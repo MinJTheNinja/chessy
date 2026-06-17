@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pawn Voyage A4 Guide</title>
+  <style>
+    :root {
+      --ivory: #f7f1df;
+      --paper: #fffaf0;
+      --charcoal: #243336;
+      --teal: #0b7773;
+      --teal2: #5fb2a6;
+      --saffron: #f1a51b;
+      --red: #b94835;
+      --line: #d9cfb6;
+      --muted: #617071;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #ddd;
+      font-family: "Noto Sans Thai", "Leelawadee UI", Tahoma, Arial, sans-serif;
+      color: var(--charcoal);
+    }
+    .page {
+      width: 3508px;
+      height: 2480px;
+      background: var(--ivory);
+      position: relative;
+      overflow: hidden;
+    }
+    .page + .page { margin-top: 80px; }
+    .page:before {
+      content: "";
+      position: absolute;
+      left: 1754px;
+      top: 150px;
+      bottom: 150px;
+      width: 6px;
+      background: var(--saffron);
+      border-radius: 8px;
+    }
+    .half {
+      position: absolute;
+      top: 0;
+      width: 1754px;
+      height: 2480px;
+      padding: 150px 160px;
+    }
+    .left { left: 0; }
+    .right { left: 1754px; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 34px;
+      margin-bottom: 90px;
+    }
+    .logo {
+      width: 190px;
+      height: 190px;
+      border-radius: 44px;
+      background: var(--charcoal);
+      position: relative;
+      box-shadow: inset 0 -14px 0 rgba(255,255,255,.08);
+    }
+    .logo:before {
+      content: "♟";
+      position: absolute;
+      color: var(--saffron);
+      font-size: 125px;
+      left: 43px;
+      top: 14px;
+      line-height: 1;
+    }
+    .logo:after {
+      content: "";
+      position: absolute;
+      width: 92px;
+      height: 92px;
+      border: 13px solid var(--teal2);
+      border-left-color: transparent;
+      border-bottom-color: transparent;
+      transform: rotate(45deg);
+      right: 22px;
+      bottom: 25px;
+      border-radius: 50%;
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: 120px;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+    .brand p {
+      margin: 16px 0 0;
+      font-size: 34px;
+      color: var(--muted);
+      line-height: 1.28;
+    }
+    h2 {
+      margin: 0 0 24px;
+      font-size: 78px;
+      line-height: 1.1;
+      letter-spacing: 0;
+      color: var(--teal);
+    }
+    h3 {
+      margin: 0 0 14px;
+      font-size: 42px;
+      line-height: 1.18;
+      letter-spacing: 0;
+      color: var(--charcoal);
+    }
+    .en {
+      font-size: 34px;
+      line-height: 1.25;
+      font-weight: 800;
+      margin: 0 0 7px;
+    }
+    .th {
+      font-size: 31px;
+      line-height: 1.32;
+      color: #485556;
+      margin: 0 0 28px;
+      font-weight: 600;
+    }
+    .hero-text {
+      max-width: 1130px;
+      margin-bottom: 78px;
+    }
+    .path-board {
+      height: 720px;
+      border-radius: 42px;
+      background:
+        linear-gradient(90deg, rgba(11,119,115,.2), rgba(255,255,255,.1)),
+        repeating-linear-gradient(45deg, rgba(36,51,54,.14) 0 82px, rgba(255,255,255,.28) 82px 164px);
+      position: relative;
+      border: 5px solid rgba(36,51,54,.12);
+      overflow: hidden;
+    }
+    .path-board:before {
+      content: "";
+      position: absolute;
+      left: 155px;
+      top: 350px;
+      width: 1010px;
+      height: 0;
+      border-top: 24px dashed var(--saffron);
+      transform: rotate(-13deg);
+      transform-origin: left center;
+    }
+    .path-board .pawn {
+      position: absolute;
+      left: 130px;
+      bottom: 80px;
+      font-size: 190px;
+      color: var(--teal);
+    }
+    .path-board .queen {
+      position: absolute;
+      right: 110px;
+      top: 50px;
+      font-size: 210px;
+      color: var(--charcoal);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      border-radius: 999px;
+      background: var(--charcoal);
+      color: white;
+      padding: 20px 34px;
+      font-size: 30px;
+      font-weight: 800;
+      margin: 36px 0 0;
+    }
+    .badge span { color: var(--saffron); }
+    .piece-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 28px;
+      margin-top: 58px;
+    }
+    .card {
+      background: var(--paper);
+      border: 4px solid var(--line);
+      border-radius: 24px;
+      padding: 28px;
+      min-height: 286px;
+      position: relative;
+    }
+    .piece-row {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    .piece-icon {
+      font-size: 94px;
+      line-height: .95;
+      color: var(--teal);
+      text-align: center;
+    }
+    .tiny {
+      font-size: 26px;
+      line-height: 1.2;
+      color: var(--muted);
+      margin-top: 12px;
+      font-weight: 700;
+    }
+    .meter {
+      height: 18px;
+      border-radius: 99px;
+      background: #e7ddc5;
+      overflow: hidden;
+      margin-top: 18px;
+    }
+    .meter span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--teal), var(--saffron), var(--red));
+      border-radius: inherit;
+    }
+    .compare-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 24px;
+      margin-bottom: 18px;
+    }
+    .legend {
+      display: flex;
+      gap: 18px;
+      font-size: 24px;
+      color: var(--muted);
+      font-weight: 800;
+      flex-wrap: wrap;
+    }
+    .legend i {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 7px;
+      vertical-align: -2px;
+      background: var(--teal);
+    }
+    .move-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 54px;
+    }
+    .move-card {
+      background: var(--paper);
+      border: 4px solid var(--line);
+      border-radius: 24px;
+      padding: 24px;
+      min-height: 390px;
+    }
+    .diagram {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border: 4px solid rgba(36,51,54,.25);
+      background:
+        repeating-linear-gradient(90deg, transparent 0 20%, rgba(36,51,54,.08) 20% 40%),
+        repeating-linear-gradient(0deg, transparent 0 20%, rgba(36,51,54,.08) 20% 40%),
+        #fff8e8;
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+    .center-piece {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 86px;
+      color: var(--charcoal);
+      line-height: 1;
+    }
+    .arrow {
+      position: absolute;
+      color: var(--red);
+      font-size: 54px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .a1 { left: 47%; top: 2%; }
+    .a2 { left: 47%; bottom: 2%; transform: rotate(180deg); }
+    .a3 { left: 5%; top: 44%; transform: rotate(-90deg); }
+    .a4 { right: 5%; top: 44%; transform: rotate(90deg); }
+    .a5 { left: 18%; top: 15%; transform: rotate(-45deg); }
+    .a6 { right: 18%; top: 15%; transform: rotate(45deg); }
+    .a7 { left: 18%; bottom: 15%; transform: rotate(-135deg); }
+    .a8 { right: 18%; bottom: 15%; transform: rotate(135deg); }
+    .special-list {
+      display: grid;
+      gap: 28px;
+      margin-top: 54px;
+    }
+    .rule {
+      display: grid;
+      grid-template-columns: 265px 1fr;
+      gap: 28px;
+      align-items: center;
+      background: var(--paper);
+      border: 4px solid var(--line);
+      border-radius: 28px;
+      padding: 28px;
+      min-height: 320px;
+    }
+    .rule-viz {
+      height: 240px;
+      border-radius: 20px;
+      background:
+        linear-gradient(90deg, rgba(11,119,115,.13), rgba(241,165,27,.12)),
+        repeating-linear-gradient(45deg, rgba(36,51,54,.10) 0 42px, rgba(255,255,255,.35) 42px 84px);
+      position: relative;
+      border: 3px solid rgba(36,51,54,.12);
+    }
+    .rule-viz b {
+      position: absolute;
+      font-size: 70px;
+      color: var(--teal);
+    }
+    .rule-viz em {
+      position: absolute;
+      font-style: normal;
+      font-size: 58px;
+      color: var(--red);
+      font-weight: 900;
+    }
+    .rv1 b:nth-child(1) { left: 28px; bottom: 42px; }
+    .rv1 b:nth-child(2) { right: 25px; bottom: 42px; color: var(--charcoal); }
+    .rv1 em { left: 92px; top: 55px; }
+    .rv2 b:nth-child(1) { left: 40px; top: 35px; }
+    .rv2 b:nth-child(2) { right: 48px; bottom: 28px; color: var(--charcoal); }
+    .rv2 em { left: 115px; top: 80px; transform: rotate(35deg); }
+    .rv3 b:nth-child(1) { left: 36px; bottom: 35px; }
+    .rv3 b:nth-child(2) { right: 36px; top: 28px; color: var(--saffron); }
+    .rv3 em { left: 114px; top: 83px; transform: rotate(45deg); }
+    .qr {
+      margin-top: 34px;
+      display: inline-grid;
+      grid-template-columns: 150px 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+    .qrbox {
+      width: 150px;
+      height: 150px;
+      background:
+        linear-gradient(90deg, var(--teal) 12px, transparent 12px) 0 0 / 30px 30px,
+        linear-gradient(var(--teal) 12px, transparent 12px) 0 0 / 30px 30px,
+        #fff;
+      border: 8px solid var(--teal);
+    }
+    .footer {
+      position: absolute;
+      left: 160px;
+      right: 160px;
+      bottom: 88px;
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 25px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <section class="page" id="page1">
+    <div class="half left">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>Pawn Voyage</h1>
+          <p>Chess through Thai Makruk<br>เรียน Chess ผ่านหมากรุกไทย</p>
+        </div>
+      </div>
+      <div class="hero-text">
+        <h2>Learn Chess Through Makruk</h2>
+        <p class="th">เรียน Chess ผ่านหมากรุกไทย</p>
+        <p class="en">Chess is a close relative of Thai Makruk, but the game starts faster and the pieces are more powerful.</p>
+        <p class="th">Chess เป็นญาติใกล้เคียงของหมากรุกไทย แต่เริ่มเกมเร็วกว่า และหมากมีพลังมากกว่า</p>
+        <p class="en">Your pawn begins a voyage: learn the board, move forward, and promote into a stronger piece.</p>
+        <p class="th">เบี้ยของคุณเริ่มต้นการเดินทาง: เรียนรู้กระดาน เดินหน้า และเลื่อนขั้นเป็นหมากที่แข็งแกร่งขึ้น</p>
+      </div>
+      <div class="path-board">
+        <div class="pawn">♟</div>
+        <div class="queen">♛</div>
+      </div>
+      <div class="badge"><span>Fast idea</span> Makruk knowledge makes Chess easier.</div>
+    </div>
+    <div class="half right">
+      <div class="compare-title">
+        <div>
+          <h2>All Pieces at a Glance</h2>
+          <p class="th">ดูหมากทั้งหมดแบบรวดเร็ว</p>
+        </div>
+        <div class="legend"><span><i></i>Same / เหมือน</span><span><i style="background:var(--saffron)"></i>Buff / แรงขึ้น</span><span><i style="background:var(--red)"></i>Power / แรงมาก</span></div>
+      </div>
+      <div class="piece-grid">
+        <div class="card">
+          <div class="piece-row"><div class="piece-icon">♔</div><div><h3>King / Khun</h3><p class="en">Moves one square in any direction.</p><p class="th">เดินได้ 1 ช่องรอบตัว</p><div class="meter"><span style="width:36%"></span></div><div class="tiny">Same as Makruk / เหมือนหมากรุกไทย</div></div></div>
+        </div>
+        <div class="card">
+          <div class="piece-row"><div class="piece-icon">♕</div><div><h3>Queen / Met</h3><p class="en">Moves like a rook plus a bishop.</p><p class="th">เดินได้ทั้งแนวตรงและแนวทแยง</p><div class="meter"><span style="width:100%"></span></div><div class="tiny">Much stronger / แรงขึ้นมาก</div></div></div>
+        </div>
+        <div class="card">
+          <div class="piece-row"><div class="piece-icon">♖</div><div><h3>Rook / Ruea</h3><p class="en">Moves straight as far as the path is clear.</p><p class="th">เดินตรงได้ไกลถ้าไม่มีหมากขวาง</p><div class="meter"><span style="width:38%"></span></div><div class="tiny">Same as Makruk / เหมือนหมากรุกไทย</div></div></div>
+        </div>
+        <div class="card">
+          <div class="piece-row"><div class="piece-icon">♗</div><div><h3>Bishop / Khon</h3><p class="en">Moves diagonally across the board.</p><p class="th">เดินทแยงได้ไกลทั่วกระดาน</p><div class="meter"><span style="width:75%"></span></div><div class="tiny">Buffed from Khon / แรงกว่าโคน</div></div></div>
+        </div>
+        <div class="card">
+          <div class="piece-row"><div class="piece-icon">♘</div><div><h3>Knight / Ma</h3><p class="en">Jumps in an L-shape.</p><p class="th">กระโดดเป็นรูปตัว L</p><div class="meter"><span style="width:40%"></span></div><div class="tiny">Same as Makruk / เหมือนหมากรุกไทย</div></div></div>
+        </div>
+        <div class="card">
+          <div class="piece-row"><div class="piece-icon">♙</div><div><h3>Pawn / Bia</h3><p class="en">Moves forward and can promote at the end.</p><p class="th">เดินหน้าและเลื่อนขั้นเมื่อถึงแถวสุดท้าย</p><div class="meter"><span style="width:62%"></span></div><div class="tiny">Faster start / เริ่มเร็วกว่า</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>Pawn Voyage Guide 1/2</span><span>English first, Thai below / ภาษาอังกฤษก่อน ตามด้วยภาษาไทย</span></div>
+  </section>
+
+  <section class="page" id="page2">
+    <div class="half left">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>How Pieces Move</h1>
+          <p>Movement cheat sheet<br>สรุปวิธีเดินหมาก</p>
+        </div>
+      </div>
+      <p class="en">Use the arrows to read the movement. A piece can capture an enemy piece on a legal destination square.</p>
+      <p class="th">ดูทิศทางจากลูกศร หมากสามารถกินหมากฝ่ายตรงข้ามในช่องที่เดินไปได้ตามกติกา</p>
+      <div class="move-grid">
+        <div class="move-card"><div class="diagram"><span class="center-piece">♔</span><span class="arrow a1">↑</span><span class="arrow a2">↑</span><span class="arrow a3">↑</span><span class="arrow a4">↑</span><span class="arrow a5">↑</span><span class="arrow a6">↑</span><span class="arrow a7">↑</span><span class="arrow a8">↑</span></div><h3>King</h3><p class="en">Moves one square in any direction.</p><p class="th">เดินได้ 1 ช่องรอบตัว</p></div>
+        <div class="move-card"><div class="diagram"><span class="center-piece">♕</span><span class="arrow a1">↑</span><span class="arrow a2">↑</span><span class="arrow a3">↑</span><span class="arrow a4">↑</span><span class="arrow a5">↑</span><span class="arrow a6">↑</span><span class="arrow a7">↑</span><span class="arrow a8">↑</span></div><h3>Queen</h3><p class="en">Moves straight and diagonal.</p><p class="th">เดินได้ทั้งแนวตรงและแนวทแยง</p></div>
+        <div class="move-card"><div class="diagram"><span class="center-piece">♖</span><span class="arrow a1">↑</span><span class="arrow a2">↑</span><span class="arrow a3">↑</span><span class="arrow a4">↑</span></div><h3>Rook</h3><p class="en">Moves straight across open squares.</p><p class="th">เดินตรงได้ไกลถ้าไม่มีหมากขวาง</p></div>
+        <div class="move-card"><div class="diagram"><span class="center-piece">♗</span><span class="arrow a5">↑</span><span class="arrow a6">↑</span><span class="arrow a7">↑</span><span class="arrow a8">↑</span></div><h3>Bishop</h3><p class="en">Moves diagonally across open squares.</p><p class="th">เดินทแยงได้ไกลถ้าไม่มีหมากขวาง</p></div>
+        <div class="move-card"><div class="diagram"><span class="center-piece">♘</span><span class="arrow" style="left:23%;top:3%">↱</span><span class="arrow" style="right:23%;top:3%">↰</span><span class="arrow" style="left:3%;top:23%">↱</span><span class="arrow" style="right:3%;top:23%">↰</span><span class="arrow" style="left:23%;bottom:3%;transform:rotate(180deg)">↱</span><span class="arrow" style="right:23%;bottom:3%;transform:rotate(180deg)">↰</span></div><h3>Knight</h3><p class="en">Jumps in an L-shape.</p><p class="th">กระโดดเป็นรูปตัว L</p></div>
+        <div class="move-card"><div class="diagram"><span class="center-piece">♙</span><span class="arrow a1">↑</span><span class="arrow" style="left:27%;top:18%;transform:rotate(-45deg)">↑</span><span class="arrow" style="right:27%;top:18%;transform:rotate(45deg)">↑</span></div><h3>Pawn</h3><p class="en">Moves forward and captures diagonally.</p><p class="th">เดินหน้า และกินเฉียง</p></div>
+      </div>
+    </div>
+    <div class="half right">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>Special Rules</h1>
+          <p>Three Chess-only moments<br>กฎพิเศษที่ควรรู้</p>
+        </div>
+      </div>
+      <div class="special-list">
+        <div class="rule">
+          <div class="rule-viz rv1"><b>♔</b><b>♖</b><em>↔</em></div>
+          <div><h3>Castling</h3><p class="en">The king and rook move together to make the king safer.</p><p class="th">King และ Rook ขยับพร้อมกันเพื่อให้ King ปลอดภัยขึ้น</p></div>
+        </div>
+        <div class="rule">
+          <div class="rule-viz rv2"><b>♙</b><b>♟</b><em>↘</em></div>
+          <div><h3>En Passant</h3><p class="en">A pawn can capture a pawn that just moved two squares, as if it moved one.</p><p class="th">Pawn สามารถกิน Pawn ที่เพิ่งเดิน 2 ช่อง เหมือนกับว่ามันเดินมาเพียง 1 ช่อง</p></div>
+        </div>
+        <div class="rule">
+          <div class="rule-viz rv3"><b>♙</b><b>♕</b><em>↗</em></div>
+          <div><h3>Promotion</h3><p class="en">When a pawn reaches the last rank, it becomes a queen or another piece.</p><p class="th">เมื่อ Pawn ไปถึงแถวสุดท้าย จะเลื่อนขั้นเป็น Queen หรือหมากตัวอื่นได้</p></div>
+        </div>
+      </div>
+      <div class="qr">
+        <div class="qrbox"></div>
+        <div>
+          <p class="en">Scan for the video tutorial.</p>
+          <p class="th">สแกนเพื่อดูวิดีโอสอน</p>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>Pawn Voyage Guide 2/2</span><span>Print as A4 landscape / พิมพ์เป็น A4 แนวนอน</span></div>
+  </section>
+</body>
+</html>

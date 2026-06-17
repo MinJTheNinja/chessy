@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Live Chess Global Matching</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#home" data-view-link="dashboard" aria-label="Live Chess home">
+        <span class="brand-mark">LC</span>
+        <span>Live Chess</span>
+      </a>
+      <nav class="top-nav" aria-label="Primary navigation">
+        <a href="#home" data-view-link="dashboard">Home</a>
+        <a href="#dashboard" data-view-link="dashboard">Dashboard</a>
+        <a href="#profile" data-view-link="profile">Profile</a>
+        <a href="#admin" data-view-link="admin">Admin</a>
+      </nav>
+      <div class="header-actions">
+        <span class="server-status" id="serverStatus">Backend checking</span>
+        <select id="languageSelect" aria-label="Interface language">
+          <option value="English">English</option>
+          <option value="Korean">Korean</option>
+          <option value="Thai">Thai</option>
+          <option value="Japanese">Japanese</option>
+        </select>
+        <button class="button secondary small" id="loginButton">Log in</button>
+        <button class="button primary small" id="signupButton">Sign up</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="entry" id="home" aria-labelledby="entryTitle">
+        <img src="source_zip/images/chessboard.jpg" alt="Chess pieces on a board" />
+        <div class="entry-content">
+          <span class="eyebrow">Global chess matching with live translation</span>
+          <h1 id="entryTitle">Play chess, talk naturally, and learn across languages.</h1>
+          <p>
+            Start from a simple landing flow, choose your language, match with a partner,
+            then move into live chess, STT subtitles, voice letters, profile progress, and safety tools.
+          </p>
+          <div class="entry-actions">
+            <button class="button primary" data-view-link="match">Start quick match</button>
+            <button class="button secondary" data-view-link="communication">Open communication hub</button>
+          </div>
+        </div>
+        <form class="auth-card" id="authForm" aria-label="Account entry">
+          <h2>Account Entry</h2>
+          <label>
+            Language selection
+            <select id="authLanguagePair">
+              <option>English to Korean</option>
+              <option>Korean to English</option>
+              <option>Thai to English</option>
+              <option>Japanese to Korean</option>
+            </select>
+          </label>
+          <label>
+            Email
+            <input id="authEmail" type="email" placeholder="player@example.com" autocomplete="email" />
+          </label>
+          <label>
+            Password
+            <input id="authPassword" type="password" placeholder="Enter password" autocomplete="current-password" />
+          </label>
+          <button class="button primary full" id="authSubmit" type="submit">Create account</button>
+          <button class="button secondary full" id="continueToDashboard" type="button" hidden>Continue to dashboard</button>
+          <p id="authStatus">King's and Mend's Mate-in support is enabled after account setup.</p>
+        </form>
+      </section>
+
+      <section class="app-shell" id="dashboard" aria-label="Application workspace">
+        <aside class="sidebar">
+          <span class="sidebar-label">Menu</span>
+          <button class="side-link active" data-view-link="dashboard">Dashboard</button>
+          <button class="side-link" data-view-link="match">Match Lobby</button>
+          <button class="side-link" data-view-link="review">AI Review</button>
+          <button class="side-link" data-view-link="communication">Communication</button>
+          <button class="side-link" data-view-link="stt">STT Subtitles</button>
+          <button class="side-link" data-view-link="profile">Profile</button>
+          <button class="side-link" data-view-link="admin">Admin</button>
+        </aside>
+
+        <div class="workspace">
+          <section class="view active" data-view="dashboard" aria-labelledby="dashboardTitle">
+            <div class="view-header">
+              <div>
+                <span class="eyebrow">Dashboard</span>
+                <h2 id="dashboardTitle">Choose your next step</h2>
+              </div>
+              <button class="button primary" data-view-link="match">Start Quick Match</button>
+            </div>
+
+            <div class="flow-grid">
+              <article class="route-card" data-view-link="match">
+                <span>01</span>
+                <h3>Match Lobby</h3>
+                <p>Start a quick match, join a K and E match, or wait in the matchmaking queue.</p>
+              </article>
+              <article class="route-card" data-view-link="communication">
+                <span>02</span>
+                <h3>Communication Hub</h3>
+                <p>Review STT status, open the voice letter inbox, and compose new voice letters.</p>
+              </article>
+              <article class="route-card" data-view-link="review">
+                <span>03</span>
+                <h3>AI Language Review</h3>
+                <p>After each match, build a Vocabulary Chest, cultural insight, and pronunciation replay.</p>
+              </article>
+              <article class="route-card" data-view-link="profile">
+                <span>04</span>
+                <h3>Profile and Culture</h3>
+                <p>Edit profile details, submit peer feedback, view badges, and read culture guides.</p>
+              </article>
+              <article class="route-card" data-view-link="admin">
+                <span>05</span>
+                <h3>Admin Panel</h3>
+                <p>Monitor matches, manage user accounts, and issue safety or moderation warnings.</p>
+              </article>
+            </div>
+
+            <div class="status-strip">
+              <article>
+                <span class="label">Active matches</span>
+                <strong id="activeMatchesCount">18</strong>
+              </article>
+              <article>
+                <span class="label">Subtitle sessions</span>
+                <strong id="subtitleSessionsCount">3</strong>
+              </article>
+              <article>
+                <span class="label">Avg. latency</span>
+                <strong id="dashboardLatency">38 ms</strong>
+              </article>
+              <article>
+                <span class="label">Manner temperature</span>
+                <strong id="dashboardTemp">42.8 C</strong>
+              </article>
+            </div>
+          </section>
+
+          <section class="view" data-view="match" aria-labelledby="matchTitle">
+            <div class="view-header">
+              <div>
+                <span class="eyebrow">Play Lobby</span>
+                <h2 id="matchTitle">Find a game, then learn through the match</h2>
+              </div>
+              <div class="button-row">
+                <button class="button secondary" id="joinKeMatch">Join Language Pool</button>
+                <button class="button primary" id="findMatch">Quick Pair</button>
+              </div>
+            </div>
+
+            <div class="match-layout">
+              <aside class="panel lobby-panel">
+                <div class="panel-heading">
+                  <div>
+                    <span class="label">Quick pairing</span>
+                    <h3>Choose a pool</h3>
+                  </div>
+                  <span class="pill" id="lobbySummary">Live pools ready</span>
+                </div>
+                <div class="quick-pair-grid" id="quickPairGrid" aria-label="Quick pairing pools">
+                  <button class="pool-button active" data-pool-id="bullet-1-0" data-time-control="1+0" data-rated="false">
+                    <span>1+0</span>
+                    <strong>Bullet</strong>
+                    <small>Fast chess, short phrases</small>
+                  </button>
+                  <button class="pool-button" data-pool-id="blitz-3-2" data-time-control="3+2" data-rated="false">
+                    <span>3+2</span>
+                    <strong>Blitz</strong>
+                    <small>Quick talk between moves</small>
+                  </button>
+                  <button class="pool-button" data-pool-id="rapid-10-0" data-time-control="10+0" data-rated="false">
+                    <span>10+0</span>
+                    <strong>Rapid Talk</strong>
+                    <small>Best for STT practice</small>
+                  </button>
+                  <button class="pool-button" data-pool-id="classical-30-0" data-time-control="30+0" data-rated="false">
+                    <span>30+0</span>
+                    <strong>Study</strong>
+                    <small>Slow game, deeper review</small>
+                  </button>
+                </div>
+                <label>
+                  Partner language
+                  <select id="partnerLanguage">
+                    <option>English</option>
+                    <option>Korean</option>
+                    <option>Thai</option>
+                    <option>Japanese</option>
+                  </select>
+                </label>
+                <label>
+                  Conversation goal
+                  <select id="conversationGoal">
+                    <option>Explain chess moves</option>
+                    <option>Practice daily conversation</option>
+                    <option>Learn sports phrases</option>
+                  </select>
+                </label>
+                <div class="queue-box">
+                  <span class="label">Current search</span>
+                  <strong id="queueTime">01:45</strong>
+                  <div class="progress-track"><span id="queueProgress"></span></div>
+                  <p id="queuePrompt">Pick a pool or join an open seek to start matchmaking.</p>
+                </div>
+                <div class="seek-composer">
+                  <div class="panel-heading compact">
+                    <div>
+                      <span class="label">Open seek</span>
+                      <h3>Create a game offer</h3>
+                    </div>
+                  </div>
+                  <label>
+                    Game type
+                    <div class="segmented" role="group" aria-label="Game type">
+                      <button class="segment active" data-mode="Casual">Casual</button>
+                      <button class="segment" data-mode="Rated">Rated</button>
+                    </div>
+                  </label>
+                  <label>
+                    Time control
+                    <select id="seekTimeControl">
+                      <option>3+2</option>
+                      <option selected>10+0</option>
+                      <option>15+10</option>
+                      <option>30+0</option>
+                    </select>
+                  </label>
+                  <button class="button secondary full" id="createSeek">Create Open Seek</button>
+                </div>
+              </aside>
+
+              <section class="board-panel" aria-label="Synchronized chess board">
+                <div class="board-toolbar">
+                  <div>
+                    <span class="label" id="matchSourceBadge">Lobby sync</span>
+                    <strong id="syncState">Live chess ready</strong>
+                    <p class="board-meta" id="timeControlBadge">No active clock yet</p>
+                  </div>
+                  <div class="button-row">
+                    <button class="button secondary" id="simulateMove">Make Chess Move</button>
+                    <button class="button danger" id="resignMatch">Resign Match</button>
+                  </div>
+                </div>
+                <div class="chess-board" id="chessBoard" aria-label="Interactive chess board"></div>
+                <div class="match-result" id="matchResult">
+                  <strong>Match Result</strong>
+                  <span>In progress</span>
+                  <button class="button dark small" id="generateReview" data-view-link="review">Generate AI Review</button>
+                </div>
+              </section>
+
+              <aside class="panel">
+                <div class="panel-heading">
+                  <div>
+                    <span class="label">Open lobby</span>
+                    <h3>Available games</h3>
+                  </div>
+                  <button class="text-link" id="refreshLobby" type="button">Refresh</button>
+                </div>
+                <div class="open-seek-list" id="openSeeksList" aria-live="polite"></div>
+                <div class="private-challenge">
+                  <span class="label">Private challenge</span>
+                  <p>Invite a friend with a short code and keep voice practice on.</p>
+                  <div class="challenge-code" id="privateChallengeCode">----</div>
+                  <button class="button secondary full" id="createPrivateChallenge">Create invite</button>
+                </div>
+                <h3>Partner</h3>
+                <div class="partner-card">
+                  <div class="avatar speaking" id="voiceRing">MK</div>
+                  <div>
+                    <strong id="partnerName">Mina K.</strong>
+                    <p><span id="mannerTemp">42.8</span> C manner temperature</p>
+                  </div>
+                </div>
+                <button class="button secondary full" id="toggleVoice">Voice connected</button>
+                <button class="button danger full" id="reportUser">Submit safety report</button>
+                <div class="icebreaker">
+                  <span class="label">Icebreaker mission</span>
+                  <p id="icebreakerText">Ask your partner what opening they enjoy most.</p>
+                  <button class="button secondary full" id="nextMission">Next mission</button>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="view" data-view="review" aria-labelledby="reviewTitle">
+            <div class="view-header">
+              <div>
+                <span class="eyebrow">Match Result</span>
+                <h2 id="reviewTitle">AI Language Review</h2>
+              </div>
+              <div class="button-row">
+                <button class="button secondary" data-view-link="match">Back to Match</button>
+                <button class="button primary" id="refreshReview">Refresh Review</button>
+              </div>
+            </div>
+
+            <div class="review-summary">
+              <article class="wire-card">
+                <span class="label">Generated from conversation transcript</span>
+                <h3>Vocabulary Chest</h3>
+                <p>
+                  5 to 10 useful words and phrases from both players, translated and tied back to the moment
+                  where they appeared during the match.
+                </p>
+              </article>
+              <article class="wire-card">
+                <span class="label">Listening reinforcement</span>
+                <h3 id="pronunciationStatus">Click any word to replay pronunciation.</h3>
+                <p>Each vocabulary item can speak the original phrase again for listening practice.</p>
+              </article>
+            </div>
+
+            <div class="learning-layout">
+              <section class="wire-card">
+                <div class="section-heading">
+                  <div>
+                    <span class="eyebrow">Vocabulary Chest</span>
+                    <h3>Key match vocabulary</h3>
+                  </div>
+                  <span class="pill" id="reviewStatus">7 items ready</span>
+                </div>
+
+                <div class="vocab-list" id="vocabList">
+                  <article class="vocab-item">
+                    <button class="vocab-term" data-say="calm position" data-lang="en-US">calm position</button>
+                    <strong>침착한 포지션</strong>
+                    <p>Used when Mina explained why she likes quiet openings before attacking.</p>
+                  </article>
+                  <article class="vocab-item">
+                    <button class="vocab-term" data-say="London System" data-lang="en-US">London System</button>
+                    <strong>런던 시스템</strong>
+                    <p>A chess opening mentioned when discussing stable beginner-friendly plans.</p>
+                  </article>
+                  <article class="vocab-item">
+                    <button class="vocab-term" data-say="knight fork" data-lang="en-US">knight fork</button>
+                    <strong>나이트 포크</strong>
+                    <p>Used after a move attacked two pieces at the same time.</p>
+                  </article>
+                  <article class="vocab-item">
+                    <button class="vocab-term" data-say="protect my king" data-lang="en-US">protect my king</button>
+                    <strong>왕을 보호하다</strong>
+                    <p>Used when explaining a defensive move before starting an attack.</p>
+                  </article>
+                  <article class="vocab-item">
+                    <button class="vocab-term" data-say="good game" data-lang="en-US">good game</button>
+                    <strong>좋은 경기였어요</strong>
+                    <p>A polite closing phrase used after the match result.</p>
+                  </article>
+                  <article class="vocab-item">
+                    <button class="vocab-term" data-say="Could you replay that move?" data-lang="en-US">Could you replay that move?</button>
+                    <strong>그 수를 다시 보여줄 수 있나요?</strong>
+                    <p>Used in the voice-letter context when a player wanted to review a position.</p>
+                  </article>
+                  <article class="vocab-item">
+                    <button class="vocab-term" data-say="center control" data-lang="en-US">center control</button>
+                    <strong>중앙 장악</strong>
+                    <p>Used while describing why a bishop move was strategically useful.</p>
+                  </article>
+                </div>
+              </section>
+
+              <aside class="review-side">
+                <article class="wire-card cultural-card">
+                  <span class="eyebrow">Cultural Exchange Insight</span>
+                  <h3 id="culturalTitle">Detected reference: saying "GG"</h3>
+                  <p id="culturalBody">
+                    The AI noticed both players used "good game" and "GG" as a friendly closing. In many online
+                    game communities this means respect, not just the literal game result. The user could research
+                    how their partner's language expresses sportsmanship after a match.
+                  </p>
+                  <p id="culturalPrompt">Research prompt: compare polite post-game phrases in your partner's language.</p>
+                  <button class="button secondary full">Save to Culture Guide</button>
+                </article>
+
+                <article class="wire-card">
+                  <span class="eyebrow">Future backend behavior</span>
+                  <h3>Workflow placement</h3>
+                  <ol class="review-flow">
+                    <li>Match ends and transcript is saved.</li>
+                    <li>AI extracts vocabulary, translations, and context.</li>
+                    <li>AI detects cultural references or slang.</li>
+                    <li>User taps any word to hear pronunciation.</li>
+                  </ol>
+                </article>
+              </aside>
+            </div>
+          </section>
+
+          <section class="view" data-view="communication" aria-labelledby="communicationTitle">
+            <div class="view-header">
+              <div>
+                <span class="eyebrow">Communication Hub</span>
+                <h2 id="communicationTitle">Live speech and voice letters</h2>
+              </div>
+              <button class="button primary" id="composeVoiceLetter">Compose Voice Letter</button>
+            </div>
+
+            <div class="communication-grid">
+              <article class="wire-card">
+                <h3>Live Speech and Translation</h3>
+                <p>Real-time processing</p>
+                <div class="metric-row">
+                  <span>STT Status <strong id="sttStatusText">Active</strong></span>
+                  <span>Translation <strong>EN to KO</strong></span>
+                  <span>Latency <strong id="latencyText">42 ms</strong></span>
+                </div>
+                <button class="button dark full" data-view-link="stt">View Subtitles and STT</button>
+              </article>
+
+              <article class="wire-card">
+                <h3>Voice Letter Inbox</h3>
+                <p>Unread messages from your matches</p>
+                <div class="inbox-list">
+                  <button class="inbox-item">
+                    <span class="avatar small-avatar">AB</span>
+                    <strong>Alex B.</strong>
+                    <span>Great game, loved the mid-game turn.</span>
+                    <time>2 min ago</time>
+                  </button>
+                  <button class="inbox-item">
+                    <span class="avatar small-avatar">MK</span>
+                    <strong>Maria K.</strong>
+                    <span>Could you replay that last move?</span>
+                    <time>18 min ago</time>
+                  </button>
+                  <button class="inbox-item">
+                    <span class="avatar small-avatar">JS</span>
+                    <strong>Jin S.</strong>
+                    <span>Thanks for the subtitle support.</span>
+                    <time>1 hr ago</time>
+                  </button>
+                </div>
+                <button class="text-link" type="button">Open Full Inbox</button>
+              </article>
+            </div>
+
+            <h3>Recent Communication Activity</h3>
+            <div class="status-strip">
+              <article><span class="label">Messages received</span><strong>12</strong><p>Last 7 days</p></article>
+              <article><span class="label">Voice letters sent</span><strong>5</strong><p>Last 7 days</p></article>
+              <article><span class="label">Active subtitle sessions</span><strong>3</strong><p>Currently live</p></article>
+              <article><span class="label">Avg. translation latency</span><strong>38 ms</strong><p>This session</p></article>
+            </div>
+
+            <h3>Notification Summary</h3>
+            <div class="notice-list" id="noticeList">
+              <p>New voice letter from Alex B. <span>2 min ago</span></p>
+              <p>STT session ended, subtitles saved. <span>34 min ago</span></p>
+              <p>Maria K. replied to your voice letter. <span>1 hr ago</span></p>
+            </div>
+          </section>
+
+          <section class="view" data-view="stt" aria-labelledby="sttTitle">
+            <div class="view-header">
+              <div>
+                <span class="eyebrow">STT and Subtitles</span>
+                <h2 id="sttTitle">Subtitle workspace</h2>
+              </div>
+              <button class="text-link" data-view-link="communication" type="button">Communication Hub</button>
+            </div>
+
+            <div class="stt-status">
+              <span>Status</span>
+              <span class="pill">Live</span>
+              <span class="pill" id="sttPill">STT Active</span>
+            </div>
+
+            <div class="stt-layout">
+              <section class="subtitle-stack">
+                <article class="wire-card subtitle-card">
+                  <h3>Original Speech (STT)</h3>
+                  <div class="subtitle-lines" id="originalSpeech">
+                    <p><strong>Mina:</strong> I usually play the London System when I want a calm position.</p>
+                    <p><strong>You:</strong> That makes sense. Your bishop move controls the center nicely.</p>
+                  </div>
+                </article>
+                <article class="wire-card subtitle-card">
+                  <h3>Translated Subtitles</h3>
+                  <div class="subtitle-lines" id="translatedSpeech">
+                    <p><strong>Mina:</strong> 침착한 포지션을 원할 때 저는 보통 런던 시스템을 둡니다.</p>
+                    <p><strong>You:</strong> 좋아요. 방금 비숍 수가 중앙을 잘 잡고 있어요.</p>
+                  </div>
+                </article>
+              </section>
+
+              <aside class="control-stack">
+                <article class="wire-card">
+                  <h3>STT Controls</h3>
+                  <label class="toggle-row">
+                    Speech Recognition
+                    <input type="checkbox" id="sttToggle" checked />
+                    <span>STT Active</span>
+                  </label>
+                  <label class="toggle-row">
+                    Translation
+                    <input type="checkbox" id="translationToggle" checked />
+                    <span>Show Translation</span>
+                  </label>
+                  <label>
+                    Source Language
+                    <select>
+                      <option>Auto Detect</option>
+                      <option>English</option>
+                      <option>Korean</option>
+                    </select>
+                  </label>
+                  <label>
+                    Translate To
+                    <select>
+                      <option>Korean</option>
+                      <option>English</option>
+                      <option>Thai</option>
+                    </select>
+                  </label>
+                  <button class="button dark full" id="activateStt">Activate STT</button>
+                </article>
+
+                <article class="wire-card">
+                  <h3>Display Settings</h3>
+                  <label>
+                    Font Size
+                    <select id="subtitleSize">
+                      <option value="small">Small</option>
+                      <option value="medium" selected>Medium</option>
+                      <option value="large">Large</option>
+                    </select>
+                  </label>
+                  <label class="toggle-row">
+                    High Contrast Mode
+                    <input type="checkbox" id="contrastToggle" />
+                    <span>High Contrast</span>
+                  </label>
+                  <label class="toggle-row">
+                    Show Speaker Name
+                    <input type="checkbox" checked />
+                    <span>Speaker Tag</span>
+                  </label>
+                </article>
+
+                <article class="wire-card session-info">
+                  <h3>Session Info</h3>
+                  <p>Session Duration <strong id="sessionDuration">24:13</strong></p>
+                  <p>Words Recognized <strong id="wordsRecognized">312</strong></p>
+                  <p>Accuracy <strong>96.4%</strong></p>
+                </article>
+              </aside>
+            </div>
+          </section>
+
+          <section class="view" data-view="profile" aria-labelledby="profileTitle">
+            <div class="view-header">
+              <div>
+                <span class="eyebrow">Profile and Culture</span>
+                <h2 id="profileTitle">Progress, feedback, and manners</h2>
+              </div>
+              <button class="button secondary">Edit Profile</button>
+            </div>
+
+            <div class="profile-grid">
+              <article class="wire-card">
+                <h3>User Profile</h3>
+                <div class="profile-head">
+                  <span class="avatar">CL</span>
+                  <div>
+                    <strong>ChessLearner</strong>
+                    <p>English learner, Korean speaker</p>
+                  </div>
+                </div>
+                <button class="button secondary full">Edit Profile</button>
+              </article>
+              <article class="wire-card">
+                <h3>Manner Temperature</h3>
+                <div class="temperature"><span id="profileTemp">42.8 C</span></div>
+                <button class="button secondary full">Submit Peer Feedback</button>
+              </article>
+              <article class="wire-card">
+                <h3>Badges</h3>
+                <div class="badge-list">
+                  <span>First Match</span>
+                  <span>Good Listener</span>
+                  <span>Kind Player</span>
+                </div>
+                <button class="button secondary full">View Badge Details</button>
+              </article>
+              <article class="wire-card">
+                <h3>Culture Guide</h3>
+                <p>Before the match, greet your partner and ask whether they prefer direct move advice.</p>
+                <button class="button secondary full">Open Guide</button>
+              </article>
+            </div>
+          </section>
+
+          <section class="view" data-view="admin" aria-labelledby="adminTitle">
+            <div class="view-header">
+              <div>
+                <span class="eyebrow">Admin Panel</span>
+                <h2 id="adminTitle">Safety and moderation</h2>
+              </div>
+              <button class="button danger">Issue Safety Warning</button>
+            </div>
+
+            <div class="admin-grid">
+              <article class="wire-card">
+                <h3>Match Monitor</h3>
+                <p>Review live match logs and intervene when safety reports arrive.</p>
+                <button class="button secondary full">Review Match Log</button>
+                <button class="button danger full">Intervene in Match</button>
+              </article>
+              <article class="wire-card">
+                <h3>User Management</h3>
+                <p>Manage user accounts, profile flags, and repeated feedback patterns.</p>
+                <button class="button secondary full">Manage User Account</button>
+              </article>
+              <article class="wire-card">
+                <h3>Safety and Moderation</h3>
+                <p>Warnings are tracked with context from transcript, match result, and reports.</p>
+                <button class="button danger full">Issue Safety Warning</button>
+              </article>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="voiceDialog">
+      <form method="dialog" class="dialog-card">
+        <button class="close" value="cancel" aria-label="Close">x</button>
+        <span class="eyebrow">Voice Letter Compose</span>
+        <h2>Record and send voice letter</h2>
+        <label>
+          Recipient
+          <select>
+            <option>Alex B.</option>
+            <option>Maria K.</option>
+            <option>Jin S.</option>
+          </select>
+        </label>
+        <label>
+          Message note
+          <textarea placeholder="Add a short note for the translated transcript."></textarea>
+        </label>
+        <button class="button primary full" value="confirm">Send Voice Letter</button>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>

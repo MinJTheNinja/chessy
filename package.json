@@ -1,0 +1,16 @@
+{
+  "name": "lingua-chess-match",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "node --check server.js && node --check app.js"
+  },
+  "dependencies": {
+    "chess.js": "^1.4.0"
+  }
+}

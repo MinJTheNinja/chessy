@@ -1,0 +1,12 @@
+generated_models
+source_zip/files
+make_accessible_chess_models.js
+output
+.npm-cache
+.vercel-cache
+.vercel-config
+.vercel-data
+.appdata
+.localappdata
+vercel-login-output.txt
+vercel-login-error.txt

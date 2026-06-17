@@ -1,0 +1,9 @@
+.vercel
+node_modules/
+.localappdata/
+.npm-cache/
+.vercel-cache/
+.vercel-data/
+*.log
+vercel-login-output.txt
+vercel-login-error.txt
