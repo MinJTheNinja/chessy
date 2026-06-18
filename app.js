@@ -287,6 +287,7 @@ let pendingVoiceOffer = null;
 let makingVoiceOffer = false;
 let ignoredVoiceOffer = false;
 let pendingIceCandidates = [];
+let voiceConnectTimeout = null;
 let clockSnapshot = null;
 let clockInterval = null;
 
@@ -294,7 +295,16 @@ const voiceClientId =
   window.crypto?.randomUUID?.() || `voice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
 const rtcConfig = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  iceServers: [
+    {
+      urls: [
+        "stun:stun.l.google.com:19302",
+        "stun:stun1.l.google.com:19302",
+        "stun:stun2.l.google.com:19302",
+      ],
+    },
+  ],
+  iceCandidatePoolSize: 4,
 };
 
 function setVoiceStatus(message, statusElement) {
@@ -418,6 +428,27 @@ function setVoiceCallButtons(active) {
   endVoiceCallButton.disabled = !active;
 }
 
+function isVoiceConnected() {
+  return (
+    peerConnection?.connectionState === "connected" ||
+    peerConnection?.iceConnectionState === "connected" ||
+    peerConnection?.iceConnectionState === "completed"
+  );
+}
+
+function clearVoiceConnectTimer() {
+  window.clearTimeout(voiceConnectTimeout);
+  voiceConnectTimeout = null;
+}
+
+function startVoiceConnectTimer() {
+  clearVoiceConnectTimer();
+  voiceConnectTimeout = window.setTimeout(() => {
+    if (isVoiceConnected()) return;
+    setVoiceStatus("Voice is taking longer than expected. Make sure your partner clicked Start mic, or tap End voice and Start mic again.");
+  }, 10000);
+}
+
 function isSecureVoiceContext() {
   return (
     location.protocol === "https:" ||
@@ -460,13 +491,33 @@ function ensureVoicePeerConnection() {
 
   peerConnection.addEventListener("connectionstatechange", () => {
     const state = peerConnection.connectionState;
-    if (state === "connected") setVoiceStatus("Voice call connected.");
+    if (state === "connected") {
+      clearVoiceConnectTimer();
+      setVoiceStatus("Voice call connected.");
+    }
     if (state === "connecting") setVoiceStatus("Connecting voice call...");
     if (state === "failed" || state === "disconnected") {
+      clearVoiceConnectTimer();
       setVoiceStatus("Voice call disconnected. You can start it again.");
-      setVoiceCallButtons(false);
+      setVoiceCallButtons(Boolean(localVoiceStream));
     }
-    if (state === "closed") setVoiceStatus("Voice call ended.");
+    if (state === "closed") {
+      clearVoiceConnectTimer();
+      setVoiceStatus("Voice call ended.");
+    }
+  });
+
+  peerConnection.addEventListener("iceconnectionstatechange", () => {
+    const state = peerConnection.iceConnectionState;
+    if (state === "connected" || state === "completed") {
+      clearVoiceConnectTimer();
+      setVoiceStatus("Voice call connected.");
+    }
+    if (state === "failed") {
+      clearVoiceConnectTimer();
+      setVoiceStatus("Voice route failed. Tap End voice, then Start mic again.");
+      setVoiceCallButtons(Boolean(localVoiceStream));
+    }
   });
 
   return peerConnection;
@@ -495,12 +546,14 @@ async function acceptVoiceOffer(description) {
   await flushPendingIceCandidates();
   const answer = await connection.createAnswer();
   await connection.setLocalDescription(answer);
-  await waitForSocketOpen();
+  const socketReady = await waitForSocketOpen();
+  if (!socketReady) throw new Error("Live voice socket is still connecting. Try again in a moment.");
   sendVoiceSignal({
     type: "voice:answer",
     description: connection.localDescription,
   });
   setVoiceCallButtons(true);
+  startVoiceConnectTimer();
   setVoiceStatus("Microphone on. Connecting voice...");
 }
 
@@ -525,9 +578,11 @@ async function startVoiceCall() {
   try {
     setVoiceStatus("Requesting microphone permission...");
     connectSocket(currentMatchId);
-    await waitForSocketOpen();
+    const socketReady = await waitForSocketOpen();
+    if (!socketReady) throw new Error("Live voice socket is still connecting. Try again in a moment.");
     await attachLocalVoiceStream();
     voiceRing.classList.add("speaking");
+    sendVoiceSignal({ type: "voice:ready" });
 
     if (pendingVoiceOffer) {
       const offer = pendingVoiceOffer;
@@ -545,10 +600,12 @@ async function startVoiceCall() {
       description: connection.localDescription,
     });
     setVoiceCallButtons(true);
+    startVoiceConnectTimer();
     setVoiceStatus("Microphone on. Waiting for partner...");
   } catch (error) {
-    setVoiceStatus(error.name === "NotAllowedError" ? "Microphone permission was blocked." : `Voice error: ${error.message}`);
+    const message = error.name === "NotAllowedError" ? "Microphone permission was blocked." : `Voice error: ${error.message}`;
     endVoiceCall(false);
+    setVoiceStatus(message);
   } finally {
     makingVoiceOffer = false;
   }
@@ -556,6 +613,7 @@ async function startVoiceCall() {
 
 function endVoiceCall(notifyPartner = true) {
   if (notifyPartner) sendVoiceSignal({ type: "voice:end" });
+  clearVoiceConnectTimer();
 
   if (peerConnection) {
     peerConnection.close();
@@ -591,6 +649,29 @@ async function handleVoiceSignal(message) {
   try {
     const connection = ensureVoicePeerConnection();
 
+    if (message.type === "voice:ready") {
+      if (!localVoiceStream) {
+        setVoiceStatus("Partner is ready for voice. Click Start mic to connect.");
+        return;
+      }
+      if (connection.signalingState === "stable" && !isVoiceConnected() && !makingVoiceOffer) {
+        makingVoiceOffer = true;
+        try {
+          const offer = await connection.createOffer({ offerToReceiveAudio: true });
+          await connection.setLocalDescription(offer);
+          sendVoiceSignal({
+            type: "voice:offer",
+            description: connection.localDescription,
+          });
+          startVoiceConnectTimer();
+          setVoiceStatus("Partner mic is ready. Connecting voice...");
+        } finally {
+          makingVoiceOffer = false;
+        }
+      }
+      return;
+    }
+
     if (message.type === "voice:offer") {
       const offerCollision = makingVoiceOffer || connection.signalingState !== "stable";
       ignoredVoiceOffer = offerCollision && voiceClientId.localeCompare(message.from || "") < 0;
@@ -614,6 +695,7 @@ async function handleVoiceSignal(message) {
       if (connection.signalingState !== "have-local-offer") return;
       await connection.setRemoteDescription(new RTCSessionDescription(message.description));
       await flushPendingIceCandidates();
+      startVoiceConnectTimer();
       setVoiceStatus("Partner accepted voice. Connecting...");
       return;
     }

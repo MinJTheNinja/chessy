@@ -1520,11 +1520,14 @@ function acceptWebSocket(req, socket) {
     ].join("\r\n"),
   );
 
-  const client = { socket, matchId: null, clientId: null };
+  const client = { socket, matchId: null, clientId: null, frameBuffer: Buffer.alloc(0) };
   clients.add(client);
 
   socket.on("data", (buffer) => {
-    for (const message of decodeFrames(buffer)) {
+    client.frameBuffer = Buffer.concat([client.frameBuffer, buffer]);
+    const decoded = decodeFrames(client.frameBuffer);
+    client.frameBuffer = decoded.remaining;
+    for (const message of decoded.messages) {
       handleSocketMessage(client, message);
     }
   });
@@ -1538,26 +1541,40 @@ function decodeFrames(buffer) {
   const messages = [];
   let offset = 0;
   while (offset + 2 <= buffer.length) {
+    const frameStart = offset;
     const first = buffer[offset++];
     const second = buffer[offset++];
     const opcode = first & 0x0f;
     let length = second & 0x7f;
     if (length === 126) {
-      if (offset + 2 > buffer.length) break;
+      if (offset + 2 > buffer.length) {
+        offset = frameStart;
+        break;
+      }
       length = buffer.readUInt16BE(offset);
       offset += 2;
     } else if (length === 127) {
-      if (offset + 8 > buffer.length) break;
+      if (offset + 8 > buffer.length) {
+        offset = frameStart;
+        break;
+      }
       length = Number(buffer.readBigUInt64BE(offset));
       offset += 8;
     }
     const masked = (second & 0x80) !== 0;
     const mask = masked ? buffer.subarray(offset, offset + 4) : null;
+    if (masked && offset + 4 > buffer.length) {
+      offset = frameStart;
+      break;
+    }
     if (masked) offset += 4;
-    if (offset + length > buffer.length) break;
+    if (offset + length > buffer.length) {
+      offset = frameStart;
+      break;
+    }
     const payload = buffer.subarray(offset, offset + length);
     offset += length;
-    if (opcode === 8) break;
+    if (opcode === 8) return { messages, remaining: Buffer.alloc(0) };
     if (opcode !== 1) continue;
     const text = Buffer.from(payload);
     if (mask) {
@@ -1567,7 +1584,7 @@ function decodeFrames(buffer) {
     }
     messages.push(text.toString("utf8"));
   }
-  return messages;
+  return { messages, remaining: buffer.subarray(offset) };
 }
 
 function sendSocket(client, data) {
