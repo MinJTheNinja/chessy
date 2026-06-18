@@ -1098,7 +1098,7 @@ server.on("upgrade", (req, socket) => {
   acceptWebSocket(req, socket);
 });
 
-server.listen(port, () => {
+server.listen(port, "0.0.0.0", () => {
   ensureDb();
   console.log(`Live Chess app running at http://localhost:${port}`);
 });
