@@ -234,6 +234,29 @@
                     <button class="button danger" id="resignMatch">Resign Match</button>
                   </div>
                 </div>
+                <div class="clock-panel" aria-label="Match timers">
+                  <article class="clock-card" id="whiteClockCard">
+                    <span>White</span>
+                    <strong id="whiteClock">--:--</strong>
+                  </article>
+                  <article class="clock-card" id="blackClockCard">
+                    <span>Black</span>
+                    <strong id="blackClock">--:--</strong>
+                  </article>
+                </div>
+                <div class="match-voice-bar">
+                  <div class="match-peer-chip">
+                    <span>Opponent</span>
+                    <strong id="boardPartnerName">Waiting</strong>
+                    <small>ID <span id="boardPartnerId">waiting</span></small>
+                  </div>
+                  <div class="match-voice-actions">
+                    <button class="button secondary" id="startVoiceCall">Start mic</button>
+                    <button class="button danger" id="endVoiceCall" disabled>End voice</button>
+                  </div>
+                  <p class="voice-status" data-voice-status>Start a matched game, then turn on your mic.</p>
+                  <audio id="remoteVoiceAudio" autoplay playsinline></audio>
+                </div>
                 <div class="chess-board" id="chessBoard" aria-label="Interactive chess board"></div>
                 <div class="match-result" id="matchResult">
                   <strong>Match Result</strong>
@@ -242,7 +265,7 @@
                 </div>
               </section>
 
-              <aside class="panel">
+              <aside class="panel match-side-panel">
                 <div class="panel-heading">
                   <div>
                     <span class="label">Open lobby</span>
@@ -256,6 +279,11 @@
                   <p>Invite a friend with a short code and keep voice practice on.</p>
                   <div class="challenge-code" id="privateChallengeCode">----</div>
                   <button class="button secondary full" id="createPrivateChallenge">Create invite</button>
+                  <label>
+                    Enter invite code
+                    <input id="privateChallengeInput" type="text" placeholder="ABC123" autocomplete="off" />
+                  </label>
+                  <button class="button primary full" id="joinPrivateChallenge" type="button">Join private challenge</button>
                 </div>
                 <div class="room-share">
                   <span class="label">Match room link</span>
@@ -268,15 +296,10 @@
                   <div class="avatar speaking" id="voiceRing">MK</div>
                   <div>
                     <strong id="partnerName">Mina K.</strong>
+                    <p class="partner-id">ID <span id="partnerId">waiting</span></p>
                     <p><span id="mannerTemp">42.8</span> C manner temperature</p>
                   </div>
                 </div>
-                <div class="voice-call-controls">
-                  <button class="button secondary full" id="startVoiceCall">Start mic</button>
-                  <button class="button danger full" id="endVoiceCall" disabled>End voice</button>
-                </div>
-                <p class="voice-status" data-voice-status>Start a matched game, then turn on your mic.</p>
-                <audio id="remoteVoiceAudio" autoplay playsinline></audio>
                 <button class="button danger full" id="reportUser">Submit safety report</button>
                 <div class="icebreaker">
                   <span class="label">Icebreaker mission</span>

@@ -499,10 +499,14 @@ p {
 }
 
 .match-layout.paired {
-  grid-template-columns: minmax(520px, 1fr) minmax(240px, 320px);
+  grid-template-columns: minmax(520px, 1fr);
 }
 
 .match-layout.paired .lobby-panel {
+  display: none;
+}
+
+.match-layout.paired .match-side-panel {
   display: none;
 }
 
@@ -711,6 +715,89 @@ p {
   font-size: 0.9rem;
 }
 
+.clock-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.clock-card {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfbfb;
+}
+
+.clock-card span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.clock-card strong {
+  color: var(--ink);
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.clock-card.active {
+  border-color: rgba(125, 88, 216, 0.42);
+  background: var(--purple-soft);
+}
+
+.clock-card.low-time strong {
+  color: var(--red);
+}
+
+.match-voice-bar {
+  display: none;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfbfb;
+}
+
+.match-layout.paired .match-voice-bar {
+  display: grid;
+}
+
+.match-peer-chip {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.match-peer-chip span,
+.match-peer-chip small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.match-peer-chip strong {
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match-voice-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.match-voice-bar .voice-status {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
 .chess-board {
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
@@ -850,6 +937,12 @@ p {
 .partner-card p,
 .icebreaker p {
   margin-bottom: 0;
+}
+
+.partner-id {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 780;
 }
 
 .communication-grid {
@@ -1275,6 +1368,15 @@ dialog::backdrop {
   .board-toolbar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .match-voice-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .match-voice-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .flow-grid,

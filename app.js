@@ -11,6 +11,9 @@ const matchResult = document.querySelector("#matchResult span");
 const matchLayout = document.querySelector("#matchLayout");
 const partnerLanguage = document.querySelector("#partnerLanguage");
 const partnerName = document.querySelector("#partnerName");
+const partnerId = document.querySelector("#partnerId");
+const boardPartnerName = document.querySelector("#boardPartnerName");
+const boardPartnerId = document.querySelector("#boardPartnerId");
 const voiceRing = document.querySelector("#voiceRing");
 const startVoiceCallButton = document.querySelector("#startVoiceCall");
 const endVoiceCallButton = document.querySelector("#endVoiceCall");
@@ -65,10 +68,16 @@ const openSeeksList = document.querySelector("#openSeeksList");
 const refreshLobbyButton = document.querySelector("#refreshLobby");
 const createPrivateChallengeButton = document.querySelector("#createPrivateChallenge");
 const privateChallengeCode = document.querySelector("#privateChallengeCode");
+const privateChallengeInput = document.querySelector("#privateChallengeInput");
+const joinPrivateChallengeButton = document.querySelector("#joinPrivateChallenge");
 const matchRoomLink = document.querySelector("#matchRoomLink");
 const copyMatchRoomLinkButton = document.querySelector("#copyMatchRoomLink");
 const matchSourceBadge = document.querySelector("#matchSourceBadge");
 const timeControlBadge = document.querySelector("#timeControlBadge");
+const whiteClock = document.querySelector("#whiteClock");
+const blackClock = document.querySelector("#blackClock");
+const whiteClockCard = document.querySelector("#whiteClockCard");
+const blackClockCard = document.querySelector("#blackClockCard");
 const refreshAdminButton = document.querySelector("#refreshAdmin");
 const adminStatus = document.querySelector("#adminStatus");
 const adminUsersCount = document.querySelector("#adminUsersCount");
@@ -278,6 +287,8 @@ let pendingVoiceOffer = null;
 let makingVoiceOffer = false;
 let ignoredVoiceOffer = false;
 let pendingIceCandidates = [];
+let clockSnapshot = null;
+let clockInterval = null;
 
 const voiceClientId =
   window.crypto?.randomUUID?.() || `voice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -755,12 +766,66 @@ function matchHasOpenSlot(match) {
   return Boolean(match?.players?.some((player) => !player.userId));
 }
 
+function shortPlayerId(player) {
+  if (!player) return "waiting";
+  if (!player.userId) return "guest";
+  return player.userId.replace(/^user_/, "user_").slice(0, 18);
+}
+
+function formatClock(ms) {
+  const safeMs = Math.max(0, Number(ms || 0));
+  const totalSeconds = Math.ceil(safeMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function clockValue(color) {
+  if (!clockSnapshot) return null;
+  const key = `${color}Ms`;
+  const base = Number(clockSnapshot[key] || 0);
+  const active = clockSnapshot.running && clockSnapshot.activeColor === color;
+  const elapsed = active ? Date.now() - clockSnapshot.receivedAt : 0;
+  return Math.max(0, base - elapsed);
+}
+
+function updateClockDisplay() {
+  const whiteMs = clockValue("white");
+  const blackMs = clockValue("black");
+  whiteClock.textContent = whiteMs === null ? "--:--" : formatClock(whiteMs);
+  blackClock.textContent = blackMs === null ? "--:--" : formatClock(blackMs);
+  whiteClockCard.classList.toggle("active", clockSnapshot?.running && clockSnapshot.activeColor === "white");
+  blackClockCard.classList.toggle("active", clockSnapshot?.running && clockSnapshot.activeColor === "black");
+  whiteClockCard.classList.toggle("low-time", whiteMs !== null && whiteMs <= 30_000);
+  blackClockCard.classList.toggle("low-time", blackMs !== null && blackMs <= 30_000);
+}
+
+function startMatchClock(match) {
+  window.clearInterval(clockInterval);
+  if (!match?.clocks) {
+    clockSnapshot = null;
+    updateClockDisplay();
+    return;
+  }
+
+  clockSnapshot = {
+    ...match.clocks,
+    running: match.status !== "ended" && match.clocks.running !== false,
+    receivedAt: Date.now(),
+  };
+  updateClockDisplay();
+  if (clockSnapshot.running) {
+    clockInterval = window.setInterval(updateClockDisplay, 1000);
+  }
+}
+
 function matchSourceLabel(match) {
   const source = match?.pairingType || "practice";
   const labels = {
     "quick-pool": "Quick pool",
     "open-seek": "Open seek",
     "language-pool": "Language pool",
+    "private-challenge": "Private challenge",
     "guest-practice": "Practice game",
     practice: "Practice game",
   };
@@ -1206,10 +1271,15 @@ function renderMatch(match) {
   }
   const opponent = match.players?.find((player) => player.userId !== currentUser?.id) || match.players?.[1];
   partnerName.textContent = opponent ? `${opponent.displayName} (${match.partnerLanguage})` : `Mina K. (${match.partnerLanguage})`;
+  partnerId.textContent = shortPlayerId(opponent);
+  boardPartnerName.textContent = opponent ? opponent.displayName : "Waiting";
+  boardPartnerId.textContent = shortPlayerId(opponent);
+  voiceRing.textContent = initials(opponent?.displayName || "Mina K.");
   matchResult.textContent = match.result || "In progress";
   syncState.textContent = match.game?.gameOver ? "Game over" : `${match.game?.turn || "white"} to move`;
   matchSourceBadge.textContent = matchSourceLabel(match);
   timeControlBadge.textContent = matchClockLabel(match);
+  startMatchClock(match);
   connectSocket(match.id);
   if (matchEnded) {
     endVoiceCall(false);
@@ -1397,6 +1467,31 @@ async function createPrivateChallenge() {
     });
     privateChallengeCode.textContent = data.challenge.code;
     queuePrompt.textContent = "Private invite created. Share the code with a friend.";
+  } catch (error) {
+    queuePrompt.textContent = error.message;
+  }
+}
+
+async function joinPrivateChallenge() {
+  const code = privateChallengeInput.value.trim().toUpperCase();
+  if (!code) {
+    queuePrompt.textContent = "Enter a private challenge code first.";
+    privateChallengeInput.focus();
+    return;
+  }
+  if (!backendOnline) {
+    queuePrompt.textContent = "Start the backend to join private challenges.";
+    return;
+  }
+
+  try {
+    queuePrompt.textContent = `Joining private challenge ${code}.`;
+    const data = await api(`/api/challenges/${encodeURIComponent(code)}/accept`, { method: "POST" });
+    privateChallengeInput.value = "";
+    renderMatch(data.match);
+    matchResult.textContent = "Private challenge joined";
+    await refreshStats();
+    await refreshLobby();
   } catch (error) {
     queuePrompt.textContent = error.message;
   }
@@ -1721,6 +1816,16 @@ simulateMoveButton.addEventListener("click", applyPlannedMove);
 createSeekButton.addEventListener("click", createOpenSeek);
 refreshLobbyButton.addEventListener("click", refreshLobby);
 createPrivateChallengeButton.addEventListener("click", createPrivateChallenge);
+joinPrivateChallengeButton.addEventListener("click", joinPrivateChallenge);
+privateChallengeInput.addEventListener("input", () => {
+  privateChallengeInput.value = privateChallengeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+});
+privateChallengeInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    joinPrivateChallenge();
+  }
+});
 copyMatchRoomLinkButton.addEventListener("click", copyRoomLink);
 refreshAdminButton.addEventListener("click", refreshAdmin);
 refreshProfileButton.addEventListener("click", refreshProfile);

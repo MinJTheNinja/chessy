@@ -283,6 +283,7 @@ function redisRoomPayload(match) {
     partnerLanguage: match.partnerLanguage || "English",
     goal: match.goal || "Explain chess moves",
     result: match.result || "In progress",
+    clocks: liveClockState(match),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -523,9 +524,81 @@ function serializeGame(fen) {
   };
 }
 
+function parseTimeControl(timeControl = "10+0") {
+  const match = String(timeControl).match(/(\d+)\s*\+\s*(\d+)/);
+  const minutes = match ? Number(match[1]) : 10;
+  const increment = match ? Number(match[2]) : 0;
+  return {
+    initialMs: Math.max(1, minutes) * 60_000,
+    incrementMs: Math.max(0, increment) * 1000,
+  };
+}
+
+function createClockState(timeControl = "10+0", startedAt = new Date().toISOString()) {
+  const { initialMs, incrementMs } = parseTimeControl(timeControl);
+  return {
+    whiteMs: initialMs,
+    blackMs: initialMs,
+    incrementMs,
+    activeColor: "white",
+    startedAt,
+    lastUpdatedAt: startedAt,
+    running: true,
+  };
+}
+
+function liveClockState(match, now = new Date()) {
+  const base = match.clocks || createClockState(match.timeControl, now.toISOString());
+  const clocks = { ...base };
+  const activeColor = clocks.activeColor;
+  if (match.status !== "ended" && clocks.running !== false && activeColor) {
+    const key = `${activeColor}Ms`;
+    const lastUpdated = Date.parse(clocks.lastUpdatedAt || clocks.startedAt || match.createdAt || now.toISOString());
+    const elapsed = Number.isFinite(lastUpdated) ? Math.max(0, now.getTime() - lastUpdated) : 0;
+    clocks[key] = Math.max(0, Number(clocks[key] || 0) - elapsed);
+  }
+  clocks.lastUpdatedAt = now.toISOString();
+  clocks.running = match.status !== "ended" && Boolean(activeColor);
+  return clocks;
+}
+
+function ensureMatchClock(match) {
+  if (!match.clocks) {
+    match.clocks = createClockState(match.timeControl, new Date().toISOString());
+  }
+  return match.clocks;
+}
+
+function applyClockAfterMove(match, move, game) {
+  const now = new Date();
+  const clocks = ensureMatchClock(match);
+  const movedColor = move.color === "w" ? "white" : "black";
+  const key = `${movedColor}Ms`;
+  const lastUpdated = Date.parse(clocks.lastUpdatedAt || clocks.startedAt || match.createdAt || now.toISOString());
+  const elapsed = Number.isFinite(lastUpdated) ? Math.max(0, now.getTime() - lastUpdated) : 0;
+  const remainingBeforeIncrement = Number(clocks[key] || 0) - elapsed;
+
+  if (remainingBeforeIncrement <= 0) {
+    clocks[key] = 0;
+    clocks.activeColor = null;
+    clocks.lastUpdatedAt = now.toISOString();
+    clocks.running = false;
+    match.status = "ended";
+    match.result = `${movedColor === "white" ? "White" : "Black"} lost on time`;
+    match.endedAt = now.toISOString();
+    return;
+  }
+
+  clocks[key] = remainingBeforeIncrement + Number(clocks.incrementMs || 0);
+  clocks.activeColor = game.turn() === "w" ? "white" : "black";
+  clocks.lastUpdatedAt = now.toISOString();
+  clocks.running = !game.isGameOver();
+}
+
 function decorateMatch(match) {
   return {
     ...match,
+    clocks: liveClockState(match),
     game: serializeGame(match.fen || new Chess().fen()),
   };
 }
@@ -547,6 +620,8 @@ function describeGameResult(game, move) {
 
 function createMatch(db, user, body = {}, opponent = null) {
   const game = new Chess();
+  const createdAt = new Date().toISOString();
+  const timeControl = body.timeControl || "10+0";
   const white = user
     ? { userId: user.id, displayName: user.displayName, color: "white" }
     : { userId: null, displayName: "Guest", color: "white" };
@@ -563,7 +638,7 @@ function createMatch(db, user, body = {}, opponent = null) {
     partnerLanguage: body.partnerLanguage || "English",
     mode: body.mode || "Live",
     goal: body.goal || "Explain chess moves",
-    timeControl: body.timeControl || "10+0",
+    timeControl,
     rated: Boolean(body.rated),
     pairingType: body.pairingType || "practice",
     poolId: body.poolId || null,
@@ -571,10 +646,11 @@ function createMatch(db, user, body = {}, opponent = null) {
     result: "In progress",
     fen: game.fen(),
     pgn: "",
+    clocks: createClockState(timeControl, createdAt),
     moves: [],
     transcript: [...sampleTranscript],
     reviewId: null,
-    createdAt: new Date().toISOString(),
+    createdAt,
     endedAt: null,
   };
   db.matches.push(match);
@@ -1061,6 +1137,48 @@ async function handleApi(req, res, pathname) {
     return true;
   }
 
+  const acceptChallengeParams = routePattern(pathname, "/api/challenges/:code/accept");
+  if (req.method === "POST" && acceptChallengeParams) {
+    if (!requireUser(user, res)) return true;
+
+    const code = String(acceptChallengeParams.code || "").trim().toUpperCase();
+    const challenge = db.challenges.find((item) => item.code === code && item.status === "open");
+    if (!challenge) {
+      sendJson(res, 404, { error: "Private challenge code not found or already used." });
+      return true;
+    }
+    if (challenge.userId === user.id) {
+      sendJson(res, 409, { error: "You cannot join your own private challenge." });
+      return true;
+    }
+
+    const challenger = db.users.find((item) => item.id === challenge.userId);
+    challenge.status = "accepted";
+    challenge.acceptedBy = user.id;
+    challenge.acceptedAt = new Date().toISOString();
+
+    const match = createMatch(
+      db,
+      challenger || null,
+      {
+        timeControl: challenge.timeControl,
+        rated: challenge.rated,
+        partnerLanguage: challenge.partnerLanguage,
+        goal: challenge.goal,
+        mode: "Private",
+        pairingType: "private-challenge",
+        challengeId: challenge.id,
+      },
+      user,
+    );
+    await writeDb(db);
+    await syncRedisRoom(match);
+    broadcast(match.id, { type: "match:started", match: decorateMatch(match) });
+    broadcast(null, { type: "queue:matched", match: decorateMatch(match) });
+    sendJson(res, 200, { match: decorateMatch(match), challenge });
+    return true;
+  }
+
   if (req.method === "POST" && pathname === "/api/matches/queue") {
     if (!user) {
       sendJson(res, 401, { error: "Sign in before joining live matchmaking." });
@@ -1197,9 +1315,14 @@ async function handleApi(req, res, pathname) {
     match.fen = game.fen();
     match.pgn = game.pgn();
     match.result = result;
+    applyClockAfterMove(match, legalMove, game);
     if (game.isGameOver()) {
       match.status = "ended";
       match.endedAt = new Date().toISOString();
+      if (match.clocks) {
+        match.clocks.activeColor = null;
+        match.clocks.running = false;
+      }
     }
     match.moves.push(move);
     match.transcript.push({
