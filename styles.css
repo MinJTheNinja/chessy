@@ -483,6 +483,18 @@ p {
   gap: 14px;
 }
 
+.match-layout.paired {
+  grid-template-columns: minmax(520px, 1fr) minmax(240px, 320px);
+}
+
+.match-layout.paired .lobby-panel {
+  display: none;
+}
+
+.match-layout.paired .board-panel {
+  min-width: 0;
+}
+
 .panel,
 .board-panel {
   display: grid;
@@ -681,6 +693,10 @@ p {
 .chess-board {
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  grid-auto-flow: row;
+  align-items: stretch;
+  justify-items: stretch;
   width: min(100%, 620px);
   aspect-ratio: 1;
   margin: 0 auto;
@@ -691,15 +707,21 @@ p {
 }
 
 .square {
+  appearance: none;
+  -webkit-appearance: none;
   position: relative;
   display: grid;
   place-items: center;
+  width: 100%;
+  height: 100%;
   min-width: 0;
   min-height: 0;
+  margin: 0;
   border: 0;
+  border-radius: 0;
   padding: 0;
-  font-size: clamp(1.9rem, 4.2vw, 3.45rem);
-  line-height: 1;
+  overflow: hidden;
+  box-shadow: none;
 }
 
 .square.light {
@@ -724,32 +746,41 @@ p {
   outline-offset: -4px;
 }
 
+.square:focus {
+  outline: none;
+}
+
+.square:focus-visible {
+  outline: 4px solid rgba(39, 118, 95, 0.75);
+  outline-offset: -4px;
+}
+
 .piece {
   position: relative;
   z-index: 1;
   display: grid;
-  width: 100%;
-  height: 100%;
+  width: 78%;
+  height: 78%;
   place-items: center;
-  font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "Apple Symbols", serif;
-  font-weight: 400;
-  text-rendering: geometricPrecision;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.18));
   transition: transform 220ms ease;
 }
 
-.piece.white-piece {
-  color: #fbf7ec;
-  -webkit-text-stroke: 0.7px rgba(20, 31, 33, 0.68);
-  text-shadow:
-    0 1px 0 rgba(20, 31, 33, 0.52),
-    0 3px 8px rgba(0, 0, 0, 0.22);
+.piece svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
-.piece.black-piece {
-  color: #101d25;
-  text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.18),
-    0 3px 7px rgba(0, 0, 0, 0.2);
+.piece-p {
+  width: 66%;
+  height: 66%;
+}
+
+.piece-n,
+.piece-b {
+  width: 74%;
+  height: 74%;
 }
 
 .square.recent .piece {
@@ -1096,6 +1127,7 @@ dialog::backdrop {
   }
 
   .match-layout,
+  .match-layout.paired,
   .stt-layout,
   .learning-layout {
     grid-template-columns: 1fr;

@@ -8,6 +8,7 @@ const joinKeMatchButton = document.querySelector("#joinKeMatch");
 const simulateMoveButton = document.querySelector("#simulateMove");
 const resignMatchButton = document.querySelector("#resignMatch");
 const matchResult = document.querySelector("#matchResult span");
+const matchLayout = document.querySelector("#matchLayout");
 const partnerLanguage = document.querySelector("#partnerLanguage");
 const partnerName = document.querySelector("#partnerName");
 const voiceRing = document.querySelector("#voiceRing");
@@ -64,60 +65,88 @@ const privateChallengeCode = document.querySelector("#privateChallengeCode");
 const matchSourceBadge = document.querySelector("#matchSourceBadge");
 const timeControlBadge = document.querySelector("#timeControlBadge");
 
-const pieceSymbols = {
+const pieceCodes = {
   white: {
-    p: "\u2659",
-    n: "\u2658",
-    b: "\u2657",
-    r: "\u2656",
-    q: "\u2655",
-    k: "\u2654",
+    p: "wp",
+    n: "wn",
+    b: "wb",
+    r: "wr",
+    q: "wq",
+    k: "wk",
   },
   black: {
-    p: "\u265f",
-    n: "\u265e",
-    b: "\u265d",
-    r: "\u265c",
-    q: "\u265b",
-    k: "\u265a",
+    p: "bp",
+    n: "bn",
+    b: "bb",
+    r: "br",
+    q: "bq",
+    k: "bk",
   },
 };
 
-const whitePieceSymbols = new Set(Object.values(pieceSymbols.white));
+const pieceNames = {
+  p: "pawn",
+  n: "knight",
+  b: "bishop",
+  r: "rook",
+  q: "queen",
+  k: "king",
+};
+
+function pieceSvg(pieceCode) {
+  const color = pieceCode?.[0] === "w" ? "white" : "black";
+  const type = pieceCode?.[1] || "p";
+  const light = color === "white";
+  const fill = light ? "#fbf6e8" : "#10202a";
+  const stroke = light ? "#40514f" : "#071117";
+  const accent = light ? "#d9d1be" : "#28434b";
+  const common = `fill="${fill}" stroke="${stroke}" stroke-width="4.6" stroke-linejoin="round" stroke-linecap="round"`;
+  const base = `<path ${common} d="M22 78h56l7 10H15z"/><path ${common} d="M29 67h42l5 11H24z"/>`;
+  const details = {
+    p: `<circle ${common} cx="50" cy="27" r="13"/><path ${common} d="M37 67c3-19 8-27 13-27s10 8 13 27z"/>${base}`,
+    n: `<path ${common} d="M30 78c5-18 5-31 18-43l-9-13c19 1 34 10 40 25 4 10 0 21-11 29l8 12H27z"/><path fill="${accent}" stroke="${stroke}" stroke-width="3" d="M50 33l-6 9 12-3z"/><circle fill="${light ? stroke : "#d8efe8"}" cx="61" cy="42" r="2.7"/>${base}`,
+    b: `<path ${common} d="M50 14c15 11 22 25 14 39-4 8-10 12-14 18-4-6-10-10-14-18-8-14-1-28 14-39z"/><path fill="none" stroke="${stroke}" stroke-width="4" d="M56 29L44 47"/>${base}`,
+    r: `<path ${common} d="M24 20h11v9h10v-9h10v9h10v-9h11v24H24z"/><path ${common} d="M31 44h38v27H31z"/>${base}`,
+    q: `<circle fill="${fill}" stroke="${stroke}" stroke-width="4" cx="25" cy="27" r="6"/><circle fill="${fill}" stroke="${stroke}" stroke-width="4" cx="50" cy="20" r="6"/><circle fill="${fill}" stroke="${stroke}" stroke-width="4" cx="75" cy="27" r="6"/><path ${common} d="M22 35l13 30h30l13-30-20 17-8-26-8 26z"/>${base}`,
+    k: `<path fill="none" stroke="${stroke}" stroke-width="6" d="M50 13v24M39 25h22"/><path ${common} d="M50 34c13 8 19 18 18 33H32c-1-15 5-25 18-33z"/>${base}`,
+  };
+
+  return `<svg viewBox="0 0 100 100" role="img" aria-label="${color} ${pieceNames[type] || "piece"}">${details[type] || details.p}</svg>`;
+}
 
 const initialPieces = {
-  a8: "\u265c",
-  b8: "\u265e",
-  c8: "\u265d",
-  d8: "\u265b",
-  e8: "\u265a",
-  f8: "\u265d",
-  g8: "\u265e",
-  h8: "\u265c",
-  a7: "\u265f",
-  b7: "\u265f",
-  c7: "\u265f",
-  d7: "\u265f",
-  e7: "\u265f",
-  f7: "\u265f",
-  g7: "\u265f",
-  h7: "\u265f",
-  a2: "\u2659",
-  b2: "\u2659",
-  c2: "\u2659",
-  d2: "\u2659",
-  e2: "\u2659",
-  f2: "\u2659",
-  g2: "\u2659",
-  h2: "\u2659",
-  a1: "\u2656",
-  b1: "\u2658",
-  c1: "\u2657",
-  d1: "\u2655",
-  e1: "\u2654",
-  f1: "\u2657",
-  g1: "\u2658",
-  h1: "\u2656",
+  a8: "br",
+  b8: "bn",
+  c8: "bb",
+  d8: "bq",
+  e8: "bk",
+  f8: "bb",
+  g8: "bn",
+  h8: "br",
+  a7: "bp",
+  b7: "bp",
+  c7: "bp",
+  d7: "bp",
+  e7: "bp",
+  f7: "bp",
+  g7: "bp",
+  h7: "bp",
+  a2: "wp",
+  b2: "wp",
+  c2: "wp",
+  d2: "wp",
+  e2: "wp",
+  f2: "wp",
+  g2: "wp",
+  h2: "wp",
+  a1: "wr",
+  b1: "wn",
+  c1: "wb",
+  d1: "wq",
+  e1: "wk",
+  f1: "wb",
+  g1: "wn",
+  h1: "wr",
 };
 
 const plannedMoves = [
@@ -199,27 +228,6 @@ const defaultReview = {
   },
 };
 
-const sampleSeeks = [
-  {
-    id: "sample-seek-1",
-    displayName: "Mina K.",
-    timeControl: "10+0",
-    rated: false,
-    partnerLanguage: "Korean",
-    goal: "Explain chess moves",
-    demo: true,
-  },
-  {
-    id: "sample-seek-2",
-    displayName: "Joon P.",
-    timeControl: "3+2",
-    rated: false,
-    partnerLanguage: "English",
-    goal: "Practice daily conversation",
-    demo: true,
-  },
-];
-
 let pieces = { ...initialPieces };
 let moveIndex = 0;
 let queueInterval;
@@ -229,8 +237,15 @@ let backendOnline = false;
 let currentUser = null;
 let currentMatchId = null;
 let selectedSquare = null;
+let boardOrientation = "white";
 let socket = null;
 let authMode = "signup";
+
+function setMatchPaired(isPaired) {
+  matchLayout.classList.toggle("paired", isPaired);
+  findMatchButton.hidden = isPaired;
+  joinKeMatchButton.hidden = isPaired;
+}
 
 function setServerStatus(text, online) {
   serverStatus.textContent = text;
@@ -323,6 +338,14 @@ function matchClockLabel(match) {
   return `${clock} - ${type} - ${goal}`;
 }
 
+function currentPlayerColor(match) {
+  if (!match?.players?.length) return "white";
+  if (currentUser) {
+    return match.players.find((player) => player.userId === currentUser.id)?.color || "white";
+  }
+  return match.players.find((player) => player.userId === null)?.color || "white";
+}
+
 async function refreshStats() {
   if (!backendOnline) return;
   try {
@@ -335,9 +358,27 @@ async function refreshStats() {
 }
 
 function renderLobby(lobby = {}) {
-  const seeks = lobby.openSeeks?.length ? lobby.openSeeks : sampleSeeks;
+  const seeks = lobby.openSeeks || [];
   openSeeksList.innerHTML = "";
-  lobbySummary.textContent = `${lobby.queuedPlayers || 0} queued`;
+  const openCount = Number(lobby.openSeeksTotal ?? seeks.length);
+  lobbySummary.textContent = `${openCount} live`;
+
+  if (!seeks.length) {
+    const empty = document.createElement("article");
+    empty.className = "open-seek-card empty-state";
+
+    const title = document.createElement("strong");
+    title.textContent = backendOnline ? "No live games waiting" : "Live lobby unavailable";
+
+    const text = document.createElement("p");
+    text.textContent = backendOnline
+      ? "Create an open seek or ask your friend to create one. Their game will appear here after refresh."
+      : "Start the backend to see real players instead of demo content.";
+
+    empty.append(title, text);
+    openSeeksList.append(empty);
+    return;
+  }
 
   seeks.forEach((seek) => {
     const card = document.createElement("article");
@@ -365,7 +406,7 @@ function renderLobby(lobby = {}) {
     const joinButton = document.createElement("button");
     joinButton.className = "button secondary full small";
     joinButton.type = "button";
-    joinButton.textContent = seek.demo ? "Practice this format" : "Join game";
+    joinButton.textContent = "Join game";
     joinButton.addEventListener("click", () => acceptSeek(seek));
 
     card.append(header, meta, goal, joinButton);
@@ -375,7 +416,7 @@ function renderLobby(lobby = {}) {
 
 async function refreshLobby() {
   if (!backendOnline) {
-    renderLobby({ openSeeks: sampleSeeks, queuedPlayers: 0 });
+    renderLobby({ openSeeks: [], openSeeksTotal: 0, queuedPlayers: 0 });
     return;
   }
 
@@ -385,7 +426,7 @@ async function refreshLobby() {
   } catch (error) {
     lobbySummary.textContent = "Lobby offline";
     queuePrompt.textContent = error.message;
-    renderLobby({ openSeeks: sampleSeeks, queuedPlayers: 0 });
+    renderLobby({ openSeeks: [], openSeeksTotal: 0, queuedPlayers: 0 });
   }
 }
 
@@ -407,7 +448,7 @@ async function checkBackend() {
   } catch {
     backendOnline = false;
     setServerStatus("Prototype mode", false);
-    renderLobby({ openSeeks: sampleSeeks, queuedPlayers: 0 });
+    renderLobby({ openSeeks: [], openSeeksTotal: 0, queuedPlayers: 0 });
   }
 }
 
@@ -507,9 +548,9 @@ function setView(viewName) {
 function piecesFromBoard(boardRows) {
   const next = {};
   boardRows.forEach((row) => {
-    row.forEach((piece) => {
-      if (!piece) return;
-      next[piece.square] = pieceSymbols[piece.color][piece.type];
+      row.forEach((piece) => {
+        if (!piece) return;
+      next[piece.square] = pieceCodes[piece.color][piece.type];
     });
   });
   return next;
@@ -517,34 +558,42 @@ function piecesFromBoard(boardRows) {
 
 function buildBoard() {
   board.innerHTML = "";
-  const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+  board.dataset.orientation = boardOrientation;
+  const files = boardOrientation === "black" ? ["h", "g", "f", "e", "d", "c", "b", "a"] : ["a", "b", "c", "d", "e", "f", "g", "h"];
+  const ranks = boardOrientation === "black" ? [1, 2, 3, 4, 5, 6, 7, 8] : [8, 7, 6, 5, 4, 3, 2, 1];
 
-  for (let rank = 8; rank >= 1; rank -= 1) {
+  ranks.forEach((rank, rankIndex) => {
     files.forEach((file, fileIndex) => {
       const id = `${file}${rank}`;
+      const fileCoordinateIndex = "abcdefgh".indexOf(file);
       const square = document.createElement("button");
       square.type = "button";
-      square.className = `square ${(rank + fileIndex) % 2 === 0 ? "dark" : "light"}`;
+      square.className = `square ${(rank + fileCoordinateIndex) % 2 === 1 ? "dark" : "light"}`;
       square.dataset.square = id;
+      square.style.gridRow = String(rankIndex + 1);
+      square.style.gridColumn = String(fileIndex + 1);
       square.setAttribute("aria-label", `${id} square`);
       square.addEventListener("click", () => handleSquareClick(id));
 
       if (selectedSquare === id) square.classList.add("selected");
       if (pieces[id]) {
         const piece = document.createElement("span");
-        piece.className = `piece ${whitePieceSymbols.has(pieces[id]) ? "white-piece" : "black-piece"}`;
-        piece.textContent = pieces[id];
+        piece.className = `piece ${pieces[id].startsWith("w") ? "white-piece" : "black-piece"} piece-${pieces[id][1]}`;
+        piece.innerHTML = pieceSvg(pieces[id]);
         square.append(piece);
       }
 
       board.append(square);
     });
-  }
+  });
 }
 
 function renderMatch(match) {
   if (!match) return;
   currentMatchId = match.id;
+  const matchEnded = match.status === "ended" || match.game?.gameOver;
+  setMatchPaired(!matchEnded);
+  boardOrientation = currentPlayerColor(match);
   if (match.game?.board) {
     pieces = piecesFromBoard(match.game.board);
     selectedSquare = null;
@@ -677,17 +726,8 @@ async function quickPairFromSelectedPool() {
 }
 
 async function acceptSeek(seek) {
-  if (seek.demo || !backendOnline) {
-    await startQueue(`Starting a ${seek.timeControl} practice game.`, false, {
-      readyText: "Practice seek ready",
-      body: {
-        pairingType: "open-seek",
-        timeControl: seek.timeControl,
-        rated: Boolean(seek.rated),
-        partnerLanguage: seek.partnerLanguage || partnerLanguage.value,
-        goal: seek.goal || conversationGoal.value,
-      },
-    });
+  if (!backendOnline) {
+    queuePrompt.textContent = "Start the backend to join live open games.";
     return;
   }
 
@@ -707,7 +747,7 @@ async function createOpenSeek() {
   const gameType = activeGameType();
   if (!backendOnline) {
     queuePrompt.textContent = "Start the backend and sign in to post a real open seek.";
-    renderLobby({ openSeeks: sampleSeeks, queuedPlayers: 0 });
+    renderLobby({ openSeeks: [], openSeeksTotal: 0, queuedPlayers: 0 });
     return;
   }
 
