@@ -428,7 +428,7 @@
                 <h3>Live Speech and Translation</h3>
                 <p>Real-time processing</p>
                 <div class="metric-row">
-                  <span>STT Status <strong id="sttStatusText">Active</strong></span>
+                  <span>STT Status <strong id="sttStatusText">Paused</strong></span>
                   <span>Translation <strong>EN to KO</strong></span>
                   <span>Latency <strong id="latencyText">42 ms</strong></span>
                 </div>
@@ -491,7 +491,7 @@
             <div class="stt-status">
               <span>Status</span>
               <span class="pill">Live</span>
-              <span class="pill" id="sttPill">STT Active</span>
+              <span class="pill" id="sttPill">STT Paused</span>
             </div>
 
             <div class="stt-layout">
@@ -499,8 +499,7 @@
                 <article class="wire-card subtitle-card">
                   <h3>Original Speech (STT)</h3>
                   <div class="subtitle-lines" id="originalSpeech">
-                    <p><strong>Mina:</strong> I usually play the London System when I want a calm position.</p>
-                    <p><strong>You:</strong> That makes sense. Your bishop move controls the center nicely.</p>
+                    <p class="subtitle-placeholder">Start STT, allow microphone access, then speak.</p>
                   </div>
                 </article>
                 <article class="wire-card subtitle-card">
@@ -517,7 +516,7 @@
                   <h3>STT Controls</h3>
                   <label class="toggle-row">
                     Speech Recognition
-                    <input type="checkbox" id="sttToggle" checked />
+                    <input type="checkbox" id="sttToggle" />
                     <span>STT Active</span>
                   </label>
                   <label class="toggle-row">
@@ -527,18 +526,21 @@
                   </label>
                   <label>
                     Source Language
-                    <select>
-                      <option>Auto Detect</option>
-                      <option>English</option>
-                      <option>Korean</option>
+                    <select id="sttSourceLanguage">
+                      <option value="">Browser Default</option>
+                      <option value="en-US">English</option>
+                      <option value="ko-KR">Korean</option>
+                      <option value="th-TH">Thai</option>
+                      <option value="ja-JP">Japanese</option>
                     </select>
                   </label>
                   <label>
                     Translate To
-                    <select>
+                    <select id="subtitleTargetLanguage">
                       <option>Korean</option>
                       <option>English</option>
                       <option>Thai</option>
+                      <option>Japanese</option>
                     </select>
                   </label>
                   <button class="button dark full" id="activateStt">Activate STT</button>
@@ -568,9 +570,9 @@
 
                 <article class="wire-card session-info">
                   <h3>Session Info</h3>
-                  <p>Session Duration <strong id="sessionDuration">24:13</strong></p>
-                  <p>Words Recognized <strong id="wordsRecognized">312</strong></p>
-                  <p>Accuracy <strong>96.4%</strong></p>
+                  <p>Session Duration <strong id="sessionDuration">00:00</strong></p>
+                  <p>Words Recognized <strong id="wordsRecognized">0</strong></p>
+                  <p>Accuracy <strong>Browser STT</strong></p>
                 </article>
               </aside>
             </div>

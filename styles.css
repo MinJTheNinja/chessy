@@ -1061,6 +1061,15 @@ p {
   color: var(--ink);
 }
 
+.subtitle-lines p.interim {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.subtitle-lines p.subtitle-placeholder {
+  color: var(--muted);
+}
+
 .subtitle-lines.large p {
   font-size: 1.18rem;
 }

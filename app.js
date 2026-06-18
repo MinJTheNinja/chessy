@@ -36,7 +36,10 @@ const originalSpeech = document.querySelector("#originalSpeech");
 const subtitleSize = document.querySelector("#subtitleSize");
 const contrastToggle = document.querySelector("#contrastToggle");
 const activateStt = document.querySelector("#activateStt");
+const sttSourceLanguage = document.querySelector("#sttSourceLanguage");
+const subtitleTargetLanguage = document.querySelector("#subtitleTargetLanguage");
 const wordsRecognized = document.querySelector("#wordsRecognized");
+const sessionDuration = document.querySelector("#sessionDuration");
 const latencyText = document.querySelector("#latencyText");
 const dashboardLatency = document.querySelector("#dashboardLatency");
 const generateReviewButton = document.querySelector("#generateReview");
@@ -288,8 +291,16 @@ let makingVoiceOffer = false;
 let ignoredVoiceOffer = false;
 let pendingIceCandidates = [];
 let voiceConnectTimeout = null;
+let voiceOfferRetryTimer = null;
+let voiceOfferRetryCount = 0;
 let clockSnapshot = null;
 let clockInterval = null;
+let speechRecognition = null;
+let sttListening = false;
+let sttShouldRestart = false;
+let sttInterimLine = null;
+let sttSessionStart = null;
+let sttSessionTimer = null;
 
 const voiceClientId =
   window.crypto?.randomUUID?.() || `voice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -441,12 +452,48 @@ function clearVoiceConnectTimer() {
   voiceConnectTimeout = null;
 }
 
+function clearVoiceOfferRetry() {
+  window.clearInterval(voiceOfferRetryTimer);
+  voiceOfferRetryTimer = null;
+  voiceOfferRetryCount = 0;
+}
+
 function startVoiceConnectTimer() {
   clearVoiceConnectTimer();
   voiceConnectTimeout = window.setTimeout(() => {
     if (isVoiceConnected()) return;
     setVoiceStatus("Voice is taking longer than expected. Make sure your partner clicked Start mic, or tap End voice and Start mic again.");
   }, 10000);
+}
+
+function sendCurrentVoiceOffer(statusMessage = "") {
+  const connection = ensureVoicePeerConnection();
+  if (connection.localDescription?.type !== "offer") return false;
+  const sent = sendVoiceSignal({
+    type: "voice:offer",
+    description: connection.localDescription,
+    retry: voiceOfferRetryCount,
+  });
+  if (!sent) return false;
+  if (statusMessage) setVoiceStatus(statusMessage);
+  return true;
+}
+
+function scheduleVoiceOfferRetry() {
+  clearVoiceOfferRetry();
+  voiceOfferRetryTimer = window.setInterval(() => {
+    if (isVoiceConnected() || peerConnection?.remoteDescription) {
+      clearVoiceOfferRetry();
+      return;
+    }
+    voiceOfferRetryCount += 1;
+    if (voiceOfferRetryCount > 4) {
+      clearVoiceOfferRetry();
+      setVoiceStatus("Still waiting for partner voice. Ask them to tap Start mic, then try again if needed.");
+      return;
+    }
+    sendCurrentVoiceOffer("Re-sending voice invite...");
+  }, 2200);
 }
 
 function isSecureVoiceContext() {
@@ -493,16 +540,19 @@ function ensureVoicePeerConnection() {
     const state = peerConnection.connectionState;
     if (state === "connected") {
       clearVoiceConnectTimer();
+      clearVoiceOfferRetry();
       setVoiceStatus("Voice call connected.");
     }
     if (state === "connecting") setVoiceStatus("Connecting voice call...");
     if (state === "failed" || state === "disconnected") {
       clearVoiceConnectTimer();
+      clearVoiceOfferRetry();
       setVoiceStatus("Voice call disconnected. You can start it again.");
       setVoiceCallButtons(Boolean(localVoiceStream));
     }
     if (state === "closed") {
       clearVoiceConnectTimer();
+      clearVoiceOfferRetry();
       setVoiceStatus("Voice call ended.");
     }
   });
@@ -511,10 +561,12 @@ function ensureVoicePeerConnection() {
     const state = peerConnection.iceConnectionState;
     if (state === "connected" || state === "completed") {
       clearVoiceConnectTimer();
+      clearVoiceOfferRetry();
       setVoiceStatus("Voice call connected.");
     }
     if (state === "failed") {
       clearVoiceConnectTimer();
+      clearVoiceOfferRetry();
       setVoiceStatus("Voice route failed. Tap End voice, then Start mic again.");
       setVoiceCallButtons(Boolean(localVoiceStream));
     }
@@ -595,10 +647,8 @@ async function startVoiceCall() {
     makingVoiceOffer = true;
     const offer = await connection.createOffer({ offerToReceiveAudio: true });
     await connection.setLocalDescription(offer);
-    sendVoiceSignal({
-      type: "voice:offer",
-      description: connection.localDescription,
-    });
+    sendCurrentVoiceOffer();
+    scheduleVoiceOfferRetry();
     setVoiceCallButtons(true);
     startVoiceConnectTimer();
     setVoiceStatus("Microphone on. Waiting for partner...");
@@ -614,6 +664,7 @@ async function startVoiceCall() {
 function endVoiceCall(notifyPartner = true) {
   if (notifyPartner) sendVoiceSignal({ type: "voice:end" });
   clearVoiceConnectTimer();
+  clearVoiceOfferRetry();
 
   if (peerConnection) {
     peerConnection.close();
@@ -654,15 +705,19 @@ async function handleVoiceSignal(message) {
         setVoiceStatus("Partner is ready for voice. Click Start mic to connect.");
         return;
       }
+      if (connection.signalingState === "have-local-offer" && connection.localDescription?.type === "offer") {
+        sendCurrentVoiceOffer("Partner is ready. Re-sending voice invite...");
+        scheduleVoiceOfferRetry();
+        startVoiceConnectTimer();
+        return;
+      }
       if (connection.signalingState === "stable" && !isVoiceConnected() && !makingVoiceOffer) {
         makingVoiceOffer = true;
         try {
           const offer = await connection.createOffer({ offerToReceiveAudio: true });
           await connection.setLocalDescription(offer);
-          sendVoiceSignal({
-            type: "voice:offer",
-            description: connection.localDescription,
-          });
+          sendCurrentVoiceOffer();
+          scheduleVoiceOfferRetry();
           startVoiceConnectTimer();
           setVoiceStatus("Partner mic is ready. Connecting voice...");
         } finally {
@@ -673,6 +728,20 @@ async function handleVoiceSignal(message) {
     }
 
     if (message.type === "voice:offer") {
+      if (
+        localVoiceStream &&
+        connection.signalingState === "stable" &&
+        connection.remoteDescription?.type === "offer" &&
+        connection.localDescription?.type === "answer"
+      ) {
+        sendVoiceSignal({
+          type: "voice:answer",
+          description: connection.localDescription,
+        });
+        setVoiceStatus("Re-sent voice confirmation.");
+        return;
+      }
+
       const offerCollision = makingVoiceOffer || connection.signalingState !== "stable";
       ignoredVoiceOffer = offerCollision && voiceClientId.localeCompare(message.from || "") < 0;
       if (ignoredVoiceOffer) return;
@@ -695,6 +764,7 @@ async function handleVoiceSignal(message) {
       if (connection.signalingState !== "have-local-offer") return;
       await connection.setRemoteDescription(new RTCSessionDescription(message.description));
       await flushPendingIceCandidates();
+      clearVoiceOfferRetry();
       startVoiceConnectTimer();
       setVoiceStatus("Partner accepted voice. Connecting...");
       return;
@@ -1761,6 +1831,228 @@ async function appendSubtitle() {
   }
 }
 
+function browserSpeechRecognitionCtor() {
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+function sttLanguage() {
+  return sttSourceLanguage.value || navigator.language || "en-US";
+}
+
+function sttSpeakerName() {
+  return currentUser?.displayName || "You";
+}
+
+function setSttStatus(active, detail = "") {
+  sttListening = active;
+  sttPill.textContent = active ? "STT Listening" : "STT Paused";
+  sttStatusText.textContent = detail || (active ? "Listening" : "Paused");
+  activateStt.textContent = active ? "Stop STT" : "Activate STT";
+}
+
+function updateSessionDuration() {
+  if (!sttSessionStart) {
+    sessionDuration.textContent = "00:00";
+    return;
+  }
+  const elapsed = Math.floor((Date.now() - sttSessionStart) / 1000);
+  const minutes = Math.floor(elapsed / 60);
+  const seconds = elapsed % 60;
+  sessionDuration.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function startSessionTimer() {
+  if (!sttSessionStart) sttSessionStart = Date.now();
+  updateSessionDuration();
+  window.clearInterval(sttSessionTimer);
+  sttSessionTimer = window.setInterval(updateSessionDuration, 1000);
+}
+
+function stopSessionTimer() {
+  window.clearInterval(sttSessionTimer);
+  sttSessionTimer = null;
+}
+
+function subtitleTranslation(text) {
+  const target = subtitleTargetLanguage.value || "Korean";
+  return `Translation pending (${target}): ${text}`;
+}
+
+function subtitlePlaceholder(text) {
+  const line = document.createElement("p");
+  line.className = "subtitle-placeholder";
+  line.textContent = text;
+  return line;
+}
+
+function resetSubtitlePlaceholders() {
+  originalSpeech.replaceChildren(subtitlePlaceholder("Start STT, allow microphone access, then speak."));
+  translatedSpeech.replaceChildren(subtitlePlaceholder("Browser STT captures speech first. Translation can be connected later."));
+}
+
+function clearSubtitlePlaceholders() {
+  originalSpeech.querySelectorAll(".subtitle-placeholder").forEach((line) => line.remove());
+  translatedSpeech.querySelectorAll(".subtitle-placeholder").forEach((line) => line.remove());
+}
+
+function appendSubtitleLine(container, speaker, text, className = "") {
+  clearSubtitlePlaceholders();
+  const line = document.createElement("p");
+  if (className) line.className = className;
+  const name = document.createElement("strong");
+  name.textContent = `${speaker}:`;
+  line.append(name, document.createTextNode(` ${text}`));
+  container.append(line);
+  container.scrollTop = container.scrollHeight;
+  return line;
+}
+
+async function persistSubtitleLine(text, translation) {
+  if (!backendOnline || !currentMatchId) return;
+  try {
+    await api(`/api/matches/${currentMatchId}/transcript`, {
+      method: "POST",
+      body: {
+        speaker: sttSpeakerName(),
+        text,
+        translation,
+        kind: "speech",
+      },
+    });
+  } catch {
+    // Keep live captions running even when transcript persistence is unavailable.
+  }
+}
+
+function appendRecognizedSpeech(text) {
+  const phrase = String(text || "").trim();
+  if (!phrase) return;
+  const speaker = sttSpeakerName();
+  const translation = subtitleTranslation(phrase);
+
+  appendSubtitleLine(originalSpeech, speaker, phrase);
+  appendSubtitleLine(translatedSpeech, speaker, translation);
+  wordsRecognized.textContent = String(Number(wordsRecognized.textContent || 0) + phrase.split(/\s+/).filter(Boolean).length);
+  persistSubtitleLine(phrase, translation);
+
+  const latency = 80 + Math.floor(Math.random() * 80);
+  latencyText.textContent = `${latency} ms`;
+  dashboardLatency.textContent = `${latency} ms`;
+}
+
+function updateInterimSpeech(text) {
+  const phrase = String(text || "").trim();
+  if (!phrase) {
+    if (sttInterimLine) sttInterimLine.remove();
+    sttInterimLine = null;
+    return;
+  }
+  if (!sttInterimLine) {
+    sttInterimLine = appendSubtitleLine(originalSpeech, sttSpeakerName(), phrase, "interim");
+    return;
+  }
+  sttInterimLine.replaceChildren();
+  const name = document.createElement("strong");
+  name.textContent = `${sttSpeakerName()}:`;
+  sttInterimLine.append(name, document.createTextNode(` ${phrase}`));
+  originalSpeech.scrollTop = originalSpeech.scrollHeight;
+}
+
+function stopBrowserStt() {
+  sttShouldRestart = false;
+  if (speechRecognition) {
+    speechRecognition.onend = null;
+    try {
+      speechRecognition.stop();
+    } catch {
+      // Browser speech recognition may already be stopped.
+    }
+    speechRecognition = null;
+  }
+  if (sttInterimLine) sttInterimLine.remove();
+  sttInterimLine = null;
+  stopSessionTimer();
+  setSttStatus(false, "STT stopped.");
+}
+
+function startBrowserStt() {
+  const Recognition = browserSpeechRecognitionCtor();
+  if (!Recognition) {
+    sttToggle.checked = false;
+    setSttStatus(false, "Browser STT needs Chrome or another browser with SpeechRecognition support.");
+    return;
+  }
+  if (!isSecureVoiceContext()) {
+    sttToggle.checked = false;
+    setSttStatus(false, "STT microphone needs HTTPS. Render is OK, and localhost is OK.");
+    return;
+  }
+
+  if (speechRecognition) stopBrowserStt();
+
+  speechRecognition = new Recognition();
+  speechRecognition.lang = sttLanguage();
+  speechRecognition.continuous = true;
+  speechRecognition.interimResults = true;
+  speechRecognition.maxAlternatives = 1;
+  sttShouldRestart = true;
+  sttToggle.checked = true;
+  startSessionTimer();
+  setSttStatus(true, "Listening for speech...");
+
+  speechRecognition.onresult = (event) => {
+    let finalText = "";
+    let interimText = "";
+    for (let index = event.resultIndex; index < event.results.length; index += 1) {
+      const result = event.results[index];
+      const transcript = result[0]?.transcript || "";
+      if (result.isFinal) finalText += transcript;
+      else interimText += transcript;
+    }
+    if (finalText.trim()) {
+      if (sttInterimLine) sttInterimLine.remove();
+      sttInterimLine = null;
+      appendRecognizedSpeech(finalText);
+    } else {
+      updateInterimSpeech(interimText);
+    }
+  };
+
+  speechRecognition.onerror = (event) => {
+    if (event.error === "no-speech") {
+      setSttStatus(true, "Listening");
+      return;
+    }
+    sttShouldRestart = false;
+    sttToggle.checked = false;
+    stopSessionTimer();
+    const message = event.error === "not-allowed"
+      ? "Mic permission blocked"
+      : `STT issue: ${event.error || "stopped"}`;
+    setSttStatus(false, message);
+  };
+
+  speechRecognition.onend = () => {
+    speechRecognition = null;
+    if (sttShouldRestart && sttToggle.checked) {
+      window.setTimeout(() => {
+        if (sttShouldRestart && sttToggle.checked && !speechRecognition) startBrowserStt();
+      }, 350);
+      return;
+    }
+    stopSessionTimer();
+    setSttStatus(false, "STT stopped.");
+  };
+
+  try {
+    speechRecognition.start();
+  } catch (error) {
+    sttShouldRestart = false;
+    sttToggle.checked = false;
+    setSttStatus(false, `STT error: ${error.message}`);
+  }
+}
+
 function renderReview(review) {
   if (!review) return;
   reviewStatus.textContent = `${review.vocabulary.length} items generated`;
@@ -1819,6 +2111,8 @@ function playPronunciation(button) {
     statusElement: pronunciationStatus,
   });
 }
+
+resetSubtitlePlaceholders();
 
 document.querySelectorAll("[data-view-link]").forEach((link) => {
   link.addEventListener("click", (event) => {
@@ -1972,8 +2266,11 @@ composeVoiceLetter.addEventListener("click", () => {
 
 sttToggle.addEventListener("change", () => {
   const active = sttToggle.checked;
-  sttPill.textContent = active ? "STT Active" : "STT Paused";
-  sttStatusText.textContent = active ? "Active" : "Paused";
+  if (active) {
+    startBrowserStt();
+  } else {
+    stopBrowserStt();
+  }
 });
 
 translationToggle.addEventListener("change", () => {
@@ -1992,10 +2289,20 @@ contrastToggle.addEventListener("change", () => {
 });
 
 activateStt.addEventListener("click", async () => {
-  await appendSubtitle();
-  const latency = 34 + Math.floor(Math.random() * 18);
-  latencyText.textContent = `${latency} ms`;
-  dashboardLatency.textContent = `${latency} ms`;
+  if (sttListening) {
+    sttToggle.checked = false;
+    stopBrowserStt();
+  } else {
+    sttToggle.checked = true;
+    startBrowserStt();
+  }
+});
+
+sttSourceLanguage.addEventListener("change", () => {
+  if (!sttListening) return;
+  stopBrowserStt();
+  sttToggle.checked = true;
+  startBrowserStt();
 });
 
 generateReviewButton.addEventListener("click", () => requestReview("the completed match"));
