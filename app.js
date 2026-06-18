@@ -65,6 +65,8 @@ const openSeeksList = document.querySelector("#openSeeksList");
 const refreshLobbyButton = document.querySelector("#refreshLobby");
 const createPrivateChallengeButton = document.querySelector("#createPrivateChallenge");
 const privateChallengeCode = document.querySelector("#privateChallengeCode");
+const matchRoomLink = document.querySelector("#matchRoomLink");
+const copyMatchRoomLinkButton = document.querySelector("#copyMatchRoomLink");
 const matchSourceBadge = document.querySelector("#matchSourceBadge");
 const timeControlBadge = document.querySelector("#timeControlBadge");
 const refreshAdminButton = document.querySelector("#refreshAdmin");
@@ -664,6 +666,67 @@ async function api(path, options = {}) {
   return data;
 }
 
+function routeMatchId() {
+  const match = location.pathname.match(/^\/match\/([^/?#]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function roomUrl(matchId = currentMatchId) {
+  if (!matchId) return "";
+  return new URL(`/match/${encodeURIComponent(matchId)}`, location.origin).href;
+}
+
+function updateRoomLink(matchId = currentMatchId) {
+  const link = roomUrl(matchId);
+  matchRoomLink.value = link || "No match yet";
+  copyMatchRoomLinkButton.disabled = !link;
+}
+
+function updateMatchRoute(matchId) {
+  if (!matchId || location.protocol === "file:") return;
+  const nextPath = `/match/${encodeURIComponent(matchId)}`;
+  if (location.pathname !== nextPath) {
+    history.replaceState({ matchId }, "", nextPath);
+  }
+}
+
+async function copyRoomLink() {
+  const link = matchRoomLink.value;
+  if (!currentMatchId || !link || link === "No match yet") return;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(link);
+    } else {
+      matchRoomLink.select();
+      document.execCommand("copy");
+    }
+    setVoiceStatus("Match room link copied.");
+  } catch {
+    matchRoomLink.select();
+    setVoiceStatus("Room link selected. Copy it manually.");
+  }
+}
+
+async function loadMatchFromRoute() {
+  const matchId = routeMatchId();
+  if (!matchId || !backendOnline) return;
+
+  try {
+    let data = await api(`/api/matches/${matchId}`);
+    if (currentUser && !matchBelongsToCurrentUser(data.match) && matchHasOpenSlot(data.match)) {
+      data = await api(`/api/matches/${matchId}/join`, { method: "POST" });
+    }
+    renderMatch(data.match);
+    setView("match");
+    matchResult.textContent = data.match.result || "Joined room from link";
+  } catch (error) {
+    setView("match");
+    matchResult.textContent = "Room not found";
+    syncState.textContent = error.message;
+  }
+}
+
 function selectedPool() {
   const button = document.querySelector(".pool-button.active") || document.querySelector(".pool-button");
   return {
@@ -686,6 +749,10 @@ function activeGameType() {
 function matchBelongsToCurrentUser(match) {
   if (!currentUser || !match?.players) return true;
   return match.players.some((player) => player.userId === currentUser.id);
+}
+
+function matchHasOpenSlot(match) {
+  return Boolean(match?.players?.some((player) => !player.userId));
 }
 
 function matchSourceLabel(match) {
@@ -965,6 +1032,7 @@ async function checkBackend() {
     connectSocket(null);
     await refreshStats();
     await refreshLobby();
+    await loadMatchFromRoute();
   } catch {
     backendOnline = false;
     setServerStatus("Prototype mode", false);
@@ -975,23 +1043,23 @@ async function checkBackend() {
 function connectSocket(matchId) {
   if (!backendOnline || location.protocol === "file:") return;
   if (socket && socket.readyState === WebSocket.OPEN) {
-    sendSocketMessage({ type: "join", matchId });
+    sendSocketMessage({ type: "join", matchId, clientId: voiceClientId });
     return;
   }
   if (socket && socket.readyState === WebSocket.CONNECTING) {
-    socket.addEventListener("open", () => sendSocketMessage({ type: "join", matchId }), { once: true });
+    socket.addEventListener("open", () => sendSocketMessage({ type: "join", matchId, clientId: voiceClientId }), { once: true });
     return;
   }
 
   const protocol = location.protocol === "https:" ? "wss" : "ws";
   socket = new WebSocket(`${protocol}://${location.host}/ws`);
   socket.addEventListener("open", () => {
-    sendSocketMessage({ type: "join", matchId });
+    sendSocketMessage({ type: "join", matchId, clientId: voiceClientId });
     syncState.textContent = "Live socket connected";
   });
   socket.addEventListener("message", (event) => {
     const message = JSON.parse(event.data);
-    if ((message.type === "match:started" || message.type === "queue:matched") && matchBelongsToCurrentUser(message.match)) {
+    if ((message.type === "match:started" || message.type === "queue:matched" || message.type === "match:joined") && matchBelongsToCurrentUser(message.match)) {
       renderMatch(message.match);
     }
     if (message.type === "match:move" && matchBelongsToCurrentUser(message.match)) renderMatch(message.match);
@@ -1126,6 +1194,8 @@ function buildBoard() {
 function renderMatch(match) {
   if (!match) return;
   currentMatchId = match.id;
+  updateRoomLink(match.id);
+  updateMatchRoute(match.id);
   const matchEnded = match.status === "ended" || match.game?.gameOver;
   setMatchPaired(!matchEnded);
   boardOrientation = currentPlayerColor(match);
@@ -1651,6 +1721,7 @@ simulateMoveButton.addEventListener("click", applyPlannedMove);
 createSeekButton.addEventListener("click", createOpenSeek);
 refreshLobbyButton.addEventListener("click", refreshLobby);
 createPrivateChallengeButton.addEventListener("click", createPrivateChallenge);
+copyMatchRoomLinkButton.addEventListener("click", copyRoomLink);
 refreshAdminButton.addEventListener("click", refreshAdmin);
 refreshProfileButton.addEventListener("click", refreshProfile);
 saveProfileButton.addEventListener("click", saveProfile);
@@ -1758,4 +1829,5 @@ document.querySelectorAll(".inbox-item").forEach((item) => {
 
 buildBoard();
 renderReview(defaultReview);
+updateRoomLink(null);
 checkBackend();

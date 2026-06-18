@@ -11,6 +11,9 @@ const dataDir = path.join(rootDir, ".localappdata", "live-chess");
 const dbPath = path.join(dataDir, "db.json");
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
+const upstashRedisRestUrl = process.env.UPSTASH_REDIS_REST_URL;
+const upstashRedisRestToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+const redisEnabled = Boolean(upstashRedisRestUrl && upstashRedisRestToken);
 const pgPool = databaseUrl
   ? new Pool({
       connectionString: databaseUrl,
@@ -249,6 +252,53 @@ async function writeDb(db) {
     `,
     ["main", JSON.stringify(normalizeDb(db))],
   );
+}
+
+async function redisCommand(command) {
+  if (!redisEnabled) return null;
+  try {
+    const response = await fetch(upstashRedisRestUrl, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${upstashRedisRestToken}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(command),
+    });
+    if (!response.ok) throw new Error(`Redis ${response.status}`);
+    const data = await response.json().catch(() => ({}));
+    return data.result;
+  } catch (error) {
+    console.warn(`Redis unavailable: ${error.message}`);
+    return null;
+  }
+}
+
+function redisRoomPayload(match) {
+  return {
+    id: match.id,
+    status: match.status,
+    players: match.players || [],
+    timeControl: match.timeControl || "10+0",
+    partnerLanguage: match.partnerLanguage || "English",
+    goal: match.goal || "Explain chess moves",
+    result: match.result || "In progress",
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+async function syncRedisRoom(match) {
+  if (!match?.id || !redisEnabled) return;
+  await redisCommand(["SET", `room:${match.id}`, JSON.stringify(redisRoomPayload(match)), "EX", "86400"]);
+  await redisCommand(["SADD", "rooms:active", match.id]);
+}
+
+async function touchRedisPresence(matchId, clientId) {
+  if (!matchId || !clientId || !redisEnabled) return;
+  const key = `room:${matchId}:presence:${clientId}`;
+  await redisCommand(["SET", key, JSON.stringify({ clientId, matchId, at: new Date().toISOString() }), "EX", "90"]);
+  await redisCommand(["SADD", `room:${matchId}:clients`, clientId]);
+  await redisCommand(["EXPIRE", `room:${matchId}:clients`, "86400"]);
 }
 
 function id(prefix) {
@@ -599,6 +649,8 @@ async function handleApi(req, res, pathname) {
       ok: true,
       app: "Live Chess",
       storage: pgPool ? "postgres" : "local-json",
+      postgresProvider: databaseUrl?.includes("supabase") ? "supabase" : pgPool ? "postgres" : null,
+      redis: redisEnabled ? "upstash" : "disabled",
       now: new Date().toISOString(),
     });
     return true;
@@ -758,6 +810,7 @@ async function handleApi(req, res, pathname) {
     match.result = body.result || "Ended by admin";
     match.endedAt = new Date().toISOString();
     await writeDb(db);
+    await syncRedisRoom(match);
     broadcast(match.id, { type: "match:ended", matchId: match.id, result: match.result, match: decorateMatch(match) });
     sendJson(res, 200, { match: adminMatch(match) });
     return true;
@@ -843,6 +896,7 @@ async function handleApi(req, res, pathname) {
     const body = await readBody(req);
     const match = createMatch(db, user, { ...body, pairingType: body.pairingType || "practice" });
     await writeDb(db);
+    await syncRedisRoom(match);
     broadcast(match.id, { type: "match:started", match: decorateMatch(match) });
     sendJson(res, 200, { match: decorateMatch(match) });
     return true;
@@ -865,6 +919,7 @@ async function handleApi(req, res, pathname) {
     if (!user) {
       const match = createMatch(db, null, { ...matchDetails, pairingType: "guest-practice" });
       await writeDb(db);
+      await syncRedisRoom(match);
       broadcast(match.id, { type: "match:started", match: decorateMatch(match) });
       sendJson(res, 200, { waiting: false, match: decorateMatch(match), practice: true });
       return true;
@@ -908,6 +963,7 @@ async function handleApi(req, res, pathname) {
       opponent ? user : null,
     );
     await writeDb(db);
+    await syncRedisRoom(match);
     broadcast(match.id, { type: "match:started", match: decorateMatch(match) });
     broadcast(null, { type: "queue:matched", match: decorateMatch(match) });
     sendJson(res, 200, { waiting: false, match: decorateMatch(match) });
@@ -976,6 +1032,7 @@ async function handleApi(req, res, pathname) {
       seeker ? user : null,
     );
     await writeDb(db);
+    await syncRedisRoom(match);
     broadcast(match.id, { type: "match:started", match: decorateMatch(match) });
     broadcast(null, { type: "queue:matched", match: decorateMatch(match) });
     broadcast(null, { type: "lobby:updated", openSeeks: db.seeks.filter((item) => item.status === "open").length });
@@ -1047,9 +1104,43 @@ async function handleApi(req, res, pathname) {
       opponent ? user : null,
     );
     await writeDb(db);
+    await syncRedisRoom(match);
     broadcast(match.id, { type: "match:started", match: decorateMatch(match) });
     broadcast(null, { type: "queue:matched", match: decorateMatch(match) });
     sendJson(res, 200, { waiting: false, match: decorateMatch(match) });
+    return true;
+  }
+
+  const joinMatchParams = routePattern(pathname, "/api/matches/:id/join");
+  if (req.method === "POST" && joinMatchParams) {
+    if (!requireUser(user, res)) return true;
+    const match = db.matches.find((item) => item.id === joinMatchParams.id);
+    if (!match) {
+      sendJson(res, 404, { error: "Match not found." });
+      return true;
+    }
+    if (match.status === "ended") {
+      sendJson(res, 409, { error: "This match has already ended." });
+      return true;
+    }
+
+    const existingPlayer = match.players?.find((player) => player.userId === user.id);
+    if (!existingPlayer) {
+      const openSlot = match.players?.find((player) => !player.userId);
+      if (!openSlot) {
+        sendJson(res, 409, { error: "This match room is already full." });
+        return true;
+      }
+      openSlot.userId = user.id;
+      openSlot.displayName = user.displayName;
+      match.partnerName = user.displayName;
+      match.joinedAt = new Date().toISOString();
+    }
+
+    await writeDb(db);
+    await syncRedisRoom(match);
+    broadcast(match.id, { type: "match:joined", matchId: match.id, match: decorateMatch(match) });
+    sendJson(res, 200, { match: decorateMatch(match) });
     return true;
   }
 
@@ -1119,6 +1210,7 @@ async function handleApi(req, res, pathname) {
       at: move.at,
     });
     await writeDb(db);
+    await syncRedisRoom(match);
     broadcast(match.id, { type: "match:move", matchId: match.id, move, match: decorateMatch(match) });
     sendJson(res, 200, { match: decorateMatch(match), move });
     return true;
@@ -1141,6 +1233,7 @@ async function handleApi(req, res, pathname) {
     };
     match.transcript.push(item);
     await writeDb(db);
+    await syncRedisRoom(match);
     broadcast(match.id, { type: "match:transcript", matchId: match.id, item });
     sendJson(res, 200, { item, match: decorateMatch(match) });
     return true;
@@ -1158,6 +1251,7 @@ async function handleApi(req, res, pathname) {
     match.result = body.result || match.result || "Completed";
     match.endedAt = new Date().toISOString();
     await writeDb(db);
+    await syncRedisRoom(match);
     broadcast(match.id, { type: "match:ended", matchId: match.id, result: match.result, match: decorateMatch(match) });
     sendJson(res, 200, { match: decorateMatch(match) });
     return true;
@@ -1246,7 +1340,8 @@ async function handleApi(req, res, pathname) {
 }
 
 function serveStatic(req, res, pathname) {
-  const requested = pathname === "/" ? "/index.html" : decodeURIComponent(pathname);
+  const matchRoute = routePattern(pathname, "/match/:id");
+  const requested = pathname === "/" || matchRoute ? "/index.html" : decodeURIComponent(pathname);
   const filePath = path.normalize(path.join(rootDir, requested));
   const relative = path.relative(rootDir, filePath);
   if (relative.startsWith("..") || path.isAbsolute(relative)) {
@@ -1302,7 +1397,7 @@ function acceptWebSocket(req, socket) {
     ].join("\r\n"),
   );
 
-  const client = { socket, matchId: null };
+  const client = { socket, matchId: null, clientId: null };
   clients.add(client);
 
   socket.on("data", (buffer) => {
@@ -1391,12 +1486,16 @@ function handleSocketMessage(client, message) {
 
   if (data.type === "join") {
     client.matchId = data.matchId || null;
+    client.clientId = data.clientId || client.clientId || id("client");
+    touchRedisPresence(client.matchId, client.clientId).catch(() => {});
     sendSocket(client, { type: "socket:joined", matchId: client.matchId });
     return;
   }
 
   if (data.matchId) {
     client.matchId = data.matchId;
+    client.clientId = data.from || data.clientId || client.clientId || id("client");
+    touchRedisPresence(client.matchId, client.clientId).catch(() => {});
     broadcast(data.matchId, data, data.type?.startsWith("voice:") ? client : null);
   }
 }

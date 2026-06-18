@@ -626,11 +626,17 @@ p {
 }
 
 .seek-composer,
-.private-challenge {
+.private-challenge,
+.room-share {
   display: grid;
   gap: 12px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
+}
+
+.room-share p {
+  margin-bottom: 0;
+  font-size: 0.9rem;
 }
 
 .open-seek-list {
