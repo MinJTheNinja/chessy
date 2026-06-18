@@ -12,7 +12,10 @@ const matchLayout = document.querySelector("#matchLayout");
 const partnerLanguage = document.querySelector("#partnerLanguage");
 const partnerName = document.querySelector("#partnerName");
 const voiceRing = document.querySelector("#voiceRing");
-const toggleVoiceButton = document.querySelector("#toggleVoice");
+const startVoiceCallButton = document.querySelector("#startVoiceCall");
+const endVoiceCallButton = document.querySelector("#endVoiceCall");
+const remoteVoiceAudio = document.querySelector("#remoteVoiceAudio");
+const voiceStatusMessages = document.querySelectorAll("[data-voice-status]");
 const reportUserButton = document.querySelector("#reportUser");
 const mannerTemp = document.querySelector("#mannerTemp");
 const dashboardTemp = document.querySelector("#dashboardTemp");
@@ -266,11 +269,352 @@ let selectedSquare = null;
 let boardOrientation = "white";
 let socket = null;
 let authMode = "signup";
+let cachedSpeechVoices = [];
+let peerConnection = null;
+let localVoiceStream = null;
+let pendingVoiceOffer = null;
+let makingVoiceOffer = false;
+let ignoredVoiceOffer = false;
+let pendingIceCandidates = [];
+
+const voiceClientId =
+  window.crypto?.randomUUID?.() || `voice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+const rtcConfig = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+};
+
+function setVoiceStatus(message, statusElement) {
+  if (statusElement) statusElement.textContent = message;
+  voiceStatusMessages.forEach((element) => {
+    if (element !== statusElement) element.textContent = message;
+  });
+}
+
+function sendSocketMessage(data) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+  socket.send(JSON.stringify(data));
+  return true;
+}
+
+function sendVoiceSignal(data) {
+  if (!currentMatchId) return false;
+  return sendSocketMessage({
+    ...data,
+    matchId: currentMatchId,
+    from: voiceClientId,
+  });
+}
+
+function waitForSocketOpen() {
+  if (socket?.readyState === WebSocket.OPEN) return Promise.resolve(true);
+  if (!socket || socket.readyState !== WebSocket.CONNECTING) return Promise.resolve(false);
+
+  return new Promise((resolve) => {
+    const timeout = window.setTimeout(() => resolve(false), 2500);
+    socket.addEventListener(
+      "open",
+      () => {
+        window.clearTimeout(timeout);
+        resolve(true);
+      },
+      { once: true },
+    );
+    socket.addEventListener(
+      "error",
+      () => {
+        window.clearTimeout(timeout);
+        resolve(false);
+      },
+      { once: true },
+    );
+  });
+}
+
+function updateSpeechVoices() {
+  if (!("speechSynthesis" in window)) return [];
+  cachedSpeechVoices = window.speechSynthesis.getVoices();
+  return cachedSpeechVoices;
+}
+
+if ("speechSynthesis" in window) {
+  updateSpeechVoices();
+  window.speechSynthesis.onvoiceschanged = updateSpeechVoices;
+}
+
+function speakText(text, options = {}) {
+  const phrase = String(text || "").trim();
+  const statusElement = options.statusElement || null;
+  const label = options.label || phrase;
+
+  if (!phrase) {
+    setVoiceStatus("No voice text is available.", statusElement);
+    return false;
+  }
+
+  if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+    setVoiceStatus("Voice playback is not available in this browser.", statusElement);
+    return false;
+  }
+
+  const lang = options.lang || "en-US";
+  const voices = updateSpeechVoices();
+  const langRoot = lang.split("-")[0];
+  const voice =
+    voices.find((item) => item.lang === lang) ||
+    voices.find((item) => item.lang?.startsWith(langRoot)) ||
+    voices.find((item) => item.default);
+
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(phrase);
+  utterance.lang = lang;
+  utterance.rate = options.rate || 0.88;
+  utterance.pitch = options.pitch || 1;
+  if (voice) utterance.voice = voice;
+
+  utterance.onstart = () => setVoiceStatus(`Playing: ${label}`, statusElement);
+  utterance.onend = () => setVoiceStatus(`Finished: ${label}`, statusElement);
+  utterance.onerror = () => {
+    setVoiceStatus("Could not play audio. Check browser or system sound, then click again.", statusElement);
+  };
+
+  setVoiceStatus(`Starting: ${label}`, statusElement);
+  window.speechSynthesis.speak(utterance);
+  window.setTimeout(() => window.speechSynthesis.resume(), 120);
+  return true;
+}
 
 function setMatchPaired(isPaired) {
   matchLayout.classList.toggle("paired", isPaired);
   findMatchButton.hidden = isPaired;
   joinKeMatchButton.hidden = isPaired;
+}
+
+function isVoiceCallSupported() {
+  return Boolean(
+    navigator.mediaDevices?.getUserMedia &&
+      window.RTCPeerConnection &&
+      window.RTCSessionDescription &&
+      window.RTCIceCandidate,
+  );
+}
+
+function setVoiceCallButtons(active) {
+  startVoiceCallButton.disabled = active;
+  endVoiceCallButton.disabled = !active;
+}
+
+function isSecureVoiceContext() {
+  return (
+    location.protocol === "https:" ||
+    location.hostname === "localhost" ||
+    location.hostname === "127.0.0.1"
+  );
+}
+
+async function flushPendingIceCandidates() {
+  if (!peerConnection?.remoteDescription) return;
+  const candidates = pendingIceCandidates;
+  pendingIceCandidates = [];
+  for (const candidate of candidates) {
+    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+  }
+}
+
+function ensureVoicePeerConnection() {
+  if (peerConnection) return peerConnection;
+
+  peerConnection = new RTCPeerConnection(rtcConfig);
+
+  peerConnection.addEventListener("icecandidate", (event) => {
+    if (!event.candidate) return;
+    sendVoiceSignal({
+      type: "voice:ice",
+      candidate: event.candidate,
+    });
+  });
+
+  peerConnection.addEventListener("track", (event) => {
+    const [stream] = event.streams;
+    if (stream) remoteVoiceAudio.srcObject = stream;
+    remoteVoiceAudio.play().catch(() => {
+      setVoiceStatus("Partner voice is connected. Click the page if your browser blocks audio.");
+    });
+    voiceRing.classList.add("speaking");
+    setVoiceStatus("Partner voice connected.");
+  });
+
+  peerConnection.addEventListener("connectionstatechange", () => {
+    const state = peerConnection.connectionState;
+    if (state === "connected") setVoiceStatus("Voice call connected.");
+    if (state === "connecting") setVoiceStatus("Connecting voice call...");
+    if (state === "failed" || state === "disconnected") {
+      setVoiceStatus("Voice call disconnected. You can start it again.");
+      setVoiceCallButtons(false);
+    }
+    if (state === "closed") setVoiceStatus("Voice call ended.");
+  });
+
+  return peerConnection;
+}
+
+async function attachLocalVoiceStream() {
+  if (localVoiceStream) return localVoiceStream;
+
+  localVoiceStream = await navigator.mediaDevices.getUserMedia({
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    },
+    video: false,
+  });
+
+  const connection = ensureVoicePeerConnection();
+  localVoiceStream.getTracks().forEach((track) => connection.addTrack(track, localVoiceStream));
+  return localVoiceStream;
+}
+
+async function acceptVoiceOffer(description) {
+  const connection = ensureVoicePeerConnection();
+  await connection.setRemoteDescription(new RTCSessionDescription(description));
+  await flushPendingIceCandidates();
+  const answer = await connection.createAnswer();
+  await connection.setLocalDescription(answer);
+  await waitForSocketOpen();
+  sendVoiceSignal({
+    type: "voice:answer",
+    description: connection.localDescription,
+  });
+  setVoiceCallButtons(true);
+  setVoiceStatus("Microphone on. Connecting voice...");
+}
+
+async function startVoiceCall() {
+  if (!isVoiceCallSupported()) {
+    setVoiceStatus("This browser does not support live microphone calls.");
+    return;
+  }
+  if (!backendOnline) {
+    setVoiceStatus("Start the backend before using live voice.");
+    return;
+  }
+  if (!currentMatchId) {
+    setVoiceStatus("Start or join a match before turning on your mic.");
+    return;
+  }
+  if (!isSecureVoiceContext()) {
+    setVoiceStatus("Microphone needs HTTPS. Render is OK, and localhost is OK.");
+    return;
+  }
+
+  try {
+    setVoiceStatus("Requesting microphone permission...");
+    connectSocket(currentMatchId);
+    await waitForSocketOpen();
+    await attachLocalVoiceStream();
+    voiceRing.classList.add("speaking");
+
+    if (pendingVoiceOffer) {
+      const offer = pendingVoiceOffer;
+      pendingVoiceOffer = null;
+      await acceptVoiceOffer(offer);
+      return;
+    }
+
+    const connection = ensureVoicePeerConnection();
+    makingVoiceOffer = true;
+    const offer = await connection.createOffer({ offerToReceiveAudio: true });
+    await connection.setLocalDescription(offer);
+    sendVoiceSignal({
+      type: "voice:offer",
+      description: connection.localDescription,
+    });
+    setVoiceCallButtons(true);
+    setVoiceStatus("Microphone on. Waiting for partner...");
+  } catch (error) {
+    setVoiceStatus(error.name === "NotAllowedError" ? "Microphone permission was blocked." : `Voice error: ${error.message}`);
+    endVoiceCall(false);
+  } finally {
+    makingVoiceOffer = false;
+  }
+}
+
+function endVoiceCall(notifyPartner = true) {
+  if (notifyPartner) sendVoiceSignal({ type: "voice:end" });
+
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+  }
+  if (localVoiceStream) {
+    localVoiceStream.getTracks().forEach((track) => track.stop());
+    localVoiceStream = null;
+  }
+
+  pendingVoiceOffer = null;
+  pendingIceCandidates = [];
+  ignoredVoiceOffer = false;
+  remoteVoiceAudio.srcObject = null;
+  voiceRing.classList.remove("speaking");
+  setVoiceCallButtons(false);
+  setVoiceStatus("Voice call ended.");
+}
+
+async function handleVoiceSignal(message) {
+  if (!message.matchId || message.matchId !== currentMatchId || message.from === voiceClientId) return;
+
+  if (message.type === "voice:end") {
+    endVoiceCall(false);
+    return;
+  }
+
+  if (!isVoiceCallSupported()) {
+    setVoiceStatus("Live voice is not supported in this browser.");
+    return;
+  }
+
+  try {
+    const connection = ensureVoicePeerConnection();
+
+    if (message.type === "voice:offer") {
+      const offerCollision = makingVoiceOffer || connection.signalingState !== "stable";
+      ignoredVoiceOffer = offerCollision && voiceClientId.localeCompare(message.from || "") < 0;
+      if (ignoredVoiceOffer) return;
+
+      if (offerCollision) {
+        await connection.setLocalDescription({ type: "rollback" });
+      }
+
+      if (!localVoiceStream) {
+        pendingVoiceOffer = message.description;
+        setVoiceStatus("Partner started voice. Click Start mic to join.");
+        return;
+      }
+
+      await acceptVoiceOffer(message.description);
+      return;
+    }
+
+    if (message.type === "voice:answer") {
+      if (connection.signalingState !== "have-local-offer") return;
+      await connection.setRemoteDescription(new RTCSessionDescription(message.description));
+      await flushPendingIceCandidates();
+      setVoiceStatus("Partner accepted voice. Connecting...");
+      return;
+    }
+
+    if (message.type === "voice:ice" && message.candidate) {
+      if (!connection.remoteDescription) {
+        pendingIceCandidates.push(message.candidate);
+        return;
+      }
+      if (!ignoredVoiceOffer) await connection.addIceCandidate(new RTCIceCandidate(message.candidate));
+    }
+  } catch (error) {
+    setVoiceStatus(`Voice connection issue: ${error.message}`);
+  }
 }
 
 function setServerStatus(text, online) {
@@ -631,14 +975,18 @@ async function checkBackend() {
 function connectSocket(matchId) {
   if (!backendOnline || location.protocol === "file:") return;
   if (socket && socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify({ type: "join", matchId }));
+    sendSocketMessage({ type: "join", matchId });
+    return;
+  }
+  if (socket && socket.readyState === WebSocket.CONNECTING) {
+    socket.addEventListener("open", () => sendSocketMessage({ type: "join", matchId }), { once: true });
     return;
   }
 
   const protocol = location.protocol === "https:" ? "wss" : "ws";
   socket = new WebSocket(`${protocol}://${location.host}/ws`);
   socket.addEventListener("open", () => {
-    socket.send(JSON.stringify({ type: "join", matchId }));
+    sendSocketMessage({ type: "join", matchId });
     syncState.textContent = "Live socket connected";
   });
   socket.addEventListener("message", (event) => {
@@ -649,6 +997,7 @@ function connectSocket(matchId) {
     if (message.type === "match:move" && matchBelongsToCurrentUser(message.match)) renderMatch(message.match);
     if (message.type === "match:ended" && matchBelongsToCurrentUser(message.match)) renderMatch(message.match);
     if (message.type === "review:generated") renderReview(message.review);
+    if (message.type?.startsWith("voice:")) handleVoiceSignal(message);
     if (message.type === "queue:waiting") queuePrompt.textContent = "Waiting for another player to join.";
     if (message.type === "lobby:updated") refreshLobby();
   });
@@ -714,6 +1063,12 @@ async function signOut() {
 }
 
 function setView(viewName) {
+  if (viewName === "home") {
+    document.querySelector("#home").scrollIntoView({ behavior: "smooth", block: "start" });
+    document.querySelectorAll(".side-link").forEach((link) => link.classList.remove("active"));
+    return;
+  }
+
   document.querySelectorAll(".view").forEach((view) => {
     view.classList.toggle("active", view.dataset.view === viewName);
   });
@@ -786,6 +1141,11 @@ function renderMatch(match) {
   matchSourceBadge.textContent = matchSourceLabel(match);
   timeControlBadge.textContent = matchClockLabel(match);
   connectSocket(match.id);
+  if (matchEnded) {
+    endVoiceCall(false);
+  } else if (!localVoiceStream) {
+    setVoiceStatus("Match paired. You can start your mic.");
+  }
 }
 
 function localMove(from, to) {
@@ -1206,18 +1566,11 @@ async function requestReview(source = "the completed match") {
 function playPronunciation(button) {
   const phrase = button.dataset.say || button.textContent.trim();
   const lang = button.dataset.lang || "en-US";
-
-  if ("speechSynthesis" in window) {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(phrase);
-    utterance.lang = lang;
-    utterance.rate = 0.88;
-    window.speechSynthesis.speak(utterance);
-    pronunciationStatus.textContent = `Playing pronunciation: ${phrase}`;
-    return;
-  }
-
-  pronunciationStatus.textContent = `Pronunciation replay is not available in this browser for: ${phrase}`;
+  speakText(phrase, {
+    lang,
+    label: phrase,
+    statusElement: pronunciationStatus,
+  });
 }
 
 document.querySelectorAll("[data-view-link]").forEach((link) => {
@@ -1327,10 +1680,8 @@ partnerLanguage.addEventListener("change", () => {
   partnerName.textContent = `Mina K. (${partnerLanguage.value})`;
 });
 
-toggleVoiceButton.addEventListener("click", () => {
-  const speaking = voiceRing.classList.toggle("speaking");
-  toggleVoiceButton.textContent = speaking ? "Voice connected" : "Voice muted";
-});
+startVoiceCallButton.addEventListener("click", startVoiceCall);
+endVoiceCallButton.addEventListener("click", () => endVoiceCall(true));
 
 reportUserButton.addEventListener("click", async () => {
   currentManner = Math.max(0, currentManner - 1.4);
@@ -1394,6 +1745,15 @@ refreshReviewButton.addEventListener("click", () => requestReview("the latest tr
 
 document.querySelectorAll(".vocab-term").forEach((button) => {
   button.addEventListener("click", () => playPronunciation(button));
+});
+
+document.querySelectorAll(".inbox-item").forEach((item) => {
+  item.addEventListener("click", () => {
+    speakText(item.dataset.voiceText || item.textContent, {
+      lang: item.dataset.voiceLang || "en-US",
+      label: "voice letter",
+    });
+  });
 });
 
 buildBoard();

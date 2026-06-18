@@ -8,7 +8,7 @@
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="#home" data-view-link="dashboard" aria-label="Live Chess home">
+      <a class="brand" href="#home" data-view-link="home" aria-label="Live Chess home">
         <span class="brand-mark">LC</span>
         <span>Live Chess</span>
       </a>
@@ -27,7 +27,7 @@
 
     <main>
       <section class="entry" id="home" aria-labelledby="entryTitle">
-        <img src="assets/hero-chess-classroom.png" alt="Students playing chess in a warm classroom" />
+        <img src="assets/hero-chess-classroom.png?v=20260618" alt="Students playing chess in a warm classroom" />
         <div class="entry-content">
           <span class="eyebrow">Global chess matching with live translation</span>
           <h1 id="entryTitle">Play chess, talk naturally, and learn across languages.</h1>
@@ -265,7 +265,12 @@
                     <p><span id="mannerTemp">42.8</span> C manner temperature</p>
                   </div>
                 </div>
-                <button class="button secondary full" id="toggleVoice">Voice connected</button>
+                <div class="voice-call-controls">
+                  <button class="button secondary full" id="startVoiceCall">Start mic</button>
+                  <button class="button danger full" id="endVoiceCall" disabled>End voice</button>
+                </div>
+                <p class="voice-status" data-voice-status>Start a matched game, then turn on your mic.</p>
+                <audio id="remoteVoiceAudio" autoplay playsinline></audio>
                 <button class="button danger full" id="reportUser">Submit safety report</button>
                 <div class="icebreaker">
                   <span class="label">Icebreaker mission</span>
@@ -404,20 +409,21 @@
               <article class="wire-card">
                 <h3>Voice Letter Inbox</h3>
                 <p>Unread messages from your matches</p>
+                <p class="voice-status" data-voice-status>Click a voice letter to hear it.</p>
                 <div class="inbox-list">
-                  <button class="inbox-item">
+                  <button class="inbox-item" data-voice-text="Great game, loved the middle game turn." data-voice-lang="en-US">
                     <span class="avatar small-avatar">AB</span>
                     <strong>Alex B.</strong>
                     <span>Great game, loved the mid-game turn.</span>
                     <time>2 min ago</time>
                   </button>
-                  <button class="inbox-item">
+                  <button class="inbox-item" data-voice-text="Could you replay that last move?" data-voice-lang="en-US">
                     <span class="avatar small-avatar">MK</span>
                     <strong>Maria K.</strong>
                     <span>Could you replay that last move?</span>
                     <time>18 min ago</time>
                   </button>
-                  <button class="inbox-item">
+                  <button class="inbox-item" data-voice-text="Thanks for the subtitle support." data-voice-lang="en-US">
                     <span class="avatar small-avatar">JS</span>
                     <strong>Jin S.</strong>
                     <span>Thanks for the subtitle support.</span>

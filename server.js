@@ -1255,6 +1255,19 @@ function serveStatic(req, res, pathname) {
     return;
   }
 
+  const allowedStatic =
+    requested === "/index.html" ||
+    requested === "/app.js" ||
+    requested === "/styles.css" ||
+    requested.startsWith("/assets/") ||
+    requested.startsWith("/source_zip/");
+
+  if (!allowedStatic) {
+    res.writeHead(404);
+    res.end("Not found");
+    return;
+  }
+
   fs.readFile(filePath, (error, data) => {
     if (error) {
       res.writeHead(404);
@@ -1359,8 +1372,9 @@ function sendSocket(client, data) {
   client.socket.write(Buffer.concat([header, payload]));
 }
 
-function broadcast(matchId, data) {
+function broadcast(matchId, data, excludeClient = null) {
   for (const client of clients) {
+    if (client === excludeClient) continue;
     if (!matchId || client.matchId === matchId) {
       sendSocket(client, data);
     }
@@ -1383,7 +1397,7 @@ function handleSocketMessage(client, message) {
 
   if (data.matchId) {
     client.matchId = data.matchId;
-    broadcast(data.matchId, data);
+    broadcast(data.matchId, data, data.type?.startsWith("voice:") ? client : null);
   }
 }
 
