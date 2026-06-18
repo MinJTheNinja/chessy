@@ -4,11 +4,20 @@ const path = require("path");
 const crypto = require("crypto");
 const { URL } = require("url");
 const { Chess } = require("chess.js");
+const { Pool } = require("pg");
 
 const rootDir = __dirname;
 const dataDir = path.join(rootDir, ".localappdata", "live-chess");
 const dbPath = path.join(dataDir, "db.json");
 const port = Number(process.env.PORT || 3000);
+const databaseUrl = process.env.DATABASE_URL;
+const pgPool = databaseUrl
+  ? new Pool({
+      connectionString: databaseUrl,
+      ssl: /sslmode=require|ssl=true/i.test(databaseUrl) || process.env.PGSSLMODE === "require" ? { rejectUnauthorized: false } : false,
+    })
+  : null;
+let pgReady = null;
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -152,16 +161,7 @@ function defaultDb() {
   };
 }
 
-function ensureDb() {
-  fs.mkdirSync(dataDir, { recursive: true });
-  if (!fs.existsSync(dbPath)) {
-    writeDb(defaultDb());
-  }
-}
-
-function readDb() {
-  ensureDb();
-  const db = JSON.parse(fs.readFileSync(dbPath, "utf8"));
+function normalizeDb(db = {}) {
   return {
     ...defaultDb(),
     ...db,
@@ -177,9 +177,78 @@ function readDb() {
   };
 }
 
-function writeDb(db) {
+function ensureJsonDb() {
   fs.mkdirSync(dataDir, { recursive: true });
-  fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), "utf8");
+  if (!fs.existsSync(dbPath)) {
+    writeJsonDb(defaultDb());
+  }
+}
+
+function readJsonDb() {
+  ensureJsonDb();
+  const db = JSON.parse(fs.readFileSync(dbPath, "utf8"));
+  return normalizeDb(db);
+}
+
+function writeJsonDb(db) {
+  fs.mkdirSync(dataDir, { recursive: true });
+  fs.writeFileSync(dbPath, JSON.stringify(normalizeDb(db), null, 2), "utf8");
+}
+
+async function ensurePostgresDb() {
+  if (!pgPool) return;
+  if (!pgReady) {
+    pgReady = (async () => {
+      await pgPool.query(`
+        CREATE TABLE IF NOT EXISTS app_state (
+          id TEXT PRIMARY KEY,
+          data JSONB NOT NULL,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+      await pgPool.query(
+        `
+          INSERT INTO app_state (id, data)
+          VALUES ($1, $2::jsonb)
+          ON CONFLICT (id) DO NOTHING
+        `,
+        ["main", JSON.stringify(defaultDb())],
+      );
+    })();
+  }
+  await pgReady;
+}
+
+async function ensureDb() {
+  if (pgPool) {
+    await ensurePostgresDb();
+    return;
+  }
+  ensureJsonDb();
+}
+
+async function readDb() {
+  if (!pgPool) return readJsonDb();
+  await ensurePostgresDb();
+  const result = await pgPool.query("SELECT data FROM app_state WHERE id = $1", ["main"]);
+  return normalizeDb(result.rows[0]?.data || defaultDb());
+}
+
+async function writeDb(db) {
+  if (!pgPool) {
+    writeJsonDb(db);
+    return;
+  }
+  await ensurePostgresDb();
+  await pgPool.query(
+    `
+      INSERT INTO app_state (id, data, updated_at)
+      VALUES ($1, $2::jsonb, NOW())
+      ON CONFLICT (id)
+      DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()
+    `,
+    ["main", JSON.stringify(normalizeDb(db))],
+  );
 }
 
 function id(prefix) {
@@ -427,11 +496,16 @@ function routePattern(pathname, pattern) {
 }
 
 async function handleApi(req, res, pathname) {
-  const db = readDb();
+  const db = await readDb();
   const user = getSessionUser(req, db);
 
   if (req.method === "GET" && pathname === "/api/health") {
-    sendJson(res, 200, { ok: true, app: "Live Chess", now: new Date().toISOString() });
+    sendJson(res, 200, {
+      ok: true,
+      app: "Live Chess",
+      storage: pgPool ? "postgres" : "local-json",
+      now: new Date().toISOString(),
+    });
     return true;
   }
 
@@ -495,7 +569,7 @@ async function handleApi(req, res, pathname) {
     }
 
     const token = createSession(db, found.id);
-    writeDb(db);
+    await writeDb(db);
     sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": `lc_session=${token}; Path=/; SameSite=Lax` });
     return true;
   }
@@ -510,7 +584,7 @@ async function handleApi(req, res, pathname) {
       return true;
     }
     const token = createSession(db, found.id);
-    writeDb(db);
+    await writeDb(db);
     sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": `lc_session=${token}; Path=/; SameSite=Lax` });
     return true;
   }
@@ -521,7 +595,7 @@ async function handleApi(req, res, pathname) {
       ...db,
       sessions: db.sessions.filter((session) => session.token !== token),
     };
-    writeDb(nextDb);
+    await writeDb(nextDb);
     sendJson(res, 200, { ok: true }, { "set-cookie": "lc_session=; Path=/; Max-Age=0; SameSite=Lax" });
     return true;
   }
@@ -529,7 +603,7 @@ async function handleApi(req, res, pathname) {
   if (req.method === "POST" && pathname === "/api/matches/start") {
     const body = await readBody(req);
     const match = createMatch(db, user, { ...body, pairingType: body.pairingType || "practice" });
-    writeDb(db);
+    await writeDb(db);
     broadcast(match.id, { type: "match:started", match: decorateMatch(match) });
     sendJson(res, 200, { match: decorateMatch(match) });
     return true;
@@ -551,7 +625,7 @@ async function handleApi(req, res, pathname) {
 
     if (!user) {
       const match = createMatch(db, null, { ...matchDetails, pairingType: "guest-practice" });
-      writeDb(db);
+      await writeDb(db);
       broadcast(match.id, { type: "match:started", match: decorateMatch(match) });
       sendJson(res, 200, { waiting: false, match: decorateMatch(match), practice: true });
       return true;
@@ -574,7 +648,7 @@ async function handleApi(req, res, pathname) {
         goal: matchDetails.goal,
         createdAt: new Date().toISOString(),
       });
-      writeDb(db);
+      await writeDb(db);
       broadcast(null, { type: "queue:waiting", userId: user.id, queuedPlayers: db.queue.length, poolId: pool.id });
       sendJson(res, 200, { waiting: true, queuedPlayers: db.queue.length, pool });
       return true;
@@ -594,7 +668,7 @@ async function handleApi(req, res, pathname) {
       },
       opponent ? user : null,
     );
-    writeDb(db);
+    await writeDb(db);
     broadcast(match.id, { type: "match:started", match: decorateMatch(match) });
     broadcast(null, { type: "queue:matched", match: decorateMatch(match) });
     sendJson(res, 200, { waiting: false, match: decorateMatch(match) });
@@ -621,7 +695,7 @@ async function handleApi(req, res, pathname) {
       createdAt: new Date().toISOString(),
     };
     db.seeks.push(seek);
-    writeDb(db);
+    await writeDb(db);
     broadcast(null, { type: "lobby:updated", openSeeks: db.seeks.filter((item) => item.status === "open").length });
     sendJson(res, 200, { seek: decorateSeek(db, seek) });
     return true;
@@ -662,7 +736,7 @@ async function handleApi(req, res, pathname) {
       },
       seeker ? user : null,
     );
-    writeDb(db);
+    await writeDb(db);
     broadcast(match.id, { type: "match:started", match: decorateMatch(match) });
     broadcast(null, { type: "queue:matched", match: decorateMatch(match) });
     broadcast(null, { type: "lobby:updated", openSeeks: db.seeks.filter((item) => item.status === "open").length });
@@ -686,7 +760,7 @@ async function handleApi(req, res, pathname) {
       createdAt: new Date().toISOString(),
     };
     db.challenges.push(challenge);
-    writeDb(db);
+    await writeDb(db);
     sendJson(res, 200, { challenge });
     return true;
   }
@@ -712,7 +786,7 @@ async function handleApi(req, res, pathname) {
         goal: body.goal || "Explain chess moves",
         createdAt: new Date().toISOString(),
       });
-      writeDb(db);
+      await writeDb(db);
       broadcast(null, { type: "queue:waiting", userId: user.id, queuedPlayers: db.queue.length });
       sendJson(res, 200, { waiting: true, queuedPlayers: db.queue.length });
       return true;
@@ -733,7 +807,7 @@ async function handleApi(req, res, pathname) {
       },
       opponent ? user : null,
     );
-    writeDb(db);
+    await writeDb(db);
     broadcast(match.id, { type: "match:started", match: decorateMatch(match) });
     broadcast(null, { type: "queue:matched", match: decorateMatch(match) });
     sendJson(res, 200, { waiting: false, match: decorateMatch(match) });
@@ -805,7 +879,7 @@ async function handleApi(req, res, pathname) {
       kind: "move",
       at: move.at,
     });
-    writeDb(db);
+    await writeDb(db);
     broadcast(match.id, { type: "match:move", matchId: match.id, move, match: decorateMatch(match) });
     sendJson(res, 200, { match: decorateMatch(match), move });
     return true;
@@ -827,7 +901,7 @@ async function handleApi(req, res, pathname) {
       at: new Date().toISOString(),
     };
     match.transcript.push(item);
-    writeDb(db);
+    await writeDb(db);
     broadcast(match.id, { type: "match:transcript", matchId: match.id, item });
     sendJson(res, 200, { item, match: decorateMatch(match) });
     return true;
@@ -844,7 +918,7 @@ async function handleApi(req, res, pathname) {
     match.status = "ended";
     match.result = body.result || match.result || "Completed";
     match.endedAt = new Date().toISOString();
-    writeDb(db);
+    await writeDb(db);
     broadcast(match.id, { type: "match:ended", matchId: match.id, result: match.result, match: decorateMatch(match) });
     sendJson(res, 200, { match: decorateMatch(match) });
     return true;
@@ -860,7 +934,7 @@ async function handleApi(req, res, pathname) {
     const review = buildReview(match);
     match.reviewId = review.id;
     db.reviews.push(review);
-    writeDb(db);
+    await writeDb(db);
     broadcast(match.id, { type: "review:generated", matchId: match.id, review });
     sendJson(res, 200, { review });
     return true;
@@ -898,7 +972,7 @@ async function handleApi(req, res, pathname) {
       createdAt: new Date().toISOString(),
     };
     db.voiceLetters.push(voiceLetter);
-    writeDb(db);
+    await writeDb(db);
     sendJson(res, 200, { voiceLetter });
     return true;
   }
@@ -924,7 +998,7 @@ async function handleApi(req, res, pathname) {
       createdAt: new Date().toISOString(),
     };
     db.reports.push(report);
-    writeDb(db);
+    await writeDb(db);
     sendJson(res, 200, { report });
     return true;
   }
@@ -1098,7 +1172,13 @@ server.on("upgrade", (req, socket) => {
   acceptWebSocket(req, socket);
 });
 
-server.listen(port, "0.0.0.0", () => {
-  ensureDb();
-  console.log(`Live Chess app running at http://localhost:${port}`);
-});
+ensureDb()
+  .then(() => {
+    server.listen(port, "0.0.0.0", () => {
+      console.log(`Live Chess app running at http://localhost:${port}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Failed to initialize storage:", error);
+    process.exitCode = 1;
+  });
