@@ -326,6 +326,101 @@ function publicUser(user) {
   };
 }
 
+function adminUser(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    displayName: user.displayName,
+    languagePair: user.languagePair,
+    mannerTemperature: user.mannerTemperature,
+    role: user.role || "player",
+    warnings: user.warnings || [],
+    createdAt: user.createdAt,
+  };
+}
+
+function adminMatch(match) {
+  return {
+    id: match.id,
+    status: match.status,
+    result: match.result,
+    pairingType: match.pairingType,
+    timeControl: match.timeControl,
+    rated: Boolean(match.rated),
+    partnerLanguage: match.partnerLanguage,
+    goal: match.goal,
+    players: match.players || [],
+    moveCount: match.moves?.length || 0,
+    transcriptCount: match.transcript?.length || 0,
+    createdAt: match.createdAt,
+    endedAt: match.endedAt,
+  };
+}
+
+function adminReport(report, db) {
+  const reporter = db.users.find((user) => user.id === report.reporterId);
+  const match = db.matches.find((item) => item.id === report.matchId);
+  return {
+    ...report,
+    reporterName: reporter?.displayName || "Guest",
+    matchResult: match?.result || null,
+  };
+}
+
+function requireAdmin(user, res) {
+  if (user?.role === "admin") return true;
+  sendJson(res, 403, { error: "Admin access required." });
+  return false;
+}
+
+function requireUser(user, res) {
+  if (user) return true;
+  sendJson(res, 401, { error: "Sign in first." });
+  return false;
+}
+
+function profileBadges(user, db) {
+  const userMatches = db.matches.filter((match) => (match.players || []).some((player) => player.userId === user.id));
+  const matchIds = new Set(userMatches.map((match) => match.id));
+  const reviews = db.reviews.filter((review) => matchIds.has(review.matchId));
+  const cultureGuide = user.cultureGuide || [];
+  const badges = [];
+
+  if (userMatches.length > 0) badges.push({ name: "First Match", detail: "Completed or started your first chess language match." });
+  if (userMatches.some((match) => (match.transcript || []).length > 0)) {
+    badges.push({ name: "Good Listener", detail: "Used subtitles or transcript practice during a match." });
+  }
+  if (Number(user.mannerTemperature || 42.8) >= 42) badges.push({ name: "Kind Player", detail: "Maintained a strong manner temperature." });
+  if (reviews.length > 0) badges.push({ name: "Vocabulary Builder", detail: "Generated an AI vocabulary review after a match." });
+  if (cultureGuide.length > 0) badges.push({ name: "Culture Explorer", detail: "Saved at least one culture guide note." });
+
+  if (!badges.length) badges.push({ name: "New Player", detail: "Play a match to start collecting badges." });
+  return badges;
+}
+
+function buildProfile(user, db) {
+  const userMatches = db.matches.filter((match) => (match.players || []).some((player) => player.userId === user.id));
+  const matchIds = new Set(userMatches.map((match) => match.id));
+  return {
+    user: {
+      ...publicUser(user),
+      bio: user.bio || "",
+      nativeLanguage: user.nativeLanguage || "",
+      learningLanguage: user.learningLanguage || "",
+    },
+    stats: {
+      matches: userMatches.length,
+      completedMatches: userMatches.filter((match) => match.status === "ended").length,
+      reviews: db.reviews.filter((review) => matchIds.has(review.matchId)).length,
+      feedback: (user.feedbackReceived || []).length,
+      cultureNotes: (user.cultureGuide || []).length,
+    },
+    badges: profileBadges(user, db),
+    feedback: (user.feedbackReceived || []).slice(-10).reverse(),
+    cultureGuide: (user.cultureGuide || []).slice(-10).reverse(),
+  };
+}
+
 function displayNameFor(db, userId, fallback = "Player") {
   return db.users.find((user) => user.id === userId)?.displayName || fallback;
 }
@@ -514,6 +609,75 @@ async function handleApi(req, res, pathname) {
     return true;
   }
 
+  if (req.method === "GET" && pathname === "/api/profile") {
+    if (!requireUser(user, res)) return true;
+    sendJson(res, 200, buildProfile(user, db));
+    return true;
+  }
+
+  if (req.method === "PUT" && pathname === "/api/profile") {
+    if (!requireUser(user, res)) return true;
+    const body = await readBody(req);
+    const displayName = String(body.displayName || "").trim();
+    const languagePair = String(body.languagePair || "").trim();
+    if (displayName) user.displayName = displayName.slice(0, 60);
+    if (languagePair) user.languagePair = languagePair.slice(0, 80);
+    user.bio = String(body.bio || "").trim().slice(0, 280);
+    user.nativeLanguage = String(body.nativeLanguage || "").trim().slice(0, 40);
+    user.learningLanguage = String(body.learningLanguage || "").trim().slice(0, 40);
+    await writeDb(db);
+    sendJson(res, 200, buildProfile(user, db));
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/profile/feedback") {
+    if (!requireUser(user, res)) return true;
+    const body = await readBody(req);
+    let target = user;
+    if (body.matchId) {
+      const match = db.matches.find((item) => item.id === body.matchId);
+      const opponent = match?.players?.find((player) => player.userId && player.userId !== user.id);
+      target = db.users.find((item) => item.id === opponent?.userId) || user;
+    }
+    if (body.targetUserId) target = db.users.find((item) => item.id === body.targetUserId) || target;
+
+    const kind = body.kind || "positive";
+    const delta = kind === "concern" ? -1.2 : kind === "clear" ? 0.7 : 0.9;
+    target.mannerTemperature = Math.max(0, Math.min(50, Number(target.mannerTemperature || 42.8) + delta));
+    target.feedbackReceived = target.feedbackReceived || [];
+    target.feedbackReceived.push({
+      id: id("feedback"),
+      kind,
+      note: String(body.note || "").trim().slice(0, 220),
+      fromUserId: user.id,
+      matchId: body.matchId || null,
+      createdAt: new Date().toISOString(),
+    });
+    await writeDb(db);
+    sendJson(res, 200, { profile: buildProfile(user, db), target: publicUser(target) });
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/profile/culture-guide") {
+    if (!requireUser(user, res)) return true;
+    const body = await readBody(req);
+    const note = String(body.note || "").trim();
+    if (!note) {
+      sendJson(res, 400, { error: "Culture note is required." });
+      return true;
+    }
+    user.cultureGuide = user.cultureGuide || [];
+    user.cultureGuide.push({
+      id: id("culture"),
+      note: note.slice(0, 300),
+      source: body.source || "Profile",
+      createdAt: new Date().toISOString(),
+    });
+    await writeDb(db);
+    sendJson(res, 200, buildProfile(user, db));
+    return true;
+  }
+
   if (req.method === "GET" && pathname === "/api/stats") {
     sendJson(res, 200, {
       activeMatches: db.matches.filter((match) => match.status !== "ended").length,
@@ -526,14 +690,89 @@ async function handleApi(req, res, pathname) {
     return true;
   }
 
+  if (req.method === "GET" && pathname === "/api/admin/overview") {
+    if (!requireAdmin(user, res)) return true;
+    const openReports = db.reports.filter((report) => report.status !== "resolved").length;
+    sendJson(res, 200, {
+      stats: {
+        users: db.users.length,
+        activeMatches: db.matches.filter((match) => match.status !== "ended").length,
+        openReports,
+        totalReports: db.reports.length,
+      },
+      users: db.users.slice(-30).reverse().map(adminUser),
+      matches: db.matches.slice(-30).reverse().map(adminMatch),
+      reports: db.reports.slice(-30).reverse().map((report) => adminReport(report, db)),
+    });
+    return true;
+  }
+
+  const resolveReportParams = routePattern(pathname, "/api/admin/reports/:id/resolve");
+  if (req.method === "POST" && resolveReportParams) {
+    if (!requireAdmin(user, res)) return true;
+    const report = db.reports.find((item) => item.id === resolveReportParams.id);
+    if (!report) {
+      sendJson(res, 404, { error: "Report not found." });
+      return true;
+    }
+    report.status = "resolved";
+    report.resolvedBy = user.id;
+    report.resolvedAt = new Date().toISOString();
+    await writeDb(db);
+    sendJson(res, 200, { report: adminReport(report, db) });
+    return true;
+  }
+
+  const warnUserParams = routePattern(pathname, "/api/admin/users/:id/warn");
+  if (req.method === "POST" && warnUserParams) {
+    if (!requireAdmin(user, res)) return true;
+    const body = await readBody(req);
+    const target = db.users.find((item) => item.id === warnUserParams.id);
+    if (!target) {
+      sendJson(res, 404, { error: "User not found." });
+      return true;
+    }
+    target.warnings = target.warnings || [];
+    target.warnings.push({
+      id: id("warning"),
+      reason: body.reason || "Admin warning",
+      by: user.id,
+      createdAt: new Date().toISOString(),
+    });
+    target.mannerTemperature = Math.max(0, Number(target.mannerTemperature || 42.8) - 2);
+    await writeDb(db);
+    sendJson(res, 200, { user: adminUser(target) });
+    return true;
+  }
+
+  const endAdminMatchParams = routePattern(pathname, "/api/admin/matches/:id/end");
+  if (req.method === "POST" && endAdminMatchParams) {
+    if (!requireAdmin(user, res)) return true;
+    const body = await readBody(req);
+    const match = db.matches.find((item) => item.id === endAdminMatchParams.id);
+    if (!match) {
+      sendJson(res, 404, { error: "Match not found." });
+      return true;
+    }
+    match.status = "ended";
+    match.result = body.result || "Ended by admin";
+    match.endedAt = new Date().toISOString();
+    await writeDb(db);
+    broadcast(match.id, { type: "match:ended", matchId: match.id, result: match.result, match: decorateMatch(match) });
+    sendJson(res, 200, { match: adminMatch(match) });
+    return true;
+  }
+
   if (req.method === "GET" && pathname === "/api/matches/lobby") {
+    const openSeeks = db.seeks.filter((seek) => seek.status === "open");
     sendJson(res, 200, {
       quickPools,
-      openSeeks: db.seeks
-        .filter((seek) => seek.status === "open")
+      openSeeks: openSeeks
+        .filter((seek) => seek.userId !== user?.id)
         .slice(-20)
         .reverse()
         .map((seek) => decorateSeek(db, seek)),
+      openSeeksTotal: openSeeks.length,
       queuedPlayers: db.queue.length,
     });
     return true;

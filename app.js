@@ -64,6 +64,32 @@ const createPrivateChallengeButton = document.querySelector("#createPrivateChall
 const privateChallengeCode = document.querySelector("#privateChallengeCode");
 const matchSourceBadge = document.querySelector("#matchSourceBadge");
 const timeControlBadge = document.querySelector("#timeControlBadge");
+const refreshAdminButton = document.querySelector("#refreshAdmin");
+const adminStatus = document.querySelector("#adminStatus");
+const adminUsersCount = document.querySelector("#adminUsersCount");
+const adminMatchesCount = document.querySelector("#adminMatchesCount");
+const adminReportsCount = document.querySelector("#adminReportsCount");
+const adminMatchesList = document.querySelector("#adminMatchesList");
+const adminUsersList = document.querySelector("#adminUsersList");
+const adminReportsList = document.querySelector("#adminReportsList");
+const refreshProfileButton = document.querySelector("#refreshProfile");
+const profileStatus = document.querySelector("#profileStatus");
+const profileAvatar = document.querySelector("#profileAvatar");
+const profileName = document.querySelector("#profileName");
+const profileEmail = document.querySelector("#profileEmail");
+const profileLanguageText = document.querySelector("#profileLanguageText");
+const profileDisplayName = document.querySelector("#profileDisplayName");
+const profileLanguagePair = document.querySelector("#profileLanguagePair");
+const profileBio = document.querySelector("#profileBio");
+const saveProfileButton = document.querySelector("#saveProfile");
+const peerFeedbackType = document.querySelector("#peerFeedbackType");
+const peerFeedbackNote = document.querySelector("#peerFeedbackNote");
+const submitPeerFeedbackButton = document.querySelector("#submitPeerFeedback");
+const badgeList = document.querySelector("#badgeList");
+const badgeDetails = document.querySelector("#badgeDetails");
+const cultureGuideList = document.querySelector("#cultureGuideList");
+const cultureGuideInput = document.querySelector("#cultureGuideInput");
+const saveCultureGuideButton = document.querySelector("#saveCultureGuide");
 
 const pieceCodes = {
   white: {
@@ -414,6 +440,155 @@ function renderLobby(lobby = {}) {
   });
 }
 
+function adminEmpty(message) {
+  const empty = document.createElement("p");
+  empty.className = "admin-empty";
+  empty.textContent = message;
+  return empty;
+}
+
+function renderAdminList(container, items, renderItem, emptyMessage) {
+  container.innerHTML = "";
+  if (!items.length) {
+    container.append(adminEmpty(emptyMessage));
+    return;
+  }
+  items.forEach((item) => container.append(renderItem(item)));
+}
+
+function renderAdminOverview(data) {
+  adminUsersCount.textContent = String(data.stats.users);
+  adminMatchesCount.textContent = String(data.stats.activeMatches);
+  adminReportsCount.textContent = String(data.stats.openReports);
+  adminStatus.textContent = `Admin data loaded. ${data.stats.totalReports} total report(s).`;
+
+  renderAdminList(
+    adminMatchesList,
+    data.matches,
+    (match) => {
+      const card = document.createElement("article");
+      card.className = "admin-item";
+      const players = (match.players || []).map((player) => `${player.displayName} (${player.color})`).join(" vs ") || "No players";
+      card.innerHTML = `
+        <strong>${match.timeControl || "10+0"} ${match.rated ? "Rated" : "Casual"}</strong>
+        <span>${match.status} - ${match.result || "In progress"}</span>
+        <p>${players}</p>
+        <p>${match.moveCount} move(s), ${match.transcriptCount} transcript item(s)</p>
+      `;
+      const button = document.createElement("button");
+      button.className = "button danger full small";
+      button.type = "button";
+      button.textContent = match.status === "ended" ? "Match Ended" : "End Match";
+      button.disabled = match.status === "ended";
+      button.addEventListener("click", () => endAdminMatch(match.id));
+      card.append(button);
+      return card;
+    },
+    "No matches yet.",
+  );
+
+  renderAdminList(
+    adminUsersList,
+    data.users,
+    (user) => {
+      const card = document.createElement("article");
+      card.className = "admin-item";
+      card.innerHTML = `
+        <strong>${user.displayName}</strong>
+        <span>${user.email}</span>
+        <p>${user.role} - ${Number(user.mannerTemperature || 0).toFixed(1)} C manner temperature</p>
+        <p>${(user.warnings || []).length} warning(s)</p>
+      `;
+      const button = document.createElement("button");
+      button.className = "button danger full small";
+      button.type = "button";
+      button.textContent = user.role === "admin" ? "Admin Account" : "Issue Warning";
+      button.disabled = user.role === "admin";
+      button.addEventListener("click", () => warnAdminUser(user.id));
+      card.append(button);
+      return card;
+    },
+    "No users yet.",
+  );
+
+  renderAdminList(
+    adminReportsList,
+    data.reports,
+    (report) => {
+      const card = document.createElement("article");
+      card.className = "admin-item";
+      card.innerHTML = `
+        <strong>${report.reason}</strong>
+        <span>${report.status}</span>
+        <p>Reporter: ${report.reporterName}</p>
+        <p>${report.detail || "No details provided."}</p>
+      `;
+      const button = document.createElement("button");
+      button.className = "button secondary full small";
+      button.type = "button";
+      button.textContent = report.status === "resolved" ? "Resolved" : "Mark Resolved";
+      button.disabled = report.status === "resolved";
+      button.addEventListener("click", () => resolveAdminReport(report.id));
+      card.append(button);
+      return card;
+    },
+    "No safety reports yet.",
+  );
+}
+
+async function refreshAdmin() {
+  if (!backendOnline) {
+    adminStatus.textContent = "Start the backend to use admin tools.";
+    return;
+  }
+  if (currentUser?.role !== "admin") {
+    adminStatus.textContent = "Admin access required. Sign in with the first account created for this app.";
+    return;
+  }
+
+  adminStatus.textContent = "Loading admin data...";
+  try {
+    const data = await api("/api/admin/overview");
+    renderAdminOverview(data);
+  } catch (error) {
+    adminStatus.textContent = error.message;
+  }
+}
+
+async function resolveAdminReport(reportId) {
+  try {
+    await api(`/api/admin/reports/${reportId}/resolve`, { method: "POST" });
+    await refreshAdmin();
+  } catch (error) {
+    adminStatus.textContent = error.message;
+  }
+}
+
+async function warnAdminUser(userId) {
+  try {
+    await api(`/api/admin/users/${userId}/warn`, {
+      method: "POST",
+      body: { reason: "Admin safety warning" },
+    });
+    await refreshAdmin();
+  } catch (error) {
+    adminStatus.textContent = error.message;
+  }
+}
+
+async function endAdminMatch(matchId) {
+  try {
+    await api(`/api/admin/matches/${matchId}/end`, {
+      method: "POST",
+      body: { result: "Ended by admin" },
+    });
+    await refreshAdmin();
+    await refreshStats();
+  } catch (error) {
+    adminStatus.textContent = error.message;
+  }
+}
+
 async function refreshLobby() {
   if (!backendOnline) {
     renderLobby({ openSeeks: [], openSeeksTotal: 0, queuedPlayers: 0 });
@@ -440,6 +615,7 @@ async function checkBackend() {
     if (currentUser) {
       authStatus.textContent = `Signed in as ${currentUser.displayName}`;
       updateTemperature(Number(currentUser.mannerTemperature || currentManner));
+      await refreshProfile();
     }
     renderAuthState();
     connectSocket(null);
@@ -518,6 +694,7 @@ async function signInOrRegister() {
 async function signOut() {
   if (!backendOnline) {
     currentUser = null;
+    clearProfile();
     renderAuthState();
     return;
   }
@@ -532,6 +709,7 @@ async function signOut() {
   authPassword.disabled = false;
   authLanguagePair.disabled = false;
   authStatus.textContent = "Signed out. You can log in again anytime.";
+  clearProfile();
   renderAuthState();
 }
 
@@ -542,6 +720,8 @@ function setView(viewName) {
   document.querySelectorAll(".side-link").forEach((link) => {
     link.classList.toggle("active", link.dataset.viewLink === viewName);
   });
+  if (viewName === "admin") refreshAdmin();
+  if (viewName === "profile") refreshProfile();
   document.querySelector("#dashboard").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -799,6 +979,152 @@ function updateTemperature(value) {
   profileTemp.textContent = text;
 }
 
+function initials(name = "CL") {
+  return name
+    .split(/[\s._-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "CL";
+}
+
+function renderProfile(profile) {
+  if (!profile?.user) return;
+  const user = profile.user;
+  profileAvatar.textContent = initials(user.displayName);
+  profileName.textContent = user.displayName;
+  profileEmail.textContent = user.email;
+  profileLanguageText.textContent = user.languagePair || "Language pair not set";
+  profileDisplayName.value = user.displayName || "";
+  profileLanguagePair.value = user.languagePair || "English to Korean";
+  profileBio.value = user.bio || "";
+  updateTemperature(Number(user.mannerTemperature || currentManner));
+
+  badgeList.innerHTML = "";
+  profile.badges.forEach((badge) => {
+    const item = document.createElement("span");
+    item.textContent = badge.name;
+    badgeList.append(item);
+  });
+
+  badgeDetails.innerHTML = "";
+  profile.badges.forEach((badge) => {
+    const item = document.createElement("p");
+    item.innerHTML = `<strong>${badge.name}</strong> ${badge.detail}`;
+    badgeDetails.append(item);
+  });
+
+  cultureGuideList.innerHTML = "";
+  if (!profile.cultureGuide.length) {
+    const empty = document.createElement("p");
+    empty.textContent = "No culture notes saved yet.";
+    cultureGuideList.append(empty);
+  } else {
+    profile.cultureGuide.forEach((entry) => {
+      const item = document.createElement("p");
+      item.innerHTML = `<strong>${entry.source || "Culture note"}</strong> ${entry.note}`;
+      cultureGuideList.append(item);
+    });
+  }
+
+  profileStatus.textContent = `${profile.stats.matches} match(es), ${profile.stats.reviews} review(s), ${profile.stats.cultureNotes} culture note(s).`;
+}
+
+function clearProfile() {
+  profileAvatar.textContent = "CL";
+  profileName.textContent = "ChessLearner";
+  profileEmail.textContent = "player@example.com";
+  profileLanguageText.textContent = "Sign in to load language settings.";
+  profileDisplayName.value = "";
+  profileLanguagePair.value = "English to Korean";
+  profileBio.value = "";
+  badgeList.innerHTML = "";
+  badgeDetails.innerHTML = "";
+  cultureGuideList.innerHTML = "";
+  profileStatus.textContent = "Sign in to load your saved profile.";
+}
+
+async function refreshProfile() {
+  if (!backendOnline) {
+    profileStatus.textContent = "Start the backend to use profile tools.";
+    return;
+  }
+  if (!currentUser) {
+    profileStatus.textContent = "Sign in to load your saved profile.";
+    return;
+  }
+
+  profileStatus.textContent = "Loading profile...";
+  try {
+    const profile = await api("/api/profile");
+    currentUser = profile.user;
+    renderProfile(profile);
+    renderAuthState();
+  } catch (error) {
+    profileStatus.textContent = error.message;
+  }
+}
+
+async function saveProfile() {
+  try {
+    profileStatus.textContent = "Saving profile...";
+    const profile = await api("/api/profile", {
+      method: "PUT",
+      body: {
+        displayName: profileDisplayName.value,
+        languagePair: profileLanguagePair.value,
+        bio: profileBio.value,
+      },
+    });
+    currentUser = profile.user;
+    renderProfile(profile);
+    authStatus.textContent = `Signed in as ${currentUser.displayName}`;
+    renderAuthState();
+  } catch (error) {
+    profileStatus.textContent = error.message;
+  }
+}
+
+async function submitPeerFeedback() {
+  try {
+    profileStatus.textContent = "Submitting feedback...";
+    const data = await api("/api/profile/feedback", {
+      method: "POST",
+      body: {
+        kind: peerFeedbackType.value,
+        note: peerFeedbackNote.value,
+        matchId: currentMatchId,
+      },
+    });
+    peerFeedbackNote.value = "";
+    if (data.profile) renderProfile(data.profile);
+    profileStatus.textContent = currentMatchId
+      ? `Feedback saved for ${data.target?.displayName || "your match partner"}.`
+      : "Feedback saved to your profile history.";
+  } catch (error) {
+    profileStatus.textContent = error.message;
+  }
+}
+
+async function saveCultureGuide() {
+  try {
+    const note = cultureGuideInput.value.trim();
+    if (!note) {
+      profileStatus.textContent = "Enter a culture note first.";
+      return;
+    }
+    profileStatus.textContent = "Saving culture note...";
+    const profile = await api("/api/profile/culture-guide", {
+      method: "POST",
+      body: { note, source: "Culture Guide" },
+    });
+    cultureGuideInput.value = "";
+    renderProfile(profile);
+  } catch (error) {
+    profileStatus.textContent = error.message;
+  }
+}
+
 async function appendSubtitle() {
   const sample = subtitleSamples[Math.floor(Math.random() * subtitleSamples.length)];
   const original = document.createElement("p");
@@ -972,6 +1298,11 @@ simulateMoveButton.addEventListener("click", applyPlannedMove);
 createSeekButton.addEventListener("click", createOpenSeek);
 refreshLobbyButton.addEventListener("click", refreshLobby);
 createPrivateChallengeButton.addEventListener("click", createPrivateChallenge);
+refreshAdminButton.addEventListener("click", refreshAdmin);
+refreshProfileButton.addEventListener("click", refreshProfile);
+saveProfileButton.addEventListener("click", saveProfile);
+submitPeerFeedbackButton.addEventListener("click", submitPeerFeedback);
+saveCultureGuideButton.addEventListener("click", saveCultureGuide);
 
 resignMatchButton.addEventListener("click", async () => {
   matchResult.textContent = "Resigned";

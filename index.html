@@ -12,12 +12,6 @@
         <span class="brand-mark">LC</span>
         <span>Live Chess</span>
       </a>
-      <nav class="top-nav" aria-label="Primary navigation">
-        <a href="#home" data-view-link="dashboard">Home</a>
-        <a href="#dashboard" data-view-link="dashboard">Dashboard</a>
-        <a href="#profile" data-view-link="profile">Profile</a>
-        <a href="#admin" data-view-link="admin">Admin</a>
-      </nav>
       <div class="header-actions">
         <span class="server-status" id="serverStatus">Backend checking</span>
         <select id="languageSelect" aria-label="Interface language">
@@ -33,7 +27,7 @@
 
     <main>
       <section class="entry" id="home" aria-labelledby="entryTitle">
-        <img src="source_zip/images/chessboard.jpg" alt="Chess pieces on a board" />
+        <img src="assets/hero-chess-classroom.png" alt="Students playing chess in a warm classroom" />
         <div class="entry-content">
           <span class="eyebrow">Global chess matching with live translation</span>
           <h1 id="entryTitle">Play chess, talk naturally, and learn across languages.</h1>
@@ -74,11 +68,10 @@
       <section class="app-shell" id="dashboard" aria-label="Application workspace">
         <aside class="sidebar">
           <span class="sidebar-label">Menu</span>
-          <button class="side-link active" data-view-link="dashboard">Dashboard</button>
-          <button class="side-link" data-view-link="match">Match Lobby</button>
+          <button class="side-link active" data-view-link="dashboard">Home</button>
+          <button class="side-link" data-view-link="match">Play</button>
           <button class="side-link" data-view-link="review">AI Review</button>
-          <button class="side-link" data-view-link="communication">Communication</button>
-          <button class="side-link" data-view-link="stt">STT Subtitles</button>
+          <button class="side-link" data-view-link="communication">Messages</button>
           <button class="side-link" data-view-link="profile">Profile</button>
           <button class="side-link" data-view-link="admin">Admin</button>
         </aside>
@@ -87,37 +80,32 @@
           <section class="view active" data-view="dashboard" aria-labelledby="dashboardTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">Dashboard</span>
-                <h2 id="dashboardTitle">Choose your next step</h2>
+                <span class="eyebrow">Home</span>
+                <h2 id="dashboardTitle">Start playing</h2>
               </div>
-              <button class="button primary" data-view-link="match">Start Quick Match</button>
+              <button class="button primary" data-view-link="match">Play</button>
             </div>
 
             <div class="flow-grid">
               <article class="route-card" data-view-link="match">
                 <span>01</span>
-                <h3>Match Lobby</h3>
-                <p>Start a quick match, join a K and E match, or wait in the matchmaking queue.</p>
-              </article>
-              <article class="route-card" data-view-link="communication">
-                <span>02</span>
-                <h3>Communication Hub</h3>
-                <p>Review STT status, open the voice letter inbox, and compose new voice letters.</p>
+                <h3>Play</h3>
+                <p>Find an opponent and start a live chess language match.</p>
               </article>
               <article class="route-card" data-view-link="review">
-                <span>03</span>
+                <span>02</span>
                 <h3>AI Language Review</h3>
-                <p>After each match, build a Vocabulary Chest, cultural insight, and pronunciation replay.</p>
+                <p>Review vocabulary, culture notes, and pronunciation after a match.</p>
+              </article>
+              <article class="route-card" data-view-link="communication">
+                <span>03</span>
+                <h3>Messages</h3>
+                <p>Open subtitles, voice letters, and communication tools.</p>
               </article>
               <article class="route-card" data-view-link="profile">
                 <span>04</span>
                 <h3>Profile and Culture</h3>
-                <p>Edit profile details, submit peer feedback, view badges, and read culture guides.</p>
-              </article>
-              <article class="route-card" data-view-link="admin">
-                <span>05</span>
-                <h3>Admin Panel</h3>
-                <p>Monitor matches, manage user accounts, and issue safety or moderation warnings.</p>
+                <p>Manage your profile, badges, feedback, and culture guide.</p>
               </article>
             </div>
 
@@ -144,8 +132,8 @@
           <section class="view" data-view="match" aria-labelledby="matchTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">Play Lobby</span>
-                <h2 id="matchTitle">Find a game, then learn through the match</h2>
+                <span class="eyebrow">Play</span>
+                <h2 id="matchTitle">Find a game</h2>
               </div>
               <div class="button-row">
                 <button class="button secondary" id="joinKeMatch">Join Language Pool</button>
@@ -153,7 +141,7 @@
               </div>
             </div>
 
-            <div class="match-layout">
+            <div class="match-layout" id="matchLayout">
               <aside class="panel lobby-panel">
                 <div class="panel-heading">
                   <div>
@@ -559,39 +547,70 @@
                 <span class="eyebrow">Profile and Culture</span>
                 <h2 id="profileTitle">Progress, feedback, and manners</h2>
               </div>
-              <button class="button secondary">Edit Profile</button>
+              <button class="button secondary" id="refreshProfile">Refresh Profile</button>
             </div>
+            <p class="profile-status" id="profileStatus">Sign in to load your saved profile.</p>
 
             <div class="profile-grid">
               <article class="wire-card">
                 <h3>User Profile</h3>
                 <div class="profile-head">
-                  <span class="avatar">CL</span>
+                  <span class="avatar" id="profileAvatar">CL</span>
                   <div>
-                    <strong>ChessLearner</strong>
-                    <p>English learner, Korean speaker</p>
+                    <strong id="profileName">ChessLearner</strong>
+                    <p id="profileEmail">player@example.com</p>
+                    <p id="profileLanguageText">English learner, Korean speaker</p>
                   </div>
                 </div>
-                <button class="button secondary full">Edit Profile</button>
+                <label>
+                  Display name
+                  <input id="profileDisplayName" type="text" placeholder="ChessLearner" />
+                </label>
+                <label>
+                  Language pair
+                  <select id="profileLanguagePair">
+                    <option>English to Korean</option>
+                    <option>Korean to English</option>
+                    <option>Thai to English</option>
+                    <option>Japanese to Korean</option>
+                  </select>
+                </label>
+                <label>
+                  Bio
+                  <textarea id="profileBio" placeholder="Add a short intro for language partners."></textarea>
+                </label>
+                <button class="button secondary full" id="saveProfile">Save Profile</button>
               </article>
               <article class="wire-card">
                 <h3>Manner Temperature</h3>
                 <div class="temperature"><span id="profileTemp">42.8 C</span></div>
-                <button class="button secondary full">Submit Peer Feedback</button>
+                <label>
+                  Peer feedback
+                  <select id="peerFeedbackType">
+                    <option value="positive">Helpful and respectful</option>
+                    <option value="clear">Clear communicator</option>
+                    <option value="concern">Needs moderation attention</option>
+                  </select>
+                </label>
+                <label>
+                  Note
+                  <textarea id="peerFeedbackNote" placeholder="Optional feedback note"></textarea>
+                </label>
+                <button class="button secondary full" id="submitPeerFeedback">Submit Peer Feedback</button>
               </article>
               <article class="wire-card">
                 <h3>Badges</h3>
-                <div class="badge-list">
-                  <span>First Match</span>
-                  <span>Good Listener</span>
-                  <span>Kind Player</span>
-                </div>
-                <button class="button secondary full">View Badge Details</button>
+                <div class="badge-list" id="badgeList"></div>
+                <div class="profile-detail-list" id="badgeDetails"></div>
               </article>
               <article class="wire-card">
                 <h3>Culture Guide</h3>
-                <p>Before the match, greet your partner and ask whether they prefer direct move advice.</p>
-                <button class="button secondary full">Open Guide</button>
+                <div class="profile-detail-list" id="cultureGuideList"></div>
+                <label>
+                  Save a culture note
+                  <textarea id="cultureGuideInput" placeholder="Example: How my partner says good game after a match."></textarea>
+                </label>
+                <button class="button secondary full" id="saveCultureGuide">Save Culture Note</button>
               </article>
             </div>
           </section>
@@ -602,25 +621,40 @@
                 <span class="eyebrow">Admin Panel</span>
                 <h2 id="adminTitle">Safety and moderation</h2>
               </div>
-              <button class="button danger">Issue Safety Warning</button>
+              <button class="button secondary" id="refreshAdmin">Refresh Admin Data</button>
             </div>
+
+            <div class="status-strip admin-stats" id="adminStats">
+              <article>
+                <span class="label">Users</span>
+                <strong id="adminUsersCount">0</strong>
+              </article>
+              <article>
+                <span class="label">Active matches</span>
+                <strong id="adminMatchesCount">0</strong>
+              </article>
+              <article>
+                <span class="label">Open reports</span>
+                <strong id="adminReportsCount">0</strong>
+              </article>
+            </div>
+            <p class="admin-status" id="adminStatus">Admin tools load after signing in with an admin account.</p>
 
             <div class="admin-grid">
               <article class="wire-card">
                 <h3>Match Monitor</h3>
                 <p>Review live match logs and intervene when safety reports arrive.</p>
-                <button class="button secondary full">Review Match Log</button>
-                <button class="button danger full">Intervene in Match</button>
+                <div class="admin-list" id="adminMatchesList"></div>
               </article>
               <article class="wire-card">
                 <h3>User Management</h3>
                 <p>Manage user accounts, profile flags, and repeated feedback patterns.</p>
-                <button class="button secondary full">Manage User Account</button>
+                <div class="admin-list" id="adminUsersList"></div>
               </article>
               <article class="wire-card">
                 <h3>Safety and Moderation</h3>
                 <p>Warnings are tracked with context from transcript, match result, and reports.</p>
-                <button class="button danger full">Issue Safety Warning</button>
+                <div class="admin-list" id="adminReportsList"></div>
               </article>
             </div>
           </section>
