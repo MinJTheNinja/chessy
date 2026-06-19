@@ -257,11 +257,60 @@
                   <p class="voice-status" data-voice-status>Start a matched game, then turn on your mic.</p>
                   <audio id="remoteVoiceAudio" autoplay playsinline></audio>
                 </div>
-                <div class="chess-board" id="chessBoard" aria-label="Interactive chess board"></div>
-                <div class="match-result" id="matchResult">
-                  <strong>Match Result</strong>
-                  <span>In progress</span>
-                  <button class="button dark small" id="generateReview" data-view-link="review">Generate AI Review</button>
+                <div class="match-play-grid">
+                  <div class="board-stage">
+                    <div class="chess-board" id="chessBoard" aria-label="Interactive chess board"></div>
+                    <div class="match-result" id="matchResult">
+                      <strong>Match Result</strong>
+                      <span>In progress</span>
+                      <button class="button dark small" id="generateReview" data-view-link="review">Generate AI Review</button>
+                    </div>
+                  </div>
+                  <aside class="match-subtitle-panel" aria-label="Live subtitles during chess match">
+                    <div class="match-subtitle-header">
+                      <div>
+                        <span class="label">Live subtitles</span>
+                        <h3>STT while playing</h3>
+                      </div>
+                      <button class="button dark small" id="matchActivateStt" type="button">Activate STT</button>
+                    </div>
+                    <div class="match-stt-controls">
+                      <label>
+                        Source
+                        <select id="matchSttSourceLanguage">
+                          <option value="">Browser Default</option>
+                          <option value="en-US">English</option>
+                          <option value="ko-KR">Korean</option>
+                          <option value="th-TH">Thai</option>
+                          <option value="ja-JP">Japanese</option>
+                        </select>
+                      </label>
+                      <label>
+                        Translate
+                        <select id="matchSubtitleTargetLanguage">
+                          <option>Korean</option>
+                          <option>English</option>
+                          <option>Thai</option>
+                          <option>Japanese</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div class="match-stt-meta">
+                      <span>Status <strong id="matchSttStatus">Paused</strong></span>
+                      <span>Time <strong id="matchSessionDuration">00:00</strong></span>
+                      <span>Words <strong id="matchWordsRecognized">0</strong></span>
+                    </div>
+                    <div class="match-subtitle-scroll">
+                      <div>
+                        <h4>Original</h4>
+                        <div class="subtitle-lines compact" id="matchOriginalSpeech"></div>
+                      </div>
+                      <div>
+                        <h4>Translation</h4>
+                        <div class="subtitle-lines compact" id="matchTranslatedSpeech"></div>
+                      </div>
+                    </div>
+                  </aside>
                 </div>
               </section>
 

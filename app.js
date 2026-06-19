@@ -38,6 +38,14 @@ const contrastToggle = document.querySelector("#contrastToggle");
 const activateStt = document.querySelector("#activateStt");
 const sttSourceLanguage = document.querySelector("#sttSourceLanguage");
 const subtitleTargetLanguage = document.querySelector("#subtitleTargetLanguage");
+const matchActivateStt = document.querySelector("#matchActivateStt");
+const matchSttSourceLanguage = document.querySelector("#matchSttSourceLanguage");
+const matchSubtitleTargetLanguage = document.querySelector("#matchSubtitleTargetLanguage");
+const matchOriginalSpeech = document.querySelector("#matchOriginalSpeech");
+const matchTranslatedSpeech = document.querySelector("#matchTranslatedSpeech");
+const matchSttStatus = document.querySelector("#matchSttStatus");
+const matchSessionDuration = document.querySelector("#matchSessionDuration");
+const matchWordsRecognized = document.querySelector("#matchWordsRecognized");
 const wordsRecognized = document.querySelector("#wordsRecognized");
 const sessionDuration = document.querySelector("#sessionDuration");
 const latencyText = document.querySelector("#latencyText");
@@ -298,7 +306,7 @@ let clockInterval = null;
 let speechRecognition = null;
 let sttListening = false;
 let sttShouldRestart = false;
-let sttInterimLine = null;
+let sttInterimLines = [];
 let sttSessionStart = null;
 let sttSessionTimer = null;
 
@@ -423,6 +431,7 @@ function setMatchPaired(isPaired) {
   matchLayout.classList.toggle("paired", isPaired);
   findMatchButton.hidden = isPaired;
   joinKeMatchButton.hidden = isPaired;
+  document.querySelector("#matchTitle").textContent = isPaired ? "Live match" : "Find a game";
 }
 
 function isVoiceCallSupported() {
@@ -1843,22 +1852,39 @@ function sttSpeakerName() {
   return currentUser?.displayName || "You";
 }
 
+function originalSubtitleContainers() {
+  return [originalSpeech, matchOriginalSpeech].filter(Boolean);
+}
+
+function translatedSubtitleContainers() {
+  return [translatedSpeech, matchTranslatedSpeech].filter(Boolean);
+}
+
+function setSttButtonText(text) {
+  activateStt.textContent = text;
+  if (matchActivateStt) matchActivateStt.textContent = text;
+}
+
 function setSttStatus(active, detail = "") {
   sttListening = active;
   sttPill.textContent = active ? "STT Listening" : "STT Paused";
   sttStatusText.textContent = detail || (active ? "Listening" : "Paused");
-  activateStt.textContent = active ? "Stop STT" : "Activate STT";
+  if (matchSttStatus) matchSttStatus.textContent = detail || (active ? "Listening" : "Paused");
+  setSttButtonText(active ? "Stop STT" : "Activate STT");
 }
 
 function updateSessionDuration() {
   if (!sttSessionStart) {
     sessionDuration.textContent = "00:00";
+    if (matchSessionDuration) matchSessionDuration.textContent = "00:00";
     return;
   }
   const elapsed = Math.floor((Date.now() - sttSessionStart) / 1000);
   const minutes = Math.floor(elapsed / 60);
   const seconds = elapsed % 60;
-  sessionDuration.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  const text = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  sessionDuration.textContent = text;
+  if (matchSessionDuration) matchSessionDuration.textContent = text;
 }
 
 function startSessionTimer() {
@@ -1905,13 +1931,18 @@ function subtitlePlaceholder(text) {
 }
 
 function resetSubtitlePlaceholders() {
-  originalSpeech.replaceChildren(subtitlePlaceholder("Start STT, allow microphone access, then speak."));
-  translatedSpeech.replaceChildren(subtitlePlaceholder("Browser STT captures speech first. Translation can be connected later."));
+  originalSubtitleContainers().forEach((container) => {
+    container.replaceChildren(subtitlePlaceholder("Start STT, allow microphone access, then speak."));
+  });
+  translatedSubtitleContainers().forEach((container) => {
+    container.replaceChildren(subtitlePlaceholder("Browser STT captures speech first. Translation appears here."));
+  });
 }
 
 function clearSubtitlePlaceholders() {
-  originalSpeech.querySelectorAll(".subtitle-placeholder").forEach((line) => line.remove());
-  translatedSpeech.querySelectorAll(".subtitle-placeholder").forEach((line) => line.remove());
+  [...originalSubtitleContainers(), ...translatedSubtitleContainers()].forEach((container) => {
+    container.querySelectorAll(".subtitle-placeholder").forEach((line) => line.remove());
+  });
 }
 
 function appendSubtitleLine(container, speaker, text, className = "") {
@@ -1924,6 +1955,10 @@ function appendSubtitleLine(container, speaker, text, className = "") {
   container.append(line);
   container.scrollTop = container.scrollHeight;
   return line;
+}
+
+function appendSubtitleLines(containers, speaker, text, className = "") {
+  return containers.map((container) => appendSubtitleLine(container, speaker, text, className));
 }
 
 async function persistSubtitleLine(text, translation) {
@@ -1948,22 +1983,27 @@ function appendRecognizedSpeech(text) {
   if (!phrase) return;
   const speaker = sttSpeakerName();
 
-  appendSubtitleLine(originalSpeech, speaker, phrase);
-  const translatedLine = appendSubtitleLine(translatedSpeech, speaker, "Translating...");
-  wordsRecognized.textContent = String(Number(wordsRecognized.textContent || 0) + phrase.split(/\s+/).filter(Boolean).length);
+  appendSubtitleLines(originalSubtitleContainers(), speaker, phrase);
+  const translatedLines = appendSubtitleLines(translatedSubtitleContainers(), speaker, "Translating...");
+  const nextWords = Number(wordsRecognized.textContent || 0) + phrase.split(/\s+/).filter(Boolean).length;
+  wordsRecognized.textContent = String(nextWords);
+  if (matchWordsRecognized) matchWordsRecognized.textContent = String(nextWords);
 
   const latency = 80 + Math.floor(Math.random() * 80);
   latencyText.textContent = `${latency} ms`;
   dashboardLatency.textContent = `${latency} ms`;
 
   translateSubtitleText(phrase).then((result) => {
-    translatedLine.replaceChildren();
-    const name = document.createElement("strong");
-    name.textContent = `${speaker}:`;
-    translatedLine.append(name, document.createTextNode(` ${result.text}`));
+    translatedLines.forEach((line) => {
+      line.replaceChildren();
+      const name = document.createElement("strong");
+      name.textContent = `${speaker}:`;
+      line.append(name, document.createTextNode(` ${result.text}`));
+    });
     persistSubtitleLine(phrase, result.text);
     if (result.provider === "mymemory") {
       sttStatusText.textContent = "Translated";
+      if (matchSttStatus) matchSttStatus.textContent = "Translated";
     }
   });
 }
@@ -1971,19 +2011,25 @@ function appendRecognizedSpeech(text) {
 function updateInterimSpeech(text) {
   const phrase = String(text || "").trim();
   if (!phrase) {
-    if (sttInterimLine) sttInterimLine.remove();
-    sttInterimLine = null;
+    removeInterimSpeech();
     return;
   }
-  if (!sttInterimLine) {
-    sttInterimLine = appendSubtitleLine(originalSpeech, sttSpeakerName(), phrase, "interim");
+  if (!sttInterimLines.length) {
+    sttInterimLines = appendSubtitleLines(originalSubtitleContainers(), sttSpeakerName(), phrase, "interim");
     return;
   }
-  sttInterimLine.replaceChildren();
-  const name = document.createElement("strong");
-  name.textContent = `${sttSpeakerName()}:`;
-  sttInterimLine.append(name, document.createTextNode(` ${phrase}`));
-  originalSpeech.scrollTop = originalSpeech.scrollHeight;
+  sttInterimLines.forEach((line) => {
+    line.replaceChildren();
+    const name = document.createElement("strong");
+    name.textContent = `${sttSpeakerName()}:`;
+    line.append(name, document.createTextNode(` ${phrase}`));
+    line.parentElement.scrollTop = line.parentElement.scrollHeight;
+  });
+}
+
+function removeInterimSpeech() {
+  sttInterimLines.forEach((line) => line.remove());
+  sttInterimLines = [];
 }
 
 function stopBrowserStt() {
@@ -1997,8 +2043,7 @@ function stopBrowserStt() {
     }
     speechRecognition = null;
   }
-  if (sttInterimLine) sttInterimLine.remove();
-  sttInterimLine = null;
+  removeInterimSpeech();
   stopSessionTimer();
   setSttStatus(false, "STT stopped.");
 }
@@ -2038,8 +2083,7 @@ function startBrowserStt() {
       else interimText += transcript;
     }
     if (finalText.trim()) {
-      if (sttInterimLine) sttInterimLine.remove();
-      sttInterimLine = null;
+      removeInterimSpeech();
       appendRecognizedSpeech(finalText);
     } else {
       updateInterimSpeech(interimText);
@@ -2303,6 +2347,7 @@ sttToggle.addEventListener("change", () => {
 
 translationToggle.addEventListener("change", () => {
   translatedSpeech.hidden = !translationToggle.checked;
+  if (matchTranslatedSpeech) matchTranslatedSpeech.hidden = !translationToggle.checked;
 });
 
 subtitleSize.addEventListener("change", () => {
@@ -2326,11 +2371,38 @@ activateStt.addEventListener("click", async () => {
   }
 });
 
+matchActivateStt.addEventListener("click", () => {
+  if (sttListening) {
+    sttToggle.checked = false;
+    stopBrowserStt();
+  } else {
+    sttToggle.checked = true;
+    startBrowserStt();
+  }
+});
+
 sttSourceLanguage.addEventListener("change", () => {
+  matchSttSourceLanguage.value = sttSourceLanguage.value;
   if (!sttListening) return;
   stopBrowserStt();
   sttToggle.checked = true;
   startBrowserStt();
+});
+
+matchSttSourceLanguage.addEventListener("change", () => {
+  sttSourceLanguage.value = matchSttSourceLanguage.value;
+  if (!sttListening) return;
+  stopBrowserStt();
+  sttToggle.checked = true;
+  startBrowserStt();
+});
+
+subtitleTargetLanguage.addEventListener("change", () => {
+  matchSubtitleTargetLanguage.value = subtitleTargetLanguage.value;
+});
+
+matchSubtitleTargetLanguage.addEventListener("change", () => {
+  subtitleTargetLanguage.value = matchSubtitleTargetLanguage.value;
 });
 
 generateReviewButton.addEventListener("click", () => requestReview("the completed match"));
