@@ -505,7 +505,7 @@ function profileBadges(user, db) {
   if (userMatches.some((match) => (match.transcript || []).length > 0)) {
     badges.push({ name: "Good Listener", detail: "Used subtitles or transcript practice during a match." });
   }
-  if (Number(user.mannerTemperature || 42.8) >= 42) badges.push({ name: "Kind Player", detail: "Maintained a strong manner temperature." });
+  if (Number(user.mannerTemperature ?? 42.8) >= 42) badges.push({ name: "Kind Player", detail: "Maintained a strong manner temperature." });
   if (reviews.length > 0) badges.push({ name: "Vocabulary Builder", detail: "Generated an AI vocabulary review after a match." });
   if (cultureGuide.length > 0) badges.push({ name: "Culture Explorer", detail: "Saved at least one culture guide note." });
 
@@ -853,7 +853,7 @@ async function handleApi(req, res, pathname) {
 
     const kind = body.kind || "positive";
     const delta = kind === "concern" ? -1.2 : kind === "clear" ? 0.7 : 0.9;
-    target.mannerTemperature = Math.max(0, Math.min(50, Number(target.mannerTemperature || 42.8) + delta));
+    target.mannerTemperature = Math.max(0, Math.min(50, Number(target.mannerTemperature ?? 42.8) + delta));
     target.feedbackReceived = target.feedbackReceived || [];
     target.feedbackReceived.push({
       id: id("feedback"),
@@ -949,7 +949,7 @@ async function handleApi(req, res, pathname) {
       by: user.id,
       createdAt: new Date().toISOString(),
     });
-    target.mannerTemperature = Math.max(0, Number(target.mannerTemperature || 42.8) - 2);
+    target.mannerTemperature = Math.max(0, Number(target.mannerTemperature ?? 42.8) - 2);
     await writeDb(db);
     sendJson(res, 200, { user: adminUser(target) });
     return true;

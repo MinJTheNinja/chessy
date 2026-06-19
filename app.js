@@ -7,6 +7,8 @@ const findMatchButton = document.querySelector("#findMatch");
 const joinKeMatchButton = document.querySelector("#joinKeMatch");
 const simulateMoveButton = document.querySelector("#simulateMove");
 const resignMatchButton = document.querySelector("#resignMatch");
+const drawMatchButton = document.querySelector("#drawMatch");
+const endMatchButton = document.querySelector("#endMatch");
 const matchResult = document.querySelector("#matchResult span");
 const matchLayout = document.querySelector("#matchLayout");
 const partnerLanguage = document.querySelector("#partnerLanguage");
@@ -282,6 +284,7 @@ const defaultReview = {
 let pieces = { ...initialPieces };
 let moveIndex = 0;
 let queueInterval;
+let queuePollInterval;
 let missionIndex = 0;
 let currentManner = 42.8;
 let backendOnline = false;
@@ -303,6 +306,7 @@ let voiceOfferRetryTimer = null;
 let voiceOfferRetryCount = 0;
 let clockSnapshot = null;
 let clockInterval = null;
+let timeoutNotifiedFor = null;
 let speechRecognition = null;
 let sttListening = false;
 let sttShouldRestart = false;
@@ -988,6 +992,13 @@ function updateClockDisplay() {
   blackClockCard.classList.toggle("active", clockSnapshot?.running && clockSnapshot.activeColor === "black");
   whiteClockCard.classList.toggle("low-time", whiteMs !== null && whiteMs <= 30_000);
   blackClockCard.classList.toggle("low-time", blackMs !== null && blackMs <= 30_000);
+
+  if (clockSnapshot?.running && clockSnapshot.activeColor) {
+    const activeMs = clockSnapshot.activeColor === "white" ? whiteMs : blackMs;
+    if (activeMs !== null && activeMs <= 0) {
+      notifyClockTimeout(clockSnapshot.activeColor);
+    }
+  }
 }
 
 function startMatchClock(match) {
@@ -1006,6 +1017,32 @@ function startMatchClock(match) {
   updateClockDisplay();
   if (clockSnapshot.running) {
     clockInterval = window.setInterval(updateClockDisplay, 1000);
+  }
+}
+
+async function notifyClockTimeout(color) {
+  const timeoutKey = `${currentMatchId}:${color}`;
+  if (!currentMatchId || timeoutNotifiedFor === timeoutKey) return;
+  timeoutNotifiedFor = timeoutKey;
+  const loser = color === "white" ? "White" : "Black";
+  const result = `${loser} lost on time`;
+  matchResult.textContent = result;
+  syncState.textContent = "Time expired";
+  window.clearInterval(clockInterval);
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification("Chess clock expired", { body: result });
+  }
+  if (backendOnline) {
+    await finishMatch(result, { review: false, statusText: "Time expired" });
+  }
+}
+
+async function requestNotificationPermission() {
+  if (!("Notification" in window) || Notification.permission !== "default") return;
+  try {
+    await Notification.requestPermission();
+  } catch {
+    // Browser notification permission is optional.
   }
 }
 
@@ -1162,7 +1199,7 @@ function renderAdminOverview(data) {
       card.innerHTML = `
         <strong>${user.displayName}</strong>
         <span>${user.email}</span>
-        <p>${user.role} - ${Number(user.mannerTemperature || 0).toFixed(1)} C manner temperature</p>
+        <p>${user.role} - ${Number(user.mannerTemperature ?? 0).toFixed(1)} C manner temperature</p>
         <p>${(user.warnings || []).length} warning(s)</p>
       `;
       const button = document.createElement("button");
@@ -1280,7 +1317,7 @@ async function checkBackend() {
     currentUser = session.user;
     if (currentUser) {
       authStatus.textContent = `Signed in as ${currentUser.displayName}`;
-      updateTemperature(Number(currentUser.mannerTemperature || currentManner));
+      updateTemperature(Number(currentUser.mannerTemperature ?? currentManner));
       await refreshProfile();
     }
     renderAuthState();
@@ -1714,7 +1751,7 @@ function renderProfile(profile) {
   profileDisplayName.value = user.displayName || "";
   profileLanguagePair.value = user.languagePair || "English to Korean";
   profileBio.value = user.bio || "";
-  updateTemperature(Number(user.mannerTemperature || currentManner));
+  updateTemperature(Number(user.mannerTemperature ?? currentManner));
 
   badgeList.innerHTML = "";
   profile.badges.forEach((badge) => {
