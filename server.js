@@ -1171,15 +1171,55 @@ async function handleApi(req, res, pathname) {
     }
 
     const body = await readBody(req);
+    const timeControl = body.timeControl || "10+0";
+    const rated = Boolean(body.rated);
+    const partnerLanguage = body.partnerLanguage || "English";
+    const goal = body.goal || "Explain chess moves";
     db.seeks = db.seeks.filter((seek) => !(seek.userId === user.id && seek.status === "open"));
+    const matchingSeek = db.seeks.find(
+      (seek) =>
+        seek.userId !== user.id &&
+        seek.status === "open" &&
+        seek.timeControl === timeControl &&
+        Boolean(seek.rated) === rated &&
+        seek.partnerLanguage === partnerLanguage &&
+        seek.goal === goal,
+    );
+
+    if (matchingSeek) {
+      matchingSeek.status = "matched";
+      const seeker = db.users.find((item) => item.id === matchingSeek.userId);
+      const match = createMatch(
+        db,
+        seeker || user,
+        {
+          timeControl,
+          rated,
+          partnerLanguage,
+          goal,
+          mode: "Live",
+          pairingType: "open-seek",
+          seekId: matchingSeek.id,
+        },
+        seeker ? user : null,
+      );
+      await writeDb(db);
+      await syncRedisRoom(match);
+      broadcast(match.id, { type: "match:started", match: decorateMatch(match) });
+      broadcast(null, { type: "queue:matched", match: decorateMatch(match) });
+      broadcast(null, { type: "lobby:updated", openSeeks: db.seeks.filter((item) => item.status === "open").length });
+      sendJson(res, 200, { matched: true, match: decorateMatch(match) });
+      return true;
+    }
+
     const seek = {
       id: id("seek"),
       userId: user.id,
       displayName: user.displayName,
-      timeControl: body.timeControl || "10+0",
-      rated: Boolean(body.rated),
-      partnerLanguage: body.partnerLanguage || "English",
-      goal: body.goal || "Explain chess moves",
+      timeControl,
+      rated,
+      partnerLanguage,
+      goal,
       status: "open",
       createdAt: new Date().toISOString(),
     };

@@ -22,6 +22,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -686,7 +690,7 @@ p {
 
 .match-layout {
   display: grid;
-  grid-template-columns: minmax(620px, 1fr) minmax(280px, 340px);
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
 
@@ -695,6 +699,10 @@ p {
 }
 
 .match-layout:not(.paired) .board-panel {
+  display: none;
+}
+
+.match-layout:not(.paired) .match-side-panel {
   display: none;
 }
 
@@ -719,9 +727,53 @@ p {
 }
 
 .lobby-panel {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  gap: 14px;
+  gap: 16px;
+  max-width: 860px;
+}
+
+.play-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.play-choice-card {
+  display: grid;
+  gap: 10px;
+  min-height: 156px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfbfb;
+  color: var(--ink);
+  text-align: left;
+  box-shadow: 0 8px 20px rgba(26, 26, 46, 0.05);
+}
+
+.play-choice-card strong {
+  font-size: 1.45rem;
+}
+
+.play-choice-card small {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.play-choice-card:hover {
+  border-color: rgba(184, 141, 11, 0.46);
+  transform: translateY(-1px);
+}
+
+.play-choice-card.primary-choice {
+  background: var(--dark);
+  color: white;
+}
+
+.play-choice-card.primary-choice small {
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .quick-pair-composer,
@@ -847,8 +899,8 @@ p {
 }
 
 .seek-composer {
-  padding-left: 14px;
-  border-left: 1px solid var(--line);
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
 }
 
 .room-share p {
@@ -901,6 +953,15 @@ p {
   border: 1px solid var(--line);
   border-radius: 999px;
   background: white;
+}
+
+.friend-room-card {
+  min-width: min(420px, calc(100vw - 40px));
+}
+
+.friend-room-actions {
+  display: grid;
+  gap: 10px;
 }
 
 .challenge-code {
@@ -1730,6 +1791,10 @@ dialog::backdrop {
   }
 
   .lobby-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .play-choice-grid {
     grid-template-columns: 1fr;
   }
 

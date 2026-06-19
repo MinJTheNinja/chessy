@@ -4,7 +4,11 @@ const queueTime = document.querySelector("#queueTime");
 const queueProgress = document.querySelector("#queueProgress");
 const queuePrompt = document.querySelector("#queuePrompt");
 const findMatchButton = document.querySelector("#findMatch");
-const joinKeMatchButton = document.querySelector("#joinKeMatch");
+const showCreateSeekButton = document.querySelector("#showCreateSeek");
+const showFriendRoomButton = document.querySelector("#showFriendRoom");
+const seekComposer = document.querySelector("#seekComposer");
+const friendRoomDialog = document.querySelector("#friendRoomDialog");
+const closeFriendRoomButton = document.querySelector("#closeFriendRoom");
 const simulateMoveButton = document.querySelector("#simulateMove");
 const resignMatchButton = document.querySelector("#resignMatch");
 const drawMatchButton = document.querySelector("#drawMatch");
@@ -458,7 +462,9 @@ function speakText(text, options = {}) {
 function setMatchPaired(isPaired) {
   matchLayout.classList.toggle("paired", isPaired);
   findMatchButton.hidden = isPaired;
-  joinKeMatchButton.hidden = isPaired;
+  showCreateSeekButton.hidden = isPaired;
+  showFriendRoomButton.hidden = isPaired;
+  if (isPaired) seekComposer.hidden = true;
   document.querySelector("#matchTitle").textContent = isPaired ? "Live match" : "Find a game";
 }
 
@@ -1811,7 +1817,8 @@ async function startQueue(label = "Searching for a safe partner with matching go
 
 async function quickPairFromSelectedPool() {
   const pool = selectedPool();
-  await startQueue(`Searching the ${pool.label} ${pool.name} pool.`, false, {
+  seekComposer.hidden = true;
+  await startQueue(`Quick pairing now. Searching ${pool.label} ${pool.name}.`, false, {
     endpoint: "/api/matches/quick-pair",
     readyText: "Quick pool match ready",
     body: {
@@ -1859,7 +1866,14 @@ async function createOpenSeek() {
         goal: conversationGoal.value,
       },
     });
-    queuePrompt.textContent = `Open seek posted: ${data.seek.timeControl} ${data.seek.rated ? "rated" : "casual"}.`;
+    if (data.match) {
+      renderMatch(data.match);
+      matchResult.textContent = "Matched by seek settings";
+      await refreshStats();
+      await refreshLobby();
+      return;
+    }
+    queuePrompt.textContent = `Seek posted. Matching players with ${data.seek.timeControl}, ${data.seek.partnerLanguage}, and a similar goal.`;
     await refreshLobby();
   } catch (error) {
     queuePrompt.textContent = error.message;
@@ -2532,16 +2546,16 @@ continueToDashboardButton.addEventListener("click", () => {
 });
 
 findMatchButton.addEventListener("click", quickPairFromSelectedPool);
-joinKeMatchButton.addEventListener("click", () =>
-  startQueue("Looking for another signed-in language partner.", true, {
-    readyText: "Language pool match ready",
-    body: {
-      mode: "Language",
-      pairingType: "language-pool",
-      timeControl: seekTimeControl.value,
-    },
-  }),
-);
+showCreateSeekButton.addEventListener("click", () => {
+  seekComposer.hidden = false;
+  queuePrompt.textContent = "Set your seek preferences, then create a seek.";
+  seekTimeControl.focus();
+});
+showFriendRoomButton.addEventListener("click", () => {
+  friendRoomDialog.showModal();
+  privateChallengeInput.focus();
+});
+closeFriendRoomButton.addEventListener("click", () => friendRoomDialog.close());
 simulateMoveButton.addEventListener("click", applyPlannedMove);
 createSeekButton.addEventListener("click", createOpenSeek);
 refreshLobbyButton.addEventListener("click", refreshLobby);
