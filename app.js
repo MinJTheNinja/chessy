@@ -106,6 +106,8 @@ const adminReportsCount = document.querySelector("#adminReportsCount");
 const adminMatchesList = document.querySelector("#adminMatchesList");
 const adminUsersList = document.querySelector("#adminUsersList");
 const adminReportsList = document.querySelector("#adminReportsList");
+const adminMatchSearch = document.querySelector("#adminMatchSearch");
+const adminUserSearch = document.querySelector("#adminUserSearch");
 const refreshProfileButton = document.querySelector("#refreshProfile");
 const profileStatus = document.querySelector("#profileStatus");
 const profileAvatar = document.querySelector("#profileAvatar");
@@ -300,7 +302,7 @@ let currentMatchId = null;
 let selectedSquare = null;
 let boardOrientation = "white";
 let socket = null;
-let authMode = "signup";
+let authMode = "login";
 let cachedSpeechVoices = [];
 let peerConnection = null;
 let localVoiceStream = null;
@@ -322,6 +324,7 @@ let sttSessionStart = null;
 let sttSessionTimer = null;
 let notifications = [];
 let unreadNotifications = 0;
+let cachedAdminData = null;
 
 const voiceClientId =
   window.crypto?.randomUUID?.() || `voice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -841,10 +844,13 @@ function setServerStatus(text, online) {
 
 function renderAuthState() {
   const signedIn = Boolean(currentUser);
+  document.body.classList.toggle("is-signed-in", signedIn);
   authForm.classList.toggle("signed-in", signedIn);
   continueToDashboardButton.hidden = !signedIn;
-  loginButton.textContent = signedIn ? "Dashboard" : "Log in";
-  signupButton.textContent = signedIn ? "Sign out" : "Sign up";
+  loginButton.textContent = signedIn ? "Dashboard" : "Login";
+  signupButton.textContent = signedIn ? "Sign out" : "New user";
+  loginButton.classList.toggle("active", !signedIn && authMode === "login");
+  signupButton.classList.toggle("active", !signedIn && authMode === "signup");
   authSubmit.textContent = signedIn ? "Signed in" : authMode === "login" ? "Log in" : "Create account";
   authSubmit.disabled = signedIn;
   authEmail.disabled = signedIn;
@@ -927,7 +933,7 @@ async function copyRoomLink() {
 
 async function loadMatchFromRoute() {
   const matchId = routeMatchId();
-  if (!matchId || !backendOnline) return;
+  if (!matchId || !backendOnline) return false;
 
   try {
     let data = await api(`/api/matches/${matchId}`);
@@ -937,10 +943,12 @@ async function loadMatchFromRoute() {
     renderMatch(data.match);
     setView("match");
     matchResult.textContent = data.match.result || "Joined room from link";
+    return true;
   } catch (error) {
     setView("match");
     matchResult.textContent = "Room not found";
     syncState.textContent = error.message;
+    return true;
   }
 }
 
@@ -1237,23 +1245,53 @@ function renderAdminList(container, items, renderItem, emptyMessage) {
   items.forEach((item) => container.append(renderItem(item)));
 }
 
+function adminSearchText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function adminMatchSearchText(match) {
+  const players = (match.players || []).map((player) => `${player.displayName} ${player.color}`).join(" ");
+  return adminSearchText(
+    `${match.timeControl} ${match.status} ${match.result} ${match.moveCount} ${match.transcriptCount} ${players}`,
+  );
+}
+
+function adminUserSearchText(user) {
+  return adminSearchText(
+    `${user.displayName} ${user.email} ${user.role} ${Number(user.mannerTemperature ?? 0).toFixed(1)} ${(user.warnings || []).length}`,
+  );
+}
+
 function renderAdminOverview(data) {
+  cachedAdminData = data;
   adminUsersCount.textContent = String(data.stats.users);
   adminMatchesCount.textContent = String(data.stats.activeMatches);
   adminReportsCount.textContent = String(data.stats.openReports);
   adminStatus.textContent = `Admin data loaded. ${data.stats.totalReports} total report(s).`;
+  const matchQuery = adminSearchText(adminMatchSearch.value);
+  const userQuery = adminSearchText(adminUserSearch.value);
+  const matches = matchQuery ? data.matches.filter((match) => adminMatchSearchText(match).includes(matchQuery)) : data.matches;
+  const users = userQuery ? data.users.filter((user) => adminUserSearchText(user).includes(userQuery)) : data.users;
 
   renderAdminList(
     adminMatchesList,
-    data.matches,
+    matches,
     (match) => {
-      const card = document.createElement("article");
-      card.className = "admin-item";
+      const card = document.createElement("details");
+      card.className = "admin-item admin-disclosure";
       const players = (match.players || []).map((player) => `${player.displayName} (${player.color})`).join(" vs ") || "No players";
-      card.innerHTML = `
-        <strong>${match.timeControl || "10+0"} ${match.rated ? "Rated" : "Casual"}</strong>
-        <span>${match.status} - ${match.result || "In progress"}</span>
-        <p>${players}</p>
+      const summary = document.createElement("summary");
+      summary.innerHTML = `
+        <span>
+          <strong>${match.timeControl || "10+0"} ${match.rated ? "Rated" : "Casual"}</strong>
+          <small>${players}</small>
+        </span>
+        <b>${match.status}</b>
+      `;
+      const detail = document.createElement("div");
+      detail.className = "admin-disclosure-body";
+      detail.innerHTML = `
+        <p>${match.result || "In progress"}</p>
         <p>${match.moveCount} move(s), ${match.transcriptCount} transcript item(s)</p>
       `;
       const button = document.createElement("button");
@@ -1262,23 +1300,33 @@ function renderAdminOverview(data) {
       button.textContent = match.status === "ended" ? "Match Ended" : "End Match";
       button.disabled = match.status === "ended";
       button.addEventListener("click", () => endAdminMatch(match.id));
-      card.append(button);
+      detail.append(button);
+      card.append(summary, detail);
       return card;
     },
-    "No matches yet.",
+    matchQuery ? "No matches match your search." : "No matches yet.",
   );
 
   renderAdminList(
     adminUsersList,
-    data.users,
+    users,
     (user) => {
-      const card = document.createElement("article");
-      card.className = "admin-item";
-      card.innerHTML = `
-        <strong>${user.displayName}</strong>
-        <span>${user.email}</span>
+      const card = document.createElement("details");
+      card.className = "admin-item admin-disclosure";
+      const warningCount = (user.warnings || []).length;
+      const summary = document.createElement("summary");
+      summary.innerHTML = `
+        <span>
+          <strong>${user.displayName}</strong>
+          <small>${user.email}</small>
+        </span>
+        <b>${warningCount} warning${warningCount === 1 ? "" : "s"}</b>
+      `;
+      const detail = document.createElement("div");
+      detail.className = "admin-disclosure-body";
+      detail.innerHTML = `
         <p>${user.role} - ${Number(user.mannerTemperature ?? 0).toFixed(1)} C manner temperature</p>
-        <p>${(user.warnings || []).length} warning(s)</p>
+        <p>${warningCount} warning(s)</p>
       `;
       const button = document.createElement("button");
       button.className = "button danger full small";
@@ -1286,10 +1334,11 @@ function renderAdminOverview(data) {
       button.textContent = user.role === "admin" ? "Admin Account" : "Issue Warning";
       button.disabled = user.role === "admin";
       button.addEventListener("click", () => warnAdminUser(user.id));
-      card.append(button);
+      detail.append(button);
+      card.append(summary, detail);
       return card;
     },
-    "No users yet.",
+    userQuery ? "No users match your search." : "No users yet.",
   );
 
   renderAdminList(
@@ -1402,7 +1451,8 @@ async function checkBackend() {
     connectSocket(null);
     await refreshStats();
     await refreshLobby();
-    await loadMatchFromRoute();
+    const routedToMatch = await loadMatchFromRoute();
+    if (currentUser && !routedToMatch) setView("match");
   } catch {
     backendOnline = false;
     setServerStatus("Prototype mode", false);
@@ -1479,7 +1529,7 @@ async function signInOrRegister() {
     authDisplayName.value = "";
     authPassword.value = "";
     renderAuthState();
-    setView("dashboard");
+    setView("match");
     await refreshStats();
     await refreshLobby();
   } catch (error) {
@@ -1508,6 +1558,7 @@ async function signOut() {
   authStatus.textContent = "Signed out. You can log in again anytime.";
   clearProfile();
   renderAuthState();
+  setView("home");
 }
 
 function setView(viewName) {
@@ -2506,6 +2557,12 @@ privateChallengeInput.addEventListener("keydown", (event) => {
 });
 copyMatchRoomLinkButton.addEventListener("click", copyRoomLink);
 refreshAdminButton.addEventListener("click", refreshAdmin);
+adminMatchSearch.addEventListener("input", () => {
+  if (cachedAdminData) renderAdminOverview(cachedAdminData);
+});
+adminUserSearch.addEventListener("input", () => {
+  if (cachedAdminData) renderAdminOverview(cachedAdminData);
+});
 refreshProfileButton.addEventListener("click", refreshProfile);
 saveProfileButton.addEventListener("click", saveProfile);
 submitPeerFeedbackButton.addEventListener("click", submitPeerFeedback);
@@ -2639,4 +2696,5 @@ document.querySelectorAll(".inbox-item").forEach((item) => {
 buildBoard();
 renderReview(defaultReview);
 updateRoomLink(null);
+renderAuthState();
 checkBackend();

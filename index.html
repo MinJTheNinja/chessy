@@ -40,46 +40,51 @@
 
     <main>
       <section class="entry" id="home" aria-labelledby="entryTitle">
-        <img src="/assets/hero-chess-classroom.png?v=20260618" alt="Students playing chess in a warm classroom" />
-        <div class="entry-content">
-          <span class="eyebrow">Global chess matching with live translation</span>
-          <h1 id="entryTitle">Play chess, talk naturally, and learn across languages.</h1>
-          <p>
-            Start from a simple landing flow, choose your language, match with a partner,
-            then move into live chess, STT subtitles, voice letters, profile progress, and safety tools.
-          </p>
-          <div class="entry-actions">
-            <button class="button primary" data-view-link="match">Start quick match</button>
-            <button class="button secondary" data-view-link="communication">Open communication hub</button>
+        <div class="entry-visual">
+          <img src="/assets/hero-chess-classroom.png?v=20260618" alt="Students playing chess in a warm classroom" />
+          <div class="entry-content">
+            <span class="eyebrow">Global chess matching with live translation</span>
+            <h1 id="entryTitle">Play chess beyond the board.</h1>
+            <p>
+              Match with players across languages, talk during the game, and review what you learned after each session.
+            </p>
           </div>
         </div>
-        <form class="auth-card" id="authForm" aria-label="Account entry">
-          <h2>Account Entry</h2>
-          <label>
-            Language selection
-            <select id="authLanguagePair">
-              <option>English to Korean</option>
-              <option>Korean to English</option>
-              <option>Thai to English</option>
-              <option>Japanese to Korean</option>
-            </select>
-          </label>
-          <label>
-            Email
-            <input id="authEmail" type="email" placeholder="player@example.com" autocomplete="email" />
-          </label>
-          <label id="authDisplayNameField">
-            Display name
-            <input id="authDisplayName" type="text" placeholder="Name shown to opponents" autocomplete="nickname" maxlength="40" />
-          </label>
-          <label>
-            Password
-            <input id="authPassword" type="password" placeholder="Enter password" autocomplete="current-password" />
-          </label>
-          <button class="button primary full" id="authSubmit" type="submit">Create account</button>
-          <button class="button secondary full" id="continueToDashboard" type="button" hidden>Continue to dashboard</button>
-          <p id="authStatus">King's and Mend's Mate-in support is enabled after account setup.</p>
-        </form>
+        <div class="entry-auth">
+          <div class="auth-tabs" aria-label="Account mode">
+            <button class="auth-tab active" id="loginButton" type="button">Login</button>
+            <button class="auth-tab" id="signupButton" type="button">New user</button>
+          </div>
+          <form class="auth-card" id="authForm" aria-label="Account entry">
+            <span class="eyebrow">Kings &amp; Elders</span>
+            <h2>Good evening, player</h2>
+            <p class="auth-intro">Choose a language pair and enter your account to start a live chess session.</p>
+            <label>
+              Language selection
+              <select id="authLanguagePair">
+                <option>English to Korean</option>
+                <option>Korean to English</option>
+                <option>Thai to English</option>
+                <option>Japanese to Korean</option>
+              </select>
+            </label>
+            <label>
+              Email
+              <input id="authEmail" type="email" placeholder="player@example.com" autocomplete="email" />
+            </label>
+            <label id="authDisplayNameField" hidden>
+              Display name
+              <input id="authDisplayName" type="text" placeholder="Name shown to opponents" autocomplete="nickname" maxlength="40" />
+            </label>
+            <label>
+              Password
+              <input id="authPassword" type="password" placeholder="Enter password" autocomplete="current-password" />
+            </label>
+            <button class="button primary full" id="authSubmit" type="submit">Log in</button>
+            <button class="button secondary full" id="continueToDashboard" type="button" hidden>Continue to dashboard</button>
+            <p id="authStatus">Enter your existing email and password.</p>
+          </form>
+        </div>
       </section>
 
       <section class="app-shell" id="dashboard" aria-label="Application workspace">
@@ -751,11 +756,19 @@
               <article class="wire-card">
                 <h3>Match Monitor</h3>
                 <p>Review live match logs and intervene when safety reports arrive.</p>
+                <label class="admin-search">
+                  <span>Search matches</span>
+                  <input id="adminMatchSearch" type="search" placeholder="Player, status, result, time control" />
+                </label>
                 <div class="admin-list" id="adminMatchesList"></div>
               </article>
               <article class="wire-card">
                 <h3>User Management</h3>
                 <p>Manage user accounts, profile flags, and repeated feedback patterns.</p>
+                <label class="admin-search">
+                  <span>Search users</span>
+                  <input id="adminUserSearch" type="search" placeholder="Name, email, role, warning count" />
+                </label>
                 <div class="admin-list" id="adminUsersList"></div>
               </article>
               <article class="wire-card">
