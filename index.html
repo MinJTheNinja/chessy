@@ -143,57 +143,59 @@
 
             <div class="match-layout" id="matchLayout">
               <aside class="panel lobby-panel">
-                <div class="panel-heading">
-                  <div>
-                    <span class="label">Quick pairing</span>
-                    <h3>Choose a pool</h3>
+                <div class="quick-pair-composer">
+                  <div class="panel-heading">
+                    <div>
+                      <span class="label">Quick pairing</span>
+                      <h3>Choose a pool</h3>
+                    </div>
+                    <span class="pill" id="lobbySummary">Live pools ready</span>
                   </div>
-                  <span class="pill" id="lobbySummary">Live pools ready</span>
-                </div>
-                <div class="quick-pair-grid" id="quickPairGrid" aria-label="Quick pairing pools">
-                  <button class="pool-button active" data-pool-id="bullet-1-0" data-time-control="1+0" data-rated="false">
-                    <span>1+0</span>
-                    <strong>Bullet</strong>
-                    <small>Fast chess, short phrases</small>
-                  </button>
-                  <button class="pool-button" data-pool-id="blitz-3-2" data-time-control="3+2" data-rated="false">
-                    <span>3+2</span>
-                    <strong>Blitz</strong>
-                    <small>Quick talk between moves</small>
-                  </button>
-                  <button class="pool-button" data-pool-id="rapid-10-0" data-time-control="10+0" data-rated="false">
-                    <span>10+0</span>
-                    <strong>Rapid Talk</strong>
-                    <small>Best for STT practice</small>
-                  </button>
-                  <button class="pool-button" data-pool-id="classical-30-0" data-time-control="30+0" data-rated="false">
-                    <span>30+0</span>
-                    <strong>Study</strong>
-                    <small>Slow game, deeper review</small>
-                  </button>
-                </div>
-                <label>
-                  Partner language
-                  <select id="partnerLanguage">
-                    <option>English</option>
-                    <option>Korean</option>
-                    <option>Thai</option>
-                    <option>Japanese</option>
-                  </select>
-                </label>
-                <label>
-                  Conversation goal
-                  <select id="conversationGoal">
-                    <option>Explain chess moves</option>
-                    <option>Practice daily conversation</option>
-                    <option>Learn sports phrases</option>
-                  </select>
-                </label>
-                <div class="queue-box">
-                  <span class="label">Current search</span>
-                  <strong id="queueTime">01:45</strong>
-                  <div class="progress-track"><span id="queueProgress"></span></div>
-                  <p id="queuePrompt">Pick a pool or join an open seek to start matchmaking.</p>
+                  <div class="quick-pair-grid" id="quickPairGrid" aria-label="Quick pairing pools">
+                    <button class="pool-button active" data-pool-id="bullet-1-0" data-time-control="1+0" data-rated="false">
+                      <span>1+0</span>
+                      <strong>Bullet</strong>
+                      <small>Fast chess, short phrases</small>
+                    </button>
+                    <button class="pool-button" data-pool-id="blitz-3-2" data-time-control="3+2" data-rated="false">
+                      <span>3+2</span>
+                      <strong>Blitz</strong>
+                      <small>Quick talk between moves</small>
+                    </button>
+                    <button class="pool-button" data-pool-id="rapid-10-0" data-time-control="10+0" data-rated="false">
+                      <span>10+0</span>
+                      <strong>Rapid Talk</strong>
+                      <small>Best for STT practice</small>
+                    </button>
+                    <button class="pool-button" data-pool-id="classical-30-0" data-time-control="30+0" data-rated="false">
+                      <span>30+0</span>
+                      <strong>Study</strong>
+                      <small>Slow game, deeper review</small>
+                    </button>
+                  </div>
+                  <label>
+                    Partner language
+                    <select id="partnerLanguage">
+                      <option>English</option>
+                      <option>Korean</option>
+                      <option>Thai</option>
+                      <option>Japanese</option>
+                    </select>
+                  </label>
+                  <label>
+                    Conversation goal
+                    <select id="conversationGoal">
+                      <option>Explain chess moves</option>
+                      <option>Practice daily conversation</option>
+                      <option>Learn sports phrases</option>
+                    </select>
+                  </label>
+                  <div class="queue-box">
+                    <span class="label">Current search</span>
+                    <strong id="queueTime">01:45</strong>
+                    <div class="progress-track"><span id="queueProgress"></span></div>
+                    <p id="queuePrompt">Pick a pool or join an open seek to start matchmaking.</p>
+                  </div>
                 </div>
                 <div class="seek-composer">
                   <div class="panel-heading compact">

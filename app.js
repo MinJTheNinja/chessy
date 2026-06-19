@@ -348,6 +348,18 @@ function sendVoiceSignal(data) {
   });
 }
 
+function sendSubtitleSignal(data) {
+  if (!currentMatchId) return false;
+  return sendSocketMessage({
+    ...data,
+    type: "stt:subtitle",
+    matchId: currentMatchId,
+    from: voiceClientId,
+    speaker: sttSpeakerName(),
+    sourceLanguage: sttLanguage(),
+  });
+}
+
 function waitForSocketOpen() {
   if (socket?.readyState === WebSocket.OPEN) return Promise.resolve(true);
   if (!socket || socket.readyState !== WebSocket.CONNECTING) return Promise.resolve(false);
@@ -789,6 +801,23 @@ async function handleVoiceSignal(message) {
   } catch (error) {
     setVoiceStatus(`Voice connection issue: ${error.message}`);
   }
+}
+
+function handleSubtitleSignal(message) {
+  if (!message.matchId || message.matchId !== currentMatchId || message.from === voiceClientId) return;
+  const text = String(message.text || "").trim();
+  if (!text) return;
+  const opponent =
+    message.speaker ||
+    document.querySelector("#boardPartnerName")?.textContent ||
+    document.querySelector("#partnerName")?.textContent ||
+    "Partner";
+  appendFinalSubtitle({
+    speaker: opponent,
+    text,
+    sourceLanguage: message.sourceLanguage || "",
+    persist: false,
+  });
 }
 
 function setServerStatus(text, online) {
@@ -1292,6 +1321,7 @@ function connectSocket(matchId) {
     if (message.type === "match:ended" && matchBelongsToCurrentUser(message.match)) renderMatch(message.match);
     if (message.type === "review:generated") renderReview(message.review);
     if (message.type?.startsWith("voice:")) handleVoiceSignal(message);
+    if (message.type === "stt:subtitle") handleSubtitleSignal(message);
     if (message.type === "queue:waiting") queuePrompt.textContent = "Waiting for another player to join.";
     if (message.type === "lobby:updated") refreshLobby();
   });
@@ -1904,7 +1934,7 @@ function subtitleTranslation(text) {
   return `Translation pending (${target}): ${text}`;
 }
 
-async function translateSubtitleText(text) {
+async function translateSubtitleText(text, options = {}) {
   if (!backendOnline || !currentUser) {
     return { text: subtitleTranslation(text), provider: "fallback" };
   }
@@ -1913,7 +1943,7 @@ async function translateSubtitleText(text) {
       method: "POST",
       body: {
         text,
-        sourceLanguage: sttSourceLanguage.value || navigator.language || "en-US",
+        sourceLanguage: options.sourceLanguage || sttSourceLanguage.value || navigator.language || "en-US",
         targetLanguage: subtitleTargetLanguage.value,
       },
     });
@@ -1961,13 +1991,13 @@ function appendSubtitleLines(containers, speaker, text, className = "") {
   return containers.map((container) => appendSubtitleLine(container, speaker, text, className));
 }
 
-async function persistSubtitleLine(text, translation) {
+async function persistSubtitleLine(text, translation, speaker = sttSpeakerName()) {
   if (!backendOnline || !currentMatchId) return;
   try {
     await api(`/api/matches/${currentMatchId}/transcript`, {
       method: "POST",
       body: {
-        speaker: sttSpeakerName(),
+        speaker,
         text,
         translation,
         kind: "speech",
@@ -1983,6 +2013,14 @@ function appendRecognizedSpeech(text) {
   if (!phrase) return;
   const speaker = sttSpeakerName();
 
+  appendFinalSubtitle({ speaker, text: phrase, sourceLanguage: sttLanguage(), persist: true });
+  sendSubtitleSignal({ text: phrase });
+}
+
+function appendFinalSubtitle({ speaker, text, sourceLanguage, persist = false }) {
+  const phrase = String(text || "").trim();
+  if (!phrase) return;
+
   appendSubtitleLines(originalSubtitleContainers(), speaker, phrase);
   const translatedLines = appendSubtitleLines(translatedSubtitleContainers(), speaker, "Translating...");
   const nextWords = Number(wordsRecognized.textContent || 0) + phrase.split(/\s+/).filter(Boolean).length;
@@ -1993,14 +2031,14 @@ function appendRecognizedSpeech(text) {
   latencyText.textContent = `${latency} ms`;
   dashboardLatency.textContent = `${latency} ms`;
 
-  translateSubtitleText(phrase).then((result) => {
+  translateSubtitleText(phrase, { sourceLanguage }).then((result) => {
     translatedLines.forEach((line) => {
       line.replaceChildren();
       const name = document.createElement("strong");
       name.textContent = `${speaker}:`;
       line.append(name, document.createTextNode(` ${result.text}`));
     });
-    persistSubtitleLine(phrase, result.text);
+    if (persist) persistSubtitleLine(phrase, result.text, speaker);
     if (result.provider === "mymemory") {
       sttStatusText.textContent = "Translated";
       if (matchSttStatus) matchSttStatus.textContent = "Translated";

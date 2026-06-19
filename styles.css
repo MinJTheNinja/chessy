@@ -494,7 +494,7 @@ p {
 
 .match-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 420px) minmax(320px, 1fr);
+  grid-template-columns: minmax(620px, 1fr) minmax(280px, 340px);
   gap: 14px;
 }
 
@@ -527,7 +527,20 @@ p {
 }
 
 .lobby-panel {
-  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 14px;
+}
+
+.quick-pair-composer,
+.seek-composer {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.quick-pair-composer {
+  align-content: start;
 }
 
 .panel-heading {
@@ -633,13 +646,17 @@ p {
   transition: width 250ms ease;
 }
 
-.seek-composer,
 .private-challenge,
 .room-share {
   display: grid;
   gap: 12px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
+}
+
+.seek-composer {
+  padding-left: 14px;
+  border-left: 1px solid var(--line);
 }
 
 .room-share p {
@@ -1427,6 +1444,17 @@ dialog::backdrop {
   .stt-layout,
   .learning-layout {
     grid-template-columns: 1fr;
+  }
+
+  .lobby-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .seek-composer {
+    padding-left: 0;
+    padding-top: 16px;
+    border-left: 0;
+    border-top: 1px solid var(--line);
   }
 
   .review-summary,
