@@ -14,6 +14,19 @@
       </a>
       <div class="header-actions">
         <span class="server-status" id="serverStatus">Backend checking</span>
+        <button class="notification-button" id="notificationButton" type="button" aria-expanded="false" aria-label="Notifications">
+          <span>Alerts</span>
+          <strong id="notificationCount" hidden>0</strong>
+        </button>
+        <div class="notification-panel" id="notificationPanel" hidden>
+          <div class="notification-panel-head">
+            <strong>Notifications</strong>
+            <button class="text-link" id="clearNotifications" type="button">Clear</button>
+          </div>
+          <div class="notification-list" id="notificationList">
+            <p class="notification-empty">No notifications yet.</p>
+          </div>
+        </div>
         <select id="languageSelect" aria-label="Interface language">
           <option value="English">English</option>
           <option value="Korean">Korean</option>
@@ -54,6 +67,10 @@
           <label>
             Email
             <input id="authEmail" type="email" placeholder="player@example.com" autocomplete="email" />
+          </label>
+          <label id="authDisplayNameField">
+            Display name
+            <input id="authDisplayName" type="text" placeholder="Name shown to opponents" autocomplete="nickname" maxlength="40" />
           </label>
           <label>
             Password
@@ -233,6 +250,8 @@
                   </div>
                   <div class="button-row">
                     <button class="button secondary" id="simulateMove">Make Chess Move</button>
+                    <button class="button secondary" id="drawMatch">Draw</button>
+                    <button class="button secondary" id="endMatch">End Game</button>
                     <button class="button danger" id="resignMatch">Resign Match</button>
                   </div>
                 </div>

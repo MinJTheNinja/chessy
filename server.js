@@ -441,6 +441,17 @@ function publicUser(user) {
   };
 }
 
+function playerUser(user) {
+  if (!user) return null;
+  return {
+    id: user.id,
+    displayName: user.displayName,
+    languagePair: user.languagePair,
+    mannerTemperature: user.mannerTemperature,
+    role: user.role || "player",
+  };
+}
+
 function adminUser(user) {
   return {
     id: user.id,
@@ -672,6 +683,13 @@ function playerColor(match, user) {
   return match.players?.find((player) => player.userId === user.id)?.color || null;
 }
 
+function activeMatchForUser(db, user) {
+  if (!user) return null;
+  return db.matches.find(
+    (match) => match.status !== "ended" && (match.players || []).some((player) => player.userId === user.id),
+  );
+}
+
 function describeGameResult(game, move) {
   if (game.isCheckmate()) {
     return `${move.color === "w" ? "White" : "Black"} won by checkmate`;
@@ -864,7 +882,7 @@ async function handleApi(req, res, pathname) {
       createdAt: new Date().toISOString(),
     });
     await writeDb(db);
-    sendJson(res, 200, { profile: buildProfile(user, db), target: publicUser(target) });
+    sendJson(res, 200, { profile: buildProfile(user, db), target: playerUser(target) });
     return true;
   }
 
@@ -951,6 +969,13 @@ async function handleApi(req, res, pathname) {
     });
     target.mannerTemperature = Math.max(0, Number(target.mannerTemperature ?? 42.8) - 2);
     await writeDb(db);
+    broadcast(null, {
+      type: "notification",
+      category: "warning",
+      userId: target.id,
+      title: "Admin warning",
+      body: body.reason || "Admin safety warning",
+    });
     sendJson(res, 200, { user: adminUser(target) });
     return true;
   }
@@ -993,8 +1018,13 @@ async function handleApi(req, res, pathname) {
     const body = await readBody(req);
     const email = String(body.email || "").trim().toLowerCase();
     const password = String(body.password || "");
+    const displayName = String(body.displayName || "").trim().slice(0, 40);
     if (!email || !password) {
       sendJson(res, 400, { error: "Email and password are required." });
+      return true;
+    }
+    if (!displayName) {
+      sendJson(res, 400, { error: "Display name is required." });
       return true;
     }
 
@@ -1008,7 +1038,7 @@ async function handleApi(req, res, pathname) {
       found = {
         id: id("user"),
         email,
-        displayName: body.displayName || email.split("@")[0] || "ChessLearner",
+        displayName,
         languagePair: body.languagePair || "English to Korean",
         passwordHash: hashPassword(password),
         mannerTemperature: 42.8,
@@ -1083,6 +1113,12 @@ async function handleApi(req, res, pathname) {
       return true;
     }
 
+    const activeMatch = activeMatchForUser(db, user);
+    if (activeMatch) {
+      sendJson(res, 200, { waiting: false, match: decorateMatch(activeMatch) });
+      return true;
+    }
+
     const existingEntry = db.queue.find(
       (entry) => entry.userId !== user.id && entry.kind === "quick-pool" && entry.poolId === pool.id,
     );
@@ -1150,6 +1186,13 @@ async function handleApi(req, res, pathname) {
     db.seeks.push(seek);
     await writeDb(db);
     broadcast(null, { type: "lobby:updated", openSeeks: db.seeks.filter((item) => item.status === "open").length });
+    broadcast(null, {
+      type: "notification",
+      category: "game-request",
+      fromUserId: user.id,
+      title: "New game request",
+      body: `${user.displayName} created a ${seek.timeControl} ${seek.rated ? "rated" : "casual"} game.`,
+    });
     sendJson(res, 200, { seek: decorateSeek(db, seek) });
     return true;
   }
@@ -1452,9 +1495,17 @@ async function handleApi(req, res, pathname) {
       sendJson(res, 404, { error: "Match not found." });
       return true;
     }
+    if (match.clocks) {
+      match.clocks = liveClockState(match);
+    }
     match.status = "ended";
     match.result = body.result || match.result || "Completed";
     match.endedAt = new Date().toISOString();
+    if (match.clocks) {
+      match.clocks.activeColor = null;
+      match.clocks.running = false;
+      match.clocks.lastUpdatedAt = match.endedAt;
+    }
     await writeDb(db);
     await syncRedisRoom(match);
     broadcast(match.id, { type: "match:ended", matchId: match.id, result: match.result, match: decorateMatch(match) });
@@ -1511,6 +1562,13 @@ async function handleApi(req, res, pathname) {
     };
     db.voiceLetters.push(voiceLetter);
     await writeDb(db);
+    broadcast(null, {
+      type: "notification",
+      category: "voicemail",
+      fromUserId: user?.id || null,
+      title: "New voice letter",
+      body: `${user?.displayName || "Guest"} sent a voice letter.`,
+    });
     sendJson(res, 200, { voiceLetter });
     return true;
   }

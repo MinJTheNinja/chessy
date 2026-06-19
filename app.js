@@ -59,6 +59,8 @@ const reviewStatus = document.querySelector("#reviewStatus");
 const serverStatus = document.querySelector("#serverStatus");
 const authForm = document.querySelector("#authForm");
 const authEmail = document.querySelector("#authEmail");
+const authDisplayNameField = document.querySelector("#authDisplayNameField");
+const authDisplayName = document.querySelector("#authDisplayName");
 const authPassword = document.querySelector("#authPassword");
 const authLanguagePair = document.querySelector("#authLanguagePair");
 const authStatus = document.querySelector("#authStatus");
@@ -66,6 +68,11 @@ const authSubmit = document.querySelector("#authSubmit");
 const continueToDashboardButton = document.querySelector("#continueToDashboard");
 const signupButton = document.querySelector("#signupButton");
 const loginButton = document.querySelector("#loginButton");
+const notificationButton = document.querySelector("#notificationButton");
+const notificationCount = document.querySelector("#notificationCount");
+const notificationPanel = document.querySelector("#notificationPanel");
+const notificationList = document.querySelector("#notificationList");
+const clearNotificationsButton = document.querySelector("#clearNotifications");
 const activeMatchesCount = document.querySelector("#activeMatchesCount");
 const subtitleSessionsCount = document.querySelector("#subtitleSessionsCount");
 const conversationGoal = document.querySelector("#conversationGoal");
@@ -313,6 +320,8 @@ let sttShouldRestart = false;
 let sttInterimLines = [];
 let sttSessionStart = null;
 let sttSessionTimer = null;
+let notifications = [];
+let unreadNotifications = 0;
 
 const voiceClientId =
   window.crypto?.randomUUID?.() || `voice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -839,8 +848,11 @@ function renderAuthState() {
   authSubmit.textContent = signedIn ? "Signed in" : authMode === "login" ? "Log in" : "Create account";
   authSubmit.disabled = signedIn;
   authEmail.disabled = signedIn;
+  authDisplayName.disabled = signedIn;
   authPassword.disabled = signedIn;
   authLanguagePair.disabled = signedIn;
+  authDisplayNameField.hidden = authMode === "login";
+  authPassword.autocomplete = authMode === "login" ? "current-password" : "new-password";
 }
 
 function setAuthMode(mode) {
@@ -849,7 +861,7 @@ function setAuthMode(mode) {
   authStatus.textContent =
     mode === "login" ? "Enter your existing email and password." : "Create an account to save matches and language review.";
   document.querySelector("#home").scrollIntoView({ behavior: "smooth", block: "start" });
-  authEmail.focus();
+  (mode === "login" ? authEmail : authDisplayName).focus();
 }
 
 async function api(path, options = {}) {
@@ -1044,6 +1056,72 @@ async function requestNotificationPermission() {
   } catch {
     // Browser notification permission is optional.
   }
+}
+
+function renderNotifications() {
+  notificationCount.textContent = String(unreadNotifications);
+  notificationCount.hidden = unreadNotifications === 0;
+
+  notificationList.innerHTML = "";
+  if (!notifications.length) {
+    const empty = document.createElement("p");
+    empty.className = "notification-empty";
+    empty.textContent = "No notifications yet.";
+    notificationList.append(empty);
+    return;
+  }
+
+  notifications.slice(0, 12).forEach((item) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `notification-item ${item.category || "info"}`;
+    button.innerHTML = `
+      <span>${item.title}</span>
+      <small>${item.body}</small>
+    `;
+    button.addEventListener("click", () => {
+      notificationPanel.hidden = true;
+      notificationButton.setAttribute("aria-expanded", "false");
+      if (item.view) setView(item.view);
+    });
+    notificationList.append(button);
+  });
+}
+
+function addNotification({ category = "info", title = "New notification", body = "", view = null }) {
+  const notification = {
+    id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    category,
+    title,
+    body,
+    view,
+  };
+  notifications.unshift(notification);
+  notifications = notifications.slice(0, 30);
+  unreadNotifications += 1;
+  renderNotifications();
+
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification(title, { body });
+  }
+}
+
+function handleNotificationMessage(message) {
+  if (message.category === "warning" && message.userId !== currentUser?.id) return;
+  if (message.fromUserId && message.fromUserId === currentUser?.id) return;
+
+  const views = {
+    "game-request": "match",
+    warning: "profile",
+    voicemail: "communication",
+  };
+
+  addNotification({
+    category: message.category,
+    title: message.title || "New notification",
+    body: message.body || "",
+    view: views[message.category] || null,
+  });
 }
 
 function matchSourceLabel(match) {
@@ -1359,6 +1437,7 @@ function connectSocket(matchId) {
     if (message.type === "review:generated") renderReview(message.review);
     if (message.type?.startsWith("voice:")) handleVoiceSignal(message);
     if (message.type === "stt:subtitle") handleSubtitleSignal(message);
+    if (message.type === "notification") handleNotificationMessage(message);
     if (message.type === "queue:waiting") queuePrompt.textContent = "Waiting for another player to join.";
     if (message.type === "lobby:updated") refreshLobby();
   });
@@ -1369,9 +1448,15 @@ function connectSocket(matchId) {
 
 async function signInOrRegister() {
   const email = authEmail.value.trim();
+  const displayName = authDisplayName.value.trim();
   const password = authPassword.value;
   if (!email || !password) {
     authStatus.textContent = "Enter an email and password to continue.";
+    return;
+  }
+  if (authMode === "signup" && !displayName) {
+    authStatus.textContent = "Choose a display name shown to opponents.";
+    authDisplayName.focus();
     return;
   }
 
@@ -1384,12 +1469,14 @@ async function signInOrRegister() {
       method: "POST",
       body: {
         email,
+        displayName,
         password,
         languagePair: authLanguagePair.value,
       },
     });
     currentUser = data.user;
     authStatus.textContent = `Signed in as ${currentUser.displayName}. Continue to the dashboard or start a match.`;
+    authDisplayName.value = "";
     authPassword.value = "";
     renderAuthState();
     setView("dashboard");
@@ -1486,11 +1573,14 @@ function buildBoard() {
 
 function renderMatch(match) {
   if (!match) return;
+  clearInterval(queuePollInterval);
+  clearInterval(queueInterval);
   currentMatchId = match.id;
   updateRoomLink(match.id);
   updateMatchRoute(match.id);
   const matchEnded = match.status === "ended" || match.game?.gameOver;
   setMatchPaired(!matchEnded);
+  if (!matchEnded) timeoutNotifiedFor = null;
   boardOrientation = currentPlayerColor(match);
   if (match.game?.board) {
     pieces = piecesFromBoard(match.game.board);
@@ -1571,34 +1661,79 @@ async function applyPlannedMove() {
   moveIndex += 1;
 }
 
+async function finishMatch(result, options = {}) {
+  const review = options.review ?? true;
+  matchResult.textContent = result;
+  syncState.textContent = options.statusText || "Match ended";
+  generateReviewButton.textContent = "View AI Review";
+  window.clearInterval(clockInterval);
+  if (backendOnline && currentMatchId) {
+    try {
+      const data = await api(`/api/matches/${currentMatchId}/end`, {
+        method: "POST",
+        body: { result },
+      });
+      renderMatch(data.match);
+      await refreshStats();
+    } catch (error) {
+      syncState.textContent = error.message;
+      return;
+    }
+  }
+  if (review) await requestReview("the completed match");
+}
+
 async function startQueue(label = "Searching for a safe partner with matching goals.", liveQueue = false, overrides = {}) {
   clearInterval(queueInterval);
-  let seconds = 105;
-  let progress = 18;
+  clearInterval(queuePollInterval);
+  requestNotificationPermission();
+  let seconds = 25;
+  let progress = 22;
   queuePrompt.textContent = label;
   queueProgress.style.width = `${progress}%`;
   matchResult.textContent = "Queue started";
-  queueTime.textContent = "01:45";
+  queueTime.textContent = "00:25";
 
   if (backendOnline) {
     try {
       const pool = selectedPool();
       const gameType = activeGameType();
-      const data = await api(overrides.endpoint || (liveQueue ? "/api/matches/queue" : "/api/matches/start"), {
+      const endpoint = overrides.endpoint || (liveQueue ? "/api/matches/queue" : "/api/matches/start");
+      const body = {
+        mode: gameType.mode,
+        poolId: pool.id,
+        timeControl: pool.timeControl,
+        rated: gameType.rated || pool.rated,
+        partnerLanguage: partnerLanguage.value,
+        goal: conversationGoal.value,
+        ...(overrides.body || {}),
+      };
+      const data = await api(endpoint, {
         method: "POST",
-        body: {
-          mode: gameType.mode,
-          poolId: pool.id,
-          timeControl: pool.timeControl,
-          rated: gameType.rated || pool.rated,
-          partnerLanguage: partnerLanguage.value,
-          goal: conversationGoal.value,
-          ...(overrides.body || {}),
-        },
+        body,
       });
 
       if (data.waiting) {
-        queuePrompt.textContent = `Waiting for another player. ${data.queuedPlayers} player(s) in queue.`;
+        queuePrompt.textContent = `Waiting for another player. Rechecking live pool...`;
+        queuePollInterval = setInterval(async () => {
+          if (currentMatchId) {
+            clearInterval(queuePollInterval);
+            return;
+          }
+          try {
+            const next = await api(endpoint, { method: "POST", body });
+            if (!next.waiting) {
+              clearInterval(queuePollInterval);
+              clearInterval(queueInterval);
+              renderMatch(next.match);
+              matchResult.textContent = overrides.readyText || "Live opponent matched";
+              await refreshStats();
+              await refreshLobby();
+            }
+          } catch {
+            // Keep the visible queue running if a poll misses.
+          }
+        }, 1200);
       } else {
         renderMatch(data.match);
         matchResult.textContent = overrides.readyText || (liveQueue ? "Live opponent matched" : "Practice match ready");
@@ -1611,12 +1746,15 @@ async function startQueue(label = "Searching for a safe partner with matching go
   }
 
   queueInterval = setInterval(() => {
-    seconds = Math.max(0, seconds - 7);
-    progress = Math.min(100, progress + 9);
+    seconds = Math.max(0, seconds - 1);
+    progress = Math.min(95, progress + 3);
     queueTime.textContent = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
     queueProgress.style.width = `${progress}%`;
-    if (progress >= 100) clearInterval(queueInterval);
-  }, 500);
+    if (seconds <= 0) {
+      seconds = 25;
+      progress = 42;
+    }
+  }, 1000);
 }
 
 async function quickPairFromSelectedPool() {
@@ -2320,6 +2458,23 @@ loginButton.addEventListener("click", () => {
   setAuthMode("login");
 });
 
+notificationButton.addEventListener("click", async () => {
+  const willOpen = notificationPanel.hidden;
+  notificationPanel.hidden = !willOpen;
+  notificationButton.setAttribute("aria-expanded", String(willOpen));
+  if (willOpen) {
+    unreadNotifications = 0;
+    renderNotifications();
+    await requestNotificationPermission();
+  }
+});
+
+clearNotificationsButton.addEventListener("click", () => {
+  notifications = [];
+  unreadNotifications = 0;
+  renderNotifications();
+});
+
 continueToDashboardButton.addEventListener("click", () => {
   setView("dashboard");
 });
@@ -2356,24 +2511,9 @@ saveProfileButton.addEventListener("click", saveProfile);
 submitPeerFeedbackButton.addEventListener("click", submitPeerFeedback);
 saveCultureGuideButton.addEventListener("click", saveCultureGuide);
 
-resignMatchButton.addEventListener("click", async () => {
-  matchResult.textContent = "Resigned";
-  syncState.textContent = "Match ended";
-  generateReviewButton.textContent = "View AI Review";
-  if (backendOnline && currentMatchId) {
-    try {
-      const data = await api(`/api/matches/${currentMatchId}/end`, {
-        method: "POST",
-        body: { result: "Resigned" },
-      });
-      renderMatch(data.match);
-      await refreshStats();
-    } catch (error) {
-      syncState.textContent = error.message;
-    }
-  }
-  await requestReview("the completed match");
-});
+resignMatchButton.addEventListener("click", () => finishMatch("Resigned"));
+drawMatchButton.addEventListener("click", () => finishMatch("Draw agreed"));
+endMatchButton.addEventListener("click", () => finishMatch("Game ended"));
 
 partnerLanguage.addEventListener("change", () => {
   partnerName.textContent = `Mina K. (${partnerLanguage.value})`;

@@ -126,6 +126,112 @@ a {
   color: #8b611d;
 }
 
+.notification-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.notification-button:hover,
+.notification-button[aria-expanded="true"] {
+  border-color: rgba(125, 88, 216, 0.45);
+  background: var(--purple-soft);
+  color: var(--purple);
+}
+
+.notification-button strong {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border: 2px solid white;
+  border-radius: 999px;
+  background: var(--red);
+  color: white;
+  font-size: 0.68rem;
+  line-height: 16px;
+  text-align: center;
+}
+
+.notification-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: clamp(16px, 3vw, 36px);
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(460px, calc(100vh - 92px));
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  box-shadow: var(--shadow);
+}
+
+.notification-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.notification-list {
+  display: grid;
+  gap: 8px;
+  max-height: 390px;
+  overflow: auto;
+  padding: 10px;
+}
+
+.notification-item {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--purple);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  text-align: left;
+}
+
+.notification-item.warning {
+  border-left-color: var(--red);
+}
+
+.notification-item.voicemail {
+  border-left-color: var(--green);
+}
+
+.notification-item:hover {
+  background: var(--soft);
+}
+
+.notification-item span {
+  font-weight: 850;
+}
+
+.notification-item small,
+.notification-empty {
+  color: var(--muted);
+}
+
+.notification-empty {
+  margin: 8px;
+}
+
 select,
 input,
 textarea {
@@ -729,6 +835,11 @@ p {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+}
+
+.board-toolbar .button-row {
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .board-meta {
