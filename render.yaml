@@ -15,3 +15,7 @@ services:
         sync: false
       - key: UPSTASH_REDIS_REST_TOKEN
         sync: false
+      - key: MYMEMORY_EMAIL
+        sync: false
+      - key: MYMEMORY_ENDPOINT
+        value: https://api.mymemory.translated.net

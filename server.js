@@ -13,6 +13,8 @@ const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
 const upstashRedisRestUrl = process.env.UPSTASH_REDIS_REST_URL;
 const upstashRedisRestToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+const myMemoryEmail = process.env.MYMEMORY_EMAIL;
+const myMemoryEndpoint = (process.env.MYMEMORY_ENDPOINT || "https://api.mymemory.translated.net").replace(/\/$/, "");
 const redisEnabled = Boolean(upstashRedisRestUrl && upstashRedisRestToken);
 const pgPool = databaseUrl
   ? new Pool({
@@ -346,6 +348,68 @@ function readBody(req) {
       }
     });
   });
+}
+
+function normalizeTranslationLanguage(value, fallback = "en") {
+  const language = String(value || "").trim().toLowerCase();
+  const aliases = {
+    english: "en",
+    korean: "ko",
+    thai: "th",
+    japanese: "ja",
+    "en-us": "en",
+    "en-gb": "en",
+    "ko-kr": "ko",
+    "th-th": "th",
+    "ja-jp": "ja",
+  };
+  if (!language) return fallback;
+  return aliases[language] || language.split("-")[0] || fallback;
+}
+
+function truncateUtf8(text, maxBytes = 480) {
+  let phrase = String(text || "").trim();
+  while (Buffer.byteLength(phrase, "utf8") > maxBytes) {
+    phrase = phrase.slice(0, -1);
+  }
+  return phrase;
+}
+
+async function translateWithMyMemory({ text, targetLanguage, sourceLanguage }) {
+  const phrase = truncateUtf8(text);
+  if (!phrase) {
+    const error = new Error("Text is required.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const target = normalizeTranslationLanguage(targetLanguage, "ko");
+  const source = normalizeTranslationLanguage(sourceLanguage, "en");
+  const url = new URL("/get", myMemoryEndpoint);
+  url.searchParams.set("q", phrase);
+  url.searchParams.set("langpair", `${source}|${target}`);
+  if (myMemoryEmail) url.searchParams.set("de", myMemoryEmail);
+
+  const response = await fetch(url);
+
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    const error = new Error(data?.responseDetails || "MyMemory translation failed.");
+    error.statusCode = response.status;
+    throw error;
+  }
+  if (data?.responseStatus && Number(data.responseStatus) >= 400) {
+    const error = new Error(data.responseDetails || "MyMemory translation failed.");
+    error.statusCode = data.responseStatus;
+    throw error;
+  }
+
+  return {
+    text: data?.responseData?.translatedText || phrase,
+    to: target,
+    from: source,
+    match: data?.responseData?.match || null,
+  };
 }
 
 function getCookie(req, name) {
@@ -727,8 +791,26 @@ async function handleApi(req, res, pathname) {
       storage: pgPool ? "postgres" : "local-json",
       postgresProvider: databaseUrl?.includes("supabase") ? "supabase" : pgPool ? "postgres" : null,
       redis: redisEnabled ? "upstash" : "disabled",
+      translator: "mymemory",
+      translatorEmail: myMemoryEmail ? "configured" : "anonymous",
       now: new Date().toISOString(),
     });
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/translate") {
+    if (!requireUser(user, res)) return true;
+    const body = await readBody(req);
+    try {
+      const translation = await translateWithMyMemory({
+        text: body.text,
+        targetLanguage: body.targetLanguage,
+        sourceLanguage: body.sourceLanguage,
+      });
+      sendJson(res, 200, { translation });
+    } catch (error) {
+      sendJson(res, error.statusCode || 500, { error: error.message || "Translation failed." });
+    }
     return true;
   }
 

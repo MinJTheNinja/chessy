@@ -1878,6 +1878,25 @@ function subtitleTranslation(text) {
   return `Translation pending (${target}): ${text}`;
 }
 
+async function translateSubtitleText(text) {
+  if (!backendOnline || !currentUser) {
+    return { text: subtitleTranslation(text), provider: "fallback" };
+  }
+  try {
+    const data = await api("/api/translate", {
+      method: "POST",
+      body: {
+        text,
+        sourceLanguage: sttSourceLanguage.value || navigator.language || "en-US",
+        targetLanguage: subtitleTargetLanguage.value,
+      },
+    });
+    return { text: data.translation?.text || subtitleTranslation(text), provider: "mymemory" };
+  } catch (error) {
+    return { text: `Translation unavailable: ${text}`, provider: "fallback", error: error.message };
+  }
+}
+
 function subtitlePlaceholder(text) {
   const line = document.createElement("p");
   line.className = "subtitle-placeholder";
@@ -1928,16 +1947,25 @@ function appendRecognizedSpeech(text) {
   const phrase = String(text || "").trim();
   if (!phrase) return;
   const speaker = sttSpeakerName();
-  const translation = subtitleTranslation(phrase);
 
   appendSubtitleLine(originalSpeech, speaker, phrase);
-  appendSubtitleLine(translatedSpeech, speaker, translation);
+  const translatedLine = appendSubtitleLine(translatedSpeech, speaker, "Translating...");
   wordsRecognized.textContent = String(Number(wordsRecognized.textContent || 0) + phrase.split(/\s+/).filter(Boolean).length);
-  persistSubtitleLine(phrase, translation);
 
   const latency = 80 + Math.floor(Math.random() * 80);
   latencyText.textContent = `${latency} ms`;
   dashboardLatency.textContent = `${latency} ms`;
+
+  translateSubtitleText(phrase).then((result) => {
+    translatedLine.replaceChildren();
+    const name = document.createElement("strong");
+    name.textContent = `${speaker}:`;
+    translatedLine.append(name, document.createTextNode(` ${result.text}`));
+    persistSubtitleLine(phrase, result.text);
+    if (result.provider === "mymemory") {
+      sttStatusText.textContent = "Translated";
+    }
+  });
 }
 
 function updateInterimSpeech(text) {
