@@ -626,6 +626,13 @@ p {
   margin-bottom: 20px;
 }
 
+.view[data-view="match"] .view-header,
+.view[data-view="match"] .match-layout {
+  width: min(100%, 960px);
+  margin-right: auto;
+  margin-left: auto;
+}
+
 .button-row {
   flex-wrap: wrap;
   gap: 10px;
@@ -729,51 +736,61 @@ p {
 .lobby-panel {
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  gap: 16px;
-  max-width: 860px;
+  gap: 14px;
+  width: 100%;
+  max-width: 960px;
+  justify-self: center;
 }
 
 .play-choice-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7f1e8;
 }
 
 .play-choice-card {
   display: grid;
-  gap: 10px;
-  min-height: 156px;
-  padding: 18px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fbfbfb;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px 14px;
+  min-height: 70px;
+  padding: 12px 18px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
   color: var(--ink);
   text-align: left;
-  box-shadow: 0 8px 20px rgba(26, 26, 46, 0.05);
+  box-shadow: none;
+}
+
+.play-choice-card:last-child {
+  border-right: 0;
+}
+
+.play-choice-card .label {
+  grid-row: 1 / span 2;
+  min-width: 76px;
 }
 
 .play-choice-card strong {
-  font-size: 1.45rem;
+  font-size: 1.05rem;
 }
 
 .play-choice-card small {
   color: var(--muted);
-  font-size: 0.95rem;
-  line-height: 1.45;
+  font-size: 0.86rem;
+  line-height: 1.25;
 }
 
 .play-choice-card:hover {
-  border-color: rgba(184, 141, 11, 0.46);
-  transform: translateY(-1px);
-}
-
-.play-choice-card.primary-choice {
-  background: var(--dark);
-  color: white;
-}
-
-.play-choice-card.primary-choice small {
-  color: rgba(255, 255, 255, 0.72);
+  background: #fffaf1;
+  color: var(--dark);
+  transform: none;
 }
 
 .quick-pair-composer,
@@ -863,23 +880,30 @@ p {
 
 .queue-box {
   display: grid;
-  gap: 10px;
-  padding: 18px;
+  gap: 12px;
+  padding: 16px 18px;
   border-radius: 8px;
-  background: var(--dark);
-  border: 1px solid rgba(26, 26, 46, 0.22);
-  color: white;
-  box-shadow: 0 14px 30px rgba(26, 26, 46, 0.12);
+  background: #fffdf8;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  box-shadow: 0 10px 24px rgba(26, 26, 46, 0.06);
+}
+
+.queue-status-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .queue-box strong {
-  font-size: clamp(1.55rem, 3vw, 2.15rem);
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
   line-height: 1;
 }
 
 .queue-box .label,
 .queue-box p {
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--muted);
 }
 
 .queue-box p {

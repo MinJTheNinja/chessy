@@ -160,7 +160,7 @@
             <div class="match-layout" id="matchLayout">
               <aside class="panel lobby-panel">
                 <div class="play-choice-grid" aria-label="Play options">
-                  <button class="play-choice-card primary-choice" id="findMatch" type="button">
+                  <button class="play-choice-card" id="findMatch" type="button">
                     <span class="label">Fastest</span>
                     <strong>Quick pair</strong>
                     <small>Start matching immediately with default settings.</small>
@@ -208,7 +208,10 @@
                   </div>
                 </div>
                 <div class="queue-box">
-                  <span class="label">Match status</span>
+                  <div class="queue-status-head">
+                    <span class="label">Match status</span>
+                    <button class="button secondary small" id="cancelMatchSearch" type="button" hidden>Cancel</button>
+                  </div>
                   <strong id="queueTime">Choose mode</strong>
                   <div class="progress-track"><span id="queueProgress"></span></div>
                   <p id="queuePrompt">Choose how you want to play.</p>

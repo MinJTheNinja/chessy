@@ -4,6 +4,7 @@ const queueTime = document.querySelector("#queueTime");
 const queueProgress = document.querySelector("#queueProgress");
 const queuePrompt = document.querySelector("#queuePrompt");
 const findMatchButton = document.querySelector("#findMatch");
+const cancelMatchSearchButton = document.querySelector("#cancelMatchSearch");
 const showCreateSeekButton = document.querySelector("#showCreateSeek");
 const showFriendRoomButton = document.querySelector("#showFriendRoom");
 const seekComposer = document.querySelector("#seekComposer");
@@ -464,6 +465,7 @@ function setMatchPaired(isPaired) {
   findMatchButton.hidden = isPaired;
   showCreateSeekButton.hidden = isPaired;
   showFriendRoomButton.hidden = isPaired;
+  cancelMatchSearchButton.hidden = true;
   if (isPaired) seekComposer.hidden = true;
   document.querySelector("#matchTitle").textContent = isPaired ? "Live match" : "Find a game";
 }
@@ -1747,6 +1749,7 @@ async function startQueue(label = "Searching for a safe partner with matching go
   requestNotificationPermission();
   let seconds = 25;
   let progress = 22;
+  cancelMatchSearchButton.hidden = false;
   queuePrompt.textContent = label;
   queueProgress.style.width = `${progress}%`;
   matchResult.textContent = "Searching";
@@ -1815,6 +1818,16 @@ async function startQueue(label = "Searching for a safe partner with matching go
   }, 1000);
 }
 
+function cancelMatchSearch() {
+  clearInterval(queueInterval);
+  clearInterval(queuePollInterval);
+  cancelMatchSearchButton.hidden = true;
+  queueTime.textContent = "Choose mode";
+  queueProgress.style.width = "0%";
+  queuePrompt.textContent = "Search canceled. Choose how you want to play.";
+  matchResult.textContent = "Canceled";
+}
+
 async function quickPairFromSelectedPool() {
   const pool = selectedPool();
   seekComposer.hidden = true;
@@ -1874,6 +1887,7 @@ async function createOpenSeek() {
       return;
     }
     queuePrompt.textContent = `Game created. Waiting for ${data.seek.timeControl}, ${data.seek.partnerLanguage}, ${data.seek.goal}.`;
+    cancelMatchSearchButton.hidden = false;
     await refreshLobby();
   } catch (error) {
     queuePrompt.textContent = error.message;
@@ -2546,6 +2560,7 @@ continueToDashboardButton.addEventListener("click", () => {
 });
 
 findMatchButton.addEventListener("click", quickPairFromSelectedPool);
+cancelMatchSearchButton.addEventListener("click", cancelMatchSearch);
 showCreateSeekButton.addEventListener("click", () => {
   seekComposer.hidden = false;
   queuePrompt.textContent = "Choose settings, then create a game.";
