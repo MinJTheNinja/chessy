@@ -1543,6 +1543,7 @@ async function signOut() {
     currentUser = null;
     clearProfile();
     renderAuthState();
+    setView("home");
     return;
   }
 
