@@ -1030,52 +1030,12 @@ p {
   font-size: 0.9rem;
 }
 
-.clock-panel {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.clock-card {
-  display: grid;
-  gap: 4px;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fbfbfb;
-}
-
-.clock-card span {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 850;
-  text-transform: uppercase;
-}
-
-.clock-card strong {
-  color: var(--ink);
-  font-size: 1.55rem;
-  line-height: 1;
-}
-
-.clock-card.active {
-  border-color: rgba(125, 88, 216, 0.42);
-  background: var(--purple-soft);
-}
-
-.clock-card.low-time strong {
-  color: var(--red);
-}
-
 .match-voice-bar {
   display: none;
-  grid-template-columns: minmax(180px, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fbfbfb;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: #24221f;
 }
 
 .match-layout.paired .match-voice-bar {
@@ -1109,8 +1069,9 @@ p {
 }
 
 .match-voice-bar .voice-status {
-  grid-column: 1 / -1;
   margin: 0;
+  color: #b8b2aa;
+  font-size: 0.84rem;
 }
 
 .match-play-grid {
@@ -1121,7 +1082,7 @@ p {
 }
 
 .match-layout.paired .match-play-grid {
-  grid-template-columns: minmax(360px, 1fr) minmax(280px, 360px);
+  grid-template-columns: minmax(420px, 1fr) minmax(340px, 430px);
 }
 
 .board-stage {
@@ -1130,19 +1091,128 @@ p {
   min-width: 0;
 }
 
-.match-subtitle-panel {
+.match-game-panel {
   display: none;
   align-content: start;
-  gap: 12px;
   min-width: 0;
-  padding: 14px;
-  border: 1px solid var(--line);
+  overflow: hidden;
+  border: 1px solid rgba(26, 26, 46, 0.14);
   border-radius: 8px;
-  background: #fbfbfb;
+  background: #1f1d1a;
+  box-shadow: 0 16px 34px rgba(26, 26, 46, 0.16);
 }
 
-.match-layout.paired .match-subtitle-panel {
+.match-layout.paired .match-game-panel {
   display: grid;
+}
+
+.player-clock-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  background: #2a2723;
+  color: #ded9d0;
+}
+
+.player-clock-card strong {
+  color: #f3f0e9;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: clamp(2.3rem, 5vw, 3.5rem);
+  font-weight: 520;
+  line-height: 0.95;
+}
+
+.player-clock-card div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.player-clock-card span:not(.online-dot) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-clock-card small {
+  margin-left: auto;
+  color: #9c968c;
+  font-size: 0.8rem;
+}
+
+.player-clock-card.active {
+  background: #332f29;
+}
+
+.player-clock-card.low-time strong {
+  color: #ff7b68;
+}
+
+.online-dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #5ca51f;
+}
+
+.notation-caption-panel {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-height: 260px;
+  padding: 16px;
+  background: #25231f;
+  color: #eee8dc;
+}
+
+.notation-caption-panel .label,
+.notation-caption-panel h4,
+.notation-caption-panel label {
+  color: #aaa39a;
+}
+
+.notation-caption-panel h3 {
+  color: #f3f0e9;
+}
+
+.notation-caption-panel select {
+  border-color: #4a453d;
+  background: #1f1d1a;
+  color: #f3f0e9;
+}
+
+.match-action-strip {
+  display: flex;
+  justify-content: center;
+  gap: 34px;
+  padding: 22px 16px;
+  background: #25231f;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.icon-action {
+  display: grid;
+  width: 48px;
+  min-height: 42px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #9b9690;
+  font-size: 1.45rem;
+  font-weight: 900;
+}
+
+.icon-action:hover {
+  background: #34312b;
+  color: #f3f0e9;
+}
+
+.icon-action.danger:hover {
+  color: #ff7b68;
 }
 
 .match-subtitle-header {
@@ -1183,7 +1253,7 @@ p {
   display: grid;
   gap: 2px;
   min-width: 0;
-  color: var(--muted);
+  color: #aaa39a;
   font-size: 0.75rem;
   font-weight: 820;
   text-transform: uppercase;
@@ -1191,7 +1261,7 @@ p {
 
 .match-stt-meta strong {
   overflow: hidden;
-  color: var(--ink);
+  color: #f3f0e9;
   font-size: 0.92rem;
   text-overflow: ellipsis;
   text-transform: none;
@@ -1205,7 +1275,7 @@ p {
 
 .match-subtitle-scroll h4 {
   margin-bottom: 4px;
-  color: var(--muted);
+  color: #aaa39a;
   font-size: 0.78rem;
   text-transform: uppercase;
 }
@@ -1218,6 +1288,7 @@ p {
 
 .subtitle-lines.compact p {
   padding: 8px 0;
+  color: #e7e1d8;
   font-size: 0.9rem;
 }
 

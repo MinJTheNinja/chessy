@@ -10,10 +10,8 @@ const showFriendRoomButton = document.querySelector("#showFriendRoom");
 const seekComposer = document.querySelector("#seekComposer");
 const friendRoomDialog = document.querySelector("#friendRoomDialog");
 const closeFriendRoomButton = document.querySelector("#closeFriendRoom");
-const simulateMoveButton = document.querySelector("#simulateMove");
 const resignMatchButton = document.querySelector("#resignMatch");
 const drawMatchButton = document.querySelector("#drawMatch");
-const endMatchButton = document.querySelector("#endMatch");
 const matchResult = document.querySelector("#matchResult span");
 const matchLayout = document.querySelector("#matchLayout");
 const partnerLanguage = document.querySelector("#partnerLanguage");
@@ -21,6 +19,7 @@ const partnerName = document.querySelector("#partnerName");
 const partnerId = document.querySelector("#partnerId");
 const boardPartnerName = document.querySelector("#boardPartnerName");
 const boardPartnerId = document.querySelector("#boardPartnerId");
+const selfPlayerName = document.querySelector("#selfPlayerName");
 const voiceRing = document.querySelector("#voiceRing");
 const startVoiceCallButton = document.querySelector("#startVoiceCall");
 const endVoiceCallButton = document.querySelector("#endVoiceCall");
@@ -304,6 +303,7 @@ let currentManner = 42.8;
 let backendOnline = false;
 let currentUser = null;
 let currentMatchId = null;
+let drawOfferFromOpponent = false;
 let selectedSquare = null;
 let boardOrientation = "white";
 let socket = null;
@@ -1495,6 +1495,7 @@ function connectSocket(matchId) {
     if (message.type === "review:generated") renderReview(message.review);
     if (message.type?.startsWith("voice:")) handleVoiceSignal(message);
     if (message.type === "stt:subtitle") handleSubtitleSignal(message);
+    if (message.type === "draw:offer") handleDrawOffer(message);
     if (message.type === "notification") handleNotificationMessage(message);
     if (message.type === "queue:waiting") queuePrompt.textContent = "Waiting for another player to join.";
     if (message.type === "lobby:updated") refreshLobby();
@@ -1636,6 +1637,7 @@ function renderMatch(match) {
   clearInterval(queuePollInterval);
   clearInterval(queueInterval);
   currentMatchId = match.id;
+  drawOfferFromOpponent = false;
   updateRoomLink(match.id);
   updateMatchRoute(match.id);
   const matchEnded = match.status === "ended" || match.game?.gameOver;
@@ -1652,6 +1654,7 @@ function renderMatch(match) {
   partnerId.textContent = shortPlayerId(opponent);
   boardPartnerName.textContent = opponent ? opponent.displayName : "Waiting";
   boardPartnerId.textContent = shortPlayerId(opponent);
+  if (selfPlayerName) selfPlayerName.textContent = currentUser?.displayName || "You";
   voiceRing.textContent = initials(opponent?.displayName || "Mina K.");
   matchResult.textContent = match.result || "In progress";
   syncState.textContent = match.game?.gameOver ? "Game over" : `${match.game?.turn || "white"} to move`;
@@ -1741,6 +1744,28 @@ async function finishMatch(result, options = {}) {
     }
   }
   if (review) await requestReview("the completed match");
+}
+
+function offerDraw() {
+  if (!currentMatchId) {
+    matchResult.textContent = "Start a game first";
+    return;
+  }
+  if (drawOfferFromOpponent) {
+    drawOfferFromOpponent = false;
+    finishMatch("Draw agreed", { statusText: "Draw accepted" });
+    return;
+  }
+  matchResult.textContent = "Draw offered";
+  syncState.textContent = "Draw offer sent. Waiting for opponent.";
+  sendSocketMessage({ type: "draw:offer", matchId: currentMatchId, from: voiceClientId });
+}
+
+function handleDrawOffer(message) {
+  if (!message.matchId || message.matchId !== currentMatchId || message.from === voiceClientId) return;
+  drawOfferFromOpponent = true;
+  matchResult.textContent = "Draw offered by opponent";
+  syncState.textContent = "Opponent offered a draw. Press 1/2 to accept.";
 }
 
 async function startQueue(label = "Searching for a safe partner with matching goals.", liveQueue = false, overrides = {}) {
@@ -2153,7 +2178,7 @@ function setSttButtonText(text) {
 function setSttStatus(active, detail = "") {
   sttListening = active;
   sttPill.textContent = active ? "Captions listening" : "Captions paused";
-  sttStatusText.textContent = detail || (active ? "Listening" : "Paused");
+  if (sttStatusText) sttStatusText.textContent = detail || (active ? "Listening" : "Paused");
   if (matchSttStatus) matchSttStatus.textContent = detail || (active ? "Listening" : "Paused");
   setSttButtonText(active ? "Stop captions" : "Start captions");
 }
@@ -2283,7 +2308,7 @@ function appendFinalSubtitle({ speaker, text, sourceLanguage, persist = false })
   if (matchWordsRecognized) matchWordsRecognized.textContent = String(nextWords);
 
   const latency = 80 + Math.floor(Math.random() * 80);
-  latencyText.textContent = `${latency} ms`;
+  if (latencyText) latencyText.textContent = `${latency} ms`;
   dashboardLatency.textContent = `${latency} ms`;
 
   translateSubtitleText(phrase, { sourceLanguage }).then((result) => {
@@ -2295,7 +2320,7 @@ function appendFinalSubtitle({ speaker, text, sourceLanguage, persist = false })
     });
     if (persist) persistSubtitleLine(phrase, result.text, speaker);
     if (result.provider === "mymemory") {
-      sttStatusText.textContent = "Translated";
+      if (sttStatusText) sttStatusText.textContent = "Translated";
       if (matchSttStatus) matchSttStatus.textContent = "Translated";
     }
   });
@@ -2571,7 +2596,6 @@ showFriendRoomButton.addEventListener("click", () => {
   privateChallengeInput.focus();
 });
 closeFriendRoomButton.addEventListener("click", () => friendRoomDialog.close());
-simulateMoveButton.addEventListener("click", applyPlannedMove);
 createSeekButton.addEventListener("click", createOpenSeek);
 refreshLobbyButton.addEventListener("click", refreshLobby);
 createPrivateChallengeButton.addEventListener("click", createPrivateChallenge);
@@ -2599,8 +2623,7 @@ submitPeerFeedbackButton.addEventListener("click", submitPeerFeedback);
 saveCultureGuideButton.addEventListener("click", saveCultureGuide);
 
 resignMatchButton.addEventListener("click", () => finishMatch("Resigned"));
-drawMatchButton.addEventListener("click", () => finishMatch("Draw agreed"));
-endMatchButton.addEventListener("click", () => finishMatch("Game ended"));
+drawMatchButton.addEventListener("click", offerDraw);
 
 partnerLanguage.addEventListener("change", () => {
   partnerName.textContent = `Mina K. (${partnerLanguage.value})`;

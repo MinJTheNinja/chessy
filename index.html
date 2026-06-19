@@ -120,7 +120,7 @@
               <article class="route-card" data-view-link="communication">
                 <span>03</span>
                 <h3>Messages</h3>
-                <p>Open subtitles, voice letters, and communication tools.</p>
+                <p>Read and send voice letters from your matches.</p>
               </article>
               <article class="route-card" data-view-link="profile">
                 <span>04</span>
@@ -267,35 +267,6 @@
                     <strong id="syncState">Live chess ready</strong>
                     <p class="board-meta" id="timeControlBadge">No active clock yet</p>
                   </div>
-                  <div class="button-row">
-                    <button class="button secondary" id="simulateMove">Make Chess Move</button>
-                    <button class="button secondary" id="drawMatch">Draw</button>
-                    <button class="button secondary" id="endMatch">End Game</button>
-                    <button class="button danger" id="resignMatch">Resign Match</button>
-                  </div>
-                </div>
-                <div class="clock-panel" aria-label="Match timers">
-                  <article class="clock-card" id="whiteClockCard">
-                    <span>White</span>
-                    <strong id="whiteClock">--:--</strong>
-                  </article>
-                  <article class="clock-card" id="blackClockCard">
-                    <span>Black</span>
-                    <strong id="blackClock">--:--</strong>
-                  </article>
-                </div>
-                <div class="match-voice-bar">
-                  <div class="match-peer-chip">
-                    <span>Opponent</span>
-                    <strong id="boardPartnerName">Waiting</strong>
-                    <small>ID <span id="boardPartnerId">waiting</span></small>
-                  </div>
-                  <div class="match-voice-actions">
-                    <button class="button secondary" id="startVoiceCall">Start mic</button>
-                    <button class="button danger" id="endVoiceCall" disabled>End voice</button>
-                  </div>
-                  <p class="voice-status" data-voice-status>Start a matched game, then turn on your mic.</p>
-                  <audio id="remoteVoiceAudio" autoplay playsinline></audio>
                 </div>
                 <div class="match-play-grid">
                   <div class="board-stage">
@@ -306,49 +277,82 @@
                       <button class="button dark small" id="generateReview" data-view-link="review">Generate AI Review</button>
                     </div>
                   </div>
-                  <aside class="match-subtitle-panel" aria-label="Live captions during chess match">
-                    <div class="match-subtitle-header">
+                  <aside class="match-game-panel" aria-label="Match information and live captions">
+                    <section class="player-clock-card opponent-clock-card" id="blackClockCard">
+                      <strong id="blackClock">--:--</strong>
                       <div>
-                        <span class="label">Live captions</span>
-                        <h3>Captions while playing</h3>
+                        <span class="online-dot"></span>
+                        <span id="boardPartnerName">Waiting</span>
+                        <small>ID <span id="boardPartnerId">waiting</span></small>
                       </div>
-                      <button class="button dark small" id="matchActivateStt" type="button">Start captions</button>
-                    </div>
-                    <div class="match-stt-controls">
-                      <label>
-                        Source
-                        <select id="matchSttSourceLanguage">
-                          <option value="">Browser Default</option>
-                          <option value="en-US">English</option>
-                          <option value="ko-KR">Korean</option>
-                          <option value="th-TH">Thai</option>
-                          <option value="ja-JP">Japanese</option>
-                        </select>
-                      </label>
-                      <label>
-                        Translate
-                        <select id="matchSubtitleTargetLanguage">
-                          <option>Korean</option>
-                          <option>English</option>
-                          <option>Thai</option>
-                          <option>Japanese</option>
-                        </select>
-                      </label>
-                    </div>
-                    <div class="match-stt-meta">
-                      <span>Status <strong id="matchSttStatus">Paused</strong></span>
-                      <span>Time <strong id="matchSessionDuration">00:00</strong></span>
-                      <span>Words <strong id="matchWordsRecognized">0</strong></span>
-                    </div>
-                    <div class="match-subtitle-scroll">
+                    </section>
+
+                    <section class="notation-caption-panel" aria-label="Live captions during chess match">
+                      <div class="match-subtitle-header">
+                        <div>
+                          <span class="label">Live captions</span>
+                          <h3>Captions while playing</h3>
+                        </div>
+                        <button class="button dark small" id="matchActivateStt" type="button">Start captions</button>
+                      </div>
+                      <div class="match-stt-controls">
+                        <label>
+                          Source
+                          <select id="matchSttSourceLanguage">
+                            <option value="">Browser Default</option>
+                            <option value="en-US">English</option>
+                            <option value="ko-KR">Korean</option>
+                            <option value="th-TH">Thai</option>
+                            <option value="ja-JP">Japanese</option>
+                          </select>
+                        </label>
+                        <label>
+                          Translate
+                          <select id="matchSubtitleTargetLanguage">
+                            <option>Korean</option>
+                            <option>English</option>
+                            <option>Thai</option>
+                            <option>Japanese</option>
+                          </select>
+                        </label>
+                      </div>
+                      <div class="match-stt-meta">
+                        <span>Status <strong id="matchSttStatus">Paused</strong></span>
+                        <span>Time <strong id="matchSessionDuration">00:00</strong></span>
+                        <span>Words <strong id="matchWordsRecognized">0</strong></span>
+                      </div>
+                      <div class="match-subtitle-scroll">
+                        <div>
+                          <h4>Original</h4>
+                          <div class="subtitle-lines compact" id="matchOriginalSpeech"></div>
+                        </div>
+                        <div>
+                          <h4>Translation</h4>
+                          <div class="subtitle-lines compact" id="matchTranslatedSpeech"></div>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section class="match-action-strip" aria-label="Match actions">
+                      <button class="icon-action" id="drawMatch" type="button" title="Offer draw" aria-label="Offer draw">1/2</button>
+                      <button class="icon-action danger" id="resignMatch" type="button" title="Resign" aria-label="Resign">⚑</button>
+                    </section>
+
+                    <section class="player-clock-card self-clock-card" id="whiteClockCard">
                       <div>
-                        <h4>Original</h4>
-                        <div class="subtitle-lines compact" id="matchOriginalSpeech"></div>
+                        <span class="online-dot"></span>
+                        <span id="selfPlayerName">You</span>
                       </div>
-                      <div>
-                        <h4>Translation</h4>
-                        <div class="subtitle-lines compact" id="matchTranslatedSpeech"></div>
+                      <strong id="whiteClock">--:--</strong>
+                    </section>
+
+                    <div class="match-voice-bar">
+                      <div class="match-voice-actions">
+                        <button class="button secondary small" id="startVoiceCall">Start mic</button>
+                        <button class="button danger small" id="endVoiceCall" disabled>End voice</button>
                       </div>
+                      <p class="voice-status" data-voice-status>Start a matched game, then turn on your mic.</p>
+                      <audio id="remoteVoiceAudio" autoplay playsinline></audio>
                     </div>
                   </aside>
                 </div>
@@ -511,24 +515,13 @@
           <section class="view" data-view="communication" aria-labelledby="communicationTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">Communication Hub</span>
-                <h2 id="communicationTitle">Live speech and voice letters</h2>
+                <span class="eyebrow">Messages</span>
+                <h2 id="communicationTitle">Voice letters</h2>
               </div>
               <button class="button primary" id="composeVoiceLetter">Compose Voice Letter</button>
             </div>
 
             <div class="communication-grid">
-              <article class="wire-card">
-                <h3>Live Speech and Translation</h3>
-                <p>Real-time processing</p>
-                <div class="metric-row">
-                  <span>Caption status <strong id="sttStatusText">Paused</strong></span>
-                  <span>Translation <strong>EN to KO</strong></span>
-                  <span>Latency <strong id="latencyText">42 ms</strong></span>
-                </div>
-                <button class="button dark full" data-view-link="stt">View live captions</button>
-              </article>
-
               <article class="wire-card">
                 <h3>Voice Letter Inbox</h3>
                 <p>Unread messages from your matches</p>
@@ -557,18 +550,16 @@
               </article>
             </div>
 
-            <h3>Recent Communication Activity</h3>
+            <h3>Voice letter activity</h3>
             <div class="status-strip">
               <article><span class="label">Messages received</span><strong>12</strong><p>Last 7 days</p></article>
               <article><span class="label">Voice letters sent</span><strong>5</strong><p>Last 7 days</p></article>
-              <article><span class="label">Active subtitle sessions</span><strong>3</strong><p>Currently live</p></article>
-              <article><span class="label">Avg. translation latency</span><strong>38 ms</strong><p>This session</p></article>
+              <article><span class="label">Unread</span><strong>3</strong><p>Needs reply</p></article>
             </div>
 
-            <h3>Notification Summary</h3>
+            <h3>Recent letters</h3>
             <div class="notice-list" id="noticeList">
               <p>New voice letter from Alex B. <span>2 min ago</span></p>
-              <p>Caption session ended, subtitles saved. <span>34 min ago</span></p>
               <p>Maria K. replied to your voice letter. <span>1 hr ago</span></p>
             </div>
           </section>
