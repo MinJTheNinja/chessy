@@ -864,14 +864,26 @@ p {
 .queue-box {
   display: grid;
   gap: 10px;
-  padding: 14px;
+  padding: 18px;
   border-radius: 8px;
-  background: #fafafa;
-  border: 1px solid var(--line);
+  background: var(--dark);
+  border: 1px solid rgba(26, 26, 46, 0.22);
+  color: white;
+  box-shadow: 0 14px 30px rgba(26, 26, 46, 0.12);
 }
 
 .queue-box strong {
-  font-size: 1.8rem;
+  font-size: clamp(1.55rem, 3vw, 2.15rem);
+  line-height: 1;
+}
+
+.queue-box .label,
+.queue-box p {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.queue-box p {
+  margin-bottom: 0;
 }
 
 .progress-track {

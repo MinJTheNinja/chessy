@@ -1141,10 +1141,10 @@ function handleNotificationMessage(message) {
 function matchSourceLabel(match) {
   const source = match?.pairingType || "practice";
   const labels = {
-    "quick-pool": "Quick pool",
-    "open-seek": "Open seek",
-    "language-pool": "Language pool",
-    "private-challenge": "Private challenge",
+    "quick-pool": "Quick pair",
+    "open-seek": "Created game",
+    "language-pool": "Language match",
+    "private-challenge": "Friend room",
     "guest-practice": "Practice game",
     practice: "Practice game",
   };
@@ -1189,11 +1189,11 @@ function renderLobby(lobby = {}) {
     empty.className = "open-seek-card empty-state";
 
     const title = document.createElement("strong");
-    title.textContent = backendOnline ? "No live games waiting" : "Live lobby unavailable";
+    title.textContent = backendOnline ? "No players waiting" : "Live lobby unavailable";
 
     const text = document.createElement("p");
     text.textContent = backendOnline
-      ? "Create an open seek or ask your friend to create one. Their game will appear here after refresh."
+      ? "Create a game or ask a friend to create one. Matching games will appear here."
       : "Start the backend to see real players instead of demo content.";
 
     empty.append(title, text);
@@ -1331,7 +1331,7 @@ function renderAdminOverview(data) {
       const detail = document.createElement("div");
       detail.className = "admin-disclosure-body";
       detail.innerHTML = `
-        <p>${user.role} - ${Number(user.mannerTemperature ?? 0).toFixed(1)} C manner temperature</p>
+        <p>${user.role} - ${Number(user.mannerTemperature ?? 0).toFixed(1)} fair play score</p>
         <p>${warningCount} warning(s)</p>
       `;
       const button = document.createElement("button");
@@ -1749,7 +1749,7 @@ async function startQueue(label = "Searching for a safe partner with matching go
   let progress = 22;
   queuePrompt.textContent = label;
   queueProgress.style.width = `${progress}%`;
-  matchResult.textContent = "Queue started";
+  matchResult.textContent = "Searching";
   queueTime.textContent = "00:25";
 
   if (backendOnline) {
@@ -1772,7 +1772,7 @@ async function startQueue(label = "Searching for a safe partner with matching go
       });
 
       if (data.waiting) {
-        queuePrompt.textContent = `Waiting for another player. Rechecking live pool...`;
+        queuePrompt.textContent = "Waiting for a matching player.";
         queuePollInterval = setInterval(async () => {
           if (currentMatchId) {
             clearInterval(queuePollInterval);
@@ -1784,7 +1784,7 @@ async function startQueue(label = "Searching for a safe partner with matching go
               clearInterval(queuePollInterval);
               clearInterval(queueInterval);
               renderMatch(next.match);
-              matchResult.textContent = overrides.readyText || "Live opponent matched";
+              matchResult.textContent = overrides.readyText || "Opponent matched";
               await refreshStats();
               await refreshLobby();
             }
@@ -1794,7 +1794,7 @@ async function startQueue(label = "Searching for a safe partner with matching go
         }, 1200);
       } else {
         renderMatch(data.match);
-        matchResult.textContent = overrides.readyText || (liveQueue ? "Live opponent matched" : "Practice match ready");
+        matchResult.textContent = overrides.readyText || (liveQueue ? "Opponent matched" : "Game ready");
       }
       await refreshStats();
       await refreshLobby();
@@ -1818,9 +1818,9 @@ async function startQueue(label = "Searching for a safe partner with matching go
 async function quickPairFromSelectedPool() {
   const pool = selectedPool();
   seekComposer.hidden = true;
-  await startQueue(`Quick pairing now. Searching ${pool.label} ${pool.name}.`, false, {
+  await startQueue(`Quick pair is searching ${pool.label} ${pool.name}.`, false, {
     endpoint: "/api/matches/quick-pair",
-    readyText: "Quick pool match ready",
+    readyText: "Quick pair matched",
     body: {
       pairingType: "quick-pool",
       poolId: pool.id,
@@ -1832,7 +1832,7 @@ async function quickPairFromSelectedPool() {
 
 async function acceptSeek(seek) {
   if (!backendOnline) {
-    queuePrompt.textContent = "Start the backend to join live open games.";
+    queuePrompt.textContent = "Start the backend to join live games.";
     return;
   }
 
@@ -1840,7 +1840,7 @@ async function acceptSeek(seek) {
     queuePrompt.textContent = `Joining ${seek.displayName}'s ${seek.timeControl} game.`;
     const data = await api(`/api/matches/seeks/${seek.id}/accept`, { method: "POST" });
     renderMatch(data.match);
-    matchResult.textContent = "Open seek joined";
+    matchResult.textContent = "Game joined";
     await refreshStats();
     await refreshLobby();
   } catch (error) {
@@ -1851,7 +1851,7 @@ async function acceptSeek(seek) {
 async function createOpenSeek() {
   const gameType = activeGameType();
   if (!backendOnline) {
-    queuePrompt.textContent = "Start the backend and sign in to post a real open seek.";
+    queuePrompt.textContent = "Start the backend and sign in to create a live game.";
     renderLobby({ openSeeks: [], openSeeksTotal: 0, queuedPlayers: 0 });
     return;
   }
@@ -1868,12 +1868,12 @@ async function createOpenSeek() {
     });
     if (data.match) {
       renderMatch(data.match);
-      matchResult.textContent = "Matched by seek settings";
+      matchResult.textContent = "Matched by settings";
       await refreshStats();
       await refreshLobby();
       return;
     }
-    queuePrompt.textContent = `Seek posted. Matching players with ${data.seek.timeControl}, ${data.seek.partnerLanguage}, and a similar goal.`;
+    queuePrompt.textContent = `Game created. Waiting for ${data.seek.timeControl}, ${data.seek.partnerLanguage}, ${data.seek.goal}.`;
     await refreshLobby();
   } catch (error) {
     queuePrompt.textContent = error.message;
@@ -2138,10 +2138,10 @@ function setSttButtonText(text) {
 
 function setSttStatus(active, detail = "") {
   sttListening = active;
-  sttPill.textContent = active ? "STT Listening" : "STT Paused";
+  sttPill.textContent = active ? "Captions listening" : "Captions paused";
   sttStatusText.textContent = detail || (active ? "Listening" : "Paused");
   if (matchSttStatus) matchSttStatus.textContent = detail || (active ? "Listening" : "Paused");
-  setSttButtonText(active ? "Stop STT" : "Activate STT");
+  setSttButtonText(active ? "Stop captions" : "Start captions");
 }
 
 function updateSessionDuration() {
@@ -2203,10 +2203,10 @@ function subtitlePlaceholder(text) {
 
 function resetSubtitlePlaceholders() {
   originalSubtitleContainers().forEach((container) => {
-    container.replaceChildren(subtitlePlaceholder("Start STT, allow microphone access, then speak."));
+    container.replaceChildren(subtitlePlaceholder("Start captions, allow microphone access, then speak."));
   });
   translatedSubtitleContainers().forEach((container) => {
-    container.replaceChildren(subtitlePlaceholder("Browser STT captures speech first. Translation appears here."));
+    container.replaceChildren(subtitlePlaceholder("Live captions capture speech first. Translation appears here."));
   });
 }
 
@@ -2324,19 +2324,19 @@ function stopBrowserStt() {
   }
   removeInterimSpeech();
   stopSessionTimer();
-  setSttStatus(false, "STT stopped.");
+  setSttStatus(false, "Captions stopped.");
 }
 
 function startBrowserStt() {
   const Recognition = browserSpeechRecognitionCtor();
   if (!Recognition) {
     sttToggle.checked = false;
-    setSttStatus(false, "Browser STT needs Chrome or another browser with SpeechRecognition support.");
+    setSttStatus(false, "Live captions need Chrome or another browser with speech recognition support.");
     return;
   }
   if (!isSecureVoiceContext()) {
     sttToggle.checked = false;
-    setSttStatus(false, "STT microphone needs HTTPS. Render is OK, and localhost is OK.");
+    setSttStatus(false, "Caption microphone access needs HTTPS. Render is OK, and localhost is OK.");
     return;
   }
 
@@ -2379,7 +2379,7 @@ function startBrowserStt() {
     stopSessionTimer();
     const message = event.error === "not-allowed"
       ? "Mic permission blocked"
-      : `STT issue: ${event.error || "stopped"}`;
+      : `Caption issue: ${event.error || "stopped"}`;
     setSttStatus(false, message);
   };
 
@@ -2392,7 +2392,7 @@ function startBrowserStt() {
       return;
     }
     stopSessionTimer();
-    setSttStatus(false, "STT stopped.");
+    setSttStatus(false, "Captions stopped.");
   };
 
   try {
@@ -2400,7 +2400,7 @@ function startBrowserStt() {
   } catch (error) {
     sttShouldRestart = false;
     sttToggle.checked = false;
-    setSttStatus(false, `STT error: ${error.message}`);
+    setSttStatus(false, `Caption error: ${error.message}`);
   }
 }
 
@@ -2548,7 +2548,7 @@ continueToDashboardButton.addEventListener("click", () => {
 findMatchButton.addEventListener("click", quickPairFromSelectedPool);
 showCreateSeekButton.addEventListener("click", () => {
   seekComposer.hidden = false;
-  queuePrompt.textContent = "Set your seek preferences, then create a seek.";
+  queuePrompt.textContent = "Choose settings, then create a game.";
   seekTimeControl.focus();
 });
 showFriendRoomButton.addEventListener("click", () => {

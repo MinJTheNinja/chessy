@@ -135,7 +135,7 @@
                 <strong id="activeMatchesCount">18</strong>
               </article>
               <article>
-                <span class="label">Subtitle sessions</span>
+                <span class="label">Caption sessions</span>
                 <strong id="subtitleSessionsCount">3</strong>
               </article>
               <article>
@@ -143,7 +143,7 @@
                 <strong id="dashboardLatency">38 ms</strong>
               </article>
               <article>
-                <span class="label">Manner temperature</span>
+                <span class="label">Fair play score</span>
                 <strong id="dashboardTemp">42.8 C</strong>
               </article>
             </div>
@@ -167,7 +167,7 @@
                   </button>
                   <button class="play-choice-card" id="showCreateSeek" type="button">
                     <span class="label">Custom</span>
-                    <strong>Create seek</strong>
+                    <strong>Create game</strong>
                     <small>Choose time, language, and conversation goal.</small>
                   </button>
                   <button class="play-choice-card" id="showFriendRoom" type="button">
@@ -198,7 +198,7 @@
                     <button class="pool-button active" data-pool-id="rapid-10-0" data-time-control="10+0" data-rated="false">
                       <span>10+0</span>
                       <strong>Rapid Talk</strong>
-                      <small>Best for STT practice</small>
+                      <small>Best for caption practice</small>
                     </button>
                     <button class="pool-button" data-pool-id="classical-30-0" data-time-control="30+0" data-rated="false">
                       <span>30+0</span>
@@ -208,15 +208,15 @@
                   </div>
                 </div>
                 <div class="queue-box">
-                  <span class="label">Current search</span>
-                  <strong id="queueTime">Ready</strong>
+                  <span class="label">Match status</span>
+                  <strong id="queueTime">Choose mode</strong>
                   <div class="progress-track"><span id="queueProgress"></span></div>
                   <p id="queuePrompt">Choose how you want to play.</p>
                 </div>
                 <div class="seek-composer" id="seekComposer" hidden>
                   <div class="panel-heading compact">
                     <div>
-                      <span class="label">Create seek</span>
+                      <span class="label">Create game</span>
                       <h3>Match by shared settings</h3>
                     </div>
                   </div>
@@ -253,7 +253,7 @@
                       <option>Learn sports phrases</option>
                     </select>
                   </label>
-                  <button class="button secondary full" id="createSeek">Create Open Seek</button>
+                  <button class="button secondary full" id="createSeek">Create game</button>
                 </div>
               </aside>
 
@@ -298,18 +298,18 @@
                   <div class="board-stage">
                     <div class="chess-board" id="chessBoard" aria-label="Interactive chess board"></div>
                     <div class="match-result" id="matchResult">
-                      <strong>Match Result</strong>
+                      <strong>Game status</strong>
                       <span>In progress</span>
                       <button class="button dark small" id="generateReview" data-view-link="review">Generate AI Review</button>
                     </div>
                   </div>
-                  <aside class="match-subtitle-panel" aria-label="Live subtitles during chess match">
+                  <aside class="match-subtitle-panel" aria-label="Live captions during chess match">
                     <div class="match-subtitle-header">
                       <div>
-                        <span class="label">Live subtitles</span>
-                        <h3>STT while playing</h3>
+                        <span class="label">Live captions</span>
+                        <h3>Captions while playing</h3>
                       </div>
-                      <button class="button dark small" id="matchActivateStt" type="button">Activate STT</button>
+                      <button class="button dark small" id="matchActivateStt" type="button">Start captions</button>
                     </div>
                     <div class="match-stt-controls">
                       <label>
@@ -354,8 +354,8 @@
               <aside class="panel match-side-panel">
                 <div class="panel-heading">
                   <div>
-                    <span class="label">Open lobby</span>
-                    <h3>Available games</h3>
+                    <span class="label">Open games</span>
+                    <h3>Players waiting</h3>
                   </div>
                   <button class="text-link" id="refreshLobby" type="button">Refresh</button>
                 </div>
@@ -366,7 +366,7 @@
                   <div>
                     <strong id="partnerName">Mina K.</strong>
                     <p class="partner-id">ID <span id="partnerId">waiting</span></p>
-                    <p><span id="mannerTemp">42.8</span> C manner temperature</p>
+                    <p><span id="mannerTemp">42.8</span> fair play score</p>
                   </div>
                 </div>
                 <button class="button danger full" id="reportUser">Submit safety report</button>
@@ -519,11 +519,11 @@
                 <h3>Live Speech and Translation</h3>
                 <p>Real-time processing</p>
                 <div class="metric-row">
-                  <span>STT Status <strong id="sttStatusText">Paused</strong></span>
+                  <span>Caption status <strong id="sttStatusText">Paused</strong></span>
                   <span>Translation <strong>EN to KO</strong></span>
                   <span>Latency <strong id="latencyText">42 ms</strong></span>
                 </div>
-                <button class="button dark full" data-view-link="stt">View Subtitles and STT</button>
+                <button class="button dark full" data-view-link="stt">View live captions</button>
               </article>
 
               <article class="wire-card">
@@ -565,7 +565,7 @@
             <h3>Notification Summary</h3>
             <div class="notice-list" id="noticeList">
               <p>New voice letter from Alex B. <span>2 min ago</span></p>
-              <p>STT session ended, subtitles saved. <span>34 min ago</span></p>
+              <p>Caption session ended, subtitles saved. <span>34 min ago</span></p>
               <p>Maria K. replied to your voice letter. <span>1 hr ago</span></p>
             </div>
           </section>
@@ -573,8 +573,8 @@
           <section class="view" data-view="stt" aria-labelledby="sttTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">STT and Subtitles</span>
-                <h2 id="sttTitle">Subtitle workspace</h2>
+                <span class="eyebrow">Live captions</span>
+                <h2 id="sttTitle">Caption workspace</h2>
               </div>
               <button class="text-link" data-view-link="communication" type="button">Communication Hub</button>
             </div>
@@ -582,15 +582,15 @@
             <div class="stt-status">
               <span>Status</span>
               <span class="pill">Live</span>
-              <span class="pill" id="sttPill">STT Paused</span>
+              <span class="pill" id="sttPill">Captions paused</span>
             </div>
 
             <div class="stt-layout">
               <section class="subtitle-stack">
                 <article class="wire-card subtitle-card">
-                  <h3>Original Speech (STT)</h3>
+                  <h3>Original speech</h3>
                   <div class="subtitle-lines" id="originalSpeech">
-                    <p class="subtitle-placeholder">Start STT, allow microphone access, then speak.</p>
+                    <p class="subtitle-placeholder">Start captions, allow microphone access, then speak.</p>
                   </div>
                 </article>
                 <article class="wire-card subtitle-card">
@@ -604,11 +604,11 @@
 
               <aside class="control-stack">
                 <article class="wire-card">
-                  <h3>STT Controls</h3>
+                  <h3>Caption controls</h3>
                   <label class="toggle-row">
                     Speech Recognition
                     <input type="checkbox" id="sttToggle" />
-                    <span>STT Active</span>
+                    <span>Captions active</span>
                   </label>
                   <label class="toggle-row">
                     Translation
@@ -634,7 +634,7 @@
                       <option>Japanese</option>
                     </select>
                   </label>
-                  <button class="button dark full" id="activateStt">Activate STT</button>
+                  <button class="button dark full" id="activateStt">Start captions</button>
                 </article>
 
                 <article class="wire-card">
@@ -663,7 +663,7 @@
                   <h3>Session Info</h3>
                   <p>Session Duration <strong id="sessionDuration">00:00</strong></p>
                   <p>Words Recognized <strong id="wordsRecognized">0</strong></p>
-                  <p>Accuracy <strong>Browser STT</strong></p>
+                  <p>Accuracy <strong>Browser captions</strong></p>
                 </article>
               </aside>
             </div>
@@ -710,7 +710,7 @@
                 <button class="button secondary full" id="saveProfile">Save Profile</button>
               </article>
               <article class="wire-card">
-                <h3>Manner Temperature</h3>
+                <h3>Fair play score</h3>
                 <div class="temperature"><span id="profileTemp">42.8 C</span></div>
                 <label>
                   Peer feedback

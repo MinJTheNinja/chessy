@@ -83,7 +83,7 @@ const quickPools = [
     name: "Rapid Talk",
     timeControl: "10+0",
     rated: false,
-    description: "Best for STT practice",
+    description: "Best for caption practice",
   },
   {
     id: "classical-30-0",
@@ -1166,7 +1166,7 @@ async function handleApi(req, res, pathname) {
 
   if (req.method === "POST" && pathname === "/api/matches/seeks") {
     if (!user) {
-      sendJson(res, 401, { error: "Sign in before creating an open seek." });
+      sendJson(res, 401, { error: "Sign in before creating a game." });
       return true;
     }
 
@@ -1240,17 +1240,17 @@ async function handleApi(req, res, pathname) {
   const acceptSeekParams = routePattern(pathname, "/api/matches/seeks/:id/accept");
   if (req.method === "POST" && acceptSeekParams) {
     if (!user) {
-      sendJson(res, 401, { error: "Sign in before accepting an open seek." });
+      sendJson(res, 401, { error: "Sign in before joining a game." });
       return true;
     }
 
     const seek = db.seeks.find((item) => item.id === acceptSeekParams.id && item.status === "open");
     if (!seek) {
-      sendJson(res, 404, { error: "Open seek not found." });
+      sendJson(res, 404, { error: "Game request not found." });
       return true;
     }
     if (seek.userId === user.id) {
-      sendJson(res, 409, { error: "This is your own open seek." });
+      sendJson(res, 409, { error: "This is your own game request." });
       return true;
     }
 
