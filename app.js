@@ -1823,8 +1823,9 @@ async function makeMove(from, to) {
     return;
   }
 
-  const previousPieces = { ...pieces };
-  localMove(from, to);
+  selectedSquare = null;
+  legalMoveTargets = [];
+  buildBoard();
   syncState.textContent = "Sending move...";
 
   try {
@@ -1836,7 +1837,6 @@ async function makeMove(from, to) {
     syncState.textContent = `${data.move.san} accepted`;
     refreshStats();
   } catch (error) {
-    pieces = previousPieces;
     selectedSquare = null;
     legalMoveTargets = [];
     buildBoard();
