@@ -1498,7 +1498,7 @@ async function handleApi(req, res, pathname) {
       at: move.at,
     });
     await writeDb(db);
-    await syncRedisRoom(match);
+    syncRedisRoom(match).catch((error) => console.warn(`Redis room sync failed: ${error.message}`));
     broadcast(match.id, { type: "match:move", matchId: match.id, move, match: decorateMatch(match) });
     sendJson(res, 200, { match: decorateMatch(match), move });
     return true;

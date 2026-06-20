@@ -1693,6 +1693,10 @@ async function makeMove(from, to) {
     return;
   }
 
+  const previousPieces = { ...pieces };
+  localMove(from, to);
+  syncState.textContent = "Sending move...";
+
   try {
     const data = await api(`/api/matches/${currentMatchId}/move`, {
       method: "POST",
@@ -1700,8 +1704,9 @@ async function makeMove(from, to) {
     });
     renderMatch(data.match);
     syncState.textContent = `${data.move.san} accepted`;
-    await refreshStats();
+    refreshStats();
   } catch (error) {
+    pieces = previousPieces;
     selectedSquare = null;
     buildBoard();
     syncState.textContent = error.message;
