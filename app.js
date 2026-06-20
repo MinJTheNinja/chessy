@@ -71,6 +71,11 @@ const authStatus = document.querySelector("#authStatus");
 const authSubmit = document.querySelector("#authSubmit");
 const continueToDashboardButton = document.querySelector("#continueToDashboard");
 const googleSignInButton = document.querySelector("#googleSignIn");
+const headerProfile = document.querySelector("#headerProfile");
+const headerProfileButton = document.querySelector("#headerProfileButton");
+const headerProfileName = document.querySelector("#headerProfileName");
+const headerProfileAvatar = document.querySelector("#headerProfileAvatar");
+const headerProfileMenu = document.querySelector("#headerProfileMenu");
 const headerSignOutButton = document.querySelector("#headerSignOut");
 const contrastModeButton = document.querySelector("#contrastModeButton");
 const largeTextButton = document.querySelector("#largeTextButton");
@@ -859,9 +864,16 @@ function renderAuthState() {
   const signedIn = Boolean(currentUser);
   document.body.classList.toggle("is-signed-in", signedIn);
   authForm.classList.toggle("signed-in", signedIn);
-  headerSignOutButton.hidden = !signedIn;
+  headerProfile.hidden = !signedIn;
+  if (signedIn) {
+    headerProfileName.textContent = currentUser.displayName || "Player";
+    headerProfileAvatar.textContent = initials(currentUser.displayName || "Player");
+  } else {
+    headerProfileMenu.hidden = true;
+    headerProfileButton.setAttribute("aria-expanded", "false");
+  }
   continueToDashboardButton.hidden = !signedIn;
-  loginButton.textContent = signedIn ? "Dashboard" : "Login";
+  loginButton.textContent = signedIn ? "Play" : "Login";
   signupButton.textContent = signedIn ? "Sign out" : "New user";
   loginButton.classList.toggle("active", !signedIn && authMode === "login");
   signupButton.classList.toggle("active", !signedIn && authMode === "signup");
@@ -1541,7 +1553,7 @@ async function signInOrRegister() {
       },
     });
     currentUser = data.user;
-    authStatus.textContent = `Signed in as ${currentUser.displayName}. Continue to the dashboard or start a match.`;
+    authStatus.textContent = `Signed in as ${currentUser.displayName}. Continue to play.`;
     authDisplayName.value = "";
     authPassword.value = "";
     renderAuthState();
@@ -2697,7 +2709,25 @@ authForm.addEventListener("submit", (event) => {
 });
 
 googleSignInButton.addEventListener("click", signInWithGoogle);
+headerProfileButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+  const willOpen = headerProfileMenu.hidden;
+  headerProfileMenu.hidden = !willOpen;
+  headerProfileButton.setAttribute("aria-expanded", String(willOpen));
+});
+document.querySelectorAll("[data-profile-menu-view]").forEach((button) => {
+  button.addEventListener("click", () => {
+    headerProfileMenu.hidden = true;
+    headerProfileButton.setAttribute("aria-expanded", "false");
+    setView(button.dataset.profileMenuView);
+  });
+});
 headerSignOutButton.addEventListener("click", signOut);
+document.addEventListener("click", (event) => {
+  if (headerProfile.hidden || headerProfile.contains(event.target)) return;
+  headerProfileMenu.hidden = true;
+  headerProfileButton.setAttribute("aria-expanded", "false");
+});
 contrastModeButton.addEventListener("click", toggleContrastMode);
 largeTextButton.addEventListener("click", toggleLargeTextMode);
 
@@ -2711,7 +2741,7 @@ signupButton.addEventListener("click", () => {
 
 loginButton.addEventListener("click", () => {
   if (currentUser) {
-    setView("dashboard");
+    setView("match");
     return;
   }
   setAuthMode("login");
@@ -2735,7 +2765,7 @@ clearNotificationsButton.addEventListener("click", () => {
 });
 
 continueToDashboardButton.addEventListener("click", () => {
-  setView("dashboard");
+  setView("match");
 });
 
 findMatchButton.addEventListener("click", quickPairFromSelectedPool);

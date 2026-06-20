@@ -41,7 +41,16 @@
           <span class="toggle-track" aria-hidden="true"><span></span></span>
           <span>Large text</span>
         </button>
-        <button class="button primary small" id="headerSignOut" type="button" hidden>Sign out</button>
+        <div class="header-profile" id="headerProfile" hidden>
+          <button class="profile-menu-button" id="headerProfileButton" type="button" aria-expanded="false" aria-label="Open profile menu">
+            <span id="headerProfileName">Player</span>
+            <span class="profile-menu-avatar" id="headerProfileAvatar">CL</span>
+          </button>
+          <div class="profile-menu" id="headerProfileMenu" hidden>
+            <button type="button" data-profile-menu-view="profile">Profile</button>
+            <button id="headerSignOut" type="button">Sign out</button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -92,7 +101,7 @@
               <span class="google-mark">G</span>
               Sign in with Google
             </button>
-            <button class="button secondary full" id="continueToDashboard" type="button" hidden>Continue to dashboard</button>
+            <button class="button secondary full" id="continueToDashboard" type="button" hidden>Continue to play</button>
             <p id="authStatus">Enter your existing email and password.</p>
           </form>
         </div>
@@ -101,8 +110,7 @@
       <section class="app-shell" id="dashboard" aria-label="Application workspace">
         <aside class="sidebar">
           <span class="sidebar-label">Menu</span>
-          <button class="side-link active" data-view-link="dashboard">Home</button>
-          <button class="side-link" data-view-link="match">Play</button>
+          <button class="side-link active" data-view-link="match">Play</button>
           <button class="side-link" data-view-link="review">AI Review</button>
           <button class="side-link" data-view-link="communication">Messages</button>
           <button class="side-link" data-view-link="profile">Profile</button>
@@ -110,10 +118,10 @@
         </aside>
 
         <div class="workspace">
-          <section class="view active" data-view="dashboard" aria-labelledby="dashboardTitle">
+          <section class="view" data-view="dashboard" aria-labelledby="dashboardTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">Home</span>
+                <span class="eyebrow">Overview</span>
                 <h2 id="dashboardTitle">Start playing</h2>
               </div>
               <button class="button primary" data-view-link="match">Play</button>
@@ -162,7 +170,7 @@
             </div>
           </section>
 
-          <section class="view" data-view="match" aria-labelledby="matchTitle">
+          <section class="view active" data-view="match" aria-labelledby="matchTitle">
             <div class="view-header">
               <div>
                 <span class="eyebrow">Play</span>
