@@ -75,10 +75,10 @@ const headerProfile = document.querySelector("#headerProfile");
 const headerProfileButton = document.querySelector("#headerProfileButton");
 const headerProfileName = document.querySelector("#headerProfileName");
 const headerProfileAvatar = document.querySelector("#headerProfileAvatar");
-const headerProfileMenu = document.querySelector("#headerProfileMenu");
 const headerSignOutButton = document.querySelector("#headerSignOut");
 const contrastModeButton = document.querySelector("#contrastModeButton");
 const largeTextButton = document.querySelector("#largeTextButton");
+const settingsAccountName = document.querySelector("#settingsAccountName");
 const signupButton = document.querySelector("#signupButton");
 const loginButton = document.querySelector("#loginButton");
 const notificationButton = document.querySelector("#notificationButton");
@@ -855,6 +855,7 @@ function handleSubtitleSignal(message) {
 }
 
 function setServerStatus(text, online) {
+  if (!serverStatus) return;
   serverStatus.textContent = text;
   serverStatus.classList.toggle("online", online === true);
   serverStatus.classList.toggle("offline", online === false);
@@ -868,9 +869,9 @@ function renderAuthState() {
   if (signedIn) {
     headerProfileName.textContent = currentUser.displayName || "Player";
     headerProfileAvatar.textContent = initials(currentUser.displayName || "Player");
+    if (settingsAccountName) settingsAccountName.textContent = `Signed in as ${currentUser.displayName || "Player"}`;
   } else {
-    headerProfileMenu.hidden = true;
-    headerProfileButton.setAttribute("aria-expanded", "false");
+    if (settingsAccountName) settingsAccountName.textContent = "Signed out";
   }
   continueToDashboardButton.hidden = !signedIn;
   loginButton.textContent = signedIn ? "Play" : "Login";
@@ -2709,25 +2710,8 @@ authForm.addEventListener("submit", (event) => {
 });
 
 googleSignInButton.addEventListener("click", signInWithGoogle);
-headerProfileButton.addEventListener("click", (event) => {
-  event.stopPropagation();
-  const willOpen = headerProfileMenu.hidden;
-  headerProfileMenu.hidden = !willOpen;
-  headerProfileButton.setAttribute("aria-expanded", String(willOpen));
-});
-document.querySelectorAll("[data-profile-menu-view]").forEach((button) => {
-  button.addEventListener("click", () => {
-    headerProfileMenu.hidden = true;
-    headerProfileButton.setAttribute("aria-expanded", "false");
-    setView(button.dataset.profileMenuView);
-  });
-});
+headerProfileButton.addEventListener("click", () => setView("settings"));
 headerSignOutButton.addEventListener("click", signOut);
-document.addEventListener("click", (event) => {
-  if (headerProfile.hidden || headerProfile.contains(event.target)) return;
-  headerProfileMenu.hidden = true;
-  headerProfileButton.setAttribute("aria-expanded", "false");
-});
 contrastModeButton.addEventListener("click", toggleContrastMode);
 largeTextButton.addEventListener("click", toggleLargeTextMode);
 

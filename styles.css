@@ -201,13 +201,14 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 40px;
   min-height: 36px;
-  padding: 7px 12px;
+  padding: 7px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: white;
   color: var(--ink);
-  font-size: 0.86rem;
+  font-size: 1.1rem;
   font-weight: 850;
 }
 
@@ -288,6 +289,24 @@ a {
 
 .mode-toggle[aria-pressed="true"] .toggle-track span {
   transform: translateX(14px);
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.settings-card {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.settings-toggle {
+  justify-content: space-between;
+  width: min(100%, 340px);
+  padding: 10px 12px;
 }
 
 .header-profile {
@@ -2165,6 +2184,7 @@ dialog::backdrop {
 
   .communication-grid,
   .status-strip,
+  .settings-grid,
   .admin-grid {
     grid-template-columns: 1fr;
   }
@@ -2185,7 +2205,7 @@ dialog::backdrop {
     display: none;
   }
 
-  .mode-toggle > span:last-child {
+  .header-actions .mode-toggle > span:last-child {
     display: none;
   }
 

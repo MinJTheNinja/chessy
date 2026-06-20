@@ -13,9 +13,8 @@
         <span>Live Chess</span>
       </a>
       <div class="header-actions">
-        <span class="server-status" id="serverStatus">Backend checking</span>
         <button class="notification-button" id="notificationButton" type="button" aria-expanded="false" aria-label="Notifications">
-          <span>Notifications</span>
+          <span aria-hidden="true">🔔</span>
           <strong id="notificationCount" hidden>0</strong>
         </button>
         <div class="notification-panel" id="notificationPanel" hidden>
@@ -33,23 +32,11 @@
           <option value="Thai">Thai</option>
           <option value="Japanese">Japanese</option>
         </select>
-        <button class="mode-toggle" id="contrastModeButton" type="button" aria-pressed="false">
-          <span class="toggle-track" aria-hidden="true"><span></span></span>
-          <span>Contrast</span>
-        </button>
-        <button class="mode-toggle" id="largeTextButton" type="button" aria-pressed="false">
-          <span class="toggle-track" aria-hidden="true"><span></span></span>
-          <span>Large text</span>
-        </button>
         <div class="header-profile" id="headerProfile" hidden>
-          <button class="profile-menu-button" id="headerProfileButton" type="button" aria-expanded="false" aria-label="Open profile menu">
+          <button class="profile-menu-button" id="headerProfileButton" type="button" aria-label="Open settings">
             <span id="headerProfileName">Player</span>
             <span class="profile-menu-avatar" id="headerProfileAvatar">CL</span>
           </button>
-          <div class="profile-menu" id="headerProfileMenu" hidden>
-            <button type="button" data-profile-menu-view="profile">Profile</button>
-            <button id="headerSignOut" type="button">Sign out</button>
-          </div>
         </div>
       </div>
     </header>
@@ -114,6 +101,7 @@
           <button class="side-link" data-view-link="review">AI Review</button>
           <button class="side-link" data-view-link="communication">Messages</button>
           <button class="side-link" data-view-link="profile">Profile</button>
+          <button class="side-link" data-view-link="settings">Settings</button>
           <button class="side-link" data-view-link="admin">Admin</button>
         </aside>
 
@@ -754,6 +742,36 @@
                   <textarea id="cultureGuideInput" placeholder="Example: How my partner says good game after a match."></textarea>
                 </label>
                 <button class="button secondary full" id="saveCultureGuide">Save Culture Note</button>
+              </article>
+            </div>
+          </section>
+
+          <section class="view" data-view="settings" aria-labelledby="settingsTitle">
+            <div class="view-header">
+              <div>
+                <span class="eyebrow">Account</span>
+                <h2 id="settingsTitle">Settings</h2>
+              </div>
+            </div>
+
+            <div class="settings-grid">
+              <article class="wire-card settings-card">
+                <h3>Accessibility</h3>
+                <p>Adjust the interface for readability.</p>
+                <button class="mode-toggle settings-toggle" id="contrastModeButton" type="button" aria-pressed="false">
+                  <span class="toggle-track" aria-hidden="true"><span></span></span>
+                  <span>High contrast</span>
+                </button>
+                <button class="mode-toggle settings-toggle" id="largeTextButton" type="button" aria-pressed="false">
+                  <span class="toggle-track" aria-hidden="true"><span></span></span>
+                  <span>Large text</span>
+                </button>
+              </article>
+
+              <article class="wire-card settings-card">
+                <h3>Account</h3>
+                <p id="settingsAccountName">Signed in</p>
+                <button class="button danger full" id="headerSignOut" type="button">Sign out</button>
               </article>
             </div>
           </section>
