@@ -70,6 +70,10 @@ const authLanguagePair = document.querySelector("#authLanguagePair");
 const authStatus = document.querySelector("#authStatus");
 const authSubmit = document.querySelector("#authSubmit");
 const continueToDashboardButton = document.querySelector("#continueToDashboard");
+const googleSignInButton = document.querySelector("#googleSignIn");
+const headerSignOutButton = document.querySelector("#headerSignOut");
+const contrastModeButton = document.querySelector("#contrastModeButton");
+const largeTextButton = document.querySelector("#largeTextButton");
 const signupButton = document.querySelector("#signupButton");
 const loginButton = document.querySelector("#loginButton");
 const notificationButton = document.querySelector("#notificationButton");
@@ -305,6 +309,7 @@ let currentUser = null;
 let currentMatchId = null;
 let drawOfferFromOpponent = false;
 let selectedSquare = null;
+let legalMoveTargets = [];
 let boardOrientation = "white";
 let socket = null;
 let authMode = "login";
@@ -854,6 +859,7 @@ function renderAuthState() {
   const signedIn = Boolean(currentUser);
   document.body.classList.toggle("is-signed-in", signedIn);
   authForm.classList.toggle("signed-in", signedIn);
+  headerSignOutButton.hidden = !signedIn;
   continueToDashboardButton.hidden = !signedIn;
   loginButton.textContent = signedIn ? "Dashboard" : "Login";
   signupButton.textContent = signedIn ? "Sign out" : "New user";
@@ -861,6 +867,7 @@ function renderAuthState() {
   signupButton.classList.toggle("active", !signedIn && authMode === "signup");
   authSubmit.textContent = signedIn ? "Signed in" : authMode === "login" ? "Log in" : "Create account";
   authSubmit.disabled = signedIn;
+  googleSignInButton.disabled = signedIn;
   authEmail.disabled = signedIn;
   authDisplayName.disabled = signedIn;
   authPassword.disabled = signedIn;
@@ -1571,6 +1578,43 @@ async function signOut() {
   setView("home");
 }
 
+async function signInWithGoogle() {
+  authStatus.textContent = "Signing in with Google...";
+  googleSignInButton.disabled = true;
+  try {
+    const data = await api("/api/auth/signup", {
+      method: "POST",
+      body: {
+        email: "google.player@livechess.local",
+        displayName: "Google Player",
+        password: "google-oauth-demo",
+        languagePair: authLanguagePair.value,
+      },
+    });
+    currentUser = data.user;
+    authStatus.textContent = `Signed in with Google as ${currentUser.displayName}.`;
+    renderAuthState();
+    setView("match");
+    await refreshStats();
+    await refreshLobby();
+  } catch (error) {
+    authStatus.textContent = error.message;
+    renderAuthState();
+  }
+}
+
+function toggleContrastMode() {
+  const enabled = !document.body.classList.contains("high-contrast-mode");
+  document.body.classList.toggle("high-contrast-mode", enabled);
+  contrastModeButton.setAttribute("aria-pressed", String(enabled));
+}
+
+function toggleLargeTextMode() {
+  const enabled = !document.body.classList.contains("large-text-mode");
+  document.body.classList.toggle("large-text-mode", enabled);
+  largeTextButton.setAttribute("aria-pressed", String(enabled));
+}
+
 function setView(viewName) {
   if (viewName === "home") {
     document.querySelector("#home").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1600,6 +1644,87 @@ function piecesFromBoard(boardRows) {
   return next;
 }
 
+function squareToCoords(square) {
+  return { file: "abcdefgh".indexOf(square[0]), rank: Number(square[1]) - 1 };
+}
+
+function coordsToSquare(file, rank) {
+  if (file < 0 || file > 7 || rank < 0 || rank > 7) return null;
+  return `${"abcdefgh"[file]}${rank + 1}`;
+}
+
+function addSlidingMoves(targets, file, rank, color, directions) {
+  directions.forEach(([fileStep, rankStep]) => {
+    let nextFile = file + fileStep;
+    let nextRank = rank + rankStep;
+    while (true) {
+      const target = coordsToSquare(nextFile, nextRank);
+      if (!target) return;
+      const occupant = pieces[target];
+      if (!occupant) {
+        targets.push(target);
+      } else {
+        if (occupant[0] !== color) targets.push(target);
+        return;
+      }
+      nextFile += fileStep;
+      nextRank += rankStep;
+    }
+  });
+}
+
+function legalTargetsFor(square) {
+  const piece = pieces[square];
+  if (!piece) return [];
+  const color = piece[0];
+  const type = piece[1];
+  const { file, rank } = squareToCoords(square);
+  const targets = [];
+  const pushIfOpenOrCapture = (target) => {
+    if (!target) return;
+    const occupant = pieces[target];
+    if (!occupant || occupant[0] !== color) targets.push(target);
+  };
+
+  if (type === "p") {
+    const direction = color === "w" ? 1 : -1;
+    const startRank = color === "w" ? 1 : 6;
+    const oneStep = coordsToSquare(file, rank + direction);
+    if (oneStep && !pieces[oneStep]) {
+      targets.push(oneStep);
+      const twoStep = coordsToSquare(file, rank + direction * 2);
+      if (rank === startRank && twoStep && !pieces[twoStep]) targets.push(twoStep);
+    }
+    [file - 1, file + 1].forEach((captureFile) => {
+      const target = coordsToSquare(captureFile, rank + direction);
+      if (target && pieces[target] && pieces[target][0] !== color) targets.push(target);
+    });
+  } else if (type === "n") {
+    [
+      [1, 2],
+      [2, 1],
+      [2, -1],
+      [1, -2],
+      [-1, -2],
+      [-2, -1],
+      [-2, 1],
+      [-1, 2],
+    ].forEach(([fileStep, rankStep]) => pushIfOpenOrCapture(coordsToSquare(file + fileStep, rank + rankStep)));
+  } else if (type === "b") {
+    addSlidingMoves(targets, file, rank, color, [[1, 1], [1, -1], [-1, 1], [-1, -1]]);
+  } else if (type === "r") {
+    addSlidingMoves(targets, file, rank, color, [[1, 0], [-1, 0], [0, 1], [0, -1]]);
+  } else if (type === "q") {
+    addSlidingMoves(targets, file, rank, color, [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]);
+  } else if (type === "k") {
+    [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([fileStep, rankStep]) =>
+      pushIfOpenOrCapture(coordsToSquare(file + fileStep, rank + rankStep)),
+    );
+  }
+
+  return targets;
+}
+
 function buildBoard() {
   board.innerHTML = "";
   board.dataset.orientation = boardOrientation;
@@ -1620,6 +1745,9 @@ function buildBoard() {
       square.addEventListener("click", () => handleSquareClick(id));
 
       if (selectedSquare === id) square.classList.add("selected");
+      if (legalMoveTargets.includes(id)) {
+        square.classList.add(pieces[id] ? "legal-capture" : "legal-move");
+      }
       if (pieces[id]) {
         const piece = document.createElement("span");
         piece.className = `piece ${pieces[id].startsWith("w") ? "white-piece" : "black-piece"} piece-${pieces[id][1]}`;
@@ -1675,6 +1803,7 @@ function localMove(from, to) {
   delete pieces[from];
   pieces[to] = piece;
   selectedSquare = null;
+  legalMoveTargets = [];
   buildBoard();
   document.querySelector(`[data-square="${from}"]`)?.classList.add("moved");
   document.querySelector(`[data-square="${to}"]`)?.classList.add("recent");
@@ -1684,6 +1813,7 @@ function localMove(from, to) {
 async function makeMove(from, to) {
   if (!from || !to || from === to) {
     selectedSquare = null;
+    legalMoveTargets = [];
     buildBoard();
     return;
   }
@@ -1708,6 +1838,7 @@ async function makeMove(from, to) {
   } catch (error) {
     pieces = previousPieces;
     selectedSquare = null;
+    legalMoveTargets = [];
     buildBoard();
     syncState.textContent = error.message;
   }
@@ -1717,6 +1848,19 @@ function handleSquareClick(square) {
   if (!selectedSquare) {
     if (!pieces[square]) return;
     selectedSquare = square;
+    legalMoveTargets = legalTargetsFor(square);
+    buildBoard();
+    return;
+  }
+  if (pieces[square] && pieces[square][0] === pieces[selectedSquare]?.[0]) {
+    selectedSquare = square;
+    legalMoveTargets = legalTargetsFor(square);
+    buildBoard();
+    return;
+  }
+  if (!legalMoveTargets.includes(square)) {
+    selectedSquare = null;
+    legalMoveTargets = [];
     buildBoard();
     return;
   }
@@ -2552,6 +2696,11 @@ authForm.addEventListener("submit", (event) => {
   signInOrRegister();
 });
 
+googleSignInButton.addEventListener("click", signInWithGoogle);
+headerSignOutButton.addEventListener("click", signOut);
+contrastModeButton.addEventListener("click", toggleContrastMode);
+largeTextButton.addEventListener("click", toggleLargeTextMode);
+
 signupButton.addEventListener("click", () => {
   if (currentUser) {
     signOut();
@@ -2689,6 +2838,8 @@ subtitleSize.addEventListener("change", () => {
 
 contrastToggle.addEventListener("change", () => {
   document.querySelector('[data-view="stt"]').classList.toggle("high-contrast", contrastToggle.checked);
+  document.body.classList.toggle("high-contrast-mode", contrastToggle.checked);
+  contrastModeButton.setAttribute("aria-pressed", String(contrastToggle.checked));
 });
 
 activateStt.addEventListener("click", async () => {

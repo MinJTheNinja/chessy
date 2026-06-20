@@ -39,6 +39,48 @@ body {
     sans-serif;
 }
 
+body.large-text-mode {
+  font-size: 112%;
+}
+
+body.high-contrast-mode {
+  --ink: #000000;
+  --muted: #2c2c2c;
+  --soft: #ffffff;
+  --panel: #ffffff;
+  --line: #000000;
+  --line-strong: #000000;
+  --dark: #000000;
+  --amber: #ffd400;
+  background: #ffffff;
+}
+
+body.high-contrast-mode .panel,
+body.high-contrast-mode .wire-card,
+body.high-contrast-mode .route-card,
+body.high-contrast-mode .auth-card,
+body.high-contrast-mode .board-panel,
+body.high-contrast-mode .queue-box,
+body.high-contrast-mode .play-choice-grid {
+  border-color: #000000;
+  box-shadow: none;
+}
+
+body.high-contrast-mode .button.primary,
+body.high-contrast-mode .brand-mark {
+  background: #000000;
+  color: #ffd400;
+}
+
+body.high-contrast-mode .button.secondary,
+body.high-contrast-mode select,
+body.high-contrast-mode input,
+body.high-contrast-mode textarea {
+  border-color: #000000;
+  background: #ffffff;
+  color: #000000;
+}
+
 body:not(.is-signed-in) .app-shell {
   display: none;
 }
@@ -125,6 +167,27 @@ a {
   font-size: 0.78rem;
   font-weight: 850;
   white-space: nowrap;
+}
+
+.header-actions .button[aria-pressed="true"] {
+  border-color: var(--dark);
+  background: var(--dark);
+  color: white;
+}
+
+.google-button {
+  gap: 10px;
+}
+
+.google-mark {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: white;
+  color: #4285f4;
+  font-weight: 950;
 }
 
 .server-status.online {
@@ -1343,8 +1406,30 @@ p {
   background: rgba(212, 149, 47, 0.72);
 }
 
-.square.selected {
-  outline: 4px solid rgba(125, 88, 216, 0.78);
+.square.legal-move::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  width: 26%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(70, 95, 45, 0.62);
+}
+
+.square.legal-capture::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: 10%;
+  border: 5px solid rgba(70, 95, 45, 0.7);
+  border-radius: 50%;
+}
+
+.square.selected,
+.square.light.selected,
+.square.dark.selected {
+  background: #718042;
+  outline: 4px solid rgba(70, 95, 45, 0.78);
   outline-offset: -4px;
 }
 
