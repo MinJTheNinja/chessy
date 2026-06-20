@@ -15,7 +15,7 @@
       <div class="header-actions">
         <span class="server-status" id="serverStatus">Backend checking</span>
         <button class="notification-button" id="notificationButton" type="button" aria-expanded="false" aria-label="Notifications">
-          <span>Alerts</span>
+          <span>Notifications</span>
           <strong id="notificationCount" hidden>0</strong>
         </button>
         <div class="notification-panel" id="notificationPanel" hidden>
@@ -33,8 +33,14 @@
           <option value="Thai">Thai</option>
           <option value="Japanese">Japanese</option>
         </select>
-        <button class="button secondary small" id="contrastModeButton" type="button" aria-pressed="false">High contrast</button>
-        <button class="button secondary small" id="largeTextButton" type="button" aria-pressed="false">Large text</button>
+        <button class="mode-toggle" id="contrastModeButton" type="button" aria-pressed="false">
+          <span class="toggle-track" aria-hidden="true"><span></span></span>
+          <span>Contrast</span>
+        </button>
+        <button class="mode-toggle" id="largeTextButton" type="button" aria-pressed="false">
+          <span class="toggle-track" aria-hidden="true"><span></span></span>
+          <span>Large text</span>
+        </button>
         <button class="button primary small" id="headerSignOut" type="button" hidden>Sign out</button>
       </div>
     </header>

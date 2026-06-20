@@ -169,12 +169,6 @@ a {
   white-space: nowrap;
 }
 
-.header-actions .button[aria-pressed="true"] {
-  border-color: var(--dark);
-  background: var(--dark);
-  color: white;
-}
-
 .google-button {
   gap: 10px;
 }
@@ -238,6 +232,62 @@ a {
   font-size: 0.68rem;
   line-height: 16px;
   text-align: center;
+}
+
+.mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.mode-toggle:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.toggle-track {
+  position: relative;
+  display: inline-flex;
+  width: 34px;
+  height: 20px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #d9d1c4;
+  transition: background 160ms ease;
+}
+
+.toggle-track span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(26, 26, 46, 0.22);
+  transition: transform 160ms ease;
+}
+
+.mode-toggle[aria-pressed="true"] {
+  border-color: rgba(184, 141, 11, 0.55);
+  background: #fff9e8;
+  color: var(--dark);
+}
+
+.mode-toggle[aria-pressed="true"] .toggle-track {
+  background: var(--amber);
+}
+
+.mode-toggle[aria-pressed="true"] .toggle-track span {
+  transform: translateX(14px);
 }
 
 .notification-panel {
@@ -2056,6 +2106,10 @@ dialog::backdrop {
   .brand span:last-child,
   .header-actions select,
   .server-status {
+    display: none;
+  }
+
+  .mode-toggle > span:last-child {
     display: none;
   }
 
