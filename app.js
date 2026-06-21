@@ -75,9 +75,11 @@ const continueToDashboardButton = document.querySelector("#continueToDashboard")
 const googleSignInButton = document.querySelector("#googleSignIn");
 const headerProfile = document.querySelector("#headerProfile");
 const headerProfileButton = document.querySelector("#headerProfileButton");
+const headerProfileMenu = document.querySelector("#headerProfileMenu");
 const headerProfileName = document.querySelector("#headerProfileName");
 const headerProfileAvatar = document.querySelector("#headerProfileAvatar");
 const headerSignOutButton = document.querySelector("#headerSignOut");
+const deleteAccountButton = document.querySelector("#deleteAccount");
 const contrastModeButton = document.querySelector("#contrastModeButton");
 const largeTextButton = document.querySelector("#largeTextButton");
 const settingsAccountName = document.querySelector("#settingsAccountName");
@@ -876,6 +878,8 @@ function renderAuthState() {
   } else {
     if (settingsAccountName) settingsAccountName.textContent = "Signed out";
   }
+  if (headerSignOutButton) headerSignOutButton.disabled = !signedIn;
+  if (deleteAccountButton) deleteAccountButton.disabled = !signedIn;
   continueToDashboardButton.hidden = !signedIn;
   loginButton.textContent = signedIn ? "Play" : "Login";
   signupButton.textContent = signedIn ? "Sign out" : "New user";
@@ -1597,6 +1601,44 @@ async function signOut() {
   clearProfile();
   renderAuthState();
   setView("home");
+}
+
+async function deleteAccount() {
+  if (!currentUser) {
+    authStatus.textContent = "Sign in before deleting an account.";
+    setView("home");
+    return;
+  }
+
+  const confirmed = window.confirm(
+    "Delete your account? This removes your profile, active rooms, queue entries, and voice letters."
+  );
+  if (!confirmed) return;
+
+  if (!backendOnline) {
+    currentUser = null;
+    clearProfile();
+    renderAuthState();
+    authStatus.textContent = "Local account state cleared. Start the server to delete saved account data.";
+    setView("home");
+    return;
+  }
+
+  deleteAccountButton.disabled = true;
+  deleteAccountButton.textContent = "Deleting...";
+  try {
+    await api("/api/auth/delete", { method: "DELETE" });
+    currentUser = null;
+    clearProfile();
+    renderAuthState();
+    authStatus.textContent = "Account deleted.";
+    setView("home");
+  } catch (error) {
+    authStatus.textContent = error.message;
+  } finally {
+    deleteAccountButton.disabled = false;
+    deleteAccountButton.textContent = "Delete account";
+  }
 }
 
 async function signInWithGoogle() {
@@ -2767,6 +2809,7 @@ authForm.addEventListener("submit", (event) => {
 googleSignInButton.addEventListener("click", signInWithGoogle);
 headerProfileButton.addEventListener("click", () => setView("settings"));
 headerSignOutButton.addEventListener("click", signOut);
+deleteAccountButton.addEventListener("click", deleteAccount);
 contrastModeButton.addEventListener("click", toggleContrastMode);
 largeTextButton.addEventListener("click", toggleLargeTextMode);
 

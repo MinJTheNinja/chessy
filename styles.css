@@ -328,6 +328,11 @@ a {
   padding: 10px 12px;
 }
 
+.account-actions {
+  display: grid;
+  gap: 10px;
+}
+
 .header-profile {
   position: relative;
 }

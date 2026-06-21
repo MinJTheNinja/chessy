@@ -1080,6 +1080,41 @@ async function handleApi(req, res, pathname) {
     return true;
   }
 
+  if (req.method === "DELETE" && pathname === "/api/auth/delete") {
+    if (!requireUser(user, res)) return true;
+    const userId = user.id;
+    const nextDb = {
+      ...db,
+      users: db.users.filter((item) => item.id !== userId),
+      sessions: db.sessions.filter((session) => session.userId !== userId),
+      queue: db.queue.filter((entry) => entry.userId !== userId),
+      seeks: db.seeks.filter((seek) => seek.userId !== userId),
+      challenges: db.challenges.filter((challenge) => challenge.userId !== userId),
+      matches: db.matches.map((match) => {
+        const includesDeletedUser = (match.players || []).some((player) => player.userId === userId);
+        if (!includesDeletedUser) return match;
+        return {
+          ...match,
+          userId: match.userId === userId ? null : match.userId,
+          status: match.status === "ended" ? match.status : "ended",
+          result: match.status === "ended" ? match.result : "Account deleted",
+          endedAt: match.endedAt || new Date().toISOString(),
+          players: (match.players || []).map((player) =>
+            player.userId === userId ? { ...player, userId: null, displayName: "Deleted account" } : player
+          ),
+          partnerName: match.partnerName === user.displayName ? "Deleted account" : match.partnerName,
+        };
+      }),
+      voiceLetters: db.voiceLetters.filter(
+        (letter) => letter.fromUserId !== userId && letter.toUserId !== userId && letter.userId !== userId
+      ),
+      reports: db.reports.filter((report) => report.reporterId !== userId && report.targetUserId !== userId),
+    };
+    await writeDb(nextDb);
+    sendJson(res, 200, { ok: true }, { "set-cookie": "lc_session=; Path=/; Max-Age=0; SameSite=Lax" });
+    return true;
+  }
+
   if (req.method === "POST" && pathname === "/api/matches/start") {
     const body = await readBody(req);
     const match = createMatch(db, user, { ...body, pairingType: body.pairingType || "practice" });

@@ -36,10 +36,21 @@
           <option value="Japanese">Japanese</option>
         </select>
         <div class="header-profile" id="headerProfile" hidden>
-          <button class="profile-menu-button" id="headerProfileButton" type="button" aria-label="Open settings">
+          <button
+            class="profile-menu-button"
+            id="headerProfileButton"
+            type="button"
+            aria-expanded="false"
+            aria-controls="headerProfileMenu"
+            aria-label="Open profile menu"
+          >
             <span id="headerProfileName">Player</span>
             <span class="profile-menu-avatar" id="headerProfileAvatar">CL</span>
           </button>
+          <div class="profile-menu" id="headerProfileMenu" hidden>
+            <button type="button" data-view-link="profile">Profile</button>
+            <button type="button" data-view-link="settings">Settings</button>
+          </div>
         </div>
       </div>
     </header>
@@ -772,7 +783,10 @@
               <article class="wire-card settings-card">
                 <h3>Account</h3>
                 <p id="settingsAccountName">Signed in</p>
-                <button class="button danger full" id="headerSignOut" type="button">Sign out</button>
+                <div class="account-actions">
+                  <button class="button secondary full" id="headerSignOut" type="button">Sign out</button>
+                  <button class="button danger full" id="deleteAccount" type="button">Delete account</button>
+                </div>
               </article>
             </div>
           </section>
