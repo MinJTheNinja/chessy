@@ -877,6 +877,7 @@ function renderAuthState() {
     if (settingsAccountName) settingsAccountName.textContent = `Signed in as ${currentUser.displayName || "Player"}`;
   } else {
     if (settingsAccountName) settingsAccountName.textContent = "Signed out";
+    closeProfileMenu();
   }
   if (headerSignOutButton) headerSignOutButton.disabled = !signedIn;
   if (deleteAccountButton) deleteAccountButton.disabled = !signedIn;
@@ -1695,6 +1696,7 @@ function setView(viewName) {
   if (viewName === "profile") refreshProfile();
   document.querySelector("#dashboard").scrollIntoView({ behavior: "smooth", block: "start" });
   closeMenu();
+  closeProfileMenu();
 }
 
 function openMenu() {
@@ -1705,6 +1707,22 @@ function openMenu() {
 function closeMenu() {
   sidebarMenu.hidden = true;
   menuToggle.setAttribute("aria-expanded", "false");
+}
+
+function closeProfileMenu() {
+  headerProfileMenu.hidden = true;
+  headerProfileButton.setAttribute("aria-expanded", "false");
+}
+
+function toggleProfileMenu() {
+  const willOpen = headerProfileMenu.hidden;
+  headerProfileMenu.hidden = !willOpen;
+  headerProfileButton.setAttribute("aria-expanded", String(willOpen));
+  if (willOpen) {
+    closeMenu();
+    notificationPanel.hidden = true;
+    notificationButton.setAttribute("aria-expanded", "false");
+  }
 }
 
 function toggleMenu() {
@@ -2742,17 +2760,20 @@ resetSubtitlePlaceholders();
 
 menuToggle.addEventListener("click", (event) => {
   event.stopPropagation();
+  closeProfileMenu();
   toggleMenu();
 });
 
 document.addEventListener("click", (event) => {
-  if (sidebarMenu.hidden) return;
-  if (sidebarMenu.contains(event.target) || menuToggle.contains(event.target)) return;
-  closeMenu();
+  if (!sidebarMenu.hidden && !sidebarMenu.contains(event.target) && !menuToggle.contains(event.target)) closeMenu();
+  if (!headerProfileMenu.hidden && !headerProfile.contains(event.target)) closeProfileMenu();
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closeMenu();
+  if (event.key === "Escape") {
+    closeMenu();
+    closeProfileMenu();
+  }
   const target = event.target;
   if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return;
   if (event.key.length !== 1) return;
@@ -2807,7 +2828,10 @@ authForm.addEventListener("submit", (event) => {
 });
 
 googleSignInButton.addEventListener("click", signInWithGoogle);
-headerProfileButton.addEventListener("click", () => setView("settings"));
+headerProfileButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+  toggleProfileMenu();
+});
 headerSignOutButton.addEventListener("click", signOut);
 deleteAccountButton.addEventListener("click", deleteAccount);
 contrastModeButton.addEventListener("click", toggleContrastMode);
@@ -2833,6 +2857,7 @@ notificationButton.addEventListener("click", async () => {
   const willOpen = notificationPanel.hidden;
   notificationPanel.hidden = !willOpen;
   notificationButton.setAttribute("aria-expanded", String(willOpen));
+  if (willOpen) closeProfileMenu();
   if (willOpen) {
     unreadNotifications = 0;
     renderNotifications();
