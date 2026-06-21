@@ -354,36 +354,8 @@ let notifications = [];
 let unreadNotifications = 0;
 let cachedAdminData = null;
 let adminCommandBuffer = "";
-let forumFilter = "전체";
-let forumPosts = [
-  {
-    title: "시스템이 현재 작업중에 있습니다.",
-    category: "공지",
-    body: "서비스 개선 작업이 진행 중입니다.",
-    author: "Yooan Chung",
-    time: "06/20 12:19",
-    comments: 0,
-    pinned: true,
-  },
-  {
-    title: "10+0으로 한국어 연습할 상대 구합니다.",
-    category: "자유",
-    body: "천천히 두면서 수 설명을 같이 하고 싶어요.",
-    author: "Mina K.",
-    time: "06/20 12:07",
-    comments: 3,
-    pinned: false,
-  },
-  {
-    title: "discovered attack을 영어로 쉽게 설명하려면?",
-    category: "질문",
-    body: "전술은 아는데 말로 설명하는 표현이 어렵습니다.",
-    author: "Alex B.",
-    time: "06/20 11:42",
-    comments: 5,
-    pinned: false,
-  },
-];
+let forumFilter = "All";
+let forumPosts = [];
 
 const voiceClientId =
   window.crypto?.randomUUID?.() || `voice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -920,6 +892,7 @@ function renderAuthState() {
   }
   if (headerSignOutButton) headerSignOutButton.disabled = !signedIn;
   if (deleteAccountButton) deleteAccountButton.disabled = !signedIn;
+  if (forumPostList) renderForumPosts();
   continueToDashboardButton.hidden = !signedIn;
   loginButton.textContent = signedIn ? "Play" : "Login";
   signupButton.textContent = signedIn ? "Sign out" : "New user";
@@ -1723,7 +1696,16 @@ function renderForumPosts() {
   forumFilterButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.forumFilter === forumFilter);
   });
-  const visiblePosts = forumFilter === "전체" ? forumPosts : forumPosts.filter((post) => post.category === forumFilter);
+  const visiblePosts = (forumFilter === "All" ? forumPosts : forumPosts.filter((post) => post.category === forumFilter)).sort(
+    (first, second) => Number(second.pinned) - Number(first.pinned)
+  );
+  if (visiblePosts.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "forum-empty";
+    empty.textContent = "No posts yet.";
+    forumPostList.append(empty);
+    return;
+  }
   visiblePosts.forEach((post) => {
     const item = document.createElement("article");
     item.className = "forum-post";
@@ -1736,7 +1718,7 @@ function renderForumPosts() {
     main.className = "forum-post-main";
 
     const category = document.createElement("span");
-    category.className = `forum-post-tag ${post.category === "질문" ? "question" : post.category === "자유" ? "free" : ""}`;
+    category.className = `forum-post-tag ${post.category === "Question" ? "question" : post.category === "Free" ? "free" : ""}`;
     category.textContent = post.category;
 
     const title = document.createElement("h4");
@@ -1755,8 +1737,18 @@ function renderForumPosts() {
     comments.className = "forum-comments";
     comments.textContent = `💬 ${post.comments || 0}`;
 
+    let pinButton = null;
+    if (currentUser?.role === "admin") {
+      pinButton = document.createElement("button");
+      pinButton.className = "forum-pin-action";
+      pinButton.type = "button";
+      pinButton.textContent = post.pinned ? "Unpin" : "Pin";
+      pinButton.addEventListener("click", () => toggleForumPin(post.id));
+    }
+
     main.append(category, title);
     side.append(author, time, comments);
+    if (pinButton) side.append(pinButton);
     item.append(pin, main, side);
     forumPostList.append(item);
   });
@@ -1771,11 +1763,12 @@ function publishForumPost() {
   }
   forumPosts = [
     {
+      id: window.crypto?.randomUUID?.() || `post_${Date.now()}`,
       title,
       category: forumPostCategory.value,
       body,
       author: currentUser?.displayName || "Guest Player",
-      time: "방금 전",
+      time: "Just now",
       comments: 0,
       pinned: false,
     },
@@ -1790,6 +1783,12 @@ function publishForumPost() {
 function toggleForumComposer() {
   forumComposer.hidden = !forumComposer.hidden;
   if (!forumComposer.hidden) forumPostTitle.focus();
+}
+
+function toggleForumPin(postId) {
+  if (currentUser?.role !== "admin") return;
+  forumPosts = forumPosts.map((post) => (post.id === postId ? { ...post, pinned: !post.pinned } : post));
+  renderForumPosts();
 }
 
 function saveShopInterest(productName) {

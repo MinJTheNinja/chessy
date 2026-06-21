@@ -600,41 +600,41 @@
           <section class="view" data-view="forum" aria-labelledby="forumTitle">
             <div class="forum-board">
               <header class="forum-heading">
-                <h2 id="forumTitle">게시판</h2>
-                <p>공지사항, 질문, 자유롭게 이야기해보세요</p>
+                <h2 id="forumTitle">Forum</h2>
+                <p>Announcements, questions, and open discussion for players.</p>
               </header>
 
               <div class="forum-actions">
-                <button class="button secondary" data-view-link="dashboard" type="button">← 대시보드로</button>
-                <button class="button primary" id="showForumComposer" type="button">+ 새 글 작성</button>
+                <button class="button secondary" data-view-link="dashboard" type="button">← Back to dashboard</button>
+                <button class="button primary" id="showForumComposer" type="button">+ New post</button>
               </div>
 
               <article class="wire-card forum-composer" id="forumComposer" hidden>
-                <h3>새 글 작성</h3>
+                <h3>New post</h3>
                 <label>
-                  제목
-                  <input id="forumPostTitle" type="text" placeholder="제목을 입력하세요" maxlength="80" />
+                  Title
+                  <input id="forumPostTitle" type="text" placeholder="Enter a title" maxlength="80" />
                 </label>
                 <label>
-                  카테고리
+                  Category
                   <select id="forumPostCategory">
-                    <option value="공지">공지</option>
-                    <option value="질문">질문</option>
-                    <option value="자유">자유</option>
+                    <option value="Notice">Notice</option>
+                    <option value="Question">Question</option>
+                    <option value="Free">Free</option>
                   </select>
                 </label>
                 <label>
-                  내용
-                  <textarea id="forumPostBody" placeholder="내용을 입력하세요" maxlength="420"></textarea>
+                  Message
+                  <textarea id="forumPostBody" placeholder="Write your message" maxlength="420"></textarea>
                 </label>
-                <button class="button primary full" id="publishForumPost" type="button">게시하기</button>
+                <button class="button primary full" id="publishForumPost" type="button">Publish</button>
               </article>
 
               <nav class="forum-tabs" aria-label="Forum categories">
-                <button class="active" type="button" data-forum-filter="전체">전체</button>
-                <button type="button" data-forum-filter="공지">📢 공지</button>
-                <button type="button" data-forum-filter="질문">❓ 질문</button>
-                <button type="button" data-forum-filter="자유">💬 자유</button>
+                <button class="active" type="button" data-forum-filter="All">All</button>
+                <button type="button" data-forum-filter="Notice">Notice</button>
+                <button type="button" data-forum-filter="Question">Question</button>
+                <button type="button" data-forum-filter="Free">Free</button>
               </nav>
 
               <div class="forum-list" id="forumPostList"></div>
