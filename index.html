@@ -114,6 +114,8 @@
           <button class="side-link active" data-view-link="match">Play</button>
           <button class="side-link" data-view-link="review">AI Review</button>
           <button class="side-link" data-view-link="communication">Messages</button>
+          <button class="side-link" data-view-link="forum">Forum</button>
+          <button class="side-link" data-view-link="chessboards">Chessboards</button>
           <button class="side-link admin-only" data-view-link="admin" hidden>Admin</button>
         </aside>
 
@@ -147,6 +149,16 @@
                 <span>04</span>
                 <h3>Profile and Culture</h3>
                 <p>Manage your profile, badges, feedback, and culture guide.</p>
+              </article>
+              <article class="route-card" data-view-link="forum">
+                <span>05</span>
+                <h3>Forum</h3>
+                <p>Ask questions, share game notes, and find practice partners.</p>
+              </article>
+              <article class="route-card" data-view-link="chessboards">
+                <span>06</span>
+                <h3>Chessboards</h3>
+                <p>Explore the physical boards built for live language chess.</p>
               </article>
             </div>
 
@@ -583,6 +595,93 @@
               <p>New voice letter from Alex B. <span>2 min ago</span></p>
               <p>Maria K. replied to your voice letter. <span>1 hr ago</span></p>
             </div>
+          </section>
+
+          <section class="view" data-view="forum" aria-labelledby="forumTitle">
+            <div class="forum-board">
+              <header class="forum-heading">
+                <h2 id="forumTitle">게시판</h2>
+                <p>공지사항, 질문, 자유롭게 이야기해보세요</p>
+              </header>
+
+              <div class="forum-actions">
+                <button class="button secondary" data-view-link="dashboard" type="button">← 대시보드로</button>
+                <button class="button primary" id="showForumComposer" type="button">+ 새 글 작성</button>
+              </div>
+
+              <article class="wire-card forum-composer" id="forumComposer" hidden>
+                <h3>새 글 작성</h3>
+                <label>
+                  제목
+                  <input id="forumPostTitle" type="text" placeholder="제목을 입력하세요" maxlength="80" />
+                </label>
+                <label>
+                  카테고리
+                  <select id="forumPostCategory">
+                    <option value="공지">공지</option>
+                    <option value="질문">질문</option>
+                    <option value="자유">자유</option>
+                  </select>
+                </label>
+                <label>
+                  내용
+                  <textarea id="forumPostBody" placeholder="내용을 입력하세요" maxlength="420"></textarea>
+                </label>
+                <button class="button primary full" id="publishForumPost" type="button">게시하기</button>
+              </article>
+
+              <nav class="forum-tabs" aria-label="Forum categories">
+                <button class="active" type="button" data-forum-filter="전체">전체</button>
+                <button type="button" data-forum-filter="공지">📢 공지</button>
+                <button type="button" data-forum-filter="질문">❓ 질문</button>
+                <button type="button" data-forum-filter="자유">💬 자유</button>
+              </nav>
+
+              <div class="forum-list" id="forumPostList"></div>
+            </div>
+          </section>
+
+          <section class="view" data-view="chessboards" aria-labelledby="chessboardsTitle">
+            <div class="view-header">
+              <div>
+                <span class="eyebrow">Shop</span>
+                <h2 id="chessboardsTitle">Chessboards</h2>
+              </div>
+            </div>
+
+            <section class="shop-hero">
+              <div>
+                <span class="eyebrow">Live Chess Hardware</span>
+                <h3>Boards made for chess and language practice.</h3>
+                <p>Sell your dedicated board here with product details, reservation interest, and future checkout flow.</p>
+              </div>
+              <button class="button primary" data-shop-interest="Founder's Board">Reserve interest</button>
+            </section>
+
+            <div class="shop-grid">
+              <article class="wire-card product-card">
+                <span class="product-tag">Prototype</span>
+                <h3>Founder's Board</h3>
+                <p>Portable tournament-size board for live matches, captions, and lesson review.</p>
+                <strong>$149 estimated</strong>
+                <button class="button secondary full" data-shop-interest="Founder's Board" type="button">Join waitlist</button>
+              </article>
+              <article class="wire-card product-card">
+                <span class="product-tag">Studio</span>
+                <h3>Coach Board</h3>
+                <p>Larger tabletop board for tutors, clubs, and language exchange sessions.</p>
+                <strong>$229 estimated</strong>
+                <button class="button secondary full" data-shop-interest="Coach Board" type="button">Join waitlist</button>
+              </article>
+              <article class="wire-card product-card">
+                <span class="product-tag">Accessory</span>
+                <h3>Travel Kit</h3>
+                <p>Compact pieces, carrying case, and setup guide for in-person practice games.</p>
+                <strong>$49 estimated</strong>
+                <button class="button secondary full" data-shop-interest="Travel Kit" type="button">Join waitlist</button>
+              </article>
+            </div>
+            <p class="shop-interest-status" id="shopInterestStatus">Select a product to save interest.</p>
           </section>
 
           <section class="view" data-view="stt" aria-labelledby="sttTitle">

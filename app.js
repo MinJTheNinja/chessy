@@ -93,6 +93,15 @@ const clearNotificationsButton = document.querySelector("#clearNotifications");
 const activeMatchesCount = document.querySelector("#activeMatchesCount");
 const subtitleSessionsCount = document.querySelector("#subtitleSessionsCount");
 const conversationGoal = document.querySelector("#conversationGoal");
+const forumPostTitle = document.querySelector("#forumPostTitle");
+const forumPostCategory = document.querySelector("#forumPostCategory");
+const forumPostBody = document.querySelector("#forumPostBody");
+const forumPostList = document.querySelector("#forumPostList");
+const publishForumPostButton = document.querySelector("#publishForumPost");
+const showForumComposerButton = document.querySelector("#showForumComposer");
+const forumComposer = document.querySelector("#forumComposer");
+const forumFilterButtons = document.querySelectorAll("[data-forum-filter]");
+const shopInterestStatus = document.querySelector("#shopInterestStatus");
 const vocabList = document.querySelector("#vocabList");
 const culturalTitle = document.querySelector("#culturalTitle");
 const culturalBody = document.querySelector("#culturalBody");
@@ -345,6 +354,36 @@ let notifications = [];
 let unreadNotifications = 0;
 let cachedAdminData = null;
 let adminCommandBuffer = "";
+let forumFilter = "전체";
+let forumPosts = [
+  {
+    title: "시스템이 현재 작업중에 있습니다.",
+    category: "공지",
+    body: "서비스 개선 작업이 진행 중입니다.",
+    author: "Yooan Chung",
+    time: "06/20 12:19",
+    comments: 0,
+    pinned: true,
+  },
+  {
+    title: "10+0으로 한국어 연습할 상대 구합니다.",
+    category: "자유",
+    body: "천천히 두면서 수 설명을 같이 하고 싶어요.",
+    author: "Mina K.",
+    time: "06/20 12:07",
+    comments: 3,
+    pinned: false,
+  },
+  {
+    title: "discovered attack을 영어로 쉽게 설명하려면?",
+    category: "질문",
+    body: "전술은 아는데 말로 설명하는 표현이 어렵습니다.",
+    author: "Alex B.",
+    time: "06/20 11:42",
+    comments: 5,
+    pinned: false,
+  },
+];
 
 const voiceClientId =
   window.crypto?.randomUUID?.() || `voice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -1679,6 +1718,84 @@ function toggleLargeTextMode() {
   largeTextButton.setAttribute("aria-pressed", String(enabled));
 }
 
+function renderForumPosts() {
+  forumPostList.replaceChildren();
+  forumFilterButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.forumFilter === forumFilter);
+  });
+  const visiblePosts = forumFilter === "전체" ? forumPosts : forumPosts.filter((post) => post.category === forumFilter);
+  visiblePosts.forEach((post) => {
+    const item = document.createElement("article");
+    item.className = "forum-post";
+
+    const pin = document.createElement("span");
+    pin.className = "forum-post-pin";
+    pin.textContent = post.pinned ? "📌" : "";
+
+    const main = document.createElement("div");
+    main.className = "forum-post-main";
+
+    const category = document.createElement("span");
+    category.className = `forum-post-tag ${post.category === "질문" ? "question" : post.category === "자유" ? "free" : ""}`;
+    category.textContent = post.category;
+
+    const title = document.createElement("h4");
+    title.textContent = post.title;
+
+    const side = document.createElement("div");
+    side.className = "forum-post-side";
+
+    const author = document.createElement("span");
+    author.textContent = post.author;
+
+    const time = document.createElement("time");
+    time.textContent = post.time;
+
+    const comments = document.createElement("span");
+    comments.className = "forum-comments";
+    comments.textContent = `💬 ${post.comments || 0}`;
+
+    main.append(category, title);
+    side.append(author, time, comments);
+    item.append(pin, main, side);
+    forumPostList.append(item);
+  });
+}
+
+function publishForumPost() {
+  const title = forumPostTitle.value.trim();
+  const body = forumPostBody.value.trim();
+  if (!title || !body) {
+    forumPostBody.focus();
+    return;
+  }
+  forumPosts = [
+    {
+      title,
+      category: forumPostCategory.value,
+      body,
+      author: currentUser?.displayName || "Guest Player",
+      time: "방금 전",
+      comments: 0,
+      pinned: false,
+    },
+    ...forumPosts,
+  ];
+  forumPostTitle.value = "";
+  forumPostBody.value = "";
+  forumComposer.hidden = true;
+  renderForumPosts();
+}
+
+function toggleForumComposer() {
+  forumComposer.hidden = !forumComposer.hidden;
+  if (!forumComposer.hidden) forumPostTitle.focus();
+}
+
+function saveShopInterest(productName) {
+  shopInterestStatus.textContent = `${productName} interest saved. We'll use this tab for checkout and launch updates next.`;
+}
+
 function setView(viewName) {
   if (viewName === "home") {
     document.querySelector("#home").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2757,6 +2874,7 @@ function playPronunciation(button) {
 }
 
 resetSubtitlePlaceholders();
+renderForumPosts();
 
 menuToggle.addEventListener("click", (event) => {
   event.stopPropagation();
@@ -2912,6 +3030,17 @@ refreshProfileButton.addEventListener("click", refreshProfile);
 saveProfileButton.addEventListener("click", saveProfile);
 submitPeerFeedbackButton.addEventListener("click", submitPeerFeedback);
 saveCultureGuideButton.addEventListener("click", saveCultureGuide);
+showForumComposerButton.addEventListener("click", toggleForumComposer);
+publishForumPostButton.addEventListener("click", publishForumPost);
+forumFilterButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    forumFilter = button.dataset.forumFilter;
+    renderForumPosts();
+  });
+});
+document.querySelectorAll("[data-shop-interest]").forEach((button) => {
+  button.addEventListener("click", () => saveShopInterest(button.dataset.shopInterest));
+});
 
 resignMatchButton.addEventListener("click", () => finishMatch("Resigned"));
 drawMatchButton.addEventListener("click", offerDraw);
