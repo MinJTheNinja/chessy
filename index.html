@@ -8,6 +8,9 @@
   </head>
   <body>
     <header class="site-header">
+      <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebarMenu" aria-label="Open menu">
+        <span aria-hidden="true">☰</span>
+      </button>
       <a class="brand" href="#home" data-view-link="home" aria-label="Live Chess home">
         <span class="brand-mark">LC</span>
         <span>Live Chess</span>
@@ -95,14 +98,12 @@
       </section>
 
       <section class="app-shell" id="dashboard" aria-label="Application workspace">
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebarMenu" hidden>
           <span class="sidebar-label">Menu</span>
           <button class="side-link active" data-view-link="match">Play</button>
           <button class="side-link" data-view-link="review">AI Review</button>
           <button class="side-link" data-view-link="communication">Messages</button>
-          <button class="side-link" data-view-link="profile">Profile</button>
-          <button class="side-link" data-view-link="settings">Settings</button>
-          <button class="side-link" data-view-link="admin">Admin</button>
+          <button class="side-link admin-only" data-view-link="admin" hidden>Admin</button>
         </aside>
 
         <div class="workspace">

@@ -1,4 +1,6 @@
 const board = document.querySelector("#chessBoard");
+const menuToggle = document.querySelector("#menuToggle");
+const sidebarMenu = document.querySelector("#sidebarMenu");
 const syncState = document.querySelector("#syncState");
 const queueTime = document.querySelector("#queueTime");
 const queueProgress = document.querySelector("#queueProgress");
@@ -340,6 +342,7 @@ let sttSessionTimer = null;
 let notifications = [];
 let unreadNotifications = 0;
 let cachedAdminData = null;
+let adminCommandBuffer = "";
 
 const voiceClientId =
   window.crypto?.randomUUID?.() || `voice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -887,6 +890,11 @@ function renderAuthState() {
   authLanguagePair.disabled = signedIn;
   authDisplayNameField.hidden = authMode === "login";
   authPassword.autocomplete = authMode === "login" ? "current-password" : "new-password";
+  if (currentUser?.role !== "admin") {
+    document.querySelectorAll(".admin-only").forEach((button) => {
+      button.hidden = true;
+    });
+  }
 }
 
 function setAuthMode(mode) {
@@ -1644,6 +1652,30 @@ function setView(viewName) {
   if (viewName === "admin") refreshAdmin();
   if (viewName === "profile") refreshProfile();
   document.querySelector("#dashboard").scrollIntoView({ behavior: "smooth", block: "start" });
+  closeMenu();
+}
+
+function openMenu() {
+  sidebarMenu.hidden = false;
+  menuToggle.setAttribute("aria-expanded", "true");
+}
+
+function closeMenu() {
+  sidebarMenu.hidden = true;
+  menuToggle.setAttribute("aria-expanded", "false");
+}
+
+function toggleMenu() {
+  if (sidebarMenu.hidden) openMenu();
+  else closeMenu();
+}
+
+function revealAdminByCommand() {
+  if (currentUser?.role !== "admin") return;
+  document.querySelectorAll(".admin-only").forEach((button) => {
+    button.hidden = false;
+  });
+  setView("admin");
 }
 
 function piecesFromBoard(boardRows) {
@@ -2665,6 +2697,29 @@ function playPronunciation(button) {
 }
 
 resetSubtitlePlaceholders();
+
+menuToggle.addEventListener("click", (event) => {
+  event.stopPropagation();
+  toggleMenu();
+});
+
+document.addEventListener("click", (event) => {
+  if (sidebarMenu.hidden) return;
+  if (sidebarMenu.contains(event.target) || menuToggle.contains(event.target)) return;
+  closeMenu();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeMenu();
+  const target = event.target;
+  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return;
+  if (event.key.length !== 1) return;
+  adminCommandBuffer = `${adminCommandBuffer}${event.key.toLowerCase()}`.slice(-5);
+  if (adminCommandBuffer === "admin") {
+    adminCommandBuffer = "";
+    revealAdminByCommand();
+  }
+});
 
 document.querySelectorAll("[data-view-link]").forEach((link) => {
   link.addEventListener("click", (event) => {
