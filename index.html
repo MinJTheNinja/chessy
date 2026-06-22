@@ -50,6 +50,7 @@
           <div class="profile-menu" id="headerProfileMenu" hidden>
             <button type="button" data-view-link="profile">Profile</button>
             <button type="button" data-view-link="settings">Settings</button>
+            <button id="headerSignOut" type="button">Sign out</button>
           </div>
         </div>
       </div>
@@ -114,8 +115,6 @@
           <button class="side-link active" data-view-link="match">Play</button>
           <button class="side-link" data-view-link="review">AI Review</button>
           <button class="side-link" data-view-link="communication">Messages</button>
-          <button class="side-link" data-view-link="forum">Forum</button>
-          <button class="side-link" data-view-link="chessboards">Chessboards</button>
           <button class="side-link admin-only" data-view-link="admin" hidden>Admin</button>
         </aside>
 
@@ -150,16 +149,6 @@
                 <h3>Profile and Culture</h3>
                 <p>Manage your profile, badges, feedback, and culture guide.</p>
               </article>
-              <article class="route-card" data-view-link="forum">
-                <span>05</span>
-                <h3>Forum</h3>
-                <p>Ask questions, share game notes, and find practice partners.</p>
-              </article>
-              <article class="route-card" data-view-link="chessboards">
-                <span>06</span>
-                <h3>Chessboards</h3>
-                <p>Explore the physical boards built for live language chess.</p>
-              </article>
             </div>
 
             <div class="status-strip">
@@ -190,7 +179,7 @@
               </div>
             </div>
 
-            <div class="match-layout" id="matchLayout">
+            <div class="match-layout" id="matchLayout" data-state="idle">
               <aside class="panel lobby-panel">
                 <div class="play-choice-grid" aria-label="Play options">
                   <button class="play-choice-card" id="findMatch" type="button">
@@ -307,7 +296,10 @@
                     <div class="match-result" id="matchResult">
                       <strong>Game status</strong>
                       <span>In progress</span>
-                      <button class="button dark small" id="generateReview" data-view-link="review">Generate AI Review</button>
+                      <div class="match-result-actions">
+                        <button class="button secondary small" id="newGame" type="button" hidden>New game</button>
+                        <button class="button dark small" id="generateReview" data-view-link="review" hidden>Generate AI Review</button>
+                      </div>
                     </div>
                   </div>
                   <aside class="match-game-panel" aria-label="Match information and live captions">
@@ -449,25 +441,10 @@
               </div>
               <div class="button-row">
                 <button class="button secondary" data-view-link="match">Back to Match</button>
-                <button class="button primary" id="refreshReview">Refresh Review</button>
+                <button class="button primary" id="refreshReview">Regenerate Review</button>
               </div>
             </div>
-
-            <div class="review-summary">
-              <article class="wire-card">
-                <span class="label">Generated from conversation transcript</span>
-                <h3>Vocabulary Chest</h3>
-                <p>
-                  5 to 10 useful words and phrases from both players, translated and tied back to the moment
-                  where they appeared during the match.
-                </p>
-              </article>
-              <article class="wire-card">
-                <span class="label">Listening reinforcement</span>
-                <h3 id="pronunciationStatus">Click any word to replay pronunciation.</h3>
-                <p>Each vocabulary item can speak the original phrase again for listening practice.</p>
-              </article>
-            </div>
+            <p class="review-status-line" id="pronunciationStatus">Click any word to replay pronunciation.</p>
 
             <div class="learning-layout">
               <section class="wire-card">
@@ -531,16 +508,6 @@
                   <button class="button secondary full">Save to Culture Guide</button>
                 </article>
 
-                <article class="wire-card">
-                  <span class="eyebrow">Future backend behavior</span>
-                  <h3>Workflow placement</h3>
-                  <ol class="review-flow">
-                    <li>Match ends and transcript is saved.</li>
-                    <li>AI extracts vocabulary, translations, and context.</li>
-                    <li>AI detects cultural references or slang.</li>
-                    <li>User taps any word to hear pronunciation.</li>
-                  </ol>
-                </article>
               </aside>
             </div>
           </section>
@@ -883,7 +850,6 @@
                 <h3>Account</h3>
                 <p id="settingsAccountName">Signed in</p>
                 <div class="account-actions">
-                  <button class="button secondary full" id="headerSignOut" type="button">Sign out</button>
                   <button class="button danger full" id="deleteAccount" type="button">Delete account</button>
                 </div>
               </article>

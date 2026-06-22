@@ -884,7 +884,6 @@ p {
 .status-strip,
 .profile-grid,
 .admin-grid,
-.review-summary,
 .learning-layout,
 .vocab-list,
 .review-side {
@@ -943,28 +942,78 @@ p {
   gap: 14px;
 }
 
-.match-layout.paired {
+.match-layout[data-state="playing"],
+.match-layout[data-state="ended"] {
   grid-template-columns: minmax(520px, 1fr);
 }
 
-.match-layout:not(.paired) .board-panel {
+.match-layout[data-state="idle"] .board-panel,
+.match-layout[data-state="searching"] .board-panel {
   display: none;
 }
 
-.match-layout:not(.paired) .match-side-panel {
+.match-layout[data-state="idle"] .match-side-panel,
+.match-layout[data-state="searching"] .match-side-panel {
   display: none;
 }
 
-.match-layout.paired .lobby-panel {
+.match-layout[data-state="playing"] .lobby-panel,
+.match-layout[data-state="ended"] .lobby-panel {
   display: none;
 }
 
-.match-layout.paired .match-side-panel {
+.match-layout[data-state="playing"] .match-side-panel,
+.match-layout[data-state="ended"] .match-side-panel {
   display: none;
 }
 
-.match-layout.paired .board-panel {
+.match-layout[data-state="playing"] .board-panel,
+.match-layout[data-state="ended"] .board-panel {
   min-width: 0;
+}
+
+.match-layout[data-state="searching"] .play-choice-grid,
+.match-layout[data-state="searching"] .quick-pair-composer,
+.match-layout[data-state="searching"] .seek-composer {
+  display: none;
+}
+
+.match-layout[data-state="searching"] .lobby-panel {
+  max-width: 680px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.match-layout[data-state="ended"] .board-panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.match-layout[data-state="ended"] .board-toolbar,
+.match-layout[data-state="ended"] .chess-board,
+.match-layout[data-state="ended"] .match-game-panel {
+  display: none;
+}
+
+.match-layout[data-state="ended"] .board-stage {
+  width: min(100%, 680px);
+  justify-self: center;
+}
+
+.match-layout[data-state="ended"] .match-result {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  min-height: 220px;
+  padding: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  text-align: center;
+  box-shadow: var(--shadow);
 }
 
 .panel,
@@ -1666,6 +1715,13 @@ p {
   color: var(--muted);
 }
 
+.match-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .avatar {
   display: grid;
   width: 72px;
@@ -2080,9 +2136,9 @@ p {
   gap: 16px;
 }
 
-.review-summary {
-  grid-template-columns: minmax(320px, 1fr) minmax(280px, 0.72fr);
-  margin-bottom: 22px;
+.review-status-line {
+  margin: -6px 0 18px;
+  color: var(--muted);
 }
 
 .learning-layout {
@@ -2130,15 +2186,6 @@ p {
 .cultural-card {
   border-color: rgba(212, 149, 47, 0.34);
   background: #fffaf0;
-}
-
-.review-flow {
-  display: grid;
-  gap: 12px;
-  margin: 0;
-  padding-left: 22px;
-  color: var(--muted);
-  line-height: 1.55;
 }
 
 .profile-grid {
@@ -2393,7 +2440,6 @@ dialog::backdrop {
     border-top: 1px solid var(--line);
   }
 
-  .review-summary,
   .vocab-list {
     grid-template-columns: 1fr;
   }

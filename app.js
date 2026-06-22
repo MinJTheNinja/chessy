@@ -15,6 +15,7 @@ const closeFriendRoomButton = document.querySelector("#closeFriendRoom");
 const resignMatchButton = document.querySelector("#resignMatch");
 const drawMatchButton = document.querySelector("#drawMatch");
 const matchResult = document.querySelector("#matchResult span");
+const newGameButton = document.querySelector("#newGame");
 const matchLayout = document.querySelector("#matchLayout");
 const partnerLanguage = document.querySelector("#partnerLanguage");
 const partnerName = document.querySelector("#partnerName");
@@ -486,14 +487,30 @@ function speakText(text, options = {}) {
   return true;
 }
 
-function setMatchPaired(isPaired) {
-  matchLayout.classList.toggle("paired", isPaired);
-  findMatchButton.hidden = isPaired;
-  showCreateSeekButton.hidden = isPaired;
-  showFriendRoomButton.hidden = isPaired;
-  cancelMatchSearchButton.hidden = true;
-  if (isPaired) seekComposer.hidden = true;
-  document.querySelector("#matchTitle").textContent = isPaired ? "Live match" : "Find a game";
+function setMatchState(state) {
+  const allowedStates = new Set(["idle", "searching", "playing", "ended"]);
+  const nextState = allowedStates.has(state) ? state : "idle";
+  const isIdle = nextState === "idle";
+  const isPlaying = nextState === "playing";
+  const isEnded = nextState === "ended";
+
+  matchLayout.dataset.state = nextState;
+  matchLayout.classList.toggle("paired", isPlaying);
+  findMatchButton.hidden = !isIdle;
+  showCreateSeekButton.hidden = !isIdle;
+  showFriendRoomButton.hidden = !isIdle;
+  cancelMatchSearchButton.hidden = nextState !== "searching";
+  generateReviewButton.hidden = !isEnded;
+  newGameButton.hidden = !isEnded;
+  if (!isIdle) seekComposer.hidden = true;
+
+  const titles = {
+    idle: "Find a game",
+    searching: "Finding a player",
+    playing: "Live match",
+    ended: "Match result",
+  };
+  document.querySelector("#matchTitle").textContent = titles[nextState];
 }
 
 function isVoiceCallSupported() {
@@ -1990,7 +2007,7 @@ function renderMatch(match) {
   updateRoomLink(match.id);
   updateMatchRoute(match.id);
   const matchEnded = match.status === "ended" || match.game?.gameOver;
-  setMatchPaired(!matchEnded);
+  setMatchState(matchEnded ? "ended" : "playing");
   if (!matchEnded) timeoutNotifiedFor = null;
   boardOrientation = currentPlayerColor(match);
   if (match.game?.board) {
@@ -2096,6 +2113,7 @@ async function applyPlannedMove() {
 
 async function finishMatch(result, options = {}) {
   const review = options.review ?? true;
+  setMatchState("ended");
   matchResult.textContent = result;
   syncState.textContent = options.statusText || "Match ended";
   generateReviewButton.textContent = "View AI Review";
@@ -2142,6 +2160,8 @@ async function startQueue(label = "Searching for a safe partner with matching go
   clearInterval(queueInterval);
   clearInterval(queuePollInterval);
   requestNotificationPermission();
+  currentMatchId = null;
+  setMatchState("searching");
   let seconds = 25;
   let progress = 22;
   cancelMatchSearchButton.hidden = false;
@@ -2198,6 +2218,7 @@ async function startQueue(label = "Searching for a safe partner with matching go
       await refreshLobby();
     } catch (error) {
       queuePrompt.textContent = error.message;
+      setMatchState("idle");
     }
   }
 
@@ -2216,11 +2237,25 @@ async function startQueue(label = "Searching for a safe partner with matching go
 function cancelMatchSearch() {
   clearInterval(queueInterval);
   clearInterval(queuePollInterval);
-  cancelMatchSearchButton.hidden = true;
+  setMatchState("idle");
   queueTime.textContent = "Choose mode";
   queueProgress.style.width = "0%";
   queuePrompt.textContent = "Search canceled. Choose how you want to play.";
   matchResult.textContent = "Canceled";
+}
+
+function resetToNewGame() {
+  clearInterval(queueInterval);
+  clearInterval(queuePollInterval);
+  endVoiceCall(false);
+  currentMatchId = null;
+  updateRoomLink(null);
+  setMatchState("idle");
+  queueTime.textContent = "Choose mode";
+  queueProgress.style.width = "0%";
+  queuePrompt.textContent = "Choose how you want to play.";
+  matchResult.textContent = "No active match";
+  if (location.protocol !== "file:") history.replaceState({}, "", "/");
 }
 
 async function quickPairFromSelectedPool() {
@@ -2281,8 +2316,8 @@ async function createOpenSeek() {
       await refreshLobby();
       return;
     }
+    setMatchState("searching");
     queuePrompt.textContent = `Game created. Waiting for ${data.seek.timeControl}, ${data.seek.partnerLanguage}, ${data.seek.goal}.`;
-    cancelMatchSearchButton.hidden = false;
     await refreshLobby();
   } catch (error) {
     queuePrompt.textContent = error.message;
@@ -3043,6 +3078,7 @@ document.querySelectorAll("[data-shop-interest]").forEach((button) => {
 
 resignMatchButton.addEventListener("click", () => finishMatch("Resigned"));
 drawMatchButton.addEventListener("click", offerDraw);
+newGameButton.addEventListener("click", resetToNewGame);
 
 partnerLanguage.addEventListener("change", () => {
   partnerName.textContent = `Mina K. (${partnerLanguage.value})`;
