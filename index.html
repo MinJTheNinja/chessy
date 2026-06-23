@@ -840,10 +840,18 @@
                   <span class="toggle-track" aria-hidden="true"><span></span></span>
                   <span>High contrast</span>
                 </button>
-                <button class="mode-toggle settings-toggle" id="largeTextButton" type="button" aria-pressed="false">
-                  <span class="toggle-track" aria-hidden="true"><span></span></span>
-                  <span>Large text</span>
-                </button>
+                <div class="text-size-panel">
+                  <button class="mode-toggle settings-toggle" id="largeTextButton" type="button" aria-pressed="false">
+                    <span>Larger Accessibility Sizes</span>
+                    <span class="toggle-track" aria-hidden="true"><span></span></span>
+                  </button>
+                  <p>Text in the app adjusts to your preferred reading size below.</p>
+                  <div class="text-size-slider-row">
+                    <span class="text-size-a small" aria-hidden="true">A</span>
+                    <input id="textSizeSlider" type="range" min="0" max="6" step="1" value="2" aria-label="Text size" />
+                    <span class="text-size-a large" aria-hidden="true">A</span>
+                  </div>
+                </div>
               </article>
 
               <article class="wire-card settings-card">

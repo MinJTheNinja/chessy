@@ -34,13 +34,14 @@ body {
   margin: 0;
   background: var(--soft);
   color: var(--ink);
+  font-size: var(--app-font-scale, 100%);
   font-family:
     Inter, "Pretendard", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
 }
 
 body.large-text-mode {
-  font-size: 112%;
+  --app-font-scale: 112%;
 }
 
 body.high-contrast-mode {
@@ -326,6 +327,83 @@ a {
   justify-content: space-between;
   width: min(100%, 340px);
   padding: 10px 12px;
+}
+
+.text-size-panel {
+  display: grid;
+  gap: 18px;
+  width: min(100%, 520px);
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7f7fb;
+}
+
+.text-size-panel .settings-toggle {
+  width: 100%;
+  border-color: transparent;
+  background: white;
+}
+
+.text-size-panel p {
+  max-width: 420px;
+  margin: 0 auto;
+  color: var(--ink);
+  text-align: center;
+}
+
+.text-size-slider-row {
+  display: grid;
+  grid-template-columns: auto minmax(160px, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0 2px;
+}
+
+.text-size-a {
+  color: #8a8f99;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.text-size-a.small {
+  font-size: 0.95rem;
+}
+
+.text-size-a.large {
+  font-size: 1.65rem;
+}
+
+#textSizeSlider {
+  width: 100%;
+  accent-color: var(--dark);
+  appearance: none;
+  background: transparent;
+}
+
+#textSizeSlider::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 999px;
+  background:
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(14.285% - 2px),
+      #8d929b calc(14.285% - 2px),
+      #8d929b 14.285%
+    ),
+    #c9ccd1;
+}
+
+#textSizeSlider::-webkit-slider-thumb {
+  width: 28px;
+  height: 28px;
+  margin-top: -12px;
+  border: 0;
+  border-radius: 999px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(26, 26, 46, 0.18);
+  appearance: none;
 }
 
 .account-actions {

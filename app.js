@@ -83,6 +83,7 @@ const headerSignOutButton = document.querySelector("#headerSignOut");
 const deleteAccountButton = document.querySelector("#deleteAccount");
 const contrastModeButton = document.querySelector("#contrastModeButton");
 const largeTextButton = document.querySelector("#largeTextButton");
+const textSizeSlider = document.querySelector("#textSizeSlider");
 const settingsAccountName = document.querySelector("#settingsAccountName");
 const signupButton = document.querySelector("#signupButton");
 const loginButton = document.querySelector("#loginButton");
@@ -1702,10 +1703,21 @@ function toggleContrastMode() {
   contrastModeButton.setAttribute("aria-pressed", String(enabled));
 }
 
-function toggleLargeTextMode() {
-  const enabled = !document.body.classList.contains("large-text-mode");
+const textSizeScale = [92, 96, 100, 106, 112, 120, 128];
+
+function applyTextSize(value) {
+  const sliderValue = Number(value);
+  const scale = textSizeScale[sliderValue] || 100;
+  document.body.style.setProperty("--app-font-scale", `${scale}%`);
+  const enabled = sliderValue > 2;
   document.body.classList.toggle("large-text-mode", enabled);
   largeTextButton.setAttribute("aria-pressed", String(enabled));
+}
+
+function toggleLargeTextMode() {
+  const nextValue = document.body.classList.contains("large-text-mode") ? 2 : 4;
+  textSizeSlider.value = String(nextValue);
+  applyTextSize(nextValue);
 }
 
 function renderForumPosts() {
@@ -2909,6 +2921,7 @@ function playPronunciation(button) {
 
 resetSubtitlePlaceholders();
 renderForumPosts();
+applyTextSize(textSizeSlider.value);
 
 menuToggle.addEventListener("click", (event) => {
   event.stopPropagation();
@@ -2988,6 +3001,7 @@ headerSignOutButton.addEventListener("click", signOut);
 deleteAccountButton.addEventListener("click", deleteAccount);
 contrastModeButton.addEventListener("click", toggleContrastMode);
 largeTextButton.addEventListener("click", toggleLargeTextMode);
+textSizeSlider.addEventListener("input", (event) => applyTextSize(event.target.value));
 
 signupButton.addEventListener("click", () => {
   if (currentUser) {
