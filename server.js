@@ -13,9 +13,14 @@ const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
 const upstashRedisRestUrl = process.env.UPSTASH_REDIS_REST_URL;
 const upstashRedisRestToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+const nvidiaApiKey = process.env.NVIDIA_API_KEY;
+const nvidiaApiBaseUrl = (process.env.NVIDIA_API_BASE_URL || "https://integrate.api.nvidia.com/v1").replace(/\/$/, "");
+const nvidiaTranslationModel = process.env.NVIDIA_TRANSLATION_MODEL || "nvidia/riva-translate-4b-instruct-v1.1";
+const nvidiaSafetyModel = process.env.NVIDIA_SAFETY_MODEL || "nvidia/nemotron-3.5-content-safety";
 const myMemoryEmail = process.env.MYMEMORY_EMAIL;
 const myMemoryEndpoint = (process.env.MYMEMORY_ENDPOINT || "https://api.mymemory.translated.net").replace(/\/$/, "");
 const redisEnabled = Boolean(upstashRedisRestUrl && upstashRedisRestToken);
+const nvidiaEnabled = Boolean(nvidiaApiKey);
 const pgPool = databaseUrl
   ? new Pool({
       connectionString: databaseUrl,
@@ -375,6 +380,100 @@ function truncateUtf8(text, maxBytes = 480) {
   return phrase;
 }
 
+function translationLanguageName(value, fallback = "English") {
+  const code = normalizeTranslationLanguage(value, "").toLowerCase();
+  const names = {
+    en: "English",
+    ko: "Korean",
+    th: "Thai",
+    ja: "Japanese",
+    zh: "Chinese",
+    es: "Spanish",
+    fr: "French",
+    de: "German",
+    vi: "Vietnamese",
+  };
+  return names[code] || String(value || fallback).trim() || fallback;
+}
+
+async function callNvidiaChat({ model, messages, maxTokens = 256, temperature = 0, extra = {} }) {
+  if (!nvidiaApiKey) {
+    const error = new Error("NVIDIA API key is not configured.");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  const response = await fetch(`${nvidiaApiBaseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${nvidiaApiKey}`,
+      accept: "application/json",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature,
+      max_tokens: maxTokens,
+      stream: false,
+      ...extra,
+    }),
+  });
+
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message = data?.error?.message || data?.detail || `NVIDIA API failed with ${response.status}.`;
+    const error = new Error(message);
+    error.statusCode = response.status;
+    throw error;
+  }
+  if (response.status === 202) {
+    const error = new Error("NVIDIA API returned a pending response. Try again in a moment.");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  return String(data?.choices?.[0]?.message?.content || data?.output || "").trim();
+}
+
+async function translateWithNvidia({ text, targetLanguage, sourceLanguage }) {
+  const phrase = truncateUtf8(text);
+  if (!phrase) {
+    const error = new Error("Text is required.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const target = normalizeTranslationLanguage(targetLanguage, "ko");
+  const source = normalizeTranslationLanguage(sourceLanguage, "en");
+  const sourceName = translationLanguageName(sourceLanguage, "source language");
+  const targetName = translationLanguageName(targetLanguage, "target language");
+  const translated = await callNvidiaChat({
+    model: nvidiaTranslationModel,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are a real-time subtitle translator for a chess voice chat. Translate only the user's text. Do not add explanations, labels, quotation marks, or extra commentary.",
+      },
+      {
+        role: "user",
+        content: `Translate from ${sourceName} to ${targetName}:\n${phrase}`,
+      },
+    ],
+    maxTokens: 180,
+    temperature: 0,
+  });
+
+  return {
+    text: translated || phrase,
+    to: target,
+    from: source,
+    provider: "nvidia",
+    model: nvidiaTranslationModel,
+  };
+}
+
 async function translateWithMyMemory({ text, targetLanguage, sourceLanguage }) {
   const phrase = truncateUtf8(text);
   if (!phrase) {
@@ -409,7 +508,171 @@ async function translateWithMyMemory({ text, targetLanguage, sourceLanguage }) {
     to: target,
     from: source,
     match: data?.responseData?.match || null,
+    provider: "mymemory",
   };
+}
+
+async function translateText({ text, targetLanguage, sourceLanguage }) {
+  if (nvidiaEnabled) {
+    try {
+      return await translateWithNvidia({ text, targetLanguage, sourceLanguage });
+    } catch (error) {
+      console.warn(`NVIDIA translation unavailable: ${error.message}`);
+    }
+  }
+  return translateWithMyMemory({ text, targetLanguage, sourceLanguage });
+}
+
+function localSafetyHeuristic(text) {
+  const phrase = String(text || "").toLowerCase();
+  const profanityPatterns = [
+    /\bf+u+c+k+\b/i,
+    /\bs+h+i+t+\b/i,
+    /\bb+i+t+c+h+\b/i,
+    /\ba+s+s+h+o+l+e+\b/i,
+    /\bidiot\b/i,
+    /\bstupid\b/i,
+    /씨발|시발|ㅅㅂ|병신|ㅂㅅ|꺼져|좆|개새/i,
+  ];
+  const harassmentPatterns = [
+    /\bkill yourself\b/i,
+    /\bi hate you\b/i,
+    /\byou suck\b/i,
+    /죽어|나가 죽어|혐오/i,
+  ];
+  const matched = profanityPatterns.some((pattern) => pattern.test(phrase));
+  const severe = harassmentPatterns.some((pattern) => pattern.test(phrase));
+  return {
+    flagged: matched || severe,
+    severity: severe ? "high" : matched ? "medium" : "low",
+    categories: [...(matched ? ["profanity"] : []), ...(severe ? ["harassment"] : [])],
+    source: "local",
+    reason: matched || severe ? "Possible profanity or disrespectful speech detected." : "No local safety issue detected.",
+  };
+}
+
+function parseNvidiaSafetyResult(raw) {
+  const text = String(raw || "").trim();
+  const lowered = text.toLowerCase();
+  const local = localSafetyHeuristic(text);
+  const flagged =
+    local.flagged ||
+    /\bunsafe\b/.test(lowered) ||
+    /\btoxic\b/.test(lowered) ||
+    /\bharassment\b/.test(lowered) ||
+    /\bhate\b/.test(lowered) ||
+    /\bprofanity\b/.test(lowered);
+  const safe = /\bsafe\b/.test(lowered) && !flagged;
+  return {
+    flagged: flagged && !safe,
+    severity: /\bhigh\b|\bsevere\b/.test(lowered) ? "high" : flagged ? "medium" : "low",
+    categories: [
+      ...new Set([
+        ...local.categories,
+        ...(["profanity", "harassment", "hate", "threat", "toxic"].filter((category) => lowered.includes(category))),
+      ]),
+    ],
+    source: "nvidia",
+    reason: text.slice(0, 280) || "No safety issue detected.",
+  };
+}
+
+async function detectUnsafeText(text) {
+  const local = localSafetyHeuristic(text);
+  if (!String(text || "").trim()) return local;
+
+  if (!nvidiaEnabled) return local;
+
+  try {
+    const raw = await callNvidiaChat({
+      model: nvidiaSafetyModel,
+      messages: [
+        {
+          role: "user",
+          content:
+            `Classify this chess voice-chat transcript for profanity, harassment, hate, threats, or disrespectful behavior. ` +
+            `Return a short result with safe or unsafe, severity, categories, and reason.\n\nTranscript:\n${truncateUtf8(text, 1600)}`,
+        },
+      ],
+      maxTokens: 220,
+      temperature: 0,
+      extra: {
+        chat_template_kwargs: {
+          request_categories: "/categories",
+        },
+      },
+    });
+    const modelResult = parseNvidiaSafetyResult(raw);
+    return {
+      ...modelResult,
+      flagged: modelResult.flagged || local.flagged,
+      severity: modelResult.severity === "low" && local.flagged ? local.severity : modelResult.severity,
+      categories: [...new Set([...modelResult.categories, ...local.categories])],
+    };
+  } catch (error) {
+    console.warn(`NVIDIA safety unavailable: ${error.message}`);
+    return local;
+  }
+}
+
+function transcriptSpeakerUser(match, item, db) {
+  const speaker = String(item?.speaker || "").trim().toLowerCase();
+  const player = (match.players || []).find((entry) => String(entry.displayName || "").trim().toLowerCase() === speaker);
+  if (!player?.userId) return null;
+  return db.users.find((user) => user.id === player.userId) || null;
+}
+
+async function moderateTranscriptItem(matchId, transcriptItemId) {
+  const db = await readDb();
+  const match = db.matches.find((item) => item.id === matchId);
+  if (!match) return;
+  const transcriptItem = (match.transcript || []).find((item) => item.id === transcriptItemId);
+  if (!transcriptItem || transcriptItem.safetyCheckedAt) return;
+
+  const safety = await detectUnsafeText(transcriptItem.text);
+  transcriptItem.safetyCheckedAt = new Date().toISOString();
+  transcriptItem.safety = safety;
+
+  if (safety.flagged) {
+    const target = transcriptSpeakerUser(match, transcriptItem, db);
+    if (target) {
+      target.warnings = target.warnings || [];
+      target.warnings.push({
+        id: id("warning"),
+        reason: safety.reason || "Possible disrespectful speech detected.",
+        by: "ai-moderation",
+        createdAt: new Date().toISOString(),
+        matchId: match.id,
+        source: safety.source,
+      });
+      const penalty = safety.severity === "high" ? 2 : 1;
+      target.mannerTemperature = Math.max(0, Number(target.mannerTemperature ?? 42.8) - penalty);
+    }
+
+    db.reports.push({
+      id: id("report"),
+      matchId: match.id,
+      userId: target?.id || null,
+      reason: "AI moderation detected possible profanity or disrespectful speech.",
+      detail: safety.reason,
+      status: "open",
+      source: safety.source,
+      categories: safety.categories,
+      createdAt: new Date().toISOString(),
+    });
+
+  }
+
+  await writeDb(db);
+  if (safety.flagged) {
+    broadcast(match.id, {
+      type: "notification",
+      category: "warning",
+      userId: transcriptSpeakerUser(match, transcriptItem, db)?.id || null,
+      title: "Safety warning",
+      body: safety.reason || "Possible disrespectful speech detected.",
+    });
+  }
 }
 
 function getCookie(req, name) {
@@ -809,7 +1072,9 @@ async function handleApi(req, res, pathname) {
       storage: pgPool ? "postgres" : "local-json",
       postgresProvider: databaseUrl?.includes("supabase") ? "supabase" : pgPool ? "postgres" : null,
       redis: redisEnabled ? "upstash" : "disabled",
-      translator: "mymemory",
+      translator: nvidiaEnabled ? "nvidia" : "mymemory",
+      nvidia: nvidiaEnabled ? "configured" : "not-configured",
+      safetyModel: nvidiaEnabled ? nvidiaSafetyModel : "local-fallback",
       translatorEmail: myMemoryEmail ? "configured" : "anonymous",
       now: new Date().toISOString(),
     });
@@ -820,7 +1085,7 @@ async function handleApi(req, res, pathname) {
     if (!requireUser(user, res)) return true;
     const body = await readBody(req);
     try {
-      const translation = await translateWithMyMemory({
+      const translation = await translateText({
         text: body.text,
         targetLanguage: body.targetLanguage,
         sourceLanguage: body.sourceLanguage,
@@ -829,6 +1094,14 @@ async function handleApi(req, res, pathname) {
     } catch (error) {
       sendJson(res, error.statusCode || 500, { error: error.message || "Translation failed." });
     }
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/moderate") {
+    if (!requireUser(user, res)) return true;
+    const body = await readBody(req);
+    const safety = await detectUnsafeText(body.text);
+    sendJson(res, 200, { safety });
     return true;
   }
 
@@ -1548,6 +1821,7 @@ async function handleApi(req, res, pathname) {
       return true;
     }
     const item = {
+      id: id("transcript"),
       speaker: body.speaker || user?.displayName || "You",
       text: String(body.text || ""),
       translation: body.translation || "",
@@ -1559,6 +1833,7 @@ async function handleApi(req, res, pathname) {
     await syncRedisRoom(match);
     broadcast(match.id, { type: "match:transcript", matchId: match.id, item });
     sendJson(res, 200, { item, match: decorateMatch(match) });
+    moderateTranscriptItem(match.id, item.id).catch((error) => console.warn(`Transcript moderation failed: ${error.message}`));
     return true;
   }
 

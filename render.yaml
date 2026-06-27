@@ -15,6 +15,14 @@ services:
         sync: false
       - key: UPSTASH_REDIS_REST_TOKEN
         sync: false
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_API_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
+      - key: NVIDIA_TRANSLATION_MODEL
+        value: nvidia/riva-translate-4b-instruct-v1.1
+      - key: NVIDIA_SAFETY_MODEL
+        value: nvidia/nemotron-3.5-content-safety
       - key: MYMEMORY_EMAIL
         sync: false
       - key: MYMEMORY_ENDPOINT

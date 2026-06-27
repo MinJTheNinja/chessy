@@ -2644,7 +2644,10 @@ async function translateSubtitleText(text, options = {}) {
         targetLanguage: subtitleTargetLanguage.value,
       },
     });
-    return { text: data.translation?.text || subtitleTranslation(text), provider: "mymemory" };
+    return {
+      text: data.translation?.text || subtitleTranslation(text),
+      provider: data.translation?.provider || "backend",
+    };
   } catch (error) {
     return { text: `Translation unavailable: ${text}`, provider: "fallback", error: error.message };
   }
@@ -2736,7 +2739,7 @@ function appendFinalSubtitle({ speaker, text, sourceLanguage, persist = false })
       line.append(name, document.createTextNode(` ${result.text}`));
     });
     if (persist) persistSubtitleLine(phrase, result.text, speaker);
-    if (result.provider === "mymemory") {
+    if (["nvidia", "mymemory", "backend"].includes(result.provider)) {
       if (sttStatusText) sttStatusText.textContent = "Translated";
       if (matchSttStatus) matchSttStatus.textContent = "Translated";
     }
