@@ -193,63 +193,79 @@
 
             <div class="match-layout" id="matchLayout" data-state="idle">
               <aside class="panel lobby-panel">
-                <div class="play-choice-grid" aria-label="Play options">
-                  <button class="play-choice-card" id="findMatch" type="button">
-                    <span class="label">Fastest</span>
-                    <strong>Quick pair</strong>
-                    <small>Start matching immediately with default settings.</small>
-                  </button>
-                  <button class="play-choice-card" id="showCreateSeek" type="button">
-                    <span class="label">Custom</span>
-                    <strong>Create game</strong>
-                    <small>Choose time, language, and conversation goal.</small>
-                  </button>
-                  <button class="play-choice-card" id="showFriendRoom" type="button">
-                    <span class="label">Private</span>
-                    <strong>Play with a friend</strong>
-                    <small>Create a room or join one with a code.</small>
-                  </button>
-                </div>
-                <div class="quick-pair-composer" hidden>
-                  <div class="panel-heading">
-                    <div>
-                      <span class="label">Quick pair</span>
-                      <h3>Default search</h3>
+                <div class="lobby-main-panel">
+                  <div class="play-choice-grid" aria-label="Play options">
+                    <button class="play-choice-card" id="findMatch" type="button">
+                      <span class="label">Fastest</span>
+                      <strong>Quick pair</strong>
+                      <small>Start matching immediately with default settings.</small>
+                    </button>
+                    <button class="play-choice-card" id="showCreateSeek" type="button">
+                      <span class="label">Custom</span>
+                      <strong>Create game</strong>
+                      <small>Choose time, language, and conversation goal.</small>
+                    </button>
+                    <button class="play-choice-card" id="showFriendRoom" type="button">
+                      <span class="label">Private</span>
+                      <strong>Play with a friend</strong>
+                      <small>Create a room or join one with a code.</small>
+                    </button>
+                  </div>
+
+                  <div class="quick-pair-composer" hidden>
+                    <div class="panel-heading">
+                      <div>
+                        <span class="label">Quick pair</span>
+                        <h3>Default search</h3>
+                      </div>
                     </div>
-                    <span class="pill" id="lobbySummary">Live pools ready</span>
+                    <div class="quick-pair-grid" id="quickPairGrid" aria-label="Quick pairing pools">
+                      <button class="pool-button" data-pool-id="bullet-1-0" data-time-control="1+0" data-rated="false">
+                        <span>1+0</span>
+                        <strong>Bullet</strong>
+                        <small>Fast chess, short phrases</small>
+                      </button>
+                      <button class="pool-button" data-pool-id="blitz-3-2" data-time-control="3+2" data-rated="false">
+                        <span>3+2</span>
+                        <strong>Blitz</strong>
+                        <small>Quick talk between moves</small>
+                      </button>
+                      <button class="pool-button active" data-pool-id="rapid-10-0" data-time-control="10+0" data-rated="false">
+                        <span>10+0</span>
+                        <strong>Rapid Talk</strong>
+                        <small>Best for caption practice</small>
+                      </button>
+                      <button class="pool-button" data-pool-id="classical-30-0" data-time-control="30+0" data-rated="false">
+                        <span>30+0</span>
+                        <strong>Study</strong>
+                        <small>Slow game, deeper review</small>
+                      </button>
+                    </div>
                   </div>
-                  <div class="quick-pair-grid" id="quickPairGrid" aria-label="Quick pairing pools">
-                    <button class="pool-button" data-pool-id="bullet-1-0" data-time-control="1+0" data-rated="false">
-                      <span>1+0</span>
-                      <strong>Bullet</strong>
-                      <small>Fast chess, short phrases</small>
-                    </button>
-                    <button class="pool-button" data-pool-id="blitz-3-2" data-time-control="3+2" data-rated="false">
-                      <span>3+2</span>
-                      <strong>Blitz</strong>
-                      <small>Quick talk between moves</small>
-                    </button>
-                    <button class="pool-button active" data-pool-id="rapid-10-0" data-time-control="10+0" data-rated="false">
-                      <span>10+0</span>
-                      <strong>Rapid Talk</strong>
-                      <small>Best for caption practice</small>
-                    </button>
-                    <button class="pool-button" data-pool-id="classical-30-0" data-time-control="30+0" data-rated="false">
-                      <span>30+0</span>
-                      <strong>Study</strong>
-                      <small>Slow game, deeper review</small>
-                    </button>
+
+                  <div class="queue-box">
+                    <div class="queue-status-head">
+                      <span class="label">Match status</span>
+                      <button class="button secondary small" id="cancelMatchSearch" type="button" hidden>Cancel</button>
+                    </div>
+                    <strong id="queueTime">Choose mode</strong>
+                    <div class="progress-track"><span id="queueProgress"></span></div>
+                    <p id="queuePrompt">Choose how you want to play.</p>
                   </div>
                 </div>
-                <div class="queue-box">
-                  <div class="queue-status-head">
-                    <span class="label">Match status</span>
-                    <button class="button secondary small" id="cancelMatchSearch" type="button" hidden>Cancel</button>
+
+                <aside class="language-pool-panel">
+                  <span class="label">Language Pool</span>
+                  <h3>Match by conversation fit</h3>
+                  <p>Find players who want the same language practice while playing chess.</p>
+                  <div class="language-pool-list">
+                    <span>English ↔ Korean</span>
+                    <span>English ↔ Japanese</span>
+                    <span>English ↔ Thai</span>
                   </div>
-                  <strong id="queueTime">Choose mode</strong>
-                  <div class="progress-track"><span id="queueProgress"></span></div>
-                  <p id="queuePrompt">Choose how you want to play.</p>
-                </div>
+                  <span class="pool-live-pill" id="lobbySummary">Live pools ready</span>
+                </aside>
+
                 <div class="seek-composer" id="seekComposer" hidden>
                   <div class="panel-heading compact">
                     <div>
