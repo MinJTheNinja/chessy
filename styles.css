@@ -3013,3 +3013,204 @@ dialog::backdrop {
     border-width: 6px;
   }
 }
+
+/* EasyMate signed-in workspace refresh */
+body.is-signed-in {
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbf9 48%, #eef8f4 100%);
+}
+
+body.is-signed-in .site-header {
+  min-height: 76px;
+  border-bottom-color: var(--line);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+body.is-signed-in .brand {
+  color: var(--dark);
+  font-family: Georgia, "Times New Roman", "Noto Serif KR", serif;
+}
+
+body.is-signed-in .brand-mark {
+  background: #e1f5ee;
+  color: var(--green);
+}
+
+body.is-signed-in .notification-button,
+body.is-signed-in .header-actions select,
+body.is-signed-in .profile-menu-button {
+  border-color: var(--line);
+  background: #ffffff;
+  color: var(--ink);
+}
+
+body.is-signed-in .app-shell {
+  min-height: calc(100vh - 76px);
+  border-top: 0;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbf9 52%, #eef8f4 100%);
+}
+
+body.is-signed-in .workspace {
+  padding: clamp(30px, 5vw, 64px) clamp(22px, 6vw, 78px);
+}
+
+body.is-signed-in .view[data-view="match"] .view-header,
+body.is-signed-in .view[data-view="match"] .match-layout {
+  width: min(100%, 1120px);
+}
+
+body.is-signed-in .view[data-view="match"] .view-header {
+  align-items: end;
+  margin-bottom: 26px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+body.is-signed-in .view[data-view="match"] .view-header .eyebrow {
+  color: var(--green);
+  letter-spacing: 0.11em;
+}
+
+body.is-signed-in .view[data-view="match"] .view-header h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", "Noto Serif KR", serif;
+  font-size: clamp(2.15rem, 4vw, 3.35rem);
+  line-height: 1.12;
+}
+
+body.is-signed-in .lobby-panel {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: 22px;
+  max-width: 1120px;
+}
+
+body.is-signed-in .lobby-main-panel,
+body.is-signed-in .language-pool-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 22px 52px rgba(18, 63, 52, 0.09);
+}
+
+body.is-signed-in .lobby-main-panel {
+  gap: 18px;
+  padding: clamp(20px, 3vw, 30px);
+}
+
+body.is-signed-in .play-choice-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+}
+
+body.is-signed-in .play-choice-card {
+  grid-template-columns: 1fr;
+  align-items: start;
+  gap: 9px;
+  min-height: 166px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--green);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 38px rgba(18, 63, 52, 0.06);
+}
+
+body.is-signed-in .play-choice-card:nth-child(2) {
+  border-top-color: #185fa5;
+}
+
+body.is-signed-in .play-choice-card:nth-child(3) {
+  border-top-color: #5d8f7d;
+}
+
+body.is-signed-in .play-choice-card .label {
+  grid-row: auto;
+  width: max-content;
+  min-width: 0;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #e1f5ee;
+  color: var(--green);
+  font-size: 0.72rem;
+}
+
+body.is-signed-in .play-choice-card strong {
+  font-family: Georgia, "Times New Roman", "Noto Serif KR", serif;
+  font-size: 1.28rem;
+  line-height: 1.18;
+}
+
+body.is-signed-in .play-choice-card small {
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.45;
+}
+
+body.is-signed-in .play-choice-card:hover {
+  border-color: var(--green);
+  background: #f7fbf9;
+  color: var(--ink);
+  transform: translateY(-2px);
+}
+
+body.is-signed-in .language-pool-panel {
+  gap: 18px;
+  min-height: 100%;
+  padding: clamp(22px, 3vw, 30px);
+  color: var(--ink);
+}
+
+body.is-signed-in .language-pool-panel .label {
+  color: #185fa5;
+}
+
+body.is-signed-in .language-pool-panel h3 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", "Noto Serif KR", serif;
+  font-size: 1.45rem;
+}
+
+body.is-signed-in .language-pool-panel p {
+  color: var(--muted);
+}
+
+body.is-signed-in .language-pool-list span {
+  border-color: var(--line);
+  background: #f7fbf9;
+  color: var(--ink);
+}
+
+body.is-signed-in .pool-live-pill {
+  background: #e1f5ee;
+  color: var(--green);
+}
+
+body.is-signed-in .queue-box {
+  padding: 22px;
+  border-color: var(--line);
+  background: #f7fbf9;
+}
+
+body.is-signed-in .queue-box strong {
+  font-family: Georgia, "Times New Roman", "Noto Serif KR", serif;
+  font-size: clamp(1.7rem, 3vw, 2.35rem);
+}
+
+body.is-signed-in .progress-track span {
+  background: var(--green);
+}
+
+@media (max-width: 920px) {
+  body.is-signed-in .lobby-panel,
+  body.is-signed-in .play-choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.is-signed-in .play-choice-card {
+    min-height: 132px;
+  }
+}
