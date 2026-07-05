@@ -829,6 +829,14 @@ function requireMatchAccess(match, user, res) {
   return false;
 }
 
+function matchHasUser(match, userId) {
+  return (match?.players || []).some((player) => player.userId === userId);
+}
+
+function endedMatchBetween(match, userId, targetUserId) {
+  return match?.status === "ended" && matchHasUser(match, userId) && matchHasUser(match, targetUserId);
+}
+
 function profileBadges(user, db) {
   const userMatches = db.matches.filter((match) => (match.players || []).some((player) => player.userId === user.id));
   const matchIds = new Set(userMatches.map((match) => match.id));
@@ -1204,25 +1212,47 @@ async function handleApi(req, res, pathname) {
 
   if (req.method === "POST" && pathname === "/api/profile/feedback") {
     if (!requireUser(user, res)) return true;
+    if (!requireRateLimit(req, res, user, "feedback", 10)) return true;
     const body = await readBody(req);
-    let target = user;
-    if (body.matchId) {
-      const match = db.matches.find((item) => item.id === body.matchId);
-      const opponent = match?.players?.find((player) => player.userId && player.userId !== user.id);
-      target = db.users.find((item) => item.id === opponent?.userId) || user;
-    }
-    if (body.targetUserId) target = db.users.find((item) => item.id === body.targetUserId) || target;
 
-    const kind = body.kind || "positive";
+    const match = db.matches.find((item) => item.id === body.matchId);
+    if (!match) {
+      sendJson(res, 404, { error: "Match not found." });
+      return true;
+    }
+    if (match.status !== "ended") {
+      sendJson(res, 409, { error: "Feedback is available after the match ends." });
+      return true;
+    }
+    if (!matchHasUser(match, user.id)) {
+      sendJson(res, 403, { error: "You can only rate players you've matched with." });
+      return true;
+    }
+
+    const opponent = match.players?.find((player) => player.userId && player.userId !== user.id);
+    const target = db.users.find((item) => item.id === (body.targetUserId || opponent?.userId));
+    if (!target || target.id === user.id || !endedMatchBetween(match, user.id, target.id)) {
+      sendJson(res, 403, { error: "You can only rate players you've matched with." });
+      return true;
+    }
+
+    target.feedbackReceived = target.feedbackReceived || [];
+    const duplicate = target.feedbackReceived.some((item) => item.fromUserId === user.id && item.matchId === match.id);
+    if (duplicate) {
+      sendJson(res, 409, { error: "You already submitted feedback for this match." });
+      return true;
+    }
+
+    const allowedKinds = new Set(["positive", "clear", "concern"]);
+    const kind = allowedKinds.has(body.kind) ? body.kind : "positive";
     const delta = kind === "concern" ? -1.2 : kind === "clear" ? 0.7 : 0.9;
     target.mannerTemperature = Math.max(0, Math.min(50, Number(target.mannerTemperature ?? 42.8) + delta));
-    target.feedbackReceived = target.feedbackReceived || [];
     target.feedbackReceived.push({
       id: id("feedback"),
       kind,
       note: String(body.note || "").trim().slice(0, 220),
       fromUserId: user.id,
-      matchId: body.matchId || null,
+      matchId: match.id,
       createdAt: new Date().toISOString(),
     });
     await writeDb(db);
@@ -2086,9 +2116,16 @@ function serveStatic(req, res, pathname) {
 
 const clients = new Set();
 
-function acceptWebSocket(req, socket) {
+async function acceptWebSocket(req, socket) {
   const key = req.headers["sec-websocket-key"];
   if (!key) {
+    socket.destroy();
+    return;
+  }
+  const db = await readDb();
+  const user = getSessionUser(req, db);
+  if (!user) {
+    socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
     socket.destroy();
     return;
   }
@@ -2107,7 +2144,7 @@ function acceptWebSocket(req, socket) {
     ].join("\r\n"),
   );
 
-  const client = { socket, matchId: null, clientId: null, frameBuffer: Buffer.alloc(0) };
+  const client = { socket, user, matchId: null, clientId: null, frameBuffer: Buffer.alloc(0) };
   clients.add(client);
 
   socket.on("data", (buffer) => {
@@ -2115,7 +2152,9 @@ function acceptWebSocket(req, socket) {
     const decoded = decodeFrames(client.frameBuffer);
     client.frameBuffer = decoded.remaining;
     for (const message of decoded.messages) {
-      handleSocketMessage(client, message);
+      handleSocketMessage(client, message).catch((error) => {
+        sendSocket(client, { type: "socket:error", error: error.message || "Socket message failed." });
+      });
     }
   });
 
@@ -2203,7 +2242,15 @@ function broadcast(matchId, data, excludeClient = null) {
   }
 }
 
-function handleSocketMessage(client, message) {
+async function socketMatchForUser(matchId, user) {
+  if (!matchId || !user) return null;
+  const db = await readDb();
+  const match = db.matches.find((item) => item.id === matchId);
+  if (!match || !canAccessMatch(match, user)) return null;
+  return match;
+}
+
+async function handleSocketMessage(client, message) {
   let data;
   try {
     data = JSON.parse(message);
@@ -2212,7 +2259,15 @@ function handleSocketMessage(client, message) {
   }
 
   if (data.type === "join") {
-    client.matchId = data.matchId || null;
+    const requestedMatchId = data.matchId || null;
+    if (requestedMatchId) {
+      const match = await socketMatchForUser(requestedMatchId, client.user);
+      if (!match) {
+        sendSocket(client, { type: "socket:error", error: "You do not have access to this match." });
+        return;
+      }
+    }
+    client.matchId = requestedMatchId;
     client.clientId = data.clientId || client.clientId || id("client");
     touchRedisPresence(client.matchId, client.clientId).catch(() => {});
     sendSocket(client, { type: "socket:joined", matchId: client.matchId });
@@ -2220,7 +2275,14 @@ function handleSocketMessage(client, message) {
   }
 
   if (data.matchId) {
-    client.matchId = data.matchId;
+    if (data.matchId !== client.matchId) {
+      const match = await socketMatchForUser(data.matchId, client.user);
+      if (!match) {
+        sendSocket(client, { type: "socket:error", error: "You do not have access to this match." });
+        return;
+      }
+      client.matchId = data.matchId;
+    }
     client.clientId = data.from || data.clientId || client.clientId || id("client");
     touchRedisPresence(client.matchId, client.clientId).catch(() => {});
     broadcast(data.matchId, data, data.type?.startsWith("voice:") ? client : null);
@@ -2248,7 +2310,10 @@ server.on("upgrade", (req, socket) => {
     socket.destroy();
     return;
   }
-  acceptWebSocket(req, socket);
+  acceptWebSocket(req, socket).catch(() => {
+    socket.write("HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\n");
+    socket.destroy();
+  });
 });
 
 ensureDb()
