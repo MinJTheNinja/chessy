@@ -154,6 +154,7 @@ const badgeDetails = document.querySelector("#badgeDetails");
 const cultureGuideList = document.querySelector("#cultureGuideList");
 const cultureGuideInput = document.querySelector("#cultureGuideInput");
 const saveCultureGuideButton = document.querySelector("#saveCultureGuide");
+const demoAuthAllowed = ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
 
 const pieceCodes = {
   white: {
@@ -918,7 +919,8 @@ function renderAuthState() {
   signupButton.classList.toggle("active", !signedIn && authMode === "signup");
   authSubmit.textContent = signedIn ? "Signed in" : authMode === "login" ? "Log in" : "Create account";
   authSubmit.disabled = signedIn;
-  googleSignInButton.disabled = signedIn;
+  googleSignInButton.hidden = !demoAuthAllowed;
+  googleSignInButton.disabled = signedIn || !demoAuthAllowed;
   authEmail.disabled = signedIn;
   authDisplayName.disabled = signedIn;
   authPassword.disabled = signedIn;
@@ -1153,11 +1155,13 @@ function renderNotifications() {
   notifications.slice(0, 12).forEach((item) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `notification-item ${item.category || "info"}`;
-    button.innerHTML = `
-      <span>${item.title}</span>
-      <small>${item.body}</small>
-    `;
+    const categoryClass = String(item.category || "info").replace(/[^a-z0-9_-]/gi, "");
+    button.className = `notification-item ${categoryClass || "info"}`;
+    const title = document.createElement("span");
+    title.textContent = item.title || "New notification";
+    const body = document.createElement("small");
+    body.textContent = item.body || "";
+    button.append(title, body);
     button.addEventListener("click", () => {
       notificationPanel.hidden = true;
       notificationButton.setAttribute("aria-expanded", "false");
@@ -1352,19 +1356,22 @@ function renderAdminOverview(data) {
       card.className = "admin-item admin-disclosure";
       const players = (match.players || []).map((player) => `${player.displayName} (${player.color})`).join(" vs ") || "No players";
       const summary = document.createElement("summary");
-      summary.innerHTML = `
-        <span>
-          <strong>${match.timeControl || "10+0"} ${match.rated ? "Rated" : "Casual"}</strong>
-          <small>${players}</small>
-        </span>
-        <b>${match.status}</b>
-      `;
+      const summaryText = document.createElement("span");
+      const label = document.createElement("strong");
+      label.textContent = `${match.timeControl || "10+0"} ${match.rated ? "Rated" : "Casual"}`;
+      const playerText = document.createElement("small");
+      playerText.textContent = players;
+      const status = document.createElement("b");
+      status.textContent = match.status || "unknown";
+      summaryText.append(label, playerText);
+      summary.append(summaryText, status);
       const detail = document.createElement("div");
       detail.className = "admin-disclosure-body";
-      detail.innerHTML = `
-        <p>${match.result || "In progress"}</p>
-        <p>${match.moveCount} move(s), ${match.transcriptCount} transcript item(s)</p>
-      `;
+      const result = document.createElement("p");
+      result.textContent = match.result || "In progress";
+      const counts = document.createElement("p");
+      counts.textContent = `${match.moveCount} move(s), ${match.transcriptCount} transcript item(s)`;
+      detail.append(result, counts);
       const button = document.createElement("button");
       button.className = "button danger full small";
       button.type = "button";
@@ -1386,19 +1393,22 @@ function renderAdminOverview(data) {
       card.className = "admin-item admin-disclosure";
       const warningCount = (user.warnings || []).length;
       const summary = document.createElement("summary");
-      summary.innerHTML = `
-        <span>
-          <strong>${user.displayName}</strong>
-          <small>${user.email}</small>
-        </span>
-        <b>${warningCount} warning${warningCount === 1 ? "" : "s"}</b>
-      `;
+      const summaryText = document.createElement("span");
+      const name = document.createElement("strong");
+      name.textContent = user.displayName || "Player";
+      const email = document.createElement("small");
+      email.textContent = user.email || "";
+      const warningLabel = document.createElement("b");
+      warningLabel.textContent = `${warningCount} warning${warningCount === 1 ? "" : "s"}`;
+      summaryText.append(name, email);
+      summary.append(summaryText, warningLabel);
       const detail = document.createElement("div");
       detail.className = "admin-disclosure-body";
-      detail.innerHTML = `
-        <p>${user.role} - ${Number(user.mannerTemperature ?? 0).toFixed(1)} fair play score</p>
-        <p>${warningCount} warning(s)</p>
-      `;
+      const score = document.createElement("p");
+      score.textContent = `${user.role || "player"} - ${Number(user.mannerTemperature ?? 0).toFixed(1)} fair play score`;
+      const warningText = document.createElement("p");
+      warningText.textContent = `${warningCount} warning(s)`;
+      detail.append(score, warningText);
       const button = document.createElement("button");
       button.className = "button danger full small";
       button.type = "button";
@@ -1418,12 +1428,15 @@ function renderAdminOverview(data) {
     (report) => {
       const card = document.createElement("article");
       card.className = "admin-item";
-      card.innerHTML = `
-        <strong>${report.reason}</strong>
-        <span>${report.status}</span>
-        <p>Reporter: ${report.reporterName}</p>
-        <p>${report.detail || "No details provided."}</p>
-      `;
+      const reason = document.createElement("strong");
+      reason.textContent = report.reason || "Safety report";
+      const status = document.createElement("span");
+      status.textContent = report.status || "open";
+      const reporter = document.createElement("p");
+      reporter.textContent = `Reporter: ${report.reporterName || "Guest"}`;
+      const detail = document.createElement("p");
+      detail.textContent = report.detail || "No details provided.";
+      card.append(reason, status, reporter, detail);
       const button = document.createElement("button");
       button.className = "button secondary full small";
       button.type = "button";
@@ -1673,7 +1686,11 @@ async function deleteAccount() {
 }
 
 async function signInWithGoogle() {
-  authStatus.textContent = "Signing in with Google...";
+  if (!demoAuthAllowed) {
+    authStatus.textContent = "Demo sign-in is disabled on the deployed site.";
+    return;
+  }
+  authStatus.textContent = "Signing in with demo account...";
   googleSignInButton.disabled = true;
   try {
     const data = await api("/api/auth/signup", {
@@ -1686,7 +1703,7 @@ async function signInWithGoogle() {
       },
     });
     currentUser = data.user;
-    authStatus.textContent = `Signed in with Google as ${currentUser.displayName}.`;
+    authStatus.textContent = `Signed in with demo account as ${currentUser.displayName}.`;
     renderAuthState();
     setView("match");
     await refreshStats();
@@ -2423,7 +2440,9 @@ function renderProfile(profile) {
   badgeDetails.innerHTML = "";
   profile.badges.forEach((badge) => {
     const item = document.createElement("p");
-    item.innerHTML = `<strong>${badge.name}</strong> ${badge.detail}`;
+    const name = document.createElement("strong");
+    name.textContent = badge.name || "Badge";
+    item.append(name, document.createTextNode(` ${badge.detail || ""}`));
     badgeDetails.append(item);
   });
 
@@ -2435,7 +2454,9 @@ function renderProfile(profile) {
   } else {
     profile.cultureGuide.forEach((entry) => {
       const item = document.createElement("p");
-      item.innerHTML = `<strong>${entry.source || "Culture note"}</strong> ${entry.note}`;
+      const source = document.createElement("strong");
+      source.textContent = entry.source || "Culture note";
+      item.append(source, document.createTextNode(` ${entry.note || ""}`));
       cultureGuideList.append(item);
     });
   }
@@ -2541,11 +2562,15 @@ async function saveCultureGuide() {
 async function appendSubtitle() {
   const sample = subtitleSamples[Math.floor(Math.random() * subtitleSamples.length)];
   const original = document.createElement("p");
-  original.innerHTML = `<strong>Mina:</strong> ${sample.original}`;
+  const originalSpeaker = document.createElement("strong");
+  originalSpeaker.textContent = "Mina:";
+  original.append(originalSpeaker, document.createTextNode(` ${sample.original}`));
   originalSpeech.append(original);
 
   const translated = document.createElement("p");
-  translated.innerHTML = `<strong>Mina:</strong> ${sample.translated}`;
+  const translatedSpeaker = document.createElement("strong");
+  translatedSpeaker.textContent = "Mina:";
+  translated.append(translatedSpeaker, document.createTextNode(` ${sample.translated}`));
   translatedSpeech.append(translated);
 
   wordsRecognized.textContent = String(Number(wordsRecognized.textContent) + sample.original.split(" ").length);
@@ -3019,6 +3044,14 @@ loginButton.addEventListener("click", () => {
     setView("match");
     return;
   }
+  setAuthMode("login");
+});
+
+document.querySelector("#seniorEntryButton")?.addEventListener("click", () => {
+  setAuthMode("signup");
+});
+
+document.querySelector("#globalEntryButton")?.addEventListener("click", () => {
   setAuthMode("login");
 });
 

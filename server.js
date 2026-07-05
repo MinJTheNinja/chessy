@@ -17,10 +17,17 @@ const nvidiaApiKey = process.env.NVIDIA_API_KEY;
 const nvidiaApiBaseUrl = (process.env.NVIDIA_API_BASE_URL || "https://integrate.api.nvidia.com/v1").replace(/\/$/, "");
 const nvidiaTranslationModel = process.env.NVIDIA_TRANSLATION_MODEL || "nvidia/riva-translate-4b-instruct-v1.1";
 const nvidiaSafetyModel = process.env.NVIDIA_SAFETY_MODEL || "nvidia/nemotron-3.5-content-safety";
+const adminEmails = new Set(
+  String(process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean),
+);
 const myMemoryEmail = process.env.MYMEMORY_EMAIL;
 const myMemoryEndpoint = (process.env.MYMEMORY_ENDPOINT || "https://api.mymemory.translated.net").replace(/\/$/, "");
 const redisEnabled = Boolean(upstashRedisRestUrl && upstashRedisRestToken);
 const nvidiaEnabled = Boolean(nvidiaApiKey);
+const rateLimitBuckets = new Map();
 const pgPool = databaseUrl
   ? new Pool({
       connectionString: databaseUrl,
@@ -684,6 +691,44 @@ function getCookie(req, name) {
     ?.split("=")[1];
 }
 
+function isSecureRequest(req) {
+  return req.headers["x-forwarded-proto"] === "https" || req.socket.encrypted || process.env.NODE_ENV === "production";
+}
+
+function sessionCookie(token, req, options = {}) {
+  const secure = isSecureRequest(req) ? "; Secure" : "";
+  const maxAge = options.clear ? "; Max-Age=0" : "";
+  return `lc_session=${token || ""}; Path=/${maxAge}; HttpOnly; SameSite=Lax${secure}`;
+}
+
+function clientAddress(req) {
+  return String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+}
+
+function checkRateLimit(req, user, bucket, limit, windowMs) {
+  const now = Date.now();
+  const key = `${bucket}:${user?.id || clientAddress(req)}`;
+  const current = rateLimitBuckets.get(key);
+  if (!current || now > current.resetAt) {
+    rateLimitBuckets.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  current.count += 1;
+  return current.count <= limit;
+}
+
+function requireRateLimit(req, res, user, bucket, limit, windowMs = 60_000) {
+  if (checkRateLimit(req, user, bucket, limit, windowMs)) return true;
+  sendJson(res, 429, { error: "Too many requests. Try again in a moment." });
+  return false;
+}
+
+function signupRole(email, db) {
+  if (adminEmails.has(String(email || "").toLowerCase())) return "admin";
+  if (process.env.NODE_ENV !== "production" && adminEmails.size === 0 && db.users.length === 0) return "admin";
+  return "player";
+}
+
 function getSessionUser(req, db) {
   const token = getCookie(req, "lc_session") || (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
   if (!token) return null;
@@ -765,6 +810,22 @@ function requireAdmin(user, res) {
 function requireUser(user, res) {
   if (user) return true;
   sendJson(res, 401, { error: "Sign in first." });
+  return false;
+}
+
+function matchParticipant(match, user) {
+  if (!match || !user) return false;
+  return (match.players || []).some((player) => player.userId === user.id) || match.userId === user.id;
+}
+
+function canAccessMatch(match, user) {
+  return Boolean(user?.role === "admin" || matchParticipant(match, user));
+}
+
+function requireMatchAccess(match, user, res) {
+  if (!requireUser(user, res)) return false;
+  if (canAccessMatch(match, user)) return true;
+  sendJson(res, 403, { error: "You do not have access to this match." });
   return false;
 }
 
@@ -1083,7 +1144,12 @@ async function handleApi(req, res, pathname) {
 
   if (req.method === "POST" && pathname === "/api/translate") {
     if (!requireUser(user, res)) return true;
+    if (!requireRateLimit(req, res, user, "translate", 60)) return true;
     const body = await readBody(req);
+    if (String(body.text || "").length > 1000) {
+      sendJson(res, 400, { error: "Translation text is too long." });
+      return true;
+    }
     try {
       const translation = await translateText({
         text: body.text,
@@ -1099,7 +1165,12 @@ async function handleApi(req, res, pathname) {
 
   if (req.method === "POST" && pathname === "/api/moderate") {
     if (!requireUser(user, res)) return true;
+    if (!requireRateLimit(req, res, user, "moderate", 30)) return true;
     const body = await readBody(req);
+    if (String(body.text || "").length > 2000) {
+      sendJson(res, 400, { error: "Moderation text is too long." });
+      return true;
+    }
     const safety = await detectUnsafeText(body.text);
     sendJson(res, 200, { safety });
     return true;
@@ -1315,7 +1386,7 @@ async function handleApi(req, res, pathname) {
         languagePair: body.languagePair || "English to Korean",
         passwordHash: hashPassword(password),
         mannerTemperature: 42.8,
-        role: db.users.length === 0 ? "admin" : "player",
+        role: signupRole(email, db),
         createdAt: new Date().toISOString(),
       };
       db.users.push(found);
@@ -1323,7 +1394,7 @@ async function handleApi(req, res, pathname) {
 
     const token = createSession(db, found.id);
     await writeDb(db);
-    sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": `lc_session=${token}; Path=/; SameSite=Lax` });
+    sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": sessionCookie(token, req) });
     return true;
   }
 
@@ -1338,7 +1409,7 @@ async function handleApi(req, res, pathname) {
     }
     const token = createSession(db, found.id);
     await writeDb(db);
-    sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": `lc_session=${token}; Path=/; SameSite=Lax` });
+    sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": sessionCookie(token, req) });
     return true;
   }
 
@@ -1349,7 +1420,7 @@ async function handleApi(req, res, pathname) {
       sessions: db.sessions.filter((session) => session.token !== token),
     };
     await writeDb(nextDb);
-    sendJson(res, 200, { ok: true }, { "set-cookie": "lc_session=; Path=/; Max-Age=0; SameSite=Lax" });
+    sendJson(res, 200, { ok: true }, { "set-cookie": sessionCookie("", req, { clear: true }) });
     return true;
   }
 
@@ -1384,11 +1455,12 @@ async function handleApi(req, res, pathname) {
       reports: db.reports.filter((report) => report.reporterId !== userId && report.targetUserId !== userId),
     };
     await writeDb(nextDb);
-    sendJson(res, 200, { ok: true }, { "set-cookie": "lc_session=; Path=/; Max-Age=0; SameSite=Lax" });
+    sendJson(res, 200, { ok: true }, { "set-cookie": sessionCookie("", req, { clear: true }) });
     return true;
   }
 
   if (req.method === "POST" && pathname === "/api/matches/start") {
+    if (!requireUser(user, res)) return true;
     const body = await readBody(req);
     const match = createMatch(db, user, { ...body, pairingType: body.pairingType || "practice" });
     await writeDb(db);
@@ -1399,6 +1471,7 @@ async function handleApi(req, res, pathname) {
   }
 
   if (req.method === "POST" && pathname === "/api/matches/quick-pair") {
+    if (!requireUser(user, res)) return true;
     const body = await readBody(req);
     const pool = quickPools.find((item) => item.id === body.poolId) || quickPools[2];
     const matchDetails = {
@@ -1411,15 +1484,6 @@ async function handleApi(req, res, pathname) {
       partnerLanguage: body.partnerLanguage || "English",
       goal: body.goal || "Explain chess moves",
     };
-
-    if (!user) {
-      const match = createMatch(db, null, { ...matchDetails, pairingType: "guest-practice" });
-      await writeDb(db);
-      await syncRedisRoom(match);
-      broadcast(match.id, { type: "match:started", match: decorateMatch(match) });
-      sendJson(res, 200, { waiting: false, match: decorateMatch(match), practice: true });
-      return true;
-    }
 
     const activeMatch = activeMatchForUser(db, user);
     if (activeMatch) {
@@ -1590,13 +1654,14 @@ async function handleApi(req, res, pathname) {
   }
 
   if (req.method === "POST" && pathname === "/api/challenges") {
+    if (!requireUser(user, res)) return true;
     const body = await readBody(req);
     const code = crypto.randomBytes(3).toString("hex").toUpperCase();
     const challenge = {
       id: id("challenge"),
       code,
-      userId: user?.id || null,
-      displayName: user?.displayName || "Guest",
+      userId: user.id,
+      displayName: user.displayName || "Player",
       timeControl: body.timeControl || "10+0",
       rated: false,
       partnerLanguage: body.partnerLanguage || "English",
@@ -1743,6 +1808,7 @@ async function handleApi(req, res, pathname) {
       sendJson(res, 404, { error: "Match not found." });
       return true;
     }
+    if (!requireMatchAccess(match, user, res)) return true;
     if (match.status === "ended") {
       sendJson(res, 409, { error: "This match has already ended." });
       return true;
@@ -1820,6 +1886,11 @@ async function handleApi(req, res, pathname) {
       sendJson(res, 404, { error: "Match not found." });
       return true;
     }
+    if (!requireMatchAccess(match, user, res)) return true;
+    if (String(body.text || "").length > 2000 || String(body.translation || "").length > 3000) {
+      sendJson(res, 400, { error: "Transcript item is too long." });
+      return true;
+    }
     const item = {
       id: id("transcript"),
       speaker: body.speaker || user?.displayName || "You",
@@ -1845,6 +1916,7 @@ async function handleApi(req, res, pathname) {
       sendJson(res, 404, { error: "Match not found." });
       return true;
     }
+    if (!requireMatchAccess(match, user, res)) return true;
     if (match.clocks) {
       match.clocks = liveClockState(match);
     }
@@ -1870,6 +1942,7 @@ async function handleApi(req, res, pathname) {
       sendJson(res, 404, { error: "Match not found." });
       return true;
     }
+    if (!requireMatchAccess(match, user, res)) return true;
     const review = buildReview(match);
     match.reviewId = review.id;
     db.reviews.push(review);
@@ -1886,28 +1959,47 @@ async function handleApi(req, res, pathname) {
       sendJson(res, 404, { error: "Match not found." });
       return true;
     }
+    if (!requireMatchAccess(match, user, res)) return true;
     sendJson(res, 200, { match: decorateMatch(match) });
     return true;
   }
 
   if (req.method === "GET" && pathname === "/api/reviews/latest") {
-    sendJson(res, 200, { review: db.reviews.at(-1) || null });
+    if (!requireUser(user, res)) return true;
+    const userMatchIds = new Set(
+      db.matches
+        .filter((match) => matchParticipant(match, user))
+        .map((match) => match.id),
+    );
+    const review = db.reviews.filter((item) => userMatchIds.has(item.matchId)).at(-1) || null;
+    sendJson(res, 200, { review });
     return true;
   }
 
   if (req.method === "GET" && pathname === "/api/voice-letters") {
-    sendJson(res, 200, { voiceLetters: db.voiceLetters.slice(-20).reverse() });
+    if (!requireUser(user, res)) return true;
+    const voiceLetters = db.voiceLetters
+      .filter((letter) => letter.fromUserId === user.id || letter.toUserId === user.id || letter.userId === user.id)
+      .slice(-20)
+      .reverse();
+    sendJson(res, 200, { voiceLetters });
     return true;
   }
 
   if (req.method === "POST" && pathname === "/api/voice-letters") {
+    if (!requireUser(user, res)) return true;
     const body = await readBody(req);
+    if (String(body.note || "").length > 500 || String(body.transcript || "").length > 3000) {
+      sendJson(res, 400, { error: "Voice letter is too long." });
+      return true;
+    }
     const voiceLetter = {
       id: id("letter"),
-      fromUserId: user?.id || null,
-      recipient: body.recipient || "Mina K.",
-      note: body.note || "",
-      transcript: body.transcript || "",
+      fromUserId: user.id,
+      toUserId: body.toUserId || null,
+      recipient: String(body.recipient || "Mina K.").slice(0, 80),
+      note: String(body.note || "").slice(0, 500),
+      transcript: String(body.transcript || "").slice(0, 3000),
       createdAt: new Date().toISOString(),
     };
     db.voiceLetters.push(voiceLetter);
@@ -1915,9 +2007,9 @@ async function handleApi(req, res, pathname) {
     broadcast(null, {
       type: "notification",
       category: "voicemail",
-      fromUserId: user?.id || null,
+      fromUserId: user.id,
       title: "New voice letter",
-      body: `${user?.displayName || "Guest"} sent a voice letter.`,
+      body: `${user.displayName || "Player"} sent a voice letter.`,
     });
     sendJson(res, 200, { voiceLetter });
     return true;
@@ -1933,11 +2025,17 @@ async function handleApi(req, res, pathname) {
   }
 
   if (req.method === "POST" && pathname === "/api/reports") {
+    if (!requireUser(user, res)) return true;
+    if (!requireRateLimit(req, res, user, "reports", 10)) return true;
     const body = await readBody(req);
+    if (String(body.detail || "").length > 1000) {
+      sendJson(res, 400, { error: "Report detail is too long." });
+      return true;
+    }
     const report = {
       id: id("report"),
       matchId: body.matchId || null,
-      reporterId: user?.id || null,
+      reporterId: user.id,
       reason: body.reason || "Safety report",
       detail: body.detail || "",
       status: "open",
@@ -1967,8 +2065,7 @@ function serveStatic(req, res, pathname) {
     requested === "/index.html" ||
     requested === "/app.js" ||
     requested === "/styles.css" ||
-    requested.startsWith("/assets/") ||
-    requested.startsWith("/source_zip/");
+    requested.startsWith("/assets/");
 
   if (!allowedStatic) {
     res.writeHead(404);

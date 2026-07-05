@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Live Chess Global Matching</title>
+    <title>EasyMate Chess Matching</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -11,9 +11,9 @@
       <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebarMenu" aria-label="Open menu">
         <span aria-hidden="true">☰</span>
       </button>
-      <a class="brand" href="#home" data-view-link="home" aria-label="Live Chess home">
-        <span class="brand-mark">LC</span>
-        <span>Live Chess</span>
+      <a class="brand" href="#home" data-view-link="home" aria-label="EasyMate home">
+        <span class="brand-mark">EM</span>
+        <span>Easy<strong>Mate</strong></span>
       </a>
       <div class="header-actions">
         <button class="notification-button" id="notificationButton" type="button" aria-expanded="false" aria-label="Notifications">
@@ -59,24 +59,45 @@
     <main>
       <section class="entry" id="home" aria-labelledby="entryTitle">
         <div class="entry-visual">
-          <img src="/assets/hero-chess-classroom.png?v=20260618" alt="Students playing chess in a warm classroom" />
           <div class="entry-content">
-            <span class="eyebrow">Global chess matching with live translation</span>
-            <h1 id="entryTitle">Play chess beyond the board.</h1>
-            <p>
-              Match with players across languages, talk during the game, and review what you learned after each session.
-            </p>
+            <span class="eyebrow">Chess . Conversation . Connection</span>
+            <div class="landing-board" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <h1 id="entryTitle">64개의 칸이 여는<br><em>세대와 언어의 연결</em></h1>
+            <p>체스 한 판으로 어르신, 학생, 해외 플레이어가 같은 화면에서 만나 대화하고 배웁니다.</p>
+            <div class="entry-choice-grid" aria-label="Participation options">
+              <article class="entry-choice senior">
+                <div class="entry-choice-icon" aria-hidden="true">S</div>
+                <h2>어르신 / 복지관</h2>
+                <p>학생 자원봉사자와 함께 체스를 배우고 대화를 나눕니다.</p>
+                <button class="button primary full" id="seniorEntryButton" type="button">참여 신청</button>
+              </article>
+              <article class="entry-choice global">
+                <div class="entry-choice-icon" aria-hidden="true">G</div>
+                <h2>Global / 외국인</h2>
+                <p>Play chess and practice Korean with local seniors or students.</p>
+                <button class="button secondary full" id="globalEntryButton" type="button">Start playing</button>
+              </article>
+            </div>
           </div>
         </div>
         <div class="entry-auth">
-          <div class="auth-tabs" aria-label="Account mode">
-            <button class="auth-tab active" id="loginButton" type="button">Login</button>
-            <button class="auth-tab" id="signupButton" type="button">New user</button>
-          </div>
           <form class="auth-card" id="authForm" aria-label="Account entry">
-            <span class="eyebrow">Kings &amp; Elders</span>
-            <h2>Good evening, player</h2>
-            <p class="auth-intro">Choose a language pair and enter your account to start a live chess session.</p>
+            <span class="eyebrow">EasyMate Account</span>
+            <h2>대화를 시작하세요</h2>
+            <p class="auth-intro">언어 조합을 고르고 계정으로 입장하면 실시간 체스 매칭을 시작할 수 있습니다.</p>
+            <div class="auth-tabs" aria-label="Account mode">
+              <button class="auth-tab active" id="loginButton" type="button">Login</button>
+              <button class="auth-tab" id="signupButton" type="button">New user</button>
+            </div>
             <label>
               Language selection
               <select id="authLanguagePair">
@@ -101,12 +122,32 @@
             <button class="button primary full" id="authSubmit" type="submit">Log in</button>
             <button class="button secondary full google-button" id="googleSignIn" type="button">
               <span class="google-mark">G</span>
-              Sign in with Google
+              Demo sign in
             </button>
             <button class="button secondary full" id="continueToDashboard" type="button" hidden>Continue to play</button>
             <p id="authStatus">Enter your existing email and password.</p>
           </form>
         </div>
+        <section class="landing-steps" aria-labelledby="landingStepsTitle">
+          <h2 id="landingStepsTitle">이렇게 진행합니다</h2>
+          <div class="steps">
+            <article class="step">
+              <span>01</span>
+              <h3>만남 신청</h3>
+              <p>복지관 또는 온라인 매칭을 통해 파트너를 연결합니다.</p>
+            </article>
+            <article class="step">
+              <span>02</span>
+              <h3>체스 한 판</h3>
+              <p>초보자도 괜찮습니다. 규칙보다 대화가 먼저입니다.</p>
+            </article>
+            <article class="step">
+              <span>03</span>
+              <h3>이야기 나누기</h3>
+              <p>게임 뒤 보이스레터와 복습으로 관계를 이어갑니다.</p>
+            </article>
+          </div>
+        </section>
       </section>
 
       <section class="app-shell" id="dashboard" aria-label="Application workspace">
