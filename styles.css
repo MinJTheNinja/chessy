@@ -1,23 +1,61 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&display=swap");
+
 :root {
   color-scheme: light;
-  --ink: #14211d;
-  --muted: #65736e;
-  --soft: #f7fbf9;
-  --panel: #ffffff;
-  --line: #d9e5e0;
-  --line-strong: #aac8bd;
-  --dark: #123f34;
-  --dark-2: #0b2e27;
-  --purple: #185fa5;
-  --purple-soft: #e6f1fb;
-  --green: #1d9e75;
-  --amber: #1d9e75;
-  --amber-soft: #e1f5ee;
-  --red: #b8302c;
-  --tile-light: #e1f5ee;
-  --tile-dark: #0f6e56;
-  --warm-surface: #eef8f4;
-  --shadow: 0 18px 50px rgba(18, 63, 52, 0.1);
+  --em-green: #1d9e75;
+  --em-green-dark: #0f6e56;
+  --em-blue: #2f7f66;
+  --em-ink: #1a2b25;
+  --em-muted: #62736d;
+  --em-cream: #fbf9f4;
+  --em-cream-2: #f4f0e8;
+  --em-panel: #fffefb;
+  --em-line: #e8e4db;
+  --em-line-strong: #cfc8bb;
+  --em-danger: #b8302c;
+
+  --step--1: 0.875rem;
+  --step-0: 1rem;
+  --step-1: 1.25rem;
+  --step-2: 1.6rem;
+  --step-3: 2.4rem;
+  --step-4: 3.4rem;
+
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 18px;
+  --tap-target: 48px;
+  --font-display: "Noto Serif KR", Georgia, "Times New Roman", serif;
+  --font-ui: "Pretendard", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --ink: var(--em-ink);
+  --muted: var(--em-muted);
+  --soft: var(--em-cream);
+  --panel: var(--em-panel);
+  --line: var(--em-line);
+  --line-strong: var(--em-line-strong);
+  --dark: #18382f;
+  --dark-2: #0f2d25;
+  --purple: var(--em-blue);
+  --purple-soft: #e7f3ee;
+  --green: var(--em-green);
+  --amber: var(--em-green);
+  --amber-soft: #e4f6ef;
+  --red: var(--em-danger);
+  --tile-light: #e4f6ef;
+  --tile-dark: var(--em-green-dark);
+  --warm-surface: var(--em-cream-2);
+  --shadow: 0 18px 50px rgba(26, 43, 37, 0.1);
+  --app-font-scale: 1;
 }
 
 * {
@@ -35,17 +73,15 @@ html {
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #ffffff 0%, var(--soft) 54%, #eef8f4 100%);
+  background: linear-gradient(180deg, var(--em-panel) 0%, var(--em-cream) 54%, var(--em-cream-2) 100%);
   color: var(--ink);
-  font-size: var(--app-font-scale, 100%);
-  font-family:
-    Inter, "Pretendard", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-size: calc(18px * var(--app-font-scale));
+  font-family: var(--font-ui);
   overflow-x: hidden;
 }
 
 body.large-text-mode {
-  --app-font-scale: 112%;
+  --app-font-scale: 1.12;
 }
 
 body.high-contrast-mode {
@@ -117,8 +153,8 @@ a {
   display: grid;
   grid-template-columns: auto auto 1fr;
   align-items: center;
-  gap: 24px;
-  min-height: 76px;
+  gap: var(--space-md);
+  min-height: 84px;
   padding: 0 clamp(18px, 3vw, 36px);
   border-bottom: 1px solid rgba(18, 63, 52, 0.1);
   background: rgba(255, 255, 255, 0.92);
@@ -127,11 +163,11 @@ a {
 
 .menu-toggle {
   display: inline-grid;
-  width: 40px;
-  min-height: 40px;
+  width: var(--tap-target);
+  min-height: var(--tap-target);
   place-items: center;
   border: 1px solid rgba(20, 20, 33, 0.18);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.7);
   color: var(--ink);
   font-size: 1.18rem;
@@ -160,8 +196,8 @@ a {
 .brand {
   gap: 10px;
   color: var(--dark);
-  font-family: Georgia, "Times New Roman", "Noto Serif KR", serif;
-  font-size: 1.2rem;
+  font-family: var(--font-display);
+  font-size: var(--step-1);
   font-weight: 700;
 }
 
@@ -172,10 +208,10 @@ a {
 
 .brand-mark {
   display: grid;
-  width: 38px;
-  height: 38px;
+  width: var(--tap-target);
+  height: var(--tap-target);
   place-items: center;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: #e1f5ee;
   color: var(--green);
   font-size: 0.8rem;
@@ -189,7 +225,7 @@ a {
 .server-status {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
+  min-height: var(--tap-target);
   padding: 6px 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -232,11 +268,11 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  min-height: 36px;
+  width: var(--tap-target);
+  min-height: var(--tap-target);
   padding: 7px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: white;
   color: var(--ink);
   font-size: 1.1rem;
@@ -270,10 +306,10 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 36px;
+  min-height: var(--tap-target);
   padding: 6px 8px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: white;
   color: var(--muted);
   font-size: 0.82rem;
@@ -567,12 +603,12 @@ select,
 input,
 textarea {
   width: 100%;
-  min-height: 42px;
+  min-height: var(--tap-target);
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: white;
+  border-radius: var(--radius-sm);
+  background: var(--panel);
   color: var(--ink);
-  padding: 10px 12px;
+  padding: 12px 14px;
 }
 
 textarea {
@@ -584,7 +620,7 @@ label {
   display: grid;
   gap: 8px;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: var(--step--1);
   font-weight: 760;
 }
 
@@ -598,6 +634,7 @@ p {
 h1 {
   margin-bottom: 18px;
   max-width: 830px;
+  font-family: var(--font-display);
   font-size: clamp(2.45rem, 6vw, 5.6rem);
   line-height: 1.02;
   letter-spacing: 0;
@@ -605,25 +642,26 @@ h1 {
 
 h2 {
   margin-bottom: 8px;
-  font-size: clamp(1.6rem, 2.4vw, 2rem);
+  font-family: var(--font-display);
+  font-size: clamp(var(--step-2), 2.4vw, var(--step-3));
 }
 
 h3 {
   margin-bottom: 14px;
-  font-size: 1.25rem;
+  font-size: var(--step-1);
 }
 
 p {
   color: var(--muted);
-  line-height: 1.58;
+  line-height: 1.65;
 }
 
 .button,
 .side-link,
 .segment,
 .text-link {
-  min-height: 42px;
-  border-radius: 8px;
+  min-height: var(--tap-target);
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
   font-weight: 820;
   transition:
@@ -643,8 +681,8 @@ p {
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
+  gap: var(--space-xs);
+  padding: 13px 18px;
 }
 
 .button.primary {
@@ -944,7 +982,7 @@ p {
   max-width: 680px;
   margin-bottom: 16px;
   color: var(--ink);
-  font-family: Georgia, "Times New Roman", "Noto Serif KR", serif;
+  font-family: var(--font-display);
   font-size: clamp(2.45rem, 5vw, 4.55rem);
   font-weight: 700;
   line-height: 1.16;
@@ -984,7 +1022,7 @@ p {
 }
 
 .entry-choice.global {
-  border-top-color: #185fa5;
+  border-top-color: #2f7f66;
 }
 
 .entry-choice h2 {
@@ -1012,13 +1050,13 @@ p {
 }
 
 .entry-choice.global .entry-choice-icon {
-  background: #e6f1fb;
-  color: #185fa5;
+  background: #e7f3ee;
+  color: #2f7f66;
 }
 
 .entry-choice.global .button.secondary {
-  border-color: #185fa5;
-  background: #185fa5;
+  border-color: #2f7f66;
+  background: #2f7f66;
   color: white;
 }
 
@@ -1037,7 +1075,7 @@ p {
 }
 
 .auth-card h2 {
-  font-family: Georgia, "Times New Roman", "Noto Serif KR", serif;
+  font-family: var(--font-display);
   font-size: clamp(1.65rem, 3vw, 2.25rem);
 }
 
@@ -1076,7 +1114,7 @@ p {
 .landing-steps h2 {
   width: min(100%, 920px);
   margin: 0 auto 16px;
-  font-family: Georgia, "Times New Roman", "Noto Serif KR", serif;
+  font-family: var(--font-display);
   font-size: 1.45rem;
 }
 
@@ -1097,7 +1135,7 @@ p {
   display: block;
   margin-bottom: 9px;
   color: #b9e9da;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
   font-size: 1.85rem;
   font-weight: 700;
   line-height: 1;
@@ -3016,18 +3054,18 @@ dialog::backdrop {
 
 /* EasyMate signed-in workspace refresh */
 body.is-signed-in {
-  background: linear-gradient(180deg, #ffffff 0%, #f7fbf9 48%, #eef8f4 100%);
+  background: linear-gradient(180deg, var(--em-panel) 0%, var(--em-cream) 52%, var(--em-cream-2) 100%);
 }
 
 body.is-signed-in .site-header {
-  min-height: 76px;
+  min-height: 84px;
   border-bottom-color: var(--line);
   background: rgba(255, 255, 255, 0.94);
 }
 
 body.is-signed-in .brand {
   color: var(--dark);
-  font-family: Georgia, "Times New Roman", "Noto Serif KR", serif;
+  font-family: var(--font-display);
 }
 
 body.is-signed-in .brand-mark {
@@ -3044,9 +3082,9 @@ body.is-signed-in .profile-menu-button {
 }
 
 body.is-signed-in .app-shell {
-  min-height: calc(100vh - 76px);
+  min-height: calc(100vh - 84px);
   border-top: 0;
-  background: linear-gradient(180deg, #ffffff 0%, #f7fbf9 52%, #eef8f4 100%);
+  background: linear-gradient(180deg, var(--em-panel) 0%, var(--em-cream) 52%, var(--em-cream-2) 100%);
 }
 
 body.is-signed-in .workspace {
@@ -3073,7 +3111,7 @@ body.is-signed-in .view[data-view="match"] .view-header .eyebrow {
 body.is-signed-in .view[data-view="match"] .view-header h2 {
   margin: 0;
   color: var(--ink);
-  font-family: Georgia, "Times New Roman", "Noto Serif KR", serif;
+  font-family: var(--font-display);
   font-size: clamp(2.15rem, 4vw, 3.35rem);
   line-height: 1.12;
 }
@@ -3087,8 +3125,8 @@ body.is-signed-in .lobby-panel {
 body.is-signed-in .lobby-main-panel,
 body.is-signed-in .language-pool-panel {
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.96);
+  border-radius: var(--radius);
+  background: rgba(255, 254, 251, 0.96);
   box-shadow: 0 22px 52px rgba(18, 63, 52, 0.09);
 }
 
@@ -3113,17 +3151,17 @@ body.is-signed-in .play-choice-card {
   padding: 20px;
   border: 1px solid var(--line);
   border-top: 4px solid var(--green);
-  border-radius: 8px;
-  background: #ffffff;
+  border-radius: var(--radius);
+  background: var(--panel);
   box-shadow: 0 16px 38px rgba(18, 63, 52, 0.06);
 }
 
 body.is-signed-in .play-choice-card:nth-child(2) {
-  border-top-color: #185fa5;
+  border-top-color: #2f7f66;
 }
 
 body.is-signed-in .play-choice-card:nth-child(3) {
-  border-top-color: #5d8f7d;
+  border-top-color: #77a893;
 }
 
 body.is-signed-in .play-choice-card .label {
@@ -3138,7 +3176,7 @@ body.is-signed-in .play-choice-card .label {
 }
 
 body.is-signed-in .play-choice-card strong {
-  font-family: Georgia, "Times New Roman", "Noto Serif KR", serif;
+  font-family: var(--font-display);
   font-size: 1.28rem;
   line-height: 1.18;
 }
@@ -3164,13 +3202,13 @@ body.is-signed-in .language-pool-panel {
 }
 
 body.is-signed-in .language-pool-panel .label {
-  color: #185fa5;
+  color: #2f7f66;
 }
 
 body.is-signed-in .language-pool-panel h3 {
   margin: 0;
   color: var(--ink);
-  font-family: Georgia, "Times New Roman", "Noto Serif KR", serif;
+  font-family: var(--font-display);
   font-size: 1.45rem;
 }
 
@@ -3180,7 +3218,7 @@ body.is-signed-in .language-pool-panel p {
 
 body.is-signed-in .language-pool-list span {
   border-color: var(--line);
-  background: #f7fbf9;
+  background: var(--em-cream);
   color: var(--ink);
 }
 
@@ -3192,16 +3230,66 @@ body.is-signed-in .pool-live-pill {
 body.is-signed-in .queue-box {
   padding: 22px;
   border-color: var(--line);
-  background: #f7fbf9;
+  background: var(--em-cream);
 }
 
 body.is-signed-in .queue-box strong {
-  font-family: Georgia, "Times New Roman", "Noto Serif KR", serif;
+  font-family: var(--font-display);
   font-size: clamp(1.7rem, 3vw, 2.35rem);
 }
 
 body.is-signed-in .progress-track span {
   background: var(--green);
+}
+
+.auth-card,
+.wire-card,
+.panel,
+.board-panel,
+.route-card,
+.status-strip article,
+.notice-list p,
+.match-result,
+.vocab-item,
+.settings-card,
+.forum-composer,
+.forum-post,
+.shop-card,
+.admin-item {
+  border-radius: var(--radius);
+}
+
+.button,
+.side-link,
+.segment,
+.text-link,
+.pool-button,
+.icon-action,
+.forum-tabs button,
+.profile-menu-button {
+  min-height: var(--tap-target);
+  border-radius: var(--radius-sm);
+}
+
+.button.primary,
+.entry-choice .button.primary,
+body.is-signed-in .button.primary {
+  background: var(--em-green);
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(29, 158, 117, 0.2);
+}
+
+.button.secondary,
+body.is-signed-in .button.secondary {
+  border-color: var(--em-line);
+  background: var(--panel);
+}
+
+.entry-auth,
+.auth-card,
+body.is-signed-in .lobby-main-panel,
+body.is-signed-in .language-pool-panel {
+  border-color: var(--em-line);
 }
 
 @media (max-width: 920px) {
