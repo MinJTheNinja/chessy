@@ -344,6 +344,8 @@ let pendingIceCandidates = [];
 let voiceConnectTimeout = null;
 let voiceOfferRetryTimer = null;
 let voiceOfferRetryCount = 0;
+let voiceRtcConfig = null;
+let voiceRtcConfigLoadedAt = 0;
 let clockSnapshot = null;
 let clockInterval = null;
 let timeoutNotifiedFor = null;
@@ -363,7 +365,7 @@ let forumPosts = [];
 const voiceClientId =
   window.crypto?.randomUUID?.() || `voice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
-const rtcConfig = {
+const fallbackRtcConfig = {
   iceServers: [
     {
       urls: [
@@ -594,6 +596,29 @@ function isSecureVoiceContext() {
   );
 }
 
+async function loadVoiceRtcConfig() {
+  const now = Date.now();
+  if (voiceRtcConfig && now - voiceRtcConfigLoadedAt < 10 * 60 * 1000) return voiceRtcConfig;
+  voiceRtcConfig = fallbackRtcConfig;
+  voiceRtcConfigLoadedAt = now;
+
+  if (!backendOnline || !currentUser) return voiceRtcConfig;
+  try {
+    const data = await api("/api/voice/ice-servers");
+    if (Array.isArray(data.iceServers) && data.iceServers.length) {
+      voiceRtcConfig = {
+        ...fallbackRtcConfig,
+        iceServers: data.iceServers,
+      };
+      voiceRtcConfigLoadedAt = Date.now();
+      if (data.provider === "metered-openrelay") setVoiceStatus("TURN relay ready. Starting voice...");
+    }
+  } catch {
+    voiceRtcConfig = fallbackRtcConfig;
+  }
+  return voiceRtcConfig;
+}
+
 async function flushPendingIceCandidates() {
   if (!peerConnection?.remoteDescription) return;
   const candidates = pendingIceCandidates;
@@ -606,7 +631,7 @@ async function flushPendingIceCandidates() {
 function ensureVoicePeerConnection() {
   if (peerConnection) return peerConnection;
 
-  peerConnection = new RTCPeerConnection(rtcConfig);
+  peerConnection = new RTCPeerConnection(voiceRtcConfig || fallbackRtcConfig);
 
   peerConnection.addEventListener("icecandidate", (event) => {
     if (!event.candidate) return;
@@ -683,6 +708,7 @@ async function attachLocalVoiceStream() {
 }
 
 async function acceptVoiceOffer(description) {
+  await loadVoiceRtcConfig();
   const connection = ensureVoicePeerConnection();
   await connection.setRemoteDescription(new RTCSessionDescription(description));
   await flushPendingIceCandidates();
@@ -722,6 +748,7 @@ async function startVoiceCall() {
     connectSocket(currentMatchId);
     const socketReady = await waitForSocketOpen();
     if (!socketReady) throw new Error("Live voice socket is still connecting. Try again in a moment.");
+    await loadVoiceRtcConfig();
     await attachLocalVoiceStream();
     voiceRing.classList.add("speaking");
     sendVoiceSignal({ type: "voice:ready" });

@@ -17,6 +17,8 @@ const nvidiaApiKey = process.env.NVIDIA_API_KEY;
 const nvidiaApiBaseUrl = (process.env.NVIDIA_API_BASE_URL || "https://integrate.api.nvidia.com/v1").replace(/\/$/, "");
 const nvidiaTranslationModel = process.env.NVIDIA_TRANSLATION_MODEL || "nvidia/riva-translate-4b-instruct-v1.1";
 const nvidiaSafetyModel = process.env.NVIDIA_SAFETY_MODEL || "nvidia/nemotron-3.5-content-safety";
+const meteredTurnApiUrl = String(process.env.METERED_TURN_API_URL || "").trim().replace(/\/$/, "");
+const meteredTurnApiKey = process.env.METERED_TURN_API_KEY;
 const adminEmails = new Set(
   String(process.env.ADMIN_EMAILS || "")
     .split(",")
@@ -28,6 +30,8 @@ const myMemoryEndpoint = (process.env.MYMEMORY_ENDPOINT || "https://api.mymemory
 const redisEnabled = Boolean(upstashRedisRestUrl && upstashRedisRestToken);
 const nvidiaEnabled = Boolean(nvidiaApiKey);
 const rateLimitBuckets = new Map();
+let cachedIceServers = null;
+let cachedIceServersAt = 0;
 const pgPool = databaseUrl
   ? new Pool({
       connectionString: databaseUrl,
@@ -723,6 +727,45 @@ function requireRateLimit(req, res, user, bucket, limit, windowMs = 60_000) {
   return false;
 }
 
+function fallbackIceServers() {
+  return [
+    {
+      urls: [
+        "stun:stun.l.google.com:19302",
+        "stun:stun1.l.google.com:19302",
+        "stun:stun2.l.google.com:19302",
+      ],
+    },
+  ];
+}
+
+async function voiceIceServers() {
+  const now = Date.now();
+  if (cachedIceServers && now - cachedIceServersAt < 10 * 60 * 1000) return cachedIceServers;
+  if (!meteredTurnApiUrl || !meteredTurnApiKey) {
+    cachedIceServers = fallbackIceServers();
+    cachedIceServersAt = now;
+    return cachedIceServers;
+  }
+
+  const url = new URL("/api/v1/turn/credentials", meteredTurnApiUrl);
+  url.searchParams.set("apiKey", meteredTurnApiKey);
+
+  try {
+    const response = await fetch(url);
+    const iceServers = await response.json().catch(() => null);
+    if (!response.ok || !Array.isArray(iceServers)) throw new Error(`TURN API ${response.status}`);
+    cachedIceServers = [...fallbackIceServers(), ...iceServers];
+    cachedIceServersAt = now;
+    return cachedIceServers;
+  } catch (error) {
+    console.warn(`TURN API unavailable: ${error.message}`);
+    cachedIceServers = fallbackIceServers();
+    cachedIceServersAt = now;
+    return cachedIceServers;
+  }
+}
+
 function signupRole(email, db) {
   if (adminEmails.has(String(email || "").toLowerCase())) return "admin";
   if (process.env.NODE_ENV !== "production" && adminEmails.size === 0 && db.users.length === 0) return "admin";
@@ -1186,6 +1229,17 @@ async function handleApi(req, res, pathname) {
 
   if (req.method === "GET" && pathname === "/api/session") {
     sendJson(res, 200, { user: publicUser(user) });
+    return true;
+  }
+
+  if (req.method === "GET" && pathname === "/api/voice/ice-servers") {
+    if (!requireUser(user, res)) return true;
+    if (!requireRateLimit(req, res, user, "ice-servers", 20)) return true;
+    const iceServers = await voiceIceServers();
+    sendJson(res, 200, {
+      iceServers,
+      provider: meteredTurnApiUrl && meteredTurnApiKey ? "metered-openrelay" : "stun-fallback",
+    });
     return true;
   }
 
