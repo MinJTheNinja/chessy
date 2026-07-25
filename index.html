@@ -1,10 +1,10 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>EasyMate Chess Matching</title>
-    <link rel="stylesheet" href="/styles.css?v=20260705-easymate-app" />
+    <link rel="stylesheet" href="/styles.css?v=20260725-how-to-play" />
   </head>
   <body>
     <header class="site-header">
@@ -15,6 +15,7 @@
         <span class="brand-mark">EM</span>
         <span>Easy<strong>Mate</strong></span>
       </a>
+      <button class="header-nav-link" type="button" data-view-link="how-to-play">How to play</button>
       <div class="header-actions">
         <button class="notification-button" id="notificationButton" type="button" aria-expanded="false" aria-label="Notifications">
           <span aria-hidden="true">🔔</span>
@@ -31,9 +32,7 @@
         </div>
         <select id="languageSelect" aria-label="Interface language">
           <option value="English">English</option>
-          <option value="Korean">Korean</option>
-          <option value="Thai">Thai</option>
-          <option value="Japanese">Japanese</option>
+          <option value="Korean" selected>Korean</option>
         </select>
         <div class="header-profile" id="headerProfile" hidden>
           <button
@@ -81,10 +80,10 @@
                 <button class="button primary full" id="seniorEntryButton" type="button">참여 신청</button>
               </article>
               <article class="entry-choice global">
-                <div class="entry-choice-icon" aria-hidden="true">G</div>
-                <h2>Global / 외국인</h2>
-                <p>Play chess and practice Korean with local seniors or students.</p>
-                <button class="button secondary full" id="globalEntryButton" type="button">Start playing</button>
+                <div class="entry-choice-icon" aria-hidden="true">초</div>
+                <h2>초등학생</h2>
+                <p>체스를 처음 배우는 학생은 짧은 튜토리얼을 끝낸 뒤 사이트를 자유롭게 이용합니다.</p>
+                <button class="button secondary full" id="globalEntryButton" type="button">튜토리얼 시작</button>
               </article>
             </div>
           </div>
@@ -118,6 +117,10 @@
             <label>
               Password
               <input id="authPassword" type="password" placeholder="Enter password" autocomplete="current-password" />
+            </label>
+            <label id="authConfirmPasswordField" hidden>
+              Confirm password
+              <input id="authConfirmPassword" type="password" placeholder="Enter password again" autocomplete="new-password" />
             </label>
             <button class="button primary full" id="authSubmit" type="submit">Log in</button>
             <button class="button secondary full google-button" id="googleSignIn" type="button">
@@ -153,16 +156,15 @@
       <section class="app-shell" id="dashboard" aria-label="Application workspace">
         <aside class="sidebar" id="sidebarMenu" hidden>
           <span class="sidebar-label">Menu</span>
-          <button class="side-link active" data-view-link="match">Play</button>
-          <button class="side-link" data-view-link="review">AI Review</button>
-          <button class="side-link" data-view-link="communication">Messages</button>
+          <button class="side-link active" data-view-link="dashboard">Dashboard</button>
+          <button class="side-link" data-view-link="how-to-play">How to play</button>
           <button class="side-link" data-view-link="forum">Forum</button>
-          <button class="side-link" data-view-link="chessboards">Chessboards</button>
-          <button class="side-link admin-only" data-view-link="admin" hidden>Admin</button>
+          <button class="side-link" data-view-link="chessboards">Shop</button>
+          <button class="side-link staff-only" data-view-link="staff" hidden>Staff</button>
         </aside>
 
         <div class="workspace">
-          <section class="view" data-view="dashboard" aria-labelledby="dashboardTitle">
+          <section class="view" data-view="overview" aria-labelledby="dashboardTitle">
             <div class="view-header">
               <div>
                 <span class="eyebrow">Overview</span>
@@ -182,23 +184,18 @@
                 <h3>AI Language Review</h3>
                 <p>Review vocabulary, culture notes, and pronunciation after a match.</p>
               </article>
-              <article class="route-card" data-view-link="communication">
-                <span>03</span>
-                <h3>Messages</h3>
-                <p>Read and send voice letters from your matches.</p>
-              </article>
               <article class="route-card" data-view-link="profile">
-                <span>04</span>
+                <span>03</span>
                 <h3>Profile and Culture</h3>
                 <p>Manage your profile, badges, feedback, and culture guide.</p>
               </article>
               <article class="route-card" data-view-link="forum">
-                <span>05</span>
+                <span>04</span>
                 <h3>Forum</h3>
                 <p>Announcements, questions, and player discussions.</p>
               </article>
               <article class="route-card" data-view-link="chessboards">
-                <span>06</span>
+                <span>05</span>
                 <h3>Chessboards</h3>
                 <p>Explore physical boards for live language chess.</p>
               </article>
@@ -224,7 +221,7 @@
             </div>
           </section>
 
-          <section class="view active" data-view="match" aria-labelledby="matchTitle">
+          <section class="view active" data-view="dashboard" aria-labelledby="matchTitle">
             <div class="view-header">
               <div>
                 <span class="eyebrow">Play</span>
@@ -554,7 +551,7 @@
                   <article class="vocab-item">
                     <button class="vocab-term" data-say="Could you replay that move?" data-lang="en-US">Could you replay that move?</button>
                     <strong>그 수를 다시 보여줄 수 있나요?</strong>
-                    <p>Used in the voice-letter context when a player wanted to review a position.</p>
+                    <p>Used when a player wanted to review a position.</p>
                   </article>
                   <article class="vocab-item">
                     <button class="vocab-term" data-say="center control" data-lang="en-US">center control</button>
@@ -581,55 +578,24 @@
             </div>
           </section>
 
-          <section class="view" data-view="communication" aria-labelledby="communicationTitle">
+          <section class="view how-to-play-view" data-view="how-to-play" aria-labelledby="howToPlayTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">Messages</span>
-                <h2 id="communicationTitle">Voice letters</h2>
+                <span class="eyebrow">Guide</span>
+                <h2 id="howToPlayTitle">How to play</h2>
               </div>
-              <button class="button primary" id="composeVoiceLetter">Compose Voice Letter</button>
             </div>
 
-            <div class="communication-grid">
-              <article class="wire-card">
-                <h3>Voice Letter Inbox</h3>
-                <p>Unread messages from your matches</p>
-                <p class="voice-status" data-voice-status>Click a voice letter to hear it.</p>
-                <div class="inbox-list">
-                  <button class="inbox-item" data-voice-text="Great game, loved the middle game turn." data-voice-lang="en-US">
-                    <span class="avatar small-avatar">AB</span>
-                    <strong>Alex B.</strong>
-                    <span>Great game, loved the mid-game turn.</span>
-                    <time>2 min ago</time>
-                  </button>
-                  <button class="inbox-item" data-voice-text="Could you replay that last move?" data-voice-lang="en-US">
-                    <span class="avatar small-avatar">MK</span>
-                    <strong>Maria K.</strong>
-                    <span>Could you replay that last move?</span>
-                    <time>18 min ago</time>
-                  </button>
-                  <button class="inbox-item" data-voice-text="Thanks for the subtitle support." data-voice-lang="en-US">
-                    <span class="avatar small-avatar">JS</span>
-                    <strong>Jin S.</strong>
-                    <span>Thanks for the subtitle support.</span>
-                    <time>1 hr ago</time>
-                  </button>
-                </div>
-                <button class="text-link" type="button">Open Full Inbox</button>
-              </article>
-            </div>
-
-            <h3>Voice letter activity</h3>
-            <div class="status-strip">
-              <article><span class="label">Messages received</span><strong>12</strong><p>Last 7 days</p></article>
-              <article><span class="label">Voice letters sent</span><strong>5</strong><p>Last 7 days</p></article>
-              <article><span class="label">Unread</span><strong>3</strong><p>Needs reply</p></article>
-            </div>
-
-            <h3>Recent letters</h3>
-            <div class="notice-list" id="noticeList">
-              <p>New voice letter from Alex B. <span>2 min ago</span></p>
-              <p>Maria K. replied to your voice letter. <span>1 hr ago</span></p>
+            <div class="how-to-play-shell">
+              <div class="tutorial-gate-note" id="tutorialGateNote" hidden>
+                초등학생 모드입니다. 튜토리얼을 끝내면 모든 메뉴가 열립니다.
+              </div>
+              <iframe
+                class="how-to-play-frame"
+                src="/assets/how-to-play.html"
+                title="How to play interactive guide"
+                loading="lazy"
+              ></iframe>
             </div>
           </section>
 
@@ -726,7 +692,7 @@
                 <span class="eyebrow">Live captions</span>
                 <h2 id="sttTitle">Caption workspace</h2>
               </div>
-              <button class="text-link" data-view-link="communication" type="button">Communication Hub</button>
+              <button class="text-link" data-view-link="dashboard" type="button">Back to dashboard</button>
             </div>
 
             <div class="stt-status">
@@ -933,7 +899,7 @@
             </div>
           </section>
 
-          <section class="view" data-view="admin" aria-labelledby="adminTitle">
+          <section class="view" data-view="staff" aria-labelledby="adminTitle">
             <div class="view-header">
               <div>
                 <span class="eyebrow">Admin Panel</span>
@@ -988,27 +954,6 @@
       </section>
     </main>
 
-    <dialog id="voiceDialog">
-      <form method="dialog" class="dialog-card">
-        <button class="close" value="cancel" aria-label="Close">x</button>
-        <span class="eyebrow">Voice Letter Compose</span>
-        <h2>Record and send voice letter</h2>
-        <label>
-          Recipient
-          <select>
-            <option>Alex B.</option>
-            <option>Maria K.</option>
-            <option>Jin S.</option>
-          </select>
-        </label>
-        <label>
-          Message note
-          <textarea placeholder="Add a short note for the translated transcript."></textarea>
-        </label>
-        <button class="button primary full" value="confirm">Send Voice Letter</button>
-      </form>
-    </dialog>
-
-    <script src="/app.js"></script>
+    <script src="/app.js?v=20260725-how-to-play"></script>
   </body>
 </html>

@@ -1,5 +1,6 @@
 const board = document.querySelector("#chessBoard");
 const menuToggle = document.querySelector("#menuToggle");
+const languageSelect = document.querySelector("#languageSelect");
 const sidebarMenu = document.querySelector("#sidebarMenu");
 const syncState = document.querySelector("#syncState");
 const queueTime = document.querySelector("#queueTime");
@@ -34,8 +35,6 @@ const dashboardTemp = document.querySelector("#dashboardTemp");
 const profileTemp = document.querySelector("#profileTemp");
 const nextMissionButton = document.querySelector("#nextMission");
 const icebreakerText = document.querySelector("#icebreakerText");
-const composeVoiceLetter = document.querySelector("#composeVoiceLetter");
-const voiceDialog = document.querySelector("#voiceDialog");
 const sttToggle = document.querySelector("#sttToggle");
 const translationToggle = document.querySelector("#translationToggle");
 const sttPill = document.querySelector("#sttPill");
@@ -69,11 +68,15 @@ const authEmail = document.querySelector("#authEmail");
 const authDisplayNameField = document.querySelector("#authDisplayNameField");
 const authDisplayName = document.querySelector("#authDisplayName");
 const authPassword = document.querySelector("#authPassword");
+const authConfirmPasswordField = document.querySelector("#authConfirmPasswordField");
+const authConfirmPassword = document.querySelector("#authConfirmPassword");
 const authLanguagePair = document.querySelector("#authLanguagePair");
 const authStatus = document.querySelector("#authStatus");
 const authSubmit = document.querySelector("#authSubmit");
 const continueToDashboardButton = document.querySelector("#continueToDashboard");
 const googleSignInButton = document.querySelector("#googleSignIn");
+const tutorialGateNote = document.querySelector("#tutorialGateNote");
+const howToPlayFrame = document.querySelector(".how-to-play-frame");
 const headerProfile = document.querySelector("#headerProfile");
 const headerProfileButton = document.querySelector("#headerProfileButton");
 const headerProfileMenu = document.querySelector("#headerProfileMenu");
@@ -82,7 +85,6 @@ const headerProfileAvatar = document.querySelector("#headerProfileAvatar");
 const headerSignOutButton = document.querySelector("#headerSignOut");
 const deleteAccountButton = document.querySelector("#deleteAccount");
 const contrastModeButton = document.querySelector("#contrastModeButton");
-const largeTextButton = document.querySelector("#largeTextButton");
 const textSizeSlider = document.querySelector("#textSizeSlider");
 const settingsAccountName = document.querySelector("#settingsAccountName");
 const signupButton = document.querySelector("#signupButton");
@@ -103,7 +105,17 @@ const publishForumPostButton = document.querySelector("#publishForumPost");
 const showForumComposerButton = document.querySelector("#showForumComposer");
 const forumComposer = document.querySelector("#forumComposer");
 const forumFilterButtons = document.querySelectorAll("[data-forum-filter]");
+const forumNoticeOption = forumPostCategory?.querySelector('option[value="Notice"]');
 const shopInterestStatus = document.querySelector("#shopInterestStatus");
+const shopProductGrid = document.querySelector("#shopProductGrid");
+const staffProductForm = document.querySelector("#staffProductForm");
+const staffProductImage = document.querySelector("#staffProductImage");
+const staffProductImageUrl = document.querySelector("#staffProductImageUrl");
+const staffProductName = document.querySelector("#staffProductName");
+const staffProductPrice = document.querySelector("#staffProductPrice");
+const staffProductDescription = document.querySelector("#staffProductDescription");
+const publishStaffProductButton = document.querySelector("#publishStaffProduct");
+const staffProductStatus = document.querySelector("#staffProductStatus");
 const vocabList = document.querySelector("#vocabList");
 const culturalTitle = document.querySelector("#culturalTitle");
 const culturalBody = document.querySelector("#culturalBody");
@@ -131,9 +143,11 @@ const adminStatus = document.querySelector("#adminStatus");
 const adminUsersCount = document.querySelector("#adminUsersCount");
 const adminMatchesCount = document.querySelector("#adminMatchesCount");
 const adminReportsCount = document.querySelector("#adminReportsCount");
+const shopInterestCount = document.querySelector("#shopInterestCount");
 const adminMatchesList = document.querySelector("#adminMatchesList");
 const adminUsersList = document.querySelector("#adminUsersList");
 const adminReportsList = document.querySelector("#adminReportsList");
+const shopInterestList = document.querySelector("#shopInterestList");
 const adminMatchSearch = document.querySelector("#adminMatchSearch");
 const adminUserSearch = document.querySelector("#adminUserSearch");
 const refreshProfileButton = document.querySelector("#refreshProfile");
@@ -155,6 +169,249 @@ const cultureGuideList = document.querySelector("#cultureGuideList");
 const cultureGuideInput = document.querySelector("#cultureGuideInput");
 const saveCultureGuideButton = document.querySelector("#saveCultureGuide");
 const demoAuthAllowed = ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
+const studentTutorialRequiredKey = "easyMateStudentTutorialRequired";
+const studentTutorialCompleteKey = "easyMateStudentTutorialComplete";
+
+const koreanText = {
+  "Notifications": "알림",
+  "Clear": "지우기",
+  "English": "영어",
+  "Korean": "한국어",
+  "Thai": "태국어",
+  "Japanese": "일본어",
+  "Player": "플레이어",
+  "Profile": "프로필",
+  "Settings": "설정",
+  "Sign out": "로그아웃",
+  "Menu": "메뉴",
+  "Dashboard": "대시보드",
+  "Messages": "메시지",
+  "Forum": "게시판",
+  "Shop": "상점",
+  "Staff": "스태프",
+  "Staff tools": "스태프 도구",
+  "Staff operations": "스태프 운영",
+  "Login": "로그인",
+  "New user": "새 계정",
+  "Language selection": "언어 선택",
+  "Email": "이메일",
+  "Display name": "표시 이름",
+  "Password": "비밀번호",
+  "Confirm password": "비밀번호 확인",
+  "Log in": "로그인",
+  "Create account": "계정 만들기",
+  "Demo sign in": "데모 로그인",
+  "Continue to play": "계속 플레이",
+  "Enter password": "비밀번호 입력",
+  "Enter password again": "비밀번호 다시 입력",
+  "Fastest": "가장 빠름",
+  "Quick pair": "빠른 매칭",
+  "Start matching immediately with default settings.": "기본 설정으로 바로 매칭을 시작합니다.",
+  "Custom": "맞춤",
+  "Create game": "게임 만들기",
+  "Choose time, language, and conversation goal.": "시간, 언어, 대화 목표를 선택합니다.",
+  "Private": "비공개",
+  "Play with a friend": "친구와 플레이",
+  "Create a room or join one with a code.": "방을 만들거나 코드로 참여합니다.",
+  "Bullet": "불릿",
+  "Blitz": "블리츠",
+  "Study": "스터디",
+  "Casual": "캐주얼",
+  "Rated": "레이팅",
+  "Cancel": "취소",
+  "Match status": "매칭 상태",
+  "Choose mode": "모드 선택",
+  "Default search": "기본 검색",
+  "Fast chess, short phrases": "빠른 체스, 짧은 표현",
+  "Quick talk between moves": "수 사이에 짧게 대화",
+  "Rapid Talk": "래피드 토크",
+  "Best for caption practice": "자막 연습에 적합",
+  "Slow game, deeper review": "느린 게임, 깊은 복습",
+  "Game type": "게임 유형",
+  "Time control": "시간 제한",
+  "Partner language": "파트너 언어",
+  "Conversation goal": "대화 목표",
+  "Explain chess moves": "체스 수 설명하기",
+  "Practice daily conversation": "일상 대화 연습",
+  "Learn sports phrases": "스포츠 표현 배우기",
+  "Create live game": "라이브 게임 만들기",
+  "Friend room": "친구 방",
+  "Create private room": "비공개 방 만들기",
+  "Join room": "방 참여",
+  "Room code": "방 코드",
+  "Enter code": "코드 입력",
+  "Announcements, questions, and open discussion for players.": "공지, 질문, 플레이어들의 자유로운 대화 공간입니다.",
+  "Back to dashboard": "대시보드로 돌아가기",
+  "← Back to dashboard": "← 대시보드로 돌아가기",
+  "??Back to dashboard": "← 대시보드로 돌아가기",
+  "+ New post": "+ 새 글",
+  "New post": "새 글",
+  "Title": "제목",
+  "Enter a title": "제목 입력",
+  "Category": "분류",
+  "Notice": "공지",
+  "Notice (staff only)": "공지 (스태프 전용)",
+  "Question": "질문",
+  "Free": "자유",
+  "Message": "내용",
+  "Write your message": "내용을 작성하세요",
+  "Publish": "게시",
+  "All": "전체",
+  "Live Chess Hardware": "라이브 체스 하드웨어",
+  "Boards made for chess and language practice.": "체스와 언어 연습을 위해 만든 보드입니다.",
+  "Sell your dedicated board here with product details, reservation interest, and future checkout flow.": "상품 정보, 관심 예약, 향후 결제 흐름을 이곳에서 관리합니다.",
+  "Reserve interest": "관심 예약",
+  "Join waitlist": "대기자 명단 참여",
+  "Prototype": "프로토타입",
+  "Studio": "스튜디오",
+  "Accessory": "액세서리",
+  "Founder's Board": "파운더스 보드",
+  "Coach Board": "코치 보드",
+  "Travel Kit": "여행 키트",
+  "Portable tournament-size board for live matches, captions, and lesson review.": "라이브 매치, 자막, 수업 복습을 위한 휴대용 토너먼트 크기 보드입니다.",
+  "Larger tabletop board for tutors, clubs, and language exchange sessions.": "튜터, 동아리, 언어 교환 세션을 위한 큰 탁상용 보드입니다.",
+  "Compact pieces, carrying case, and setup guide for in-person practice games.": "대면 연습 게임을 위한 소형 말, 휴대 케이스, 설치 가이드입니다.",
+  "$149 estimated": "예상가 $149",
+  "$229 estimated": "예상가 $229",
+  "$49 estimated": "예상가 $49",
+  "Select a product to save interest.": "관심 상품을 선택하세요.",
+  "Staff only": "스태프 전용",
+  "Register product": "상품 등록",
+  "Add shop items with a photo, name, price, and description.": "사진, 이름, 가격, 설명을 넣어 상품을 등록합니다.",
+  "Product photo": "상품 사진",
+  "Photo URL": "사진 URL",
+  "Product name": "상품 이름",
+  "Board name": "보드 이름",
+  "Price": "가격",
+  "Description": "설명",
+  "Short product details": "짧은 상품 설명",
+  "Add product": "상품 추가",
+  "Only staff can register products.": "스태프만 상품을 등록할 수 있습니다.",
+  "Product added.": "상품이 추가되었습니다.",
+  "Product deleted.": "상품이 삭제되었습니다.",
+  "Product not found.": "상품을 찾을 수 없습니다.",
+  "Delete product": "상품 삭제",
+  "Staff access required.": "스태프 권한이 필요합니다.",
+  "Ready to add a shop product.": "상점 상품을 추가할 수 있습니다.",
+  "Add a product name, price, and description.": "상품 이름, 가격, 설명을 입력하세요.",
+  "Product Interest": "상품 관심 예약",
+  "Players who reserved interest in shop products appear here.": "상점 상품에 관심 예약한 플레이어가 여기에 표시됩니다.",
+  "No product interest yet.": "아직 상품 관심 예약이 없습니다.",
+  "Refresh Staff Data": "스태프 데이터 새로고침",
+  "Notice permission": "공지 권한",
+  "Only staff can publish posts in the Notice category.": "스태프만 공지 분류로 글을 올릴 수 있습니다.",
+  "Open forum": "포럼 열기",
+  "Product registration": "상품 등록",
+  "Add products with a photo, name, price, and description.": "사진, 이름, 가격, 설명을 넣어 상품을 등록합니다.",
+  "Open shop": "상점 열기",
+  "Users": "사용자",
+  "Active matches": "진행 중 매치",
+  "Open reports": "열린 신고",
+  "Product interest": "상품 관심",
+  "Match Monitor": "매치 모니터",
+  "Review live match logs and intervene when safety reports arrive.": "라이브 매치 기록을 확인하고 안전 신고가 들어오면 개입합니다.",
+  "Search matches": "매치 검색",
+  "User Management": "사용자 관리",
+  "Manage user accounts, profile flags, and repeated feedback patterns.": "사용자 계정, 프로필 표시, 반복 피드백 패턴을 관리합니다.",
+  "Search users": "사용자 검색",
+  "Safety and Moderation": "안전 및 관리",
+  "Warnings are tracked with context from transcript, match result, and reports.": "경고는 대화 기록, 매치 결과, 신고 맥락과 함께 추적됩니다.",
+  "Open menu": "메뉴 열기",
+  "Open profile menu": "프로필 메뉴 열기",
+};
+const originalTextNodes = new WeakMap();
+const originalAttributes = new WeakMap();
+let applyingLanguage = false;
+
+function currentInterfaceLanguage() {
+  return languageSelect?.value || "English";
+}
+
+function translateCopy(value) {
+  return currentInterfaceLanguage() === "Korean" ? koreanText[value] || value : value;
+}
+
+function updateLandingHeroCopy() {
+  const entryTitle = document.querySelector("#entryTitle");
+  if (!entryTitle) return;
+  entryTitle.textContent = currentInterfaceLanguage() === "Korean" ? "체스를 더 쉽게!" : "Make chess easier!";
+}
+
+function translateTextNode(node) {
+  const currentText = node.textContent;
+  if (!currentText || !currentText.trim()) return;
+
+  let original = originalTextNodes.get(node);
+  if (currentInterfaceLanguage() === "Korean") {
+    const currentTrimmed = currentText.trim();
+    const previousTranslation = original ? translateCopy(original.trim()) : null;
+    if (!original || currentTrimmed !== previousTranslation) {
+      originalTextNodes.set(node, currentText);
+      original = currentText;
+    }
+    const trimmed = original.trim();
+    const translated = koreanText[trimmed];
+    if (!translated) return;
+    if (node.parentElement?.tagName === "OPTION" && !node.parentElement.hasAttribute("value")) {
+      node.parentElement.value = trimmed;
+    }
+    const leading = original.match(/^\s*/)?.[0] || "";
+    const trailing = original.match(/\s*$/)?.[0] || "";
+    node.textContent = `${leading}${translated}${trailing}`;
+    return;
+  }
+
+  if (original) node.textContent = original;
+}
+
+function translateAttribute(element, attribute) {
+  if (!element.hasAttribute(attribute)) return;
+  const currentValue = element.getAttribute(attribute);
+  if (!currentValue) return;
+
+  let originals = originalAttributes.get(element);
+  if (!originals) {
+    originals = {};
+    originalAttributes.set(element, originals);
+  }
+
+  if (currentInterfaceLanguage() === "Korean") {
+    const previousTranslation = originals[attribute] ? translateCopy(originals[attribute]) : null;
+    if (!originals[attribute] || currentValue !== previousTranslation) originals[attribute] = currentValue;
+    const translated = koreanText[originals[attribute]];
+    if (translated) element.setAttribute(attribute, translated);
+    return;
+  }
+
+  if (originals[attribute]) element.setAttribute(attribute, originals[attribute]);
+}
+
+function applyInterfaceLanguage(root = document.body) {
+  if (!root || applyingLanguage) return;
+  applyingLanguage = true;
+  document.documentElement.lang = currentInterfaceLanguage() === "Korean" ? "ko" : "en";
+  updateLandingHeroCopy();
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement;
+      if (!parent || ["SCRIPT", "STYLE", "TEXTAREA"].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+  const textNodes = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode);
+  textNodes.forEach(translateTextNode);
+
+  root.querySelectorAll?.("[placeholder], [aria-label], [title]").forEach((element) => {
+    ["placeholder", "aria-label", "title"].forEach((attribute) => translateAttribute(element, attribute));
+  });
+  applyingLanguage = false;
+}
+
+function scheduleInterfaceLanguageApply() {
+  window.requestAnimationFrame(() => applyInterfaceLanguage());
+}
 
 const pieceCodes = {
   white: {
@@ -361,6 +618,32 @@ let cachedAdminData = null;
 let adminCommandBuffer = "";
 let forumFilter = "All";
 let forumPosts = [];
+let staffShopProducts = [];
+let deletedShopProductIds = [];
+
+const defaultShopProducts = [
+  {
+    id: "default-founders-board",
+    tag: "Prototype",
+    name: "Founder's Board",
+    description: "Portable tournament-size board for live matches, captions, and lesson review.",
+    price: "$149 estimated",
+  },
+  {
+    id: "default-coach-board",
+    tag: "Studio",
+    name: "Coach Board",
+    description: "Larger tabletop board for tutors, clubs, and language exchange sessions.",
+    price: "$229 estimated",
+  },
+  {
+    id: "default-travel-kit",
+    tag: "Accessory",
+    name: "Travel Kit",
+    description: "Compact pieces, carrying case, and setup guide for in-person practice games.",
+    price: "$49 estimated",
+  },
+];
 
 const voiceClientId =
   window.crypto?.randomUUID?.() || `voice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -504,7 +787,7 @@ function setMatchState(state) {
   showCreateSeekButton.hidden = !isIdle;
   showFriendRoomButton.hidden = !isIdle;
   cancelMatchSearchButton.hidden = nextState !== "searching";
-  generateReviewButton.hidden = !isEnded;
+  if (generateReviewButton) generateReviewButton.hidden = true;
   newGameButton.hidden = !isEnded;
   if (!isIdle) seekComposer.hidden = true;
 
@@ -514,7 +797,8 @@ function setMatchState(state) {
     playing: "Live match",
     ended: "Match result",
   };
-  document.querySelector("#matchTitle").textContent = titles[nextState];
+  const dashboardTitle = document.querySelector("#dashboardTitle");
+  if (dashboardTitle) dashboardTitle.textContent = titles[nextState];
 }
 
 function isVoiceCallSupported() {
@@ -923,6 +1207,31 @@ function setServerStatus(text, online) {
   serverStatus.classList.toggle("offline", online === false);
 }
 
+function isStaffUser(user = currentUser) {
+  return user?.role === "staff" || user?.role === "admin";
+}
+
+function renderStaffAccessState() {
+  const canUseStaffTools = isStaffUser();
+  document.querySelectorAll(".staff-only").forEach((element) => {
+    element.hidden = !canUseStaffTools;
+  });
+  if (shopProductGrid) renderStaffShopProducts();
+  if (forumNoticeOption) {
+    forumNoticeOption.disabled = !canUseStaffTools;
+    forumNoticeOption.hidden = !canUseStaffTools;
+    forumNoticeOption.textContent = canUseStaffTools ? "Notice" : "Notice (staff only)";
+  }
+  if (forumPostCategory?.value === "Notice" && !canUseStaffTools) {
+    forumPostCategory.value = "Question";
+  }
+  if (staffProductStatus) {
+    staffProductStatus.textContent = translateCopy(
+      canUseStaffTools ? "Ready to add a shop product." : "Only staff can register products.",
+    );
+  }
+}
+
 function renderAuthState() {
   const signedIn = Boolean(currentUser);
   document.body.classList.toggle("is-signed-in", signedIn);
@@ -935,6 +1244,7 @@ function renderAuthState() {
   } else {
     if (settingsAccountName) settingsAccountName.textContent = "Signed out";
     closeProfileMenu();
+    if (authSubmit.disabled) document.body.classList.remove("auth-entry-open");
   }
   if (headerSignOutButton) headerSignOutButton.disabled = !signedIn;
   if (deleteAccountButton) deleteAccountButton.disabled = !signedIn;
@@ -951,23 +1261,84 @@ function renderAuthState() {
   authEmail.disabled = signedIn;
   authDisplayName.disabled = signedIn;
   authPassword.disabled = signedIn;
+  authConfirmPassword.disabled = signedIn;
   authLanguagePair.disabled = signedIn;
   authDisplayNameField.hidden = authMode === "login";
+  authConfirmPasswordField.hidden = authMode === "login" || !authPassword.value;
   authPassword.autocomplete = authMode === "login" ? "current-password" : "new-password";
-  if (currentUser?.role !== "admin") {
-    document.querySelectorAll(".admin-only").forEach((button) => {
-      button.hidden = true;
-    });
-  }
+  renderStaffAccessState();
+  updateTutorialGateState();
 }
 
 function setAuthMode(mode) {
   authMode = mode;
+  authConfirmPassword.value = "";
+  document.body.classList.add("auth-entry-open");
   renderAuthState();
   authStatus.textContent =
     mode === "login" ? "Enter your existing email and password." : "Create an account to save matches and language review.";
-  document.querySelector("#home").scrollIntoView({ behavior: "smooth", block: "start" });
-  (mode === "login" ? authEmail : authDisplayName).focus();
+  document.querySelector(".entry-auth")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.setTimeout(() => (mode === "login" ? authEmail : authDisplayName).focus(), 260);
+}
+
+function readLocalSetting(key) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalSetting(key, value) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // The tutorial still works for this page load if storage is unavailable.
+  }
+}
+
+function removeLocalSetting(key) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Ignore storage errors.
+  }
+}
+
+function isStudentTutorialComplete() {
+  return readLocalSetting(studentTutorialCompleteKey) === "true";
+}
+
+function isStudentTutorialRequired() {
+  return readLocalSetting(studentTutorialRequiredKey) === "true" && !isStudentTutorialComplete();
+}
+
+function updateTutorialGateState() {
+  const required = isStudentTutorialRequired();
+  const complete = isStudentTutorialComplete();
+  document.body.classList.toggle("tutorial-required", required);
+  document.body.classList.toggle("tutorial-complete", complete);
+  if (tutorialGateNote) tutorialGateNote.hidden = !required;
+  document.querySelectorAll("[data-view-link]").forEach((link) => {
+    const blocked = required && link.dataset.viewLink !== "how-to-play";
+    link.classList.toggle("tutorial-locked-link", blocked);
+    link.setAttribute("aria-disabled", blocked ? "true" : "false");
+  });
+}
+
+function beginStudentTutorial() {
+  writeLocalSetting(studentTutorialRequiredKey, "true");
+  removeLocalSetting(studentTutorialCompleteKey);
+  updateTutorialGateState();
+  setView("how-to-play");
+}
+
+function completeStudentTutorial() {
+  writeLocalSetting(studentTutorialCompleteKey, "true");
+  removeLocalSetting(studentTutorialRequiredKey);
+  updateTutorialGateState();
+  authStatus.textContent = "튜토리얼 완료! 이제 사이트를 자유롭게 이용할 수 있습니다.";
+  setView("dashboard");
 }
 
 async function api(path, options = {}) {
@@ -1041,11 +1412,11 @@ async function loadMatchFromRoute() {
       data = await api(`/api/matches/${matchId}/join`, { method: "POST" });
     }
     renderMatch(data.match);
-    setView("match");
+    setView("dashboard");
     matchResult.textContent = data.match.result || "Joined room from link";
     return true;
   } catch (error) {
-    setView("match");
+    setView("dashboard");
     matchResult.textContent = "Room not found";
     syncState.textContent = error.message;
     return true;
@@ -1223,7 +1594,6 @@ function handleNotificationMessage(message) {
   const views = {
     "game-request": "match",
     warning: "profile",
-    voicemail: "communication",
   };
 
   addNotification({
@@ -1267,8 +1637,8 @@ async function refreshStats() {
   if (!backendOnline) return;
   try {
     const stats = await api("/api/stats");
-    activeMatchesCount.textContent = String(stats.activeMatches);
-    subtitleSessionsCount.textContent = String(stats.subtitleSessions);
+    if (activeMatchesCount) activeMatchesCount.textContent = String(stats.activeMatches);
+    if (subtitleSessionsCount) subtitleSessionsCount.textContent = String(stats.subtitleSessions);
   } catch {
     // Non-critical status cards can fail without blocking play.
   }
@@ -1369,7 +1739,8 @@ function renderAdminOverview(data) {
   adminUsersCount.textContent = String(data.stats.users);
   adminMatchesCount.textContent = String(data.stats.activeMatches);
   adminReportsCount.textContent = String(data.stats.openReports);
-  adminStatus.textContent = `Admin data loaded. ${data.stats.totalReports} total report(s).`;
+  if (shopInterestCount) shopInterestCount.textContent = String(data.shopInterests?.length || 0);
+  adminStatus.textContent = `Staff data loaded. ${data.stats.totalReports} total report(s).`;
   const matchQuery = adminSearchText(adminMatchSearch.value);
   const userQuery = adminSearchText(adminUserSearch.value);
   const matches = matchQuery ? data.matches.filter((match) => adminMatchSearchText(match).includes(matchQuery)) : data.matches;
@@ -1439,8 +1810,8 @@ function renderAdminOverview(data) {
       const button = document.createElement("button");
       button.className = "button danger full small";
       button.type = "button";
-      button.textContent = user.role === "admin" ? "Admin Account" : "Issue Warning";
-      button.disabled = user.role === "admin";
+      button.textContent = isStaffUser(user) ? "Staff Account" : "Issue Warning";
+      button.disabled = isStaffUser(user);
       button.addEventListener("click", () => warnAdminUser(user.id));
       detail.append(button);
       card.append(summary, detail);
@@ -1475,19 +1846,41 @@ function renderAdminOverview(data) {
     },
     "No safety reports yet.",
   );
+
+  if (shopInterestList) {
+    renderAdminList(
+      shopInterestList,
+      data.shopInterests || [],
+      (interest) => {
+        const card = document.createElement("article");
+        card.className = "admin-item";
+        const title = document.createElement("strong");
+        title.textContent = interest.productName || "Product";
+        const user = document.createElement("span");
+        user.textContent = interest.displayName || "Guest Player";
+        const email = document.createElement("p");
+        email.textContent = interest.email || "No email";
+        const time = document.createElement("small");
+        time.textContent = interest.updatedAt || interest.createdAt || "";
+        card.append(title, user, email, time);
+        return card;
+      },
+      "No product interest yet.",
+    );
+  }
 }
 
 async function refreshAdmin() {
   if (!backendOnline) {
-    adminStatus.textContent = "Start the backend to use admin tools.";
+    adminStatus.textContent = "Start the backend to use staff tools.";
     return;
   }
-  if (currentUser?.role !== "admin") {
-    adminStatus.textContent = "Admin access required. Sign in with the first account created for this app.";
+  if (!isStaffUser()) {
+    adminStatus.textContent = "Staff access required.";
     return;
   }
 
-  adminStatus.textContent = "Loading admin data...";
+  adminStatus.textContent = "Loading staff data...";
   try {
     const data = await api("/api/admin/overview");
     renderAdminOverview(data);
@@ -1509,7 +1902,7 @@ async function warnAdminUser(userId) {
   try {
     await api(`/api/admin/users/${userId}/warn`, {
       method: "POST",
-      body: { reason: "Admin safety warning" },
+      body: { reason: "Staff safety warning" },
     });
     await refreshAdmin();
   } catch (error) {
@@ -1521,7 +1914,7 @@ async function endAdminMatch(matchId) {
   try {
     await api(`/api/admin/matches/${matchId}/end`, {
       method: "POST",
-      body: { result: "Ended by admin" },
+      body: { result: "Ended by staff" },
     });
     await refreshAdmin();
     await refreshStats();
@@ -1563,7 +1956,7 @@ async function checkBackend() {
     await refreshStats();
     await refreshLobby();
     const routedToMatch = await loadMatchFromRoute();
-    if (currentUser && !routedToMatch) setView("match");
+    if (currentUser && !routedToMatch) setView("dashboard");
   } catch {
     backendOnline = false;
     setServerStatus("Prototype mode", false);
@@ -1612,6 +2005,7 @@ async function signInOrRegister() {
   const email = authEmail.value.trim();
   const displayName = authDisplayName.value.trim();
   const password = authPassword.value;
+  const confirmPassword = authConfirmPassword.value;
   if (!email || !password) {
     authStatus.textContent = "Enter an email and password to continue.";
     return;
@@ -1619,6 +2013,17 @@ async function signInOrRegister() {
   if (authMode === "signup" && !displayName) {
     authStatus.textContent = "Choose a display name shown to opponents.";
     authDisplayName.focus();
+    return;
+  }
+  if (authMode === "signup" && !confirmPassword) {
+    authStatus.textContent = "Type your password again to confirm it.";
+    authConfirmPasswordField.hidden = false;
+    authConfirmPassword.focus();
+    return;
+  }
+  if (authMode === "signup" && password !== confirmPassword) {
+    authStatus.textContent = "Passwords do not match.";
+    authConfirmPassword.focus();
     return;
   }
 
@@ -1640,8 +2045,9 @@ async function signInOrRegister() {
     authStatus.textContent = `Signed in as ${currentUser.displayName}. Continue to play.`;
     authDisplayName.value = "";
     authPassword.value = "";
+    authConfirmPassword.value = "";
     renderAuthState();
-    setView("match");
+    setView("dashboard");
     await refreshStats();
     await refreshLobby();
   } catch (error) {
@@ -1682,7 +2088,7 @@ async function deleteAccount() {
   }
 
   const confirmed = window.confirm(
-    "Delete your account? This removes your profile, active rooms, queue entries, and voice letters."
+    "Delete your account? This removes your profile, active rooms, and queue entries."
   );
   if (!confirmed) return;
 
@@ -1732,7 +2138,7 @@ async function signInWithGoogle() {
     currentUser = data.user;
     authStatus.textContent = `Signed in with demo account as ${currentUser.displayName}.`;
     renderAuthState();
-    setView("match");
+    setView("dashboard");
     await refreshStats();
     await refreshLobby();
   } catch (error) {
@@ -1747,21 +2153,13 @@ function toggleContrastMode() {
   contrastModeButton.setAttribute("aria-pressed", String(enabled));
 }
 
-const textSizeScale = [92, 96, 100, 106, 112, 120, 128];
+const textSizeScale = [0.92, 0.96, 1, 1.06, 1.12, 1.2, 1.28];
 
 function applyTextSize(value) {
   const sliderValue = Number(value);
-  const scale = textSizeScale[sliderValue] || 100;
-  document.body.style.setProperty("--app-font-scale", `${scale}%`);
-  const enabled = sliderValue > 2;
-  document.body.classList.toggle("large-text-mode", enabled);
-  largeTextButton.setAttribute("aria-pressed", String(enabled));
-}
-
-function toggleLargeTextMode() {
-  const nextValue = document.body.classList.contains("large-text-mode") ? 2 : 4;
-  textSizeSlider.value = String(nextValue);
-  applyTextSize(nextValue);
+  const scale = textSizeScale[sliderValue] || 1;
+  document.documentElement.style.setProperty("--app-font-scale", String(scale));
+  localStorage.setItem("easyMateTextSize", String(sliderValue));
 }
 
 function renderForumPosts() {
@@ -1785,14 +2183,14 @@ function renderForumPosts() {
 
     const pin = document.createElement("span");
     pin.className = "forum-post-pin";
-    pin.textContent = post.pinned ? "📌" : "";
+    pin.textContent = post.pinned ? "?��" : "";
 
     const main = document.createElement("div");
     main.className = "forum-post-main";
 
     const category = document.createElement("span");
     category.className = `forum-post-tag ${post.category === "Question" ? "question" : post.category === "Free" ? "free" : ""}`;
-    category.textContent = post.category;
+    category.textContent = translateCopy(post.category);
 
     const title = document.createElement("h4");
     title.textContent = post.title;
@@ -1808,10 +2206,10 @@ function renderForumPosts() {
 
     const comments = document.createElement("span");
     comments.className = "forum-comments";
-    comments.textContent = `💬 ${post.comments || 0}`;
+    comments.textContent = `?�� ${post.comments || 0}`;
 
     let pinButton = null;
-    if (currentUser?.role === "admin") {
+    if (isStaffUser()) {
       pinButton = document.createElement("button");
       pinButton.className = "forum-pin-action";
       pinButton.type = "button";
@@ -1830,6 +2228,11 @@ function renderForumPosts() {
 function publishForumPost() {
   const title = forumPostTitle.value.trim();
   const body = forumPostBody.value.trim();
+  if (forumPostCategory.value === "Notice" && !isStaffUser()) {
+    forumPostCategory.value = "Question";
+    forumPostBody.focus();
+    return;
+  }
   if (!title || !body) {
     forumPostBody.focus();
     return;
@@ -1854,34 +2257,236 @@ function publishForumPost() {
 }
 
 function toggleForumComposer() {
+  renderStaffAccessState();
   forumComposer.hidden = !forumComposer.hidden;
   if (!forumComposer.hidden) forumPostTitle.focus();
 }
 
 function toggleForumPin(postId) {
-  if (currentUser?.role !== "admin") return;
+  if (!isStaffUser()) return;
   forumPosts = forumPosts.map((post) => (post.id === postId ? { ...post, pinned: !post.pinned } : post));
   renderForumPosts();
 }
 
-function saveShopInterest(productName) {
-  shopInterestStatus.textContent = `${productName} interest saved. We'll use this tab for checkout and launch updates next.`;
+async function saveShopInterest(productName) {
+  if (!currentUser) {
+    shopInterestStatus.textContent = translateCopy("Sign in before reserving product interest.");
+    return;
+  }
+  shopInterestStatus.textContent =
+    currentInterfaceLanguage() === "Korean" ? `${translateCopy(productName)} 관심 예약을 저장하는 중...` : `Saving ${productName} interest...`;
+  if (!backendOnline) {
+    shopInterestStatus.textContent = translateCopy("Start the backend to save product interest for staff.");
+    return;
+  }
+  try {
+    await api("/api/shop/interests", {
+      method: "POST",
+      body: { productName },
+    });
+    shopInterestStatus.textContent =
+      currentInterfaceLanguage() === "Korean"
+        ? `${translateCopy(productName)} 관심 예약이 저장되었습니다. 스태프 페이지에서 확인할 수 있습니다.`
+        : `${productName} interest saved. Staff can now see it.`;
+    if (isStaffUser()) await refreshAdmin();
+  } catch (error) {
+    shopInterestStatus.textContent = error.message;
+  }
 }
 
-function setView(viewName) {
-  if (viewName === "home") {
-    document.querySelector("#home").scrollIntoView({ behavior: "smooth", block: "start" });
-    document.querySelectorAll(".side-link").forEach((link) => link.classList.remove("active"));
+function loadStaffShopProducts() {
+  try {
+    staffShopProducts = JSON.parse(localStorage.getItem("easyMateStaffShopProducts") || "[]");
+  } catch {
+    staffShopProducts = [];
+  }
+}
+
+function saveStaffShopProducts() {
+  localStorage.setItem("easyMateStaffShopProducts", JSON.stringify(staffShopProducts));
+}
+
+function loadDeletedShopProductIds() {
+  try {
+    deletedShopProductIds = JSON.parse(localStorage.getItem("easyMateDeletedShopProductIds") || "[]");
+  } catch {
+    deletedShopProductIds = [];
+  }
+}
+
+function saveDeletedShopProductIds() {
+  localStorage.setItem("easyMateDeletedShopProductIds", JSON.stringify(deletedShopProductIds));
+}
+
+function ensureStaffProductIds() {
+  let changed = false;
+  staffShopProducts = staffShopProducts.map((product) => {
+    if (product.id) return product;
+    changed = true;
+    return {
+      ...product,
+      id: window.crypto?.randomUUID?.() || `product_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    };
+  });
+  if (changed) saveStaffShopProducts();
+}
+
+function readStaffProductImage(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) {
+      resolve("");
+      return;
+    }
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(String(reader.result || "")));
+    reader.addEventListener("error", () => reject(new Error("Could not read product image.")));
+    reader.readAsDataURL(file);
+  });
+}
+
+function addShopProductCard({ id, tag: productTag = "Staff pick", imageSrc, name, price, description }, { prepend = true, deletable = false } = {}) {
+  if (!shopProductGrid) return;
+  const card = document.createElement("article");
+  card.className = "wire-card product-card";
+  if (id) card.dataset.productId = id;
+
+  if (imageSrc) {
+    const image = document.createElement("img");
+    image.className = "product-image";
+    image.src = imageSrc;
+    image.alt = name;
+    card.append(image);
+  }
+
+  const tag = document.createElement("span");
+  tag.className = "product-tag";
+  tag.textContent = translateCopy(productTag);
+
+  const title = document.createElement("h3");
+  title.textContent = name;
+
+  const copy = document.createElement("p");
+  copy.textContent = description;
+
+  const priceText = document.createElement("strong");
+  priceText.textContent = price;
+
+  const button = document.createElement("button");
+  button.className = "button secondary full";
+  button.type = "button";
+  button.textContent = translateCopy("Join waitlist");
+  button.addEventListener("click", () => saveShopInterest(name));
+
+  card.append(tag, title, copy, priceText, button);
+  if (deletable && isStaffUser()) {
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "button danger full product-delete-button";
+    deleteButton.type = "button";
+    deleteButton.textContent = translateCopy("Delete product");
+    deleteButton.addEventListener("click", () => deleteStaffProduct(id));
+    card.append(deleteButton);
+  }
+  if (prepend) shopProductGrid.prepend(card);
+  else shopProductGrid.append(card);
+}
+
+function renderStaffShopProducts() {
+  loadStaffShopProducts();
+  loadDeletedShopProductIds();
+  ensureStaffProductIds();
+  document.querySelectorAll("[data-product-id]").forEach((card) => card.remove());
+  defaultShopProducts
+    .filter((product) => !deletedShopProductIds.includes(product.id))
+    .forEach((product) => addShopProductCard(product, { prepend: false, deletable: true }));
+  staffShopProducts.forEach((product) => addShopProductCard(product, { prepend: false, deletable: true }));
+}
+
+function deleteStaffProduct(productId) {
+  if (!isStaffUser() || !productId) {
+    if (staffProductStatus) staffProductStatus.textContent = translateCopy("Staff access required.");
+    return;
+  }
+  const beforeCount = staffShopProducts.length;
+  staffShopProducts = staffShopProducts.filter((product) => product.id !== productId);
+  const defaultProductDeleted = defaultShopProducts.some((product) => product.id === productId);
+  if (defaultProductDeleted && !deletedShopProductIds.includes(productId)) {
+    deletedShopProductIds.push(productId);
+    saveDeletedShopProductIds();
+  }
+  saveStaffShopProducts();
+  document.querySelector(`[data-product-id="${CSS.escape(productId)}"]`)?.remove();
+  if (staffProductStatus) {
+    staffProductStatus.textContent = translateCopy(
+      beforeCount === staffShopProducts.length && !defaultProductDeleted ? "Product not found." : "Product deleted.",
+    );
+  }
+}
+
+async function publishStaffProduct() {
+  if (!isStaffUser()) {
+    if (staffProductStatus) staffProductStatus.textContent = translateCopy("Staff access required.");
+    return;
+  }
+  const name = staffProductName.value.trim();
+  const price = staffProductPrice.value.trim();
+  const description = staffProductDescription.value.trim();
+  if (!name || !price || !description) {
+    if (staffProductStatus) staffProductStatus.textContent = translateCopy("Add a product name, price, and description.");
     return;
   }
 
+  try {
+    const uploadedImage = await readStaffProductImage(staffProductImage.files?.[0]);
+    const imageSrc = uploadedImage || staffProductImageUrl.value.trim();
+    const product = {
+      id: window.crypto?.randomUUID?.() || `product_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+      imageSrc,
+      name,
+      price,
+      description,
+    };
+    staffShopProducts.unshift(product);
+    saveStaffShopProducts();
+    addShopProductCard(product, { deletable: true });
+    staffProductImage.value = "";
+    staffProductImageUrl.value = "";
+    staffProductName.value = "";
+    staffProductPrice.value = "";
+    staffProductDescription.value = "";
+    if (staffProductStatus) staffProductStatus.textContent = translateCopy("Product added.");
+  } catch (error) {
+    if (staffProductStatus) staffProductStatus.textContent = error.message;
+  }
+}
+
+function setView(viewName) {
+  if (viewName === "review") viewName = "dashboard";
+  if (viewName === "admin") viewName = "staff";
+  if (viewName === "staff" && !isStaffUser()) viewName = "dashboard";
+  updateTutorialGateState();
+  if (isStudentTutorialRequired() && viewName !== "how-to-play") {
+    viewName = "how-to-play";
+  }
+  if (viewName === "home") {
+    document.body.classList.add("show-landing");
+    document.body.classList.remove("show-how-to-play");
+    document.body.classList.remove("auth-entry-open");
+    document.querySelector("#home").scrollIntoView({ behavior: "smooth", block: "start" });
+    document.querySelectorAll(".side-link").forEach((link) => link.classList.remove("active"));
+    closeMenu();
+    closeProfileMenu();
+    return;
+  }
+
+  document.body.classList.remove("show-landing");
+  document.body.classList.toggle("show-how-to-play", viewName === "how-to-play");
   document.querySelectorAll(".view").forEach((view) => {
     view.classList.toggle("active", view.dataset.view === viewName);
   });
   document.querySelectorAll(".side-link").forEach((link) => {
     link.classList.toggle("active", link.dataset.viewLink === viewName);
   });
-  if (viewName === "admin") refreshAdmin();
+  if (viewName === "staff") refreshAdmin();
   if (viewName === "profile") refreshProfile();
   document.querySelector("#dashboard").scrollIntoView({ behavior: "smooth", block: "start" });
   closeMenu();
@@ -1920,11 +2525,8 @@ function toggleMenu() {
 }
 
 function revealAdminByCommand() {
-  if (currentUser?.role !== "admin") return;
-  document.querySelectorAll(".admin-only").forEach((button) => {
-    button.hidden = false;
-  });
-  setView("admin");
+  if (!isStaffUser()) return;
+  setView("staff");
 }
 
 function piecesFromBoard(boardRows) {
@@ -2172,7 +2774,7 @@ async function finishMatch(result, options = {}) {
   setMatchState("ended");
   matchResult.textContent = result;
   syncState.textContent = options.statusText || "Match ended";
-  generateReviewButton.textContent = "View AI Review";
+  if (generateReviewButton) generateReviewButton.textContent = "";
   window.clearInterval(clockInterval);
   if (backendOnline && currentMatchId) {
     try {
@@ -2432,7 +3034,7 @@ async function joinPrivateChallenge() {
 function updateTemperature(value) {
   const text = `${value.toFixed(1)} C`;
   mannerTemp.textContent = value.toFixed(1);
-  dashboardTemp.textContent = text;
+  if (dashboardTemp) dashboardTemp.textContent = text;
   profileTemp.textContent = text;
 }
 
@@ -2781,7 +3383,7 @@ function appendFinalSubtitle({ speaker, text, sourceLanguage, persist = false })
 
   const latency = 80 + Math.floor(Math.random() * 80);
   if (latencyText) latencyText.textContent = `${latency} ms`;
-  dashboardLatency.textContent = `${latency} ms`;
+  if (dashboardLatency) dashboardLatency.textContent = `${latency} ms`;
 
   translateSubtitleText(phrase, { sourceLanguage }).then((result) => {
     translatedLines.forEach((line) => {
@@ -2916,6 +3518,7 @@ function startBrowserStt() {
 }
 
 function renderReview(review) {
+  if (!reviewStatus || !pronunciationStatus || !vocabList || !culturalTitle || !culturalBody || !culturalPrompt) return;
   if (!review) return;
   reviewStatus.textContent = `${review.vocabulary.length} items generated`;
   pronunciationStatus.textContent = "AI review generated. Click any word to replay pronunciation.";
@@ -2948,6 +3551,7 @@ function renderReview(review) {
 }
 
 async function requestReview(source = "the completed match") {
+  if (!reviewStatus || !pronunciationStatus) return;
   reviewStatus.textContent = "Generating";
   pronunciationStatus.textContent = `Building AI review from ${source}.`;
   if (!backendOnline || !currentMatchId) {
@@ -2976,6 +3580,8 @@ function playPronunciation(button) {
 
 resetSubtitlePlaceholders();
 renderForumPosts();
+const savedTextSize = localStorage.getItem("easyMateTextSize");
+if (savedTextSize !== null) textSizeSlider.value = savedTextSize;
 applyTextSize(textSizeSlider.value);
 
 menuToggle.addEventListener("click", (event) => {
@@ -2987,6 +3593,14 @@ menuToggle.addEventListener("click", (event) => {
 document.addEventListener("click", (event) => {
   if (!sidebarMenu.hidden && !sidebarMenu.contains(event.target) && !menuToggle.contains(event.target)) closeMenu();
   if (!headerProfileMenu.hidden && !headerProfile.contains(event.target)) closeProfileMenu();
+  if (
+    !notificationPanel.hidden &&
+    !notificationPanel.contains(event.target) &&
+    !notificationButton.contains(event.target)
+  ) {
+    notificationPanel.hidden = true;
+    notificationButton.setAttribute("aria-expanded", "false");
+  }
 });
 
 document.addEventListener("keydown", (event) => {
@@ -3002,6 +3616,17 @@ document.addEventListener("keydown", (event) => {
     adminCommandBuffer = "";
     revealAdminByCommand();
   }
+});
+
+const interfaceLanguageObserver = new MutationObserver(() => {
+  if (applyingLanguage || currentInterfaceLanguage() !== "Korean") return;
+  scheduleInterfaceLanguageApply();
+});
+
+interfaceLanguageObserver.observe(document.body, {
+  childList: true,
+  characterData: true,
+  subtree: true,
 });
 
 document.querySelectorAll("[data-view-link]").forEach((link) => {
@@ -3047,6 +3672,11 @@ authForm.addEventListener("submit", (event) => {
   signInOrRegister();
 });
 
+authPassword.addEventListener("input", () => {
+  authConfirmPasswordField.hidden = authMode === "login" || !authPassword.value;
+  if (authConfirmPasswordField.hidden) authConfirmPassword.value = "";
+});
+
 googleSignInButton.addEventListener("click", signInWithGoogle);
 headerProfileButton.addEventListener("click", (event) => {
   event.stopPropagation();
@@ -3055,8 +3685,11 @@ headerProfileButton.addEventListener("click", (event) => {
 headerSignOutButton.addEventListener("click", signOut);
 deleteAccountButton.addEventListener("click", deleteAccount);
 contrastModeButton.addEventListener("click", toggleContrastMode);
-largeTextButton.addEventListener("click", toggleLargeTextMode);
 textSizeSlider.addEventListener("input", (event) => applyTextSize(event.target.value));
+
+languageSelect?.addEventListener("change", () => {
+  applyInterfaceLanguage();
+});
 
 signupButton.addEventListener("click", () => {
   if (currentUser) {
@@ -3068,21 +3701,32 @@ signupButton.addEventListener("click", () => {
 
 loginButton.addEventListener("click", () => {
   if (currentUser) {
-    setView("match");
+    setView("dashboard");
     return;
   }
   setAuthMode("login");
 });
 
 document.querySelector("#seniorEntryButton")?.addEventListener("click", () => {
+  if (currentUser) {
+    setView("dashboard");
+    return;
+  }
   setAuthMode("signup");
 });
 
 document.querySelector("#globalEntryButton")?.addEventListener("click", () => {
-  setAuthMode("login");
+  beginStudentTutorial();
 });
 
-notificationButton.addEventListener("click", async () => {
+window.addEventListener("message", (event) => {
+  if (event.origin !== window.location.origin && event.origin !== "null") return;
+  if (howToPlayFrame?.contentWindow && event.source !== howToPlayFrame.contentWindow) return;
+  if (event.data?.type === "easymate:tutorial-complete") completeStudentTutorial();
+});
+
+notificationButton.addEventListener("click", async (event) => {
+  event.stopPropagation();
   const willOpen = notificationPanel.hidden;
   notificationPanel.hidden = !willOpen;
   notificationButton.setAttribute("aria-expanded", String(willOpen));
@@ -3101,7 +3745,7 @@ clearNotificationsButton.addEventListener("click", () => {
 });
 
 continueToDashboardButton.addEventListener("click", () => {
-  setView("match");
+  setView("dashboard");
 });
 
 findMatchButton.addEventListener("click", quickPairFromSelectedPool);
@@ -3143,6 +3787,9 @@ submitPeerFeedbackButton.addEventListener("click", submitPeerFeedback);
 saveCultureGuideButton.addEventListener("click", saveCultureGuide);
 showForumComposerButton.addEventListener("click", toggleForumComposer);
 publishForumPostButton.addEventListener("click", publishForumPost);
+forumPostCategory.addEventListener("change", () => {
+  if (forumPostCategory.value === "Notice" && !isStaffUser()) forumPostCategory.value = "Question";
+});
 forumFilterButtons.forEach((button) => {
   button.addEventListener("click", () => {
     forumFilter = button.dataset.forumFilter;
@@ -3152,6 +3799,7 @@ forumFilterButtons.forEach((button) => {
 document.querySelectorAll("[data-shop-interest]").forEach((button) => {
   button.addEventListener("click", () => saveShopInterest(button.dataset.shopInterest));
 });
+publishStaffProductButton?.addEventListener("click", publishStaffProduct);
 
 resignMatchButton.addEventListener("click", () => finishMatch("Resigned"));
 drawMatchButton.addEventListener("click", offerDraw);
@@ -3187,10 +3835,6 @@ reportUserButton.addEventListener("click", async () => {
 nextMissionButton.addEventListener("click", () => {
   missionIndex = (missionIndex + 1) % missions.length;
   icebreakerText.textContent = missions[missionIndex];
-});
-
-composeVoiceLetter.addEventListener("click", () => {
-  voiceDialog.showModal();
 });
 
 sttToggle.addEventListener("change", () => {
@@ -3264,24 +3908,22 @@ matchSubtitleTargetLanguage.addEventListener("change", () => {
   subtitleTargetLanguage.value = matchSubtitleTargetLanguage.value;
 });
 
-generateReviewButton.addEventListener("click", () => requestReview("the completed match"));
-refreshReviewButton.addEventListener("click", () => requestReview("the latest transcript sample"));
+generateReviewButton?.addEventListener("click", () => requestReview("the completed match"));
+refreshReviewButton?.addEventListener("click", () => requestReview("the latest transcript sample"));
 
 document.querySelectorAll(".vocab-term").forEach((button) => {
   button.addEventListener("click", () => playPronunciation(button));
 });
 
-document.querySelectorAll(".inbox-item").forEach((item) => {
-  item.addEventListener("click", () => {
-    speakText(item.dataset.voiceText || item.textContent, {
-      lang: item.dataset.voiceLang || "en-US",
-      label: "voice letter",
-    });
-  });
-});
-
 buildBoard();
 renderReview(defaultReview);
+renderStaffShopProducts();
 updateRoomLink(null);
 renderAuthState();
+applyInterfaceLanguage();
+if (isStudentTutorialRequired()) {
+  setView("how-to-play");
+} else if (isStudentTutorialComplete() && !currentUser) {
+  setView("dashboard");
+}
 checkBackend();
