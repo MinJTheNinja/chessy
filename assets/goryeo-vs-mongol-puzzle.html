@@ -3,184 +3,289 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>고려 vs 몽골 · 여섯 용사 이야기 · EasyMate</title>
+<title>강화도의 결전 · 체크메이트 퍼즐 · EasyMate</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
 <style>
 :root{
-  --hanji:#F8F2E8;
   --meok:#1F3348;
-  --noerok:#2F6B62;
+  --wood:#33241A;
+  --wood-dark:#241811;
+  --wood-deep:#1B120C;
+  --hanji:#EFE4C8;
+  --sage:#9FBEA4;
   --jinsa:#B4483C;
   --geum:#C9A24A;
+  --noerok:#2F6B62;
   --easyblue:#6197D0;
   --goryeo:#3E5C94;
   --mongol:#8E3B31;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
+html,body{min-height:100%}
 body{
-  font-family:'Gowun Dodum',sans-serif;
+  font-family:'Gowun Dodum',sans-serif;color:var(--meok);
+  background:linear-gradient(180deg,#F6E3B4 0%, #F0D8A8 26%, #E3DCC2 55%, #D8E0D4 100%);
+  display:flex;align-items:flex-start;justify-content:center;padding:14px 10px 30px;
+  position:relative;overflow-x:hidden;
+}
+body.home-mode{
   background:
-    radial-gradient(circle at 15% 20%, rgba(201,162,74,.12), transparent 42%),
-    radial-gradient(circle at 85% 80%, rgba(97,151,208,.12), transparent 42%),
-    var(--hanji);
-  color:var(--meok);
-  display:flex;align-items:center;justify-content:center;padding:12px;
+    radial-gradient(circle at 20% 10%, rgba(201,162,74,.10), transparent 45%),
+    linear-gradient(160deg,#2B1D13 0%, var(--wood-dark) 55%, var(--wood-deep) 100%);
 }
-#app{
-  width:100%;max-width:520px;background:#FFFCF5;
-  border:3px solid var(--meok);border-radius:26px;
-  box-shadow:0 10px 0 rgba(31,51,72,.18);
-  overflow:hidden;position:relative;display:flex;flex-direction:column;min-height:660px;
-}
-.top-band{
-  height:14px;
-  background:repeating-linear-gradient(90deg,
-    var(--jinsa) 0 28px, var(--geum) 28px 40px,
-    var(--noerok) 40px 68px, var(--geum) 68px 80px,
-    var(--easyblue) 80px 108px, var(--geum) 108px 120px);
-}
-.scene{flex:1;display:none;flex-direction:column;padding:20px 22px 18px}
-.scene.active{display:flex;animation:fadein .45s ease}
-@keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-h1,h2,.jua{font-family:'Jua',sans-serif;letter-spacing:.5px}
-h1{font-size:30px;line-height:1.25;text-align:center}
-h2{font-size:24px}
+.scenery{position:fixed;inset:0;z-index:-1;pointer-events:none}
+.scenery .sun{position:absolute;left:10%;top:9%;width:110px;height:110px;border-radius:50%;
+  background:radial-gradient(circle,#FBEED0 0%, #F6D98F 55%, rgba(246,217,143,0) 72%)}
+.scenery svg{position:absolute;left:0;bottom:0;width:100%;height:34%}
+body.home-mode .scenery{display:none}
 svg,img{display:block;width:100%;height:100%;object-fit:contain}
-.eyebrow{
-  font-family:'Jua',sans-serif;font-size:13px;color:#fff;
-  background:var(--noerok);border-radius:999px;padding:4px 14px;align-self:center;margin-bottom:10px;
-}
-.title-art{margin:6px auto 0;width:190px;height:190px;display:flex}
-.title-art>div{width:50%;height:100%}
-.title-vs{position:absolute;left:50%;top:150px;transform:translateX(-50%);font-family:'Jua',sans-serif;font-size:20px;color:var(--jinsa);text-shadow:0 2px 0 #fff}
-.title-sub{text-align:center;font-size:15px;line-height:1.7;margin-top:8px;color:#4a5568}
-.start-btn{
-  margin:18px auto 6px;display:block;font-family:'Jua',sans-serif;font-size:21px;color:#fff;
-  background:var(--jinsa);border:none;border-radius:999px;padding:14px 44px;cursor:pointer;
-  box-shadow:0 5px 0 #82322a;transition:transform .1s;
-}
-.start-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #82322a}
-.brand{text-align:center;font-size:12px;color:var(--easyblue);margin-top:auto;padding-top:10px;font-family:'Jua',sans-serif}
+.jua{font-family:'Jua',sans-serif;letter-spacing:.5px}
 
-.char-row{display:flex;align-items:flex-end;gap:12px;margin-bottom:6px}
-.char-art{width:112px;height:112px;flex-shrink:0;animation:bounce 3s ease-in-out infinite}
-@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-.char-text{flex:1;padding-bottom:6px}
-.speech{
-  position:relative;background:#fff;border:2.5px solid var(--meok);border-radius:18px;
-  padding:12px 14px;font-size:14.5px;line-height:1.6;
-}
-.speech::before{content:"";position:absolute;left:-12px;bottom:22px;border:8px solid transparent;border-right-color:var(--meok)}
-.speech::after{content:"";position:absolute;left:-8px;bottom:24px;border:6px solid transparent;border-right-color:#fff}
-.speech b{color:var(--jinsa)}
-.char-name{font-family:'Jua',sans-serif;font-size:18px;margin-bottom:4px}
-.char-name small{font-size:12px;color:var(--easyblue);margin-left:6px}
+#app{width:100%;max-width:820px;display:flex;flex-direction:column;align-items:center}
+.screen{display:none;width:100%;flex-direction:column;align-items:center}
+.screen.active{display:flex;animation:fadein .4s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
-.board-wrap{margin:10px auto 4px;position:relative}
+/* ═══════════ 홈(레벨/퍼즐 선택) ═══════════ */
+.home{width:100%;color:#EFE4C8}
+.home-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;
+  border-bottom:3px solid var(--geum);padding-bottom:10px;margin-bottom:16px;flex-wrap:wrap}
+.home-title h1{font-family:'Jua',sans-serif;font-size:30px;color:#F3E6C4;letter-spacing:1px}
+.home-title p{font-size:13px;color:#B9A67E;margin-top:4px}
+.star-total{font-family:'Jua',sans-serif;font-size:22px;color:var(--geum);display:flex;align-items:center;gap:8px}
+.star-total .mute-btn{font-size:17px;background:rgba(239,228,200,.1);border:2px solid rgba(239,228,200,.35);
+  color:#EFE4C8;border-radius:10px;padding:6px 10px;cursor:pointer}
+.home-body{display:flex;gap:16px;width:100%;align-items:flex-start}
+.lv-nav{display:flex;flex-direction:column;gap:8px;flex-shrink:0;width:132px}
+.lv-btn{font-family:'Jua',sans-serif;font-size:16px;text-align:left;
+  color:#CBB98E;background:rgba(239,228,200,.06);border:2px solid rgba(201,162,74,.35);
+  border-radius:12px;padding:12px 14px;cursor:pointer;transition:all .15s}
+.lv-btn small{display:block;font-size:10.5px;margin-top:3px;color:#9a8a66;font-family:'Gowun Dodum',sans-serif}
+.lv-btn:hover{background:rgba(239,228,200,.12)}
+.lv-btn.on{background:var(--geum);color:#241811;border-color:var(--geum);box-shadow:0 4px 0 #8a6b1c}
+.lv-btn.on small{color:#4a3a12}
+.lv-main{flex:1;min-width:0}
+.lv-title{font-family:'Jua',sans-serif;font-size:20px;color:#F3E6C4;margin-bottom:12px;
+  display:flex;align-items:center;gap:10px}
+.lv-title .rule{flex:1;height:2px;background:rgba(201,162,74,.35)}
+.pz-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.pz-card{background:#3A2A1D;border:2px solid rgba(201,162,74,.45);border-radius:14px;overflow:hidden;
+  cursor:pointer;transition:transform .13s, border-color .13s;text-align:left;color:inherit;font-family:inherit;
+  display:flex;flex-direction:column;box-shadow:0 6px 12px rgba(0,0,0,.35)}
+.pz-card:hover{transform:translateY(-3px);border-color:var(--geum)}
+.pz-card:active{transform:translateY(0)}
+.thumb{position:relative;width:100%;height:122px;overflow:hidden;
+  background:repeating-conic-gradient(#E7DCBF 0% 25%, #A9C3AC 0% 50%) 0 0/56px 56px;}
+.thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(36,24,17,0) 55%,rgba(36,24,17,.55) 100%)}
+.thumb .t-art{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:64%;height:88%;
+  filter:drop-shadow(0 4px 4px rgba(0,0,0,.4))}
+.thumb .t-badge{position:absolute;top:7px;left:7px;z-index:2;font-family:'Jua',sans-serif;font-size:10.5px;
+  background:var(--jinsa);color:#fff;border-radius:7px;padding:3px 8px;box-shadow:0 2px 0 rgba(0,0,0,.3)}
+.thumb .t-done{position:absolute;top:7px;right:7px;z-index:2;font-family:'Jua',sans-serif;font-size:11px;
+  background:var(--noerok);color:#fff;border-radius:7px;padding:3px 8px}
+.pz-card-body{width:100%;padding:10px 12px 11px;border-top:2px solid rgba(201,162,74,.4)}
+.pz-card-title{font-family:'Jua',sans-serif;font-size:15.5px;color:#F3E6C4;line-height:1.3}
+.pz-card-sub{font-size:11px;color:#B9A67E;margin-top:3px;line-height:1.45;min-height:16px}
+.stars-row{margin-top:7px;font-size:16px;letter-spacing:2px}
+.stars-row .on{color:var(--geum)}
+.stars-row .off{color:#57452C}
+.home-brand{font-size:12px;color:#8a7a56;margin-top:26px;font-family:'Jua',sans-serif;text-align:center}
+
+/* ═══════════ 퍼즐 화면 ═══════════ */
+.pz-wrap{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center}
+.pz-top{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:520px;margin-bottom:8px;gap:6px}
+.pz-top .back{font-family:'Jua',sans-serif;font-size:14px;color:var(--meok);background:rgba(255,252,243,.9);
+  border:2px solid var(--meok);border-radius:999px;padding:7px 14px;cursor:pointer}
+.pz-title{font-family:'Jua',sans-serif;font-size:17px;text-shadow:0 2px 0 rgba(255,255,255,.7);text-align:center;flex:1}
+.pz-top-btns{display:flex;gap:6px}
+.pz-top .reset,.pz-top .mute2{font-family:'Jua',sans-serif;font-size:14px;color:#fff;background:var(--noerok);
+  border:none;border-radius:999px;padding:8px 13px;cursor:pointer;box-shadow:0 3px 0 #1d473f}
+.pz-top .reset:active,.pz-top .mute2:active{transform:translateY(2px);box-shadow:0 1px 0 #1d473f}
+.turn-banner{
+  display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Jua',sans-serif;font-size:14.5px;
+  background:rgba(255,252,243,.92);border:2.5px solid var(--goryeo);color:var(--goryeo);
+  border-radius:999px;padding:7px 18px;margin-bottom:10px;min-height:40px;text-align:center;max-width:96vw;
+}
+.turn-banner.alert{border-color:var(--jinsa);color:var(--jinsa);animation:shake .4s}
+.turn-banner.good{border-color:var(--noerok);color:var(--noerok)}
+.turn-banner.win{border-color:var(--geum);color:#8a6b1c;background:#FFF6DC}
+.frame-outer{position:relative;width:min(96vw,520px)}
+.banner-tag{position:absolute;z-index:6;font-family:'Jua',sans-serif;font-size:12px;color:#fff;
+  padding:4px 12px;border-radius:8px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.banner-mongol{top:-8px;right:14px;background:var(--mongol)}
+.banner-goryeo{bottom:-8px;left:14px;background:var(--goryeo)}
+.frame{
+  background:linear-gradient(135deg,#3B2A1E 0%, var(--wood) 40%, #2B1D13 100%);
+  border-radius:16px;padding:30px;position:relative;
+  box-shadow:0 14px 24px rgba(40,25,10,.35), inset 0 0 0 2px rgba(255,255,255,.06);
+}
+.frame::before,.frame::after{
+  content:"";position:absolute;width:44px;height:9px;border-radius:3px;opacity:.9;
+  background:repeating-linear-gradient(90deg,
+    var(--jinsa) 0 9px, var(--geum) 9px 13px, var(--noerok) 13px 22px,
+    var(--geum) 22px 26px, var(--easyblue) 26px 35px, var(--geum) 35px 39px);
+}
+.frame::before{top:9px;left:9px}
+.frame::after{bottom:9px;right:9px}
+.coord{position:absolute;font-family:'Jua',sans-serif;font-size:12px;color:#D8C39A;opacity:.85;display:flex;z-index:2}
+.coord.files{left:30px;right:30px;bottom:15px;justify-content:space-around}
+.coord.ranks{top:30px;bottom:30px;left:8px;flex-direction:column-reverse;justify-content:space-around}
 .board{
-  display:grid;grid-template-columns:repeat(5,1fr);
-  width:min(290px,74vw);aspect-ratio:1;
-  border:3px solid var(--meok);border-radius:12px;overflow:hidden;touch-action:manipulation;
+  position:relative;display:grid;grid-template-columns:repeat(8,1fr);
+  width:100%;aspect-ratio:1;border-radius:6px;overflow:hidden;
+  outline:2px solid rgba(216,195,154,.5);touch-action:manipulation;
 }
-.sq{position:relative}
-.sq.light{background:#FBF4E4}
-.sq.dark{background:#CFE0CB}
-.sq.hint{cursor:pointer}
-.sq.hint::after{
-  content:"";position:absolute;left:33%;top:33%;width:34%;height:34%;border-radius:50%;
-  background:var(--easyblue);opacity:.85;animation:pulse 1.2s ease-in-out infinite;
+.sq{position:relative;cursor:pointer}
+.sq.light{background:var(--hanji)}
+.sq.dark{background:var(--sage)}
+.sq.sel{box-shadow:inset 0 0 0 3.5px var(--goryeo)}
+.sq.last{box-shadow:inset 0 0 0 3px rgba(201,162,74,.6)}
+.sq.last-b{box-shadow:inset 0 0 0 3px rgba(142,59,49,.65)}
+.sq.dot::after{
+  content:"";position:absolute;left:34%;top:34%;width:32%;height:32%;border-radius:50%;
+  background:var(--easyblue);opacity:.85;animation:pulse 1.2s ease-in-out infinite;z-index:4;
 }
-.sq.hint.capture-target::after{
-  left:21%;top:21%;width:58%;height:58%;
-  background:rgba(97,151,208,.28);border:3px solid var(--easyblue);
+.sq.dot.cap::after{
+  left:12%;top:12%;width:76%;height:76%;background:rgba(180,72,60,.2);border:3px solid var(--jinsa);
 }
-@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
 .sq.wrong{animation:shake .35s}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-.piece-token{
-  position:absolute;width:20%;aspect-ratio:1;pointer-events:none;z-index:5;
-  transition:left .45s cubic-bezier(.34,1.4,.64,1), top .45s cubic-bezier(.34,1.4,.64,1);
-  filter:drop-shadow(0 3px 2px rgba(0,0,0,.28));
+/* 오답 시 몽골의 탈출로 표시 */
+.sq.esc::after{
+  content:"";position:absolute;left:14%;top:14%;width:72%;height:72%;border-radius:50%;z-index:4;
+  border:4px dashed var(--jinsa);background:rgba(180,72,60,.14);animation:escPulse .55s ease-in-out infinite alternate;
 }
-.piece-token::before{
-  content:"";position:absolute;left:15%;right:15%;bottom:1%;height:16%;border-radius:50%;z-index:-1;
-  background:radial-gradient(ellipse at center, rgba(62,92,148,.5) 0%, rgba(62,92,148,.24) 55%, rgba(62,92,148,0) 75%);
-  box-shadow:inset 0 0 0 2px rgba(62,92,148,.4);
+@keyframes escPulse{from{transform:scale(.92);opacity:.75}to{transform:scale(1.04);opacity:1}}
+/* 진영 받침 */
+.pc-base{position:absolute;left:16%;right:16%;bottom:9%;height:14%;border-radius:50%;z-index:2;pointer-events:none}
+.pc-base.w{background:radial-gradient(ellipse at center, rgba(62,92,148,.55) 0%, rgba(62,92,148,.28) 55%, rgba(62,92,148,0) 75%);
+  box-shadow:inset 0 0 0 2px rgba(62,92,148,.45)}
+.pc-base.b{background:radial-gradient(ellipse at center, rgba(142,59,49,.55) 0%, rgba(142,59,49,.28) 55%, rgba(142,59,49,0) 75%);
+  box-shadow:inset 0 0 0 2px rgba(142,59,49,.5)}
+.pc{position:absolute;inset:0% 4% 15% 4%;pointer-events:none;z-index:3;
+  filter:drop-shadow(0 2px 1.5px rgba(0,0,0,.3))}
+.pc.hint-glow{animation:hintGlow .8s ease-in-out infinite alternate}
+@keyframes hintGlow{from{filter:drop-shadow(0 0 2px var(--geum)) drop-shadow(0 2px 1.5px rgba(0,0,0,.3))}
+  to{filter:drop-shadow(0 0 12px var(--geum)) drop-shadow(0 0 4px var(--geum))}}
+.pc-label{
+  position:absolute;left:50%;bottom:1%;transform:translateX(-50%);z-index:4;pointer-events:none;
+  font-family:'Jua',sans-serif;font-size:clamp(7px,1.9vw,10.5px);line-height:1;padding:1.5px 5px 2px;
+  border-radius:6px;white-space:nowrap;color:#fff;box-shadow:0 1px 0 rgba(0,0,0,.25);
 }
-.enemy-token::before{
-  background:radial-gradient(ellipse at center, rgba(142,59,49,.5) 0%, rgba(142,59,49,.24) 55%, rgba(142,59,49,0) 75%);
-  box-shadow:inset 0 0 0 2px rgba(142,59,49,.45);
-}
-.mission{text-align:center;font-family:'Jua',sans-serif;font-size:15.5px;color:var(--noerok);margin-top:10px;min-height:24px}
-.mission.done{color:var(--jinsa)}
-.star-burst{position:absolute;font-size:26px;pointer-events:none;z-index:9;animation:burst .8s ease-out forwards}
-@keyframes burst{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.8) translateY(-30px);opacity:0}}
-.enemy-token.poof{animation:poof .42s ease-out forwards}
-@keyframes poof{0%{transform:scale(1);opacity:1}55%{transform:scale(1.35) rotate(8deg);opacity:.72}100%{transform:scale(.15) translateY(-24px);opacity:0}}
-.lesson-note{font-size:13px;line-height:1.55;text-align:center;color:#4a5568;margin-top:4px}
-.rule-list{display:flex;flex-direction:column;gap:10px;margin:16px 0 6px}
-.rule-item{display:flex;gap:12px;align-items:flex-start;background:#FFFCF3;border:2.5px solid var(--meok);
-  border-radius:16px;padding:13px 15px;box-shadow:0 4px 0 rgba(31,51,72,.14)}
-.rule-item .ri-num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--meok);color:#fff;
-  font-family:'Jua',sans-serif;font-size:14px;display:grid;place-items:center}
-.rule-item .ri-body{font-size:13.5px;line-height:1.55;color:#4a5568}
-.rule-item .ri-body .ri-t{font-family:'Jua',sans-serif;color:var(--meok);display:block;font-size:15px;margin-bottom:3px}
-.rule-item .ri-body .ri-t em{font-style:normal;color:var(--jinsa)}
-.rule-item .ri-body b{color:var(--jinsa)}
-.goal-art{display:flex;align-items:flex-end;justify-content:center;gap:6px;margin:4px 0 2px}
-.goal-art>div{width:74px;height:74px}
-.goal-art .vs{font-family:'Jua',sans-serif;font-size:14px;color:var(--jinsa);align-self:center}
-.compare{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
-.cmp{border-radius:16px;padding:13px;border:2.5px solid;font-size:12.5px;line-height:1.5}
-.cmp .cmp-t{font-family:'Jua',sans-serif;font-size:15px;margin-bottom:4px;display:block}
-.cmp.esc{border-color:var(--noerok);color:#31584f;background:rgba(47,107,98,.07)}
-.cmp.esc .cmp-t{color:var(--noerok)}
-.cmp.mate{border-color:var(--jinsa);color:#7e3229;background:rgba(180,72,60,.08)}
-.cmp.mate .cmp-t{color:var(--jinsa)}
-.sq.sq-guard::before{content:"";position:absolute;inset:0;background:rgba(62,92,148,.34);pointer-events:none}
-.sq.sq-danger.strong::before{background:rgba(180,72,60,.32)}
-.legend{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;font-size:11.5px;color:#4a5568;margin-top:8px}
-.legend span{display:flex;align-items:center;gap:5px}
-.legend i{width:12px;height:12px;border-radius:4px;display:inline-block}
-.legend i.dgr{background:rgba(180,72,60,.45)}
-.legend i.grd{background:rgba(62,92,148,.45)}
-
-.nav{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:14px}
-.nav button{font-family:'Jua',sans-serif;font-size:17px;border:none;border-radius:999px;padding:11px 26px;cursor:pointer;transition:transform .1s}
-.nav button:active{transform:scale(.95)}
-.btn-next{background:var(--meok);color:#fff;box-shadow:0 4px 0 #0e1c2c}
-.btn-next:disabled{background:#b9c0cc;box-shadow:0 4px 0 #99a1ad;cursor:not-allowed}
-.btn-prev{background:transparent;color:var(--meok);text-decoration:underline;padding:11px 10px}
-.dots{display:flex;gap:6px}
-.dot{width:9px;height:9px;border-radius:50%;background:#dbcfb3}
-.dot.on{background:var(--geum)}
-
-.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 2px}
-.badge{background:#fff;border:2.5px solid var(--meok);border-radius:16px;padding:8px 4px 6px;text-align:center}
-.badge .art{width:100%;height:66px}
-.badge p{font-family:'Jua',sans-serif;font-size:13px;margin-top:2px}
-.badge.locked{opacity:.32;filter:grayscale(1)}
-.badge.earned{animation:pop .5s cubic-bezier(.34,1.6,.64,1)}
+.pc-label.w{background:var(--goryeo)}
+.pc-label.b{background:var(--mongol)}
+.check-glow::before{content:"";position:absolute;inset:4%;border-radius:50%;z-index:2;
+  box-shadow:0 0 0 3px rgba(180,72,60,.65);animation:dangerPulse 1s ease-in-out infinite}
+@keyframes dangerPulse{0%,100%{box-shadow:0 0 0 3px rgba(180,72,60,.65)}50%{box-shadow:0 0 0 8px rgba(180,72,60,.12)}}
+.pz-hintline{font-size:13px;color:#54607a;margin-top:12px;text-align:center;min-height:20px;max-width:480px}
+.hint-btn{margin-top:8px;font-family:'Jua',sans-serif;font-size:13.5px;color:var(--meok);
+  background:rgba(255,252,243,.9);border:2px solid var(--meok);border-radius:999px;padding:7px 18px;cursor:pointer}
+/* 승리 오버레이 */
+.overlay{position:fixed;inset:0;background:rgba(31,51,72,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.overlay.show{display:flex;animation:fadein .3s ease}
+.win-card{background:#FFFCF3;border:3px solid var(--meok);border-radius:24px;box-shadow:0 10px 0 rgba(31,51,72,.3);
+  padding:26px 28px;max-width:340px;width:100%;text-align:center;animation:pop .5s cubic-bezier(.34,1.6,.64,1)}
 @keyframes pop{from{transform:scale(.5)}to{transform:scale(1)}}
-.final-msg{text-align:center;font-size:15px;line-height:1.7;margin-top:4px}
-.replay{margin:12px auto 0;display:block;font-family:'Jua',sans-serif;font-size:17px;background:var(--easyblue);color:#fff;border:none;border-radius:999px;padding:12px 34px;cursor:pointer;box-shadow:0 4px 0 #3f6f9f}
-.replay:active{transform:translateY(3px);box-shadow:0 1px 0 #3f6f9f}
+.win-card .art{width:120px;height:120px;margin:6px auto}
+.win-card h2{font-family:'Jua',sans-serif;font-size:26px;color:var(--jinsa)}
+.win-card p{font-size:14px;line-height:1.7;color:#4a5568;margin-top:8px}
+.win-card .stars{font-size:30px;letter-spacing:6px;margin-top:6px}
+.win-card .stars .on{color:var(--geum)}
+.win-card .stars .off{color:#D8CFB8}
+.win-btns{display:flex;gap:10px;justify-content:center;margin-top:16px}
+.win-btns button{font-family:'Jua',sans-serif;font-size:15px;border:none;border-radius:999px;padding:11px 20px;cursor:pointer}
+.win-btns .again{background:transparent;color:var(--meok);text-decoration:underline}
+.win-btns .list{background:var(--jinsa);color:#fff;box-shadow:0 4px 0 #82322a}
+.win-btns .list:active{transform:translateY(3px);box-shadow:0 1px 0 #82322a}
 
-.sq.sq-danger::before{content:"";position:absolute;inset:0;background:rgba(180,72,60,.15);pointer-events:none}
-.king-danger::before{content:"";position:absolute;inset:-12%;border-radius:50%;box-shadow:0 0 0 3px rgba(180,72,60,.6);animation:dangerPulse 1s ease-in-out infinite}
-@keyframes dangerPulse{0%,100%{box-shadow:0 0 0 3px rgba(180,72,60,.6)}50%{box-shadow:0 0 0 9px rgba(180,72,60,.12)}}
-
+@media (max-width:620px){
+  .home-body{flex-direction:column}
+  .lv-nav{flex-direction:row;width:100%}
+  .lv-btn{flex:1;text-align:center;padding:10px 6px}
+  .lv-btn small{display:none}
+  .pz-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+}
 button:focus-visible{outline:3px solid var(--geum);outline-offset:2px}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
-<body>
-<div id="app">
-  <div class="top-band"></div>
-  <div id="scenes"></div>
+<body class="home-mode">
+<div class="scenery">
+  <div class="sun"></div>
+  <svg viewBox="0 0 100 46" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,26 L14,12 L26,22 L38,8 L52,20 L66,10 L80,22 L92,14 L100,20 L100,46 L0,46 Z" fill="#AEBBAC" opacity=".4"/>
+    <path d="M0,32 L10,24 L22,30 L36,20 L50,30 L64,22 L78,30 L90,24 L100,30 L100,46 L0,46 Z" fill="#93A594" opacity=".45"/>
+    <path d="M0,40 h7 v-3 h2.4 v3 h4.8 v-3 h2.4 v3 h7 v6 h-23.6 Z" fill="#8B8E86" opacity=".55"/>
+    <path d="M76,40 h7 v-3 h2.4 v3 h4.8 v-3 h2.4 v3 h7 v6 h-23.6 Z" fill="#8B8E86" opacity=".55"/>
+    <rect x="0" y="43" width="100" height="3" fill="#7E9182" opacity=".5"/>
+  </svg>
 </div>
+
+<div id="app">
+  <!-- ═══ 홈: 레벨 / 퍼즐 선택 ═══ -->
+  <div class="screen active home" id="homeScreen">
+    <div class="home-head">
+      <div class="home-title">
+        <h1>강화도의 결전</h1>
+        <p>고려 vs 몽골 · 체크메이트 퍼즐 — EasyMate</p>
+      </div>
+      <div class="star-total">
+        <span id="starTotal">★ 0/24</span>
+        <button class="mute-btn" id="muteBtn" title="효과음 켜기/끄기">🔊</button>
+      </div>
+    </div>
+    <div class="home-body">
+      <div class="lv-nav" id="lvNav"></div>
+      <div class="lv-main">
+        <div class="lv-title" id="lvTitle"></div>
+        <div class="pz-grid" id="pzGrid"></div>
+      </div>
+    </div>
+    <div class="home-brand">EasyMate · 세대를 잇는 64칸의 다리</div>
+  </div>
+
+  <!-- ═══ 퍼즐 ═══ -->
+  <div class="screen" id="puzzleScreen">
+    <div class="pz-wrap">
+      <div class="pz-top">
+        <button class="back" id="backBtn">← 목록</button>
+        <div class="pz-title" id="pzTitle"></div>
+        <div class="pz-top-btns">
+          <button class="mute2" id="muteBtn2" title="효과음">🔊</button>
+          <button class="reset" id="resetBtn">다시 놓기</button>
+        </div>
+      </div>
+      <div class="turn-banner" id="banner"></div>
+      <div class="frame-outer">
+        <div class="banner-tag banner-mongol">몽골군</div>
+        <div class="banner-tag banner-goryeo">고려군 (나)</div>
+        <div class="frame">
+          <div class="board" id="board"></div>
+          <div class="coord files"><span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span></div>
+          <div class="coord ranks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></div>
+        </div>
+      </div>
+      <div class="pz-hintline" id="hintLine"></div>
+      <button class="hint-btn" id="hintBtn">💡 힌트 보기</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="win-card">
+    <h2>체크메이트!</h2>
+    <div class="art" id="winArt"></div>
+    <div class="stars" id="winStars"></div>
+    <p id="winText">몽골 칸이 도망갈 곳이 없어요.<br>고려의 승리입니다!</p>
+    <div class="win-btns">
+      <button class="again" id="againBtn">다시 풀기</button>
+      <button class="list" id="toListBtn">퍼즐 목록 →</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* 고려 vs 몽골 — 치비 기물 원화 (전 기물 원화) */
 const ART = {
@@ -204,498 +309,473 @@ const SFX = {
   ctx:null, muted:false,
   ac(){ if(!this.ctx) this.ctx=new (window.AudioContext||window.webkitAudioContext)(); if(this.ctx.state==='suspended') this.ctx.resume(); return this.ctx; },
   env(g,t0,a,d,peak){ g.gain.setValueAtTime(0,t0); g.gain.linearRampToValueAtTime(peak,t0+a); g.gain.exponentialRampToValueAtTime(0.001,t0+a+d); },
-  tone(freq,dur,type,peak,slideTo,when){
+  tone(freq,dur,type='sine',peak=.18,slideTo=null,when=0){
     if(this.muted) return;
     try{
-      const ctx=this.ac(), t0=ctx.currentTime+(when||0);
+      const ctx=this.ac(), t0=ctx.currentTime+when;
       const o=ctx.createOscillator(), g=ctx.createGain();
-      o.type=type||'sine'; o.frequency.setValueAtTime(freq,t0);
+      o.type=type; o.frequency.setValueAtTime(freq,t0);
       if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,t0+dur);
-      this.env(g,t0,.008,dur,peak||.15);
-      o.connect(g); g.connect(ctx.destination);
+      this.env(g,t0,.008,dur,peak);
+      o.connect(g).connect(ctx.destination);
       o.start(t0); o.stop(t0+dur+.05);
     }catch(e){}
   },
-  noise(dur,peak){
+  noise(dur,peak=.2,when=0){
     if(this.muted) return;
     try{
-      const ctx=this.ac(), t0=ctx.currentTime;
+      const ctx=this.ac(), t0=ctx.currentTime+when;
       const buf=ctx.createBuffer(1,Math.max(1,Math.floor(ctx.sampleRate*dur)),ctx.sampleRate);
       const d=buf.getChannelData(0);
       for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length);
       const src=ctx.createBufferSource(); src.buffer=buf;
-      const g=ctx.createGain(); this.env(g,t0,.004,dur,peak||.2);
+      const g=ctx.createGain(); this.env(g,t0,.004,dur,peak);
       const f=ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=900;
       src.connect(f); f.connect(g); g.connect(ctx.destination); src.start(t0);
     }catch(e){}
   },
+  select(){ this.tone(760,.05,'triangle',.10); },
   move(){ this.tone(520,.07,'square',.09,240); },
   capture(){ this.noise(.13,.22); this.tone(300,.12,'square',.10,110); },
   wrong(){ this.tone(170,.22,'sawtooth',.11,120); },
-  good(){ this.tone(523,.09,'triangle',.13); this.tone(659,.09,'triangle',.13,null,.09); }
+  good(){ this.tone(523,.09,'triangle',.13); this.tone(659,.09,'triangle',.13,null,.09); },
+  win(){ [523,659,784,1047].forEach((f,i)=>this.tone(f,.14,'triangle',.15,null,i*.12)); this.tone(1047,.4,'sine',.09,null,.5); },
+  toggle(){ this.muted=!this.muted; return this.muted; }
 };
 
-const rays = (dirs)=>{
+/* ───────── 데이터 ───────── */
+const KO_NAME={p:'폰',r:'룩',n:'나이트',b:'비숍',q:'퀸',k:'킹'};
+const ART_KEY=(t,c)=> (c==='w'?'g_':'m_')+({p:'pawn',r:'rook',n:'knight',b:'bishop',q:'queen',k:'king'}[t]);
+function P(t,c){return {t,c};}
+function empty(){return Array.from({length:8},()=>Array(8).fill(null));}
+
+/* row 0 = 8랭크(몽골, 위) / row 7 = 1랭크(고려, 아래). 고려=w */
+const LEVELS=[
+ {id:'lv1', name:'레벨 1', tag:'메이트 인 원', sub:'한 수로 끝내는 결전',
+  puzzles:[
+   {id:'s1', title:'성문 뒤의 함정', sub:'몽골 칸이 병사들 뒤에 숨었어요. 뒷줄이 텅 비었네요?', art:'g_rook', depth:1,
+    hint:'돌탑 수문장(룩)은 세로로 쭉 달릴 수 있어요. 몽골 칸이 있는 맨 윗줄을 노려보세요!', hintFrom:[7,4],
+    setup(){const b=empty();
+      b[0][6]=P('k','b'); b[1][5]=P('p','b'); b[1][6]=P('p','b'); b[1][7]=P('p','b'); b[2][1]=P('n','b');
+      b[7][4]=P('r','w'); b[7][6]=P('k','w'); b[6][5]=P('p','w'); b[6][6]=P('p','w'); b[6][7]=P('p','w');
+      return b;}},
+   {id:'s2', title:'질식하는 칸', sub:'몽골 칸이 자기 부하들에게 둘러싸여 숨을 곳이 없어요.', art:'g_knight', depth:1,
+    hint:'백마 기수(나이트)만이 부하들을 뛰어넘어 칸의 코앞에 착지할 수 있어요!', hintFrom:[3,6],
+    setup(){const b=empty();
+      b[0][7]=P('k','b'); b[0][6]=P('r','b'); b[0][0]=P('r','b'); b[1][6]=P('p','b'); b[1][7]=P('p','b');
+      b[3][6]=P('n','w'); b[7][6]=P('k','w'); b[6][5]=P('p','w'); b[6][6]=P('p','w'); b[6][7]=P('p','w');
+      return b;}},
+   {id:'s3', title:'네 수 만의 기습', sub:'전투가 막 시작됐는데, 벌써 끝낼 수 있다고요?', art:'g_queen', depth:1,
+    hint:'퀸이 노리는 칸을 비숍도 함께 지켜주고 있어요. 몽골 칸 바로 옆의 약한 칸은 어디일까요?', hintFrom:[3,7],
+    setup(){const b=empty();
+      b[0][0]=P('r','b'); b[0][2]=P('b','b'); b[0][3]=P('q','b'); b[0][4]=P('k','b'); b[0][5]=P('b','b'); b[0][6]=P('n','b'); b[0][7]=P('r','b');
+      [0,1,2,3,5,6,7].forEach(c=>b[1][c]=P('p','b'));
+      b[2][2]=P('n','b'); b[3][4]=P('p','b');
+      b[3][7]=P('q','w'); b[4][2]=P('b','w'); b[4][4]=P('p','w');
+      [0,1,2,3,5,6,7].forEach(c=>b[6][c]=P('p','w'));
+      b[7][0]=P('r','w'); b[7][1]=P('n','w'); b[7][2]=P('b','w'); b[7][4]=P('k','w'); b[7][6]=P('n','w'); b[7][7]=P('r','w');
+      return b;}}
+  ]},
+ {id:'lv2', name:'레벨 2', tag:'메이트 인 투', sub:'두 수 앞을 내다보는 지략',
+  puzzles:[
+   {id:'m1', title:'두 돌탑의 사다리', sub:'돌탑 두 개가 사다리처럼 몽골 칸을 끝줄로 밀어붙여요.', art:'g_rook', depth:2,
+    hint:'첫 수는 장군! 아래쪽 돌탑으로 일곱째 줄을 막으면, 칸은 끝줄로 도망칠 수밖에 없어요.', hintFrom:[7,1],
+    setup(){const b=empty();
+      b[1][4]=P('k','b'); b[1][6]=P('p','b'); b[1][7]=P('p','b');
+      b[2][0]=P('r','w'); b[7][1]=P('r','w'); b[7][6]=P('k','w'); b[6][5]=P('p','w'); b[6][6]=P('p','w'); b[6][7]=P('p','w');
+      return b;}},
+   {id:'m2', title:'임금님의 진군', sub:'장군을 부르지 않아도 이기는 조용한 한 수가 있어요.', art:'g_king', depth:2,
+    hint:'첫 수는 장군이 아니에요! 임금님이 한 칸 다가서서 몽골 칸의 도망길을 미리 막아보세요.', hintFrom:[3,6],
+    setup(){const b=empty();
+      b[0][7]=P('k','b'); b[3][7]=P('p','b');
+      b[3][6]=P('k','w'); b[6][0]=P('q','w'); b[6][5]=P('p','w');
+      return b;}},
+   {id:'m3', title:'졸병의 꿈', sub:'끝줄에 닿은 꼬마 창병에게 놀라운 일이 일어나요.', art:'g_pawn', depth:2,
+    hint:'창병을 끝줄까지 밀어보세요 — 퀸으로 변신하면서 장군! 뒤에서 돌탑이 지켜주고 있어요.', hintFrom:[1,6],
+    setup(){const b=empty();
+      b[1][7]=P('k','b'); b[1][0]=P('p','b');
+      b[1][6]=P('p','w'); b[7][6]=P('r','w'); b[6][5]=P('k','w');
+      return b;}}
+  ]},
+ {id:'lv3', name:'레벨 3', tag:'메이트 인 투 · 심화', sub:'명장은 희생을 두려워하지 않는다',
+  puzzles:[
+   {id:'h1', title:'칸의 질식', sub:'퀸을 내어주는 놀라운 희생! 그리고 백마의 마지막 도약.', art:'g_knight', depth:2,
+    hint:'근위대장(퀸)을 몽골 칸 바로 옆에 바치세요! 몽골 돌탑이 잡는 순간, 칸은 완전히 갇혀요 — 그다음은 백마의 차례.', hintFrom:[5,1],
+    setup(){const b=empty();
+      b[0][7]=P('k','b'); b[0][5]=P('r','b'); b[0][0]=P('r','b'); b[1][6]=P('p','b'); b[1][7]=P('p','b'); b[1][0]=P('p','b');
+      b[5][1]=P('q','w'); b[2][7]=P('n','w'); b[7][6]=P('k','w'); b[6][5]=P('p','w'); b[6][6]=P('p','w'); b[6][7]=P('p','w');
+      return b;}},
+   {id:'h2', title:'겹쳐진 돌탑', sub:'돌탑 하나를 내어주면, 뒤의 돌탑이 성문을 부숴요.', art:'g_rook', depth:2,
+    hint:'겹쳐 선 돌탑으로 끝줄에 쳐들어가세요! 몽골 돌탑이 막아서면, 뒤에 있던 돌탑이 다시 쳐들어가요.', hintFrom:[6,4],
+    setup(){const b=empty();
+      b[0][6]=P('k','b'); b[0][3]=P('r','b'); b[0][1]=P('n','b'); b[1][5]=P('p','b'); b[1][6]=P('p','b'); b[1][7]=P('p','b'); b[1][0]=P('p','b');
+      b[7][4]=P('r','w'); b[6][4]=P('r','w'); b[7][6]=P('k','w'); b[6][5]=P('p','w'); b[6][6]=P('p','w'); b[6][7]=P('p','w');
+      return b;}}
+  ]}
+];
+const ALL_PUZZLES = LEVELS.flatMap(l=>l.puzzles);
+const TOTAL_STARS = ALL_PUZZLES.length*3;
+
+/* ───────── 체스 엔진 ───────── */
+const inB=(r,c)=>r>=0&&r<8&&c>=0&&c<8;
+function attacked(bd,r,c,by){
+  const pd = by==='w' ? 1 : -1;
+  for(const dc of [-1,1]) if(inB(r+pd,c+dc)){const p=bd[r+pd][c+dc]; if(p&&p.c===by&&p.t==='p') return true;}
+  for(const [dr,dc] of [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]])
+    if(inB(r+dr,c+dc)){const p=bd[r+dr][c+dc]; if(p&&p.c===by&&p.t==='n') return true;}
+  for(const [dr,dc] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]])
+    if(inB(r+dr,c+dc)){const p=bd[r+dr][c+dc]; if(p&&p.c===by&&p.t==='k') return true;}
+  const scan=(dirs,types)=>{
+    for(const [dr,dc] of dirs){
+      let rr=r+dr,cc=c+dc;
+      while(inB(rr,cc)){
+        const p=bd[rr][cc];
+        if(p){ if(p.c===by&&types.includes(p.t)) return true; break; }
+        rr+=dr;cc+=dc;
+      }
+    }
+    return false;
+  };
+  if(scan([[1,0],[-1,0],[0,1],[0,-1]],['r','q'])) return true;
+  if(scan([[1,1],[1,-1],[-1,1],[-1,-1]],['b','q'])) return true;
+  return false;
+}
+function kingPos(bd,color){
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=bd[r][c]; if(p&&p.t==='k'&&p.c===color) return [r,c];}
+  return null;
+}
+function inCheck(bd,color){ const k=kingPos(bd,color); return k?attacked(bd,k[0],k[1],color==='w'?'b':'w'):false; }
+function pseudoMoves(bd,r,c){
+  const p=bd[r][c]; if(!p) return [];
+  const out=[]; const push=(rr,cc)=>{out.push([rr,cc]);};
+  const slide=(dirs)=>{
+    for(const [dr,dc] of dirs){
+      let rr=r+dr,cc=c+dc;
+      while(inB(rr,cc)){
+        const q=bd[rr][cc];
+        if(!q) push(rr,cc);
+        else { if(q.c!==p.c) push(rr,cc); break; }
+        rr+=dr;cc+=dc;
+      }
+    }
+  };
+  if(p.t==='p'){
+    const d = p.c==='w' ? -1 : 1;
+    const startRow = p.c==='w' ? 6 : 1;
+    if(inB(r+d,c)&&!bd[r+d][c]){
+      push(r+d,c);
+      if(r===startRow&&!bd[r+2*d][c]) push(r+2*d,c);
+    }
+    for(const dc of [-1,1]) if(inB(r+d,c+dc)){
+      const q=bd[r+d][c+dc]; if(q&&q.c!==p.c) push(r+d,c+dc);
+    }
+  }
+  else if(p.t==='n'){ for(const [dr,dc] of [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]){
+    if(inB(r+dr,c+dc)){const q=bd[r+dr][c+dc]; if(!q||q.c!==p.c) push(r+dr,c+dc);} } }
+  else if(p.t==='k'){ for(const [dr,dc] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]){
+    if(inB(r+dr,c+dc)){const q=bd[r+dr][c+dc]; if(!q||q.c!==p.c) push(r+dr,c+dc);} } }
+  else if(p.t==='r') slide([[1,0],[-1,0],[0,1],[0,-1]]);
+  else if(p.t==='b') slide([[1,1],[1,-1],[-1,1],[-1,-1]]);
+  else if(p.t==='q') slide([[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]);
+  return out;
+}
+function applyMove(bd,from,to){
+  const nb=bd.map(row=>row.map(p=>p?{...p}:null));
+  const p=nb[from[0]][from[1]];
+  nb[to[0]][to[1]]=p; nb[from[0]][from[1]]=null;
+  if(p.t==='p'&&(to[0]===0||to[0]===7)) p.t='q';
+  return nb;
+}
+function legalMoves(bd,r,c){
+  const p=bd[r][c]; if(!p) return [];
+  return pseudoMoves(bd,r,c).filter(([rr,cc])=>!inCheck(applyMove(bd,[r,c],[rr,cc]),p.c));
+}
+function allMoves(bd,color){
   const out=[];
-  for(const [dr,dc] of dirs){
-    let r=2+dr,c=2+dc;
-    while(r>=0&&r<5&&c>=0&&c<5){out.push([r,c]);r+=dr;c+=dc;}
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=bd[r][c];
+    if(p&&p.c===color) for(const m of legalMoves(bd,r,c)) out.push([[r,c],m]);
   }
   return out;
-};
-const PIECES = [
-  {id:'g_pawn', name:'꼬마 창병', en:'폰 · Pawn',
-   intro:`안녕! 나는 고려의 <b>꼬마 창병</b>이야. 우리는 여덟 형제라서 고려군에서 제일 숫자가 많아! 나는 씩씩하게 <b>앞으로 한 칸씩</b>만 걸어가. 뒤로는 절대 안 돌아가! (맨 처음 출발할 때만 두 칸도 갈 수 있어.)`,
-   mission:'파란 점을 눌러서 창병을 앞으로 보내줘!', moves:[[2,2]], start:[3,2]},
-  {id:'g_rook', name:'돌탑 수문장', en:'룩 · Rook',
-   intro:`나는 강화 성곽의 <b>돌탑 수문장</b>! 돌을 쌓아 만들어서 아주 튼튼하지. 나는 <b>앞·뒤·양옆으로 쭉-!</b> 미끄러지듯 달려갈 수 있어.`,
-   mission:'파란 점 중 아무 곳이나 눌러서 돌탑을 움직여봐!',
-   moves:rays([[1,0],[-1,0],[0,1],[0,-1]]), start:[2,2]},
-  {id:'g_knight', name:'백마 기수', en:'나이트 · Knight',
-   intro:`히힝! 나는 <b>백마 기수</b>야. 나는 특별하게 <b>ㄱ자 모양</b>으로 폴짝 뛰어다녀. 다른 말이 길을 막고 있어도 <b>훌쩍 뛰어넘을</b> 수 있는 건 나뿐이야!`,
-   mission:'ㄱ자 모양 파란 점으로 백마를 점프시켜봐!',
-   moves:[[0,1],[0,3],[1,0],[1,4],[3,0],[3,4],[4,1],[4,3]], start:[2,2]},
-  {id:'g_bishop', name:'지혜 승려', en:'비숍 · Bishop',
-   intro:`나무아미타불… 나는 팔만대장경을 지키는 <b>지혜 승려</b>라오. 나는 언제나 <b>대각선으로만</b> 조용히 미끄러져 다닌다오. 비스듬한 길이 나의 길!`,
-   mission:'대각선 파란 점을 눌러서 승려님을 모셔가자!',
-   moves:rays([[1,1],[1,-1],[-1,1],[-1,-1]]), start:[2,2]},
-  {id:'g_queen', name:'근위대장', en:'퀸 · Queen',
-   intro:`나는 임금님을 가장 가까이서 지키는 <b>근위대장</b>이다! 활과 지혜로 <b>앞뒤·양옆·대각선 어디든 쭉-!</b> 달려가지. 고려군에서 제일 힘이 센 건 바로 나야!`,
-   mission:'어느 방향이든 좋아! 파란 점으로 근위대장을 보내자!',
-   moves:rays([[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]), start:[2,2]},
-  {id:'g_king', name:'고려 임금', en:'킹 · King',
-   intro:`나는 <b>고려의 임금</b>이니라. 나는 조심조심 <b>어느 방향이든 딱 한 칸씩</b>만 걷는다. 하지만 기억하거라 — 내가 잡히면 전쟁이 끝난단다. 모두가 나를 지켜다오!`,
-   mission:'한 칸 옆 파란 점을 눌러서 임금님을 옮겨드리자!',
-   moves:[[1,1],[1,2],[1,3],[2,1],[2,3],[3,1],[3,2],[3,3]], start:[2,2]}
-];
-const CAPTURE_SCENES = [
-  {id:'knightCapture', piece:'g_knight', enemy:'m_bishop', name:'백마 기수', en:'적을 잡는 방법',
-   intro:`<b>몽골의 샤먼</b>이 북을 울리며 병사들을 부르고 있어! 잡는 방법은 모두 똑같아 — <b>내가 갈 수 있는 칸에 적이 있으면, 그 칸으로 들어가면서 잡아.</b> 잡힌 적은 판에서 빠져나가!`,
-   mission:'ㄱ자 점프로 샤먼이 있는 칸에 착지해 잡아보자!',
-   note:'모든 용사는 “움직이는 길 = 잡는 길”이에요. 잡힌 기물은 판에서 사라져요.',
-   start:[4,1], target:[2,2]},
-  {id:'pawnCapture', piece:'g_pawn', enemy:'m_pawn', name:'꼬마 창병', en:'딱 하나의 예외',
-   intro:`그런데 나만 특별해! 나는 <b>앞으로 걷지만</b>, 적을 잡을 때만큼은 <b>대각선 앞 한 칸</b>을 콕! 찌른단다. 바로 앞에 적이 있으면 오히려 못 지나가!`,
-   mission:'대각선 앞의 몽골 병사를 눌러서 잡아보자!',
-   note:'창병(폰)은 여섯 용사 중 유일하게 “걷는 길”과 “잡는 길”이 달라요.',
-   start:[3,2], target:[2,3]}
-];
-const totalPieceScenes = PIECES.length;
-const GOAL_SCENE = 1;                       /* 게임의 목표·차례·판 크기 */
-const PIECE_START_SCENE = 2;
-const CAPTURE_START_SCENE = PIECE_START_SCENE + totalPieceScenes;
-const CHECK_SCENE = CAPTURE_START_SCENE + CAPTURE_SCENES.length;
-const CHECKMATE_SCENE = CHECK_SCENE+1;
-const RECAP_SCENE = CHECKMATE_SCENE+1;      /* 장군 vs 외통수 정리 */
-const BADGE_SCENE = RECAP_SCENE+1;
-
-const state = {scene:0, earned:{}, captures:{}, checkEarned:false, checkmateEarned:false};
-const root = document.getElementById('scenes');
-
-function dots(idx){
-  let d='<div class="dots">';
-  for(let i=0;i<totalPieceScenes;i++) d+=`<div class="dot ${i<=idx?'on':''}"></div>`;
-  return d+'</div>';
 }
-function progressDots(n, idx){
-  let d='<div class="dots">';
-  for(let i=0;i<n;i++) d+=`<div class="dot ${i<=idx?'on':''}"></div>`;
-  return d+'</div>';
-}
-
-function render(){
-  const s = state.scene;
-  let html='';
-  if(s===0) html = titleScene();
-  else if(s===GOAL_SCENE) html = goalScene();
-  else if(s>=PIECE_START_SCENE && s<PIECE_START_SCENE+totalPieceScenes)
-    html = pieceScene(PIECES[s-PIECE_START_SCENE], s-PIECE_START_SCENE);
-  else if(s>=CAPTURE_START_SCENE && s<CAPTURE_START_SCENE+CAPTURE_SCENES.length) html = captureScene(CAPTURE_SCENES[s-CAPTURE_START_SCENE], s-CAPTURE_START_SCENE);
-  else if(s===CHECK_SCENE) html = checkScene();
-  else if(s===CHECKMATE_SCENE) html = checkmateScene();
-  else if(s===RECAP_SCENE) html = recapScene();
-  else html = badgeScene();
-  root.innerHTML = `<div class="scene active">${html}</div>`;
-  bindScene();
-}
-
-function titleScene(){
-  return `
-    <div class="eyebrow">EasyMate 체스 동화</div>
-    <h1>고려 vs 몽골<br>여섯 용사 이야기</h1>
-    <div class="title-art"><div>${ART.g_king}</div><div>${ART.m_king}</div></div>
-    <p class="title-sub">아주 먼 옛날, 몽골의 대군이 고려로 쳐들어왔어요.<br>먼저 <b>이기는 방법</b>을 배우고,<br>고려를 지키는 여섯 용사를 만나볼까요?</p>
-    <button class="start-btn" id="startBtn">모험 시작!</button>
-    <div class="brand">EasyMate · 세대를 잇는 64칸의 다리</div>`;
-}
-function goalScene(){
-  return `
-    <div class="eyebrow">먼저, 전쟁의 규칙</div>
-    <h2 style="text-align:center;font-size:24px;color:var(--meok)">이기는 방법은 딱 하나</h2>
-    <div class="goal-art">
-      <div>${ART.g_king}</div><span class="vs">VS</span><div>${ART.m_king}</div>
-    </div>
-    <div class="rule-list">
-      <div class="rule-item"><div class="ri-num">1</div><div class="ri-body">
-        <span class="ri-t">목표 — <em>상대 임금을 가두면 승리!</em></span>
-        상대 임금을 공격했는데 <b>도망갈 칸도, 막을 방법도 없으면</b> 그 자리에서 전쟁이 끝나요. 이걸 <b>체크메이트</b>라고 해요.
-        임금은 실제로 잡히지 않아요 — 가두는 순간 끝!
-      </div></div>
-      <div class="rule-item"><div class="ri-num">2</div><div class="ri-body">
-        <span class="ri-t">차례 — <em>한 번씩 번갈아</em></span>
-        고려가 용사 하나를 옮기면, 다음은 몽골 차례예요. 한 번에 두 수를 둘 수는 없고, 쉬어갈 수도 없어요.
-      </div></div>
-      <div class="rule-item"><div class="ri-num">3</div><div class="ri-body">
-        <span class="ri-t">전장 — <em>가로 8칸 × 세로 8칸 = 64칸</em></span>
-        진짜 체스판은 64칸이에요. 여기 연습 마당은 배우기 쉽도록 <b>5칸 × 5칸</b>으로 줄여 놓았어요.
-      </div></div>
-    </div>
-    <p class="lesson-note">이제 고려를 지킬 여섯 용사를 한 명씩 만나볼까요?</p>
-    <div class="nav">
-      <button class="btn-prev" id="prevBtn">← 이전</button>
-      <button class="btn-next" id="nextBtn">여섯 용사 만나기 →</button>
-    </div>`;
-}
-function recapScene(){
-  return `
-    <div class="eyebrow">헷갈리기 쉬운 두 낱말</div>
-    <h2 style="text-align:center;font-size:24px;color:var(--meok)">장군과 외통수</h2>
-    <div class="compare">
-      <div class="cmp esc"><span class="cmp-t">장군 (체크)</span>
-        임금이 공격받았지만 <b>빠져나갈 방법이 아직 있어요.</b> 게임은 계속돼요.</div>
-      <div class="cmp mate"><span class="cmp-t">외통수 (체크메이트)</span>
-        공격받았는데 <b>세 가지 방법이 모두 막혔어요.</b> 그 순간 승부가 끝나요.</div>
-    </div>
-    <div class="rule-list">
-      <div class="rule-item"><div class="ri-num">✓</div><div class="ri-body">
-        <span class="ri-t">장군을 당했을 때 할 수 있는 세 가지</span>
-        ① 임금이 <b>안전한 칸으로 피하기</b> · ② 다른 용사로 <b>공격 길을 막기</b> · ③ <b>공격한 적을 잡기</b>.
-        이 셋 중 하나라도 되면 아직 지지 않았어요!
-      </div></div>
-    </div>
-    <p class="lesson-note">어르신들은 체크메이트를 <b>“외통수”</b>라고 부르시기도 해요. 같은 말이랍니다.</p>
-    <div class="nav">
-      <button class="btn-prev" id="prevBtn">← 이전</button>
-      <button class="btn-next" id="nextBtn">배지 받으러 가기 →</button>
-    </div>`;
-}
-function pieceScene(p, idx){
-  return `
-    <div class="char-row">
-      <div class="char-art">${ART[p.id]}</div>
-      <div class="char-text">
-        <div class="char-name">${p.name}<small>${p.en}</small></div>
-        <div class="speech">${p.intro}</div>
-      </div>
-    </div>
-    <div class="board-wrap"><div class="board" id="board"></div></div>
-    <div class="mission" id="mission">${p.mission}</div>
-    <div class="nav">
-      <button class="btn-prev" id="prevBtn">← 이전</button>
-      ${dots(idx)}
-      <button class="btn-next" id="nextBtn" disabled>다음 →</button>
-    </div>`;
-}
-function captureScene(c, idx){
-  return `
-    <div class="char-row">
-      <div class="char-art">${ART[c.piece]}</div>
-      <div class="char-text">
-        <div class="char-name">${c.name}<small>${c.en}</small></div>
-        <div class="speech">${c.intro}</div>
-      </div>
-    </div>
-    <div class="board-wrap"><div class="board" id="board"></div></div>
-    <div class="mission" id="mission">${c.mission}</div>
-    <p class="lesson-note">${c.note}</p>
-    <div class="nav">
-      <button class="btn-prev" id="prevBtn">← 이전</button>
-      ${progressDots(CAPTURE_SCENES.length, idx)}
-      <button class="btn-next" id="nextBtn" disabled>다음 →</button>
-    </div>`;
-}
-function checkScene(){
-  return `
-    <div class="eyebrow">위험해요, 전하!</div>
-    <div class="char-row">
-      <div class="char-art">${ART.g_king}</div>
-      <div class="char-text">
-        <div class="char-name">장군! (체크)<small>임금님이 공격받을 때</small></div>
-        <div class="speech">큰일이다! 몽골의 <b>공성탑</b>이 나를 노리고 있구나. 임금이 공격받는 걸 <b>"체크"</b>, 우리말로 <b>"장군!"</b>이라고 한단다. 장군을 당하면 ① 안전한 칸으로 <b>피하거나</b> ② 다른 용사가 <b>길을 막거나</b> ③ 공격한 적을 <b>잡으면</b> 돼. 이번엔 <b>피하는 방법</b>을 해보자꾸나!</div>
-      </div>
-    </div>
-    <div class="board-wrap"><div class="board" id="board"></div></div>
-    <div class="mission" id="mission">빨간 줄을 벗어난 파란 점으로 임금님을 피신시키자!</div>
-    <p class="lesson-note">빨간 칸은 몽골 공성탑이 노리는 위험한 줄이에요. 이 줄을 벗어나야 안전해요.</p>
-    <div class="nav">
-      <button class="btn-prev" id="prevBtn">← 이전</button>
-      <button class="btn-next" id="nextBtn" disabled>다음 →</button>
-    </div>`;
-}
-function checkmateScene(){
-  return `
-    <div class="eyebrow">이기는 끝장면</div>
-    <div class="char-row">
-      <div class="char-art">${ART.g_rook}</div>
-      <div class="char-text">
-        <div class="char-name">체크메이트 (외통수)<small>도망갈 칸이 없어요</small></div>
-        <div class="speech"><b>체크메이트</b>는 왕이 공격받는데 <b>도망갈 칸도, 막을 방법도 없을 때</b>야. 우리 임금님이 몽골 칸의 도망길을 막고 있어. 이제 내가 마지막 한 수를 두면 끝!</div>
-      </div>
-    </div>
-    <div class="board-wrap"><div class="board" id="board"></div></div>
-    <div class="mission" id="mission">돌탑을 파란 점으로 보내 몽골 칸을 꼼짝 못 하게 하자!</div>
-    <p class="lesson-note" id="mateNote">파란 칸은 우리 임금님이 지키는 칸이라 몽골 칸이 갈 수 없어요.</p>
-    <div class="legend"><span><i class="grd"></i>임금님이 지키는 칸</span><span><i class="dgr"></i>돌탑이 노리는 칸</span></div>
-    <div class="nav">
-      <button class="btn-prev" id="prevBtn">← 이전</button>
-      <button class="btn-next" id="nextBtn" disabled>다음 →</button>
-    </div>`;
-}
-function badgeScene(){
-  const n = Object.keys(state.earned).length;
-  let b='';
-  for(const p of PIECES){
-    b += `<div class="badge ${state.earned[p.id]?'earned':'locked'}"><div class="art">${ART[p.id]}</div><p>${p.name}</p></div>`;
+function isCheckmate(bd,color){ return inCheck(bd,color)&&allMoves(bd,color).length===0; }
+function mateMoves(bd){ return allMoves(bd,'w').filter(([f,t])=>isCheckmate(applyMove(bd,f,t),'b')); }
+/* 이 국면에서 흑의 모든 응수에 대해 백 메이트-인-1이 존재하는가 */
+function forcesMateNext(b1){
+  const reps=allMoves(b1,'b');
+  if(reps.length===0) return false;
+  for(const [bf,bt] of reps){
+    if(mateMoves(applyMove(b1,bf,bt)).length===0) return false;
   }
-  return `
-    <div class="eyebrow">모험 완료!</div>
-    <h2 style="text-align:center">나의 고려 용사 배지</h2>
-    <div class="badges">${b}</div>
-    <p class="final-msg">${n===totalPieceScenes
-      ? '와! <b>여섯 용사를 모두</b> 움직여 봤구나!<br>이제 <b>퍼즐 편</b>에서 진짜 몽골군과 겨뤄보자!'
-      : `지금까지 <b>${n}명</b>의 용사를 움직여 봤어.<br>다시 돌아가서 나머지 용사도 만나볼까?`}</p>
-    <button class="replay" id="replayBtn">처음부터 다시 보기</button>
-    <div class="brand">EasyMate · 세대를 잇는 64칸의 다리</div>`;
+  return true;
+}
+/* 몽골 최선 응수: 백 메이트 수단 최소, 동률 시 킹 이동·잡기 선호 */
+function bestReply(b1){
+  const reps=allMoves(b1,'b');
+  let best=null, bestScore=Infinity;
+  for(const [f,t] of reps){
+    const b2=applyMove(b1,f,t);
+    let s=mateMoves(b2).length*10;
+    if(b1[f[0]][f[1]].t==='k') s-=3;
+    if(b1[t[0]][t[1]]) s-=2;
+    if(s<bestScore){ bestScore=s; best=[f,t]; }
+  }
+  return best;
 }
 
-/* ---------- 보드 유틸 ---------- */
-function makeGrid(board){
-  board.innerHTML='';
-  for(let r=0;r<5;r++)for(let c=0;c<5;c++){
+/* ───────── 상태 & 홈 UI ───────── */
+const stars={};            /* puzzleId -> 0~3 */
+let curLevel=0, cur=null, curLvIdx=0, curPzIdx=0;
+let bd=null, sel=null, locked=false, phase=1, wrongCount=0, hintLevel=0;
+let history=[];
+
+const homeScreen=document.getElementById('homeScreen');
+const puzzleScreen=document.getElementById('puzzleScreen');
+const boardEl=document.getElementById('board');
+const banner=document.getElementById('banner');
+const hintLine=document.getElementById('hintLine');
+const hintBtn=document.getElementById('hintBtn');
+const overlay=document.getElementById('overlay');
+
+function starSum(){ return ALL_PUZZLES.reduce((a,p)=>a+(stars[p.id]||0),0); }
+function starsHtml(n){
+  let h='';
+  for(let i=0;i<3;i++) h+='<span class="'+(i<n?'on':'off')+'">★</span>';
+  return h;
+}
+function updateStarTotal(){ document.getElementById('starTotal').textContent='★ '+starSum()+'/'+TOTAL_STARS; }
+
+function renderHome(){
+  updateStarTotal();
+  const nav=document.getElementById('lvNav');
+  nav.innerHTML='';
+  LEVELS.forEach((lv,i)=>{
+    const b=document.createElement('button');
+    b.className='lv-btn'+(i===curLevel?' on':'');
+    b.innerHTML=lv.name+'<small>'+lv.tag+'</small>';
+    b.onclick=()=>{ SFX.select(); curLevel=i; renderHome(); };
+    nav.appendChild(b);
+  });
+  const lv=LEVELS[curLevel];
+  document.getElementById('lvTitle').innerHTML=
+    lv.name+' · '+lv.sub+'<div class="rule"></div><span style="font-size:13px;color:#B9A67E">'+lv.tag+'</span>';
+  const grid=document.getElementById('pzGrid');
+  grid.innerHTML='';
+  lv.puzzles.forEach((pz,i)=>{
+    const s=stars[pz.id]||0;
+    const card=document.createElement('button');
+    card.className='pz-card';
+    card.innerHTML=
+      '<div class="thumb">'+
+        '<div class="t-badge">'+lv.tag+'</div>'+
+        (s>0?'<div class="t-done">완료 ✓</div>':'')+
+        '<div class="t-art">'+ART[pz.art]+'</div>'+
+      '</div>'+
+      '<div class="pz-card-body">'+
+        '<div class="pz-card-title">'+(i+1)+'. '+pz.title+'</div>'+
+        '<div class="pz-card-sub">'+pz.sub+'</div>'+
+        '<div class="stars-row">'+starsHtml(s)+'</div>'+
+      '</div>';
+    card.onclick=()=>{ SFX.select(); openPuzzle(curLevel,i); };
+    grid.appendChild(card);
+  });
+}
+
+/* ───────── 퍼즐 진행 ───────── */
+function openPuzzle(lvIdx,pzIdx){
+  curLvIdx=lvIdx; curPzIdx=pzIdx;
+  cur=LEVELS[lvIdx].puzzles[pzIdx];
+  document.getElementById('pzTitle').textContent=LEVELS[lvIdx].name+'-'+(pzIdx+1)+' · '+cur.title;
+  homeScreen.classList.remove('active');
+  puzzleScreen.classList.add('active');
+  document.body.classList.remove('home-mode');
+  resetPuzzle();
+}
+function goHome(){
+  overlay.classList.remove('show');
+  puzzleScreen.classList.remove('active');
+  homeScreen.classList.add('active');
+  document.body.classList.add('home-mode');
+  renderHome();
+}
+function firstBannerText(){
+  return cur.depth===2
+    ? '고려의 차례 — 두 수 만에 체크메이트! 첫 수를 찾아라'
+    : '고려의 차례 — 한 수로 체크메이트를 찾아라!';
+}
+function resetPuzzle(){
+  bd=cur.setup(); sel=null; locked=false; phase=1; wrongCount=0; hintLevel=0; history=[];
+  hintLine.textContent='';
+  hintBtn.textContent='💡 힌트 보기';
+  setBanner(firstBannerText(),'');
+  drawBoard();
+}
+function setBanner(text,mode){
+  banner.textContent=text;
+  banner.className='turn-banner'+(mode?' '+mode:'');
+  if(mode==='alert'){banner.classList.remove('alert');void banner.offsetWidth;banner.classList.add('alert');}
+}
+function drawBoard(extra){
+  extra=extra||{};
+  boardEl.innerHTML='';
+  const moves = sel ? legalMoves(bd,sel[0],sel[1]) : [];
+  const moveKeys = new Set(moves.map(([r,c])=>r+','+c));
+  const bInCheck = inCheck(bd,'b');
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
     const sq=document.createElement('div');
     sq.className='sq '+(((r+c)%2===0)?'light':'dark');
     sq.dataset.rc=r+','+c;
-    board.appendChild(sq);
+    if(sel&&sel[0]===r&&sel[1]===c) sq.classList.add('sel');
+    if(moveKeys.has(r+','+c)) sq.classList.add('dot', bd[r][c]?'cap':'go');
+    if(extra.last&&extra.last[0]===r&&extra.last[1]===c) sq.classList.add('last');
+    if(extra.lastB&&extra.lastB[0]===r&&extra.lastB[1]===c) sq.classList.add('last-b');
+    if(extra.esc&&extra.esc.some(([er,ec])=>er===r&&ec===c)) sq.classList.add('esc');
+    const p=bd[r][c];
+    if(p){
+      const base=document.createElement('div');
+      base.className='pc-base '+p.c;
+      sq.appendChild(base);
+      const art=document.createElement('div');
+      art.className='pc';
+      if(bInCheck&&p.t==='k'&&p.c==='b') art.classList.add('check-glow');
+      if(extra.glow&&extra.glow[0]===r&&extra.glow[1]===c) art.classList.add('hint-glow');
+      art.innerHTML=ART[ART_KEY(p.t,p.c)];
+      sq.appendChild(art);
+      const label=document.createElement('div');
+      label.className='pc-label '+p.c;
+      label.textContent=KO_NAME[p.t];
+      sq.appendChild(label);
+    }
+    sq.addEventListener('click',()=>onSquare(r,c,sq));
+    boardEl.appendChild(sq);
   }
 }
-function sqAt(board,r,c){ return board.querySelector(`.sq[data-rc="${r},${c}"]`); }
-function placeToken(el,[r,c]){
-  if(el.dataset.placed) SFX.move();
-  el.style.left=(c*20)+'%'; el.style.top=(r*20)+'%';
-  el.dataset.placed='1';
-}
-function addToken(board,art,at,extraClass=''){
-  const token=document.createElement('div');
-  token.className=('piece-token '+extraClass).trim();
-  token.innerHTML=art;
-  board.appendChild(token);
-  placeToken(token,at);
-  return token;
-}
-function celebrate(sq){
-  SFX.good();
-  const board=document.getElementById('board');
-  const rect=sq.getBoundingClientRect(), brect=board.getBoundingClientRect();
-  for(let i=0;i<3;i++){
-    const s=document.createElement('div');
-    s.className='star-burst'; s.textContent=['⭐','✨','🌟'][i];
-    s.style.left=(rect.left-brect.left+rect.width/2-13+(i-1)*18)+'px';
-    s.style.top=(rect.top-brect.top+rect.height/2-13)+'px';
-    board.appendChild(s);
-    setTimeout(()=>s.remove(),820);
+function onSquare(r,c,sq){
+  if(locked) return;
+  const p=bd[r][c];
+  if(sel){
+    const moves=legalMoves(bd,sel[0],sel[1]);
+    if(moves.some(([rr,cc])=>rr===r&&cc===c)){ tryMove(sel,[r,c]); return; }
+  }
+  if(p&&p.c==='w'){
+    sel=[r,c];
+    SFX.select();
+    const n=legalMoves(bd,r,c).length;
+    setBanner(n?KO_NAME[p.t]+' 선택! 파란 점으로 움직일 수 있어요.':'이 용사는 지금 움직일 수 없어요.','');
+    drawBoard();
+  }else if(sel){
+    sel=null; drawBoard();
+    setBanner(phase===2?'마무리 일격을 찾아라!':firstBannerText(),'');
+  }else if(p){
+    sq.classList.remove('wrong');void sq.offsetWidth;sq.classList.add('wrong');
+    SFX.wrong();
+    setBanner('그건 몽골군이에요! 고려군을 골라주세요.','alert');
   }
 }
-function flashWrong(sq,message){
+/* 오답 시 몽골의 탈출로: 킹 이동 목적지 우선, 없으면 방어수(잡기/차단) 출발지 */
+function escapeSquares(b1){
+  const escs=[], defs=[];
+  for(const [f,t] of allMoves(b1,'b')){
+    if(b1[f[0]][f[1]].t==='k') escs.push(t);
+    else defs.push(f);
+  }
+  return escs.length?escs:defs;
+}
+function tryMove(from,to){
+  const before=bd;
+  const captured=!!bd[to[0]][to[1]];
+  const after=applyMove(bd,from,to);
+  bd=after; sel=null; locked=true;
+  drawBoard({last:to});
+  if(captured) SFX.capture(); else SFX.move();
+
+  /* 1) 즉시 체크메이트 → 승리 */
+  if(isCheckmate(after,'b')){ winPuzzle(); return; }
+
+  /* 2) 2수 퍼즐 1단계: 강제 M2 수라면 몽골 응수 진행 */
+  if(cur.depth===2 && phase===1 && forcesMateNext(after)){
+    history.push(before);
+    setBanner('좋은 수! 몽골군이 응수합니다…','good');
+    SFX.good();
+    setTimeout(()=>{
+      const rep=bestReply(bd);
+      const bCaptured=!!bd[rep[1][0]][rep[1][1]];
+      bd=applyMove(bd,rep[0],rep[1]);
+      if(bCaptured) SFX.capture(); else SFX.move();
+      phase=2; locked=false;
+      drawBoard({lastB:rep[1]});
+      setBanner('몽골이 응수했어요 — 마무리 일격을 찾아라!','');
+    },850);
+    return;
+  }
+
+  /* 3) 오답 — 되돌리기 전에 왜 안 되는지 보여주기 */
+  wrongCount++;
+  const wasCheck=inCheck(after,'b');
+  const msg = wasCheck
+    ? '장군! 하지만 몽골이 빠져나가요 — 빨간 점선이 탈출로예요.'
+    : '음… 그 수로는 몽골 칸을 잡을 수 없어요. 다시!';
+  setBanner(msg,'alert');
   SFX.wrong();
-  const m=document.getElementById('mission');
-  sq.classList.remove('wrong'); void sq.offsetWidth; sq.classList.add('wrong');
-  m.textContent=message;
+  if(wasCheck){
+    drawBoard({last:to, esc:escapeSquares(after)});
+  }
+  setTimeout(()=>{
+    bd=before; locked=false;
+    drawBoard();
+    setBanner(phase===2?'마무리 일격을 찾아라!':firstBannerText(),'');
+  }, wasCheck?1700:1200);
+}
+function calcStars(){
+  if(wrongCount===0 && hintLevel===0) return 3;
+  if(wrongCount<=2 && hintLevel<=1) return 2;
+  return 1;
+}
+function winPuzzle(){
+  const earned=calcStars();
+  stars[cur.id]=Math.max(stars[cur.id]||0, earned);
+  setBanner('체크메이트! 고려의 승리!','win');
+  SFX.win();
+  setTimeout(()=>{
+    document.getElementById('winArt').innerHTML=ART[cur.art];
+    document.getElementById('winStars').innerHTML=starsHtml(earned);
+    document.getElementById('winText').innerHTML=
+      earned===3 ? '완벽해요! 힌트도, 실수도 없이 해냈어요.<br>몽골 칸이 항복합니다!'
+      : earned===2 ? '해냈어요! 몽골 칸이 도망갈 곳이 없어요.<br>다시 풀면 별 3개에 도전할 수 있어요.'
+      : '승리! 연습하면 별을 더 모을 수 있어요.<br>다시 도전해볼까요?';
+    overlay.classList.add('show');
+  },650);
 }
 
-/* ---------- 기물 소개 씬 ---------- */
-function setupBoard(p){
-  const board=document.getElementById('board');
-  makeGrid(board);
-  const targets=new Set(p.moves.map(([r,c])=>r+','+c));
-  targets.forEach(key=>{
-    const [r,c]=key.split(',').map(Number);
-    sqAt(board,r,c).classList.add('hint');
-  });
-  const token=addToken(board,ART[p.id],p.start);
-  let done=false;
-  board.addEventListener('click', e=>{
-    const sq=e.target.closest('.sq'); if(!sq||done) return;
-    const m=document.getElementById('mission');
-    if(sq.classList.contains('hint')){
-      done=true;
-      const [r,c]=sq.dataset.rc.split(',').map(Number);
-      placeToken(token,[r,c]);
-      board.querySelectorAll('.sq.hint').forEach(el=>el.classList.remove('hint'));
-      celebrate(sq);
-      m.textContent=`${p.name}, 임무 완수! 참 잘했어요!`;
-      m.classList.add('done');
-      state.earned[p.id]=true;
-      document.getElementById('nextBtn').disabled=false;
-    }else{
-      flashWrong(sq,'음, 거긴 갈 수 없어. 파란 점을 찾아봐!');
-    }
-  });
+/* ───────── 버튼 ───────── */
+document.getElementById('backBtn').onclick=()=>{ SFX.select(); goHome(); };
+document.getElementById('resetBtn').onclick=()=>{ SFX.select(); resetPuzzle(); };
+document.getElementById('againBtn').onclick=()=>{ overlay.classList.remove('show'); resetPuzzle(); };
+document.getElementById('toListBtn').onclick=()=>{ SFX.select(); goHome(); };
+hintBtn.onclick=()=>{
+  if(!cur) return;
+  SFX.select();
+  if(hintLevel===0){
+    hintLevel=1;
+    hintLine.textContent='💡 '+cur.hint;
+    hintBtn.textContent='💡 힌트 한 번 더 (움직일 용사 보기)';
+  }else{
+    hintLevel=2;
+    hintLine.textContent='💡 '+cur.hint+'  — 반짝이는 용사를 움직여보세요!';
+    if(phase===1) drawBoard({glow:cur.hintFrom});
+  }
+};
+function bindMute(btn){
+  btn.onclick=()=>{ const m=SFX.toggle();
+    document.getElementById('muteBtn').textContent=m?'🔇':'🔊';
+    document.getElementById('muteBtn2').textContent=m?'🔇':'🔊';
+    if(!m) SFX.select();
+  };
 }
+bindMute(document.getElementById('muteBtn'));
+bindMute(document.getElementById('muteBtn2'));
 
-/* ---------- 잡기 씬 ---------- */
-function setupCapture(c){
-  const board=document.getElementById('board');
-  makeGrid(board);
-  const token=addToken(board,ART[c.piece],c.start);
-  const enemy=addToken(board,ART[c.enemy],c.target,'enemy-token');
-  const targetSq=sqAt(board,c.target[0],c.target[1]);
-  targetSq.classList.add('hint','capture-target');
-  let done=false;
-  board.addEventListener('click', e=>{
-    const sq=e.target.closest('.sq'); if(!sq||done) return;
-    const m=document.getElementById('mission');
-    if(sq===targetSq){
-      done=true;
-      enemy.classList.add('poof'); SFX.capture();
-      setTimeout(()=>enemy.remove(),400);
-      placeToken(token,c.target);
-      sq.classList.remove('hint','capture-target');
-      celebrate(sq);
-      m.textContent='몽골군을 잡았다! 고려군 만세!';
-      m.classList.add('done');
-      state.captures[c.id]=true;
-      document.getElementById('nextBtn').disabled=false;
-    }else{
-      flashWrong(sq,'앗! 적이 있는 칸을 눌러야 잡을 수 있어!');
-    }
-  });
-}
-
-/* ---------- 체크(피신) 씬 ---------- */
-function setupCheck(){
-  const board=document.getElementById('board');
-  makeGrid(board);
-  const dangerCol=2;
-  board.querySelectorAll('.sq').forEach(sq=>{
-    const [,c]=sq.dataset.rc.split(',').map(Number);
-    if(c===dangerCol) sq.classList.add('sq-danger');
-  });
-  addToken(board,ART.m_rook,[0,2],'enemy-token');
-  const kingTok=addToken(board,ART.g_king,[3,2],'king-danger');
-  const safe=[[3,1],[3,3],[4,1],[4,3]];
-  safe.forEach(([r,c])=>sqAt(board,r,c).classList.add('hint'));
-  let done=false;
-  board.addEventListener('click', e=>{
-    const sq=e.target.closest('.sq'); if(!sq||done) return;
-    const m=document.getElementById('mission');
-    const [r,c]=sq.dataset.rc.split(',').map(Number);
-    if(sq.classList.contains('hint')){
-      done=true;
-      placeToken(kingTok,[r,c]);
-      kingTok.classList.remove('king-danger');
-      board.querySelectorAll('.sq.hint').forEach(el=>el.classList.remove('hint'));
-      celebrate(sq);
-      m.textContent='임금님이 안전한 곳으로 피신했어요!';
-      m.classList.add('done');
-      state.checkEarned=true;
-      document.getElementById('nextBtn').disabled=false;
-    }else{
-      flashWrong(sq, (c===dangerCol) ? '안돼! 그 줄은 아직 위험해!' : '음, 거긴 아니야. 파란 점을 찾아봐!');
-    }
-  });
-}
-
-/* ---------- 체크메이트 씬 ---------- */
-function setupCheckmate(){
-  const board=document.getElementById('board');
-  makeGrid(board);
-  /* 몽골 칸 [0,4] 구석, 고려 임금 [2,3]이 1행 도망길 차단, 돌탑 [3,0] → 0행으로 이동하면 메이트 */
-  const enemyKing=addToken(board,ART.m_king,[0,4],'enemy-token');
-  addToken(board,ART.g_king,[2,3]);
-  const rookTok=addToken(board,ART.g_rook,[3,0]);
-  [[1,3],[1,4]].forEach(([r,c])=>sqAt(board,r,c).classList.add('sq-guard'));
-  const mateTargets=[[0,0],[0,1],[0,2]];
-  mateTargets.forEach(([r,c])=>sqAt(board,r,c).classList.add('hint'));
-  let done=false;
-  board.addEventListener('click', e=>{
-    const sq=e.target.closest('.sq'); if(!sq||done) return;
-    const m=document.getElementById('mission');
-    if(sq.classList.contains('hint')){
-      done=true;
-      const [r,c]=sq.dataset.rc.split(',').map(Number);
-      placeToken(rookTok,[r,c]);
-      board.querySelectorAll('.sq.hint').forEach(el=>el.classList.remove('hint'));
-      enemyKing.classList.add('king-danger');
-      for(let cc=0;cc<5;cc++){ const t=sqAt(board,0,cc); if(t) t.classList.add('sq-danger','strong'); }
-      const note=document.getElementById('mateNote');
-      if(note) note.innerHTML='보이나요? 맨 윗줄은 <b>돌탑</b>이 전부 노리고, 아래 두 칸은 <b>우리 임금님</b>이 막고 있어요. 몽골 칸은 갈 곳이 하나도 없어요!';
-      celebrate(sq);
-      m.textContent='체크메이트! 몽골 칸이 항복했어요! 🎉';
-      m.classList.add('done');
-      state.checkmateEarned=true;
-      document.getElementById('nextBtn').disabled=false;
-    }else{
-      flashWrong(sq,'맨 윗줄로 가야 몽골 칸을 가둘 수 있어!');
-    }
-  });
-}
-
-function bindScene(){
-  const s=state.scene;
-  const go=(n)=>{state.scene=n;render();};
-  if(s===0){ document.getElementById('startBtn').onclick=()=>go(1); return; }
-
-  if(s===GOAL_SCENE){
-    document.getElementById('prevBtn').onclick=()=>go(0);
-    document.getElementById('nextBtn').onclick=()=>go(s+1);
-    return;
-  }
-  if(s>=PIECE_START_SCENE && s<PIECE_START_SCENE+totalPieceScenes){
-    const p=PIECES[s-PIECE_START_SCENE];
-    setupBoard(p);
-    if(state.earned[p.id]) document.getElementById('nextBtn').disabled=false;
-    document.getElementById('prevBtn').onclick=()=>go(s-1);
-    document.getElementById('nextBtn').onclick=()=>go(s+1);
-    return;
-  }
-  if(s>=CAPTURE_START_SCENE && s<CAPTURE_START_SCENE+CAPTURE_SCENES.length){
-    const capture=CAPTURE_SCENES[s-CAPTURE_START_SCENE];
-    setupCapture(capture);
-    if(state.captures[capture.id]) document.getElementById('nextBtn').disabled=false;
-    document.getElementById('prevBtn').onclick=()=>go(s-1);
-    document.getElementById('nextBtn').onclick=()=>go(s+1);
-    return;
-  }
-  if(s===CHECK_SCENE){
-    setupCheck();
-    if(state.checkEarned) document.getElementById('nextBtn').disabled=false;
-    document.getElementById('prevBtn').onclick=()=>go(s-1);
-    document.getElementById('nextBtn').onclick=()=>go(s+1);
-    return;
-  }
-  if(s===CHECKMATE_SCENE){
-    setupCheckmate();
-    if(state.checkmateEarned) document.getElementById('nextBtn').disabled=false;
-    document.getElementById('prevBtn').onclick=()=>go(s-1);
-    document.getElementById('nextBtn').onclick=()=>go(s+1);
-    return;
-  }
-  if(s===RECAP_SCENE){
-    document.getElementById('prevBtn').onclick=()=>go(s-1);
-    document.getElementById('nextBtn').onclick=()=>go(s+1);
-    return;
-  }
-  if(s===BADGE_SCENE){
-    if(Object.keys(state.earned).length===totalPieceScenes){
-      try{
-        window.parent?.postMessage({type:'easymate:tutorial-complete'}, '*');
-      }catch(error){}
-    }
-    document.getElementById('replayBtn').onclick=()=>go(0);
-    return;
-  }
-}
-render();
+renderHome();
 </script>
 </body>
 </html>

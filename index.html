@@ -1,39 +1,37 @@
 ﻿<!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>EasyMate Chess Matching</title>
-    <link rel="stylesheet" href="/styles.css?v=20260725-how-to-play" />
+    <title>EasyMate 체스 매칭</title>
+    <link rel="stylesheet" href="/styles.css?v=20260812-ui-refresh" />
   </head>
   <body>
     <header class="site-header">
-      <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebarMenu" aria-label="Open menu">
+      <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebarMenu" aria-label="메뉴 열기">
         <span aria-hidden="true">☰</span>
       </button>
-      <a class="brand" href="#home" data-view-link="home" aria-label="EasyMate home">
-        <span class="brand-mark">EM</span>
+      <a class="brand" href="#home" data-view-link="home" aria-label="EasyMate 홈">
         <span>Easy<strong>Mate</strong></span>
       </a>
-      <button class="header-nav-link" type="button" data-view-link="how-to-play">How to play</button>
       <div class="header-actions">
-        <button class="notification-button" id="notificationButton" type="button" aria-expanded="false" aria-label="Notifications">
+        <div class="piece-edition-toggle" id="headerPieceEditionToggle" role="group" aria-label="말 디자인 선택">
+          <button class="active" type="button" data-piece-edition="cheoinseong">처인성</button>
+          <button type="button" data-piece-edition="beta">Beta</button>
+        </div>
+        <button class="notification-button" id="notificationButton" type="button" aria-expanded="false" aria-label="알림">
           <span aria-hidden="true">🔔</span>
           <strong id="notificationCount" hidden>0</strong>
         </button>
         <div class="notification-panel" id="notificationPanel" hidden>
           <div class="notification-panel-head">
-            <strong>Notifications</strong>
-            <button class="text-link" id="clearNotifications" type="button">Clear</button>
+            <strong>알림</strong>
+            <button class="text-link" id="clearNotifications" type="button">지우기</button>
           </div>
           <div class="notification-list" id="notificationList">
-            <p class="notification-empty">No notifications yet.</p>
+            <p class="notification-empty">아직 알림이 없어요. 매칭이 시작되면 이곳에 알려드릴게요.</p>
           </div>
         </div>
-        <select id="languageSelect" aria-label="Interface language">
-          <option value="English">English</option>
-          <option value="Korean" selected>Korean</option>
-        </select>
         <div class="header-profile" id="headerProfile" hidden>
           <button
             class="profile-menu-button"
@@ -41,15 +39,15 @@
             type="button"
             aria-expanded="false"
             aria-controls="headerProfileMenu"
-            aria-label="Open profile menu"
+            aria-label="프로필 메뉴 열기"
           >
-            <span id="headerProfileName">Player</span>
+            <span id="headerProfileName">플레이어</span>
             <span class="profile-menu-avatar" id="headerProfileAvatar">CL</span>
           </button>
           <div class="profile-menu" id="headerProfileMenu" hidden>
-            <button type="button" data-view-link="profile">Profile</button>
-            <button type="button" data-view-link="settings">Settings</button>
-            <button id="headerSignOut" type="button">Sign out</button>
+            <button type="button" data-view-link="profile">프로필</button>
+            <button type="button" data-view-link="settings">설정</button>
+            <button id="headerSignOut" type="button">로그아웃</button>
           </div>
         </div>
       </div>
@@ -59,7 +57,7 @@
       <section class="entry" id="home" aria-labelledby="entryTitle">
         <div class="entry-visual">
           <div class="entry-content">
-            <span class="eyebrow">Chess . Conversation . Connection</span>
+            <span class="eyebrow">체스 · 대화 · 연결</span>
             <div class="landing-board" aria-hidden="true">
               <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
               <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
@@ -72,151 +70,121 @@
             </div>
             <h1 id="entryTitle">64개의 칸이 여는<br><em>세대와 언어의 연결</em></h1>
             <p>체스 한 판으로 어르신, 학생, 해외 플레이어가 같은 화면에서 만나 대화하고 배웁니다.</p>
-            <div class="entry-choice-grid" aria-label="Participation options">
-              <article class="entry-choice senior">
-                <div class="entry-choice-icon" aria-hidden="true">S</div>
-                <h2>어르신 / 복지관</h2>
-                <p>학생 자원봉사자와 함께 체스를 배우고 대화를 나눕니다.</p>
-                <button class="button primary full" id="seniorEntryButton" type="button">참여 신청</button>
-              </article>
-              <article class="entry-choice global">
-                <div class="entry-choice-icon" aria-hidden="true">초</div>
-                <h2>초등학생</h2>
-                <p>체스를 처음 배우는 학생은 짧은 튜토리얼을 끝낸 뒤 사이트를 자유롭게 이용합니다.</p>
-                <button class="button secondary full" id="globalEntryButton" type="button">튜토리얼 시작</button>
-              </article>
+            <div class="entry-actions">
+              <button class="button primary" id="mainAccountButton" type="button">계정으로 시작</button>
+              <button class="button secondary" id="mainTutorialButton" type="button">튜토리얼 먼저 보기</button>
             </div>
           </div>
         </div>
         <div class="entry-auth">
           <form class="auth-card" id="authForm" aria-label="Account entry">
-            <span class="eyebrow">EasyMate Account</span>
+            <span class="eyebrow">EasyMate 계정</span>
             <h2>대화를 시작하세요</h2>
             <p class="auth-intro">언어 조합을 고르고 계정으로 입장하면 실시간 체스 매칭을 시작할 수 있습니다.</p>
             <div class="auth-tabs" aria-label="Account mode">
-              <button class="auth-tab active" id="loginButton" type="button">Login</button>
-              <button class="auth-tab" id="signupButton" type="button">New user</button>
+              <button class="auth-tab active" id="loginButton" type="button">로그인</button>
+              <button class="auth-tab" id="signupButton" type="button">새 계정</button>
             </div>
             <label>
-              Language selection
+              언어 선택
               <select id="authLanguagePair">
-                <option>English to Korean</option>
-                <option>Korean to English</option>
-                <option>Thai to English</option>
-                <option>Japanese to Korean</option>
+                <option value="English to Korean">영어에서 한국어</option>
+                <option value="Korean to English">한국어에서 영어</option>
+                <option value="Thai to English">태국어에서 영어</option>
+                <option value="Japanese to Korean">일본어에서 한국어</option>
               </select>
             </label>
             <label>
-              Email
+              이메일
               <input id="authEmail" type="email" placeholder="player@example.com" autocomplete="email" />
             </label>
             <label id="authDisplayNameField" hidden>
-              Display name
-              <input id="authDisplayName" type="text" placeholder="Name shown to opponents" autocomplete="nickname" maxlength="40" />
+              표시 이름
+              <input id="authDisplayName" type="text" placeholder="상대에게 보일 이름" autocomplete="nickname" maxlength="40" />
             </label>
             <label>
-              Password
-              <input id="authPassword" type="password" placeholder="Enter password" autocomplete="current-password" />
+              비밀번호
+              <input id="authPassword" type="password" placeholder="비밀번호 입력" autocomplete="current-password" />
             </label>
             <label id="authConfirmPasswordField" hidden>
-              Confirm password
-              <input id="authConfirmPassword" type="password" placeholder="Enter password again" autocomplete="new-password" />
+              비밀번호 확인
+              <input id="authConfirmPassword" type="password" placeholder="비밀번호 다시 입력" autocomplete="new-password" />
             </label>
-            <button class="button primary full" id="authSubmit" type="submit">Log in</button>
+            <button class="button primary full" id="authSubmit" type="submit">로그인</button>
             <button class="button secondary full google-button" id="googleSignIn" type="button">
               <span class="google-mark">G</span>
-              Demo sign in
+              데모 로그인
             </button>
-            <button class="button secondary full" id="continueToDashboard" type="button" hidden>Continue to play</button>
-            <p id="authStatus">Enter your existing email and password.</p>
+            <button class="button secondary full" id="continueToDashboard" type="button" hidden>계속 플레이</button>
+            <p id="authStatus">기존 이메일과 비밀번호를 입력하세요.</p>
           </form>
         </div>
-        <section class="landing-steps" aria-labelledby="landingStepsTitle">
-          <h2 id="landingStepsTitle">이렇게 진행합니다</h2>
-          <div class="steps">
-            <article class="step">
-              <span>01</span>
-              <h3>만남 신청</h3>
-              <p>복지관 또는 온라인 매칭을 통해 파트너를 연결합니다.</p>
-            </article>
-            <article class="step">
-              <span>02</span>
-              <h3>체스 한 판</h3>
-              <p>초보자도 괜찮습니다. 규칙보다 대화가 먼저입니다.</p>
-            </article>
-            <article class="step">
-              <span>03</span>
-              <h3>이야기 나누기</h3>
-              <p>게임 뒤 보이스레터와 복습으로 관계를 이어갑니다.</p>
-            </article>
-          </div>
-        </section>
       </section>
 
-      <section class="app-shell" id="dashboard" aria-label="Application workspace">
+      <section class="app-shell" id="dashboard" aria-label="앱 작업 공간">
         <aside class="sidebar" id="sidebarMenu" hidden>
-          <span class="sidebar-label">Menu</span>
-          <button class="side-link active" data-view-link="dashboard">Dashboard</button>
-          <button class="side-link" data-view-link="how-to-play">How to play</button>
-          <button class="side-link" data-view-link="forum">Forum</button>
-          <button class="side-link" data-view-link="chessboards">Shop</button>
-          <button class="side-link staff-only" data-view-link="staff" hidden>Staff</button>
+          <span class="sidebar-label">메뉴</span>
+          <button class="side-link active" data-view-link="dashboard">대국</button>
+          <button class="side-link" data-view-link="how-to-play">튜토리얼</button>
+          <button class="side-link" data-view-link="forum">게시판</button>
+          <button class="side-link" data-view-link="chessboards">상점</button>
+          <button class="side-link staff-only" data-view-link="staff" hidden>운영자</button>
         </aside>
 
         <div class="workspace">
           <section class="view" data-view="overview" aria-labelledby="dashboardTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">Overview</span>
-                <h2 id="dashboardTitle">Start playing</h2>
+                <span class="eyebrow">한눈에 보기</span>
+                <h2 id="dashboardTitle">대국을 시작하세요</h2>
               </div>
-              <button class="button primary" data-view-link="match">Play</button>
+              <button class="button primary" data-view-link="match">대국하기</button>
             </div>
 
             <div class="flow-grid">
               <article class="route-card" data-view-link="match">
                 <span>01</span>
-                <h3>Play</h3>
-                <p>Find an opponent and start a live chess language match.</p>
+                <h3>대국</h3>
+                <p>상대를 찾아 체스를 두며 언어 대화를 시작합니다.</p>
               </article>
               <article class="route-card" data-view-link="review">
                 <span>02</span>
-                <h3>AI Language Review</h3>
-                <p>Review vocabulary, culture notes, and pronunciation after a match.</p>
+                <h3>AI 언어 복습</h3>
+                <p>대국 뒤 단어, 문화 메모, 발음을 다시 확인합니다.</p>
               </article>
               <article class="route-card" data-view-link="profile">
                 <span>03</span>
-                <h3>Profile and Culture</h3>
-                <p>Manage your profile, badges, feedback, and culture guide.</p>
+                <h3>프로필과 문화</h3>
+                <p>프로필, 배지, 피드백, 문화 노트를 관리합니다.</p>
               </article>
               <article class="route-card" data-view-link="forum">
                 <span>04</span>
-                <h3>Forum</h3>
-                <p>Announcements, questions, and player discussions.</p>
+                <h3>게시판</h3>
+                <p>공지, 질문, 플레이어 이야기를 모아 봅니다.</p>
               </article>
               <article class="route-card" data-view-link="chessboards">
                 <span>05</span>
-                <h3>Chessboards</h3>
-                <p>Explore physical boards for live language chess.</p>
+                <h3>체스보드</h3>
+                <p>현장 언어 체스에 쓸 실물 보드를 살펴봅니다.</p>
               </article>
             </div>
 
             <div class="status-strip">
               <article>
-                <span class="label">Active matches</span>
+                <span class="label">진행 중 대국</span>
                 <strong id="activeMatchesCount">18</strong>
               </article>
               <article>
-                <span class="label">Caption sessions</span>
+                <span class="label">자막 세션</span>
                 <strong id="subtitleSessionsCount">3</strong>
               </article>
               <article>
-                <span class="label">Avg. latency</span>
+                <span class="label">평균 지연</span>
                 <strong id="dashboardLatency">38 ms</strong>
               </article>
               <article>
-                <span class="label">Fair play score</span>
-                <strong id="dashboardTemp">42.8 C</strong>
+                <span class="label">매너 배지</span>
+                <strong id="dashboardTemp">🌱 친절한 대화 상대</strong>
               </article>
             </div>
           </section>
@@ -224,102 +192,102 @@
           <section class="view active" data-view="dashboard" aria-labelledby="matchTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">Play</span>
-                <h2 id="matchTitle">Find a game</h2>
+                <span class="eyebrow">대국</span>
+                <h2 id="matchTitle">상대 찾기</h2>
               </div>
             </div>
 
             <div class="match-layout" id="matchLayout" data-state="idle">
               <aside class="panel lobby-panel">
                 <div class="lobby-main-panel">
-                  <div class="play-choice-grid" aria-label="Play options">
+                  <div class="play-choice-grid" aria-label="대국 방식 선택">
                     <button class="play-choice-card" id="findMatch" type="button">
-                      <span class="label">Fastest</span>
-                      <strong>Quick pair</strong>
-                      <small>Start matching immediately with default settings.</small>
+                      <span class="label">가장 빠름</span>
+                      <strong>퀵 매칭</strong>
+                      <small>기본 설정으로 바로 상대를 찾습니다.</small>
                     </button>
                     <button class="play-choice-card" id="showCreateSeek" type="button">
-                      <span class="label">Custom</span>
-                      <strong>Create game</strong>
-                      <small>Choose time, language, and conversation goal.</small>
+                      <span class="label">맞춤</span>
+                      <strong>게임 만들기</strong>
+                      <small>시간, 언어, 대화 목표를 고릅니다.</small>
                     </button>
                     <button class="play-choice-card" id="showFriendRoom" type="button">
-                      <span class="label">Private</span>
-                      <strong>Play with a friend</strong>
-                      <small>Create a room or join one with a code.</small>
+                      <span class="label">비공개</span>
+                      <strong>친구와 플레이</strong>
+                      <small>방을 만들거나 코드로 참여합니다.</small>
                     </button>
                   </div>
 
                   <div class="quick-pair-composer" hidden>
                     <div class="panel-heading">
                       <div>
-                        <span class="label">Quick pair</span>
-                        <h3>Default search</h3>
+                      <span class="label">퀵 매칭</span>
+                      <h3>기본 검색</h3>
                       </div>
                     </div>
-                    <div class="quick-pair-grid" id="quickPairGrid" aria-label="Quick pairing pools">
+                    <div class="quick-pair-grid" id="quickPairGrid" aria-label="빠른 매칭 풀">
                       <button class="pool-button" data-pool-id="bullet-1-0" data-time-control="1+0" data-rated="false">
                         <span>1+0</span>
-                        <strong>Bullet</strong>
-                        <small>Fast chess, short phrases</small>
+                        <strong>불릿</strong>
+                        <small>짧은 표현으로 빠르게 둡니다.</small>
                       </button>
                       <button class="pool-button" data-pool-id="blitz-3-2" data-time-control="3+2" data-rated="false">
                         <span>3+2</span>
-                        <strong>Blitz</strong>
-                        <small>Quick talk between moves</small>
+                        <strong>블리츠</strong>
+                        <small>수 사이에 짧게 대화합니다.</small>
                       </button>
                       <button class="pool-button active" data-pool-id="rapid-10-0" data-time-control="10+0" data-rated="false">
                         <span>10+0</span>
-                        <strong>Rapid Talk</strong>
-                        <small>Best for caption practice</small>
+                        <strong>래피드 토크</strong>
+                        <small>자막 연습에 가장 좋습니다.</small>
                       </button>
                       <button class="pool-button" data-pool-id="classical-30-0" data-time-control="30+0" data-rated="false">
                         <span>30+0</span>
-                        <strong>Study</strong>
-                        <small>Slow game, deeper review</small>
+                        <strong>스터디</strong>
+                        <small>천천히 두고 깊게 복습합니다.</small>
                       </button>
                     </div>
                   </div>
 
                   <div class="queue-box">
                     <div class="queue-status-head">
-                      <span class="label">Match status</span>
-                      <button class="button secondary small" id="cancelMatchSearch" type="button" hidden>Cancel</button>
+                      <span class="label">매칭 상태</span>
+                      <button class="button secondary small" id="cancelMatchSearch" type="button" hidden>취소</button>
                     </div>
-                    <strong id="queueTime">Choose mode</strong>
+                    <strong id="queueTime">방식 선택</strong>
                     <div class="progress-track"><span id="queueProgress"></span></div>
-                    <p id="queuePrompt">Choose how you want to play.</p>
+                    <p id="queuePrompt">원하는 대국 방식을 선택하세요.</p>
                   </div>
                 </div>
 
                 <aside class="language-pool-panel">
-                  <span class="label">Language Pool</span>
-                  <h3>Match by conversation fit</h3>
-                  <p>Find players who want the same language practice while playing chess.</p>
+                  <span class="label">언어 풀</span>
+                  <h3>대화 목표로 매칭</h3>
+                  <p>체스를 두며 같은 언어 연습을 원하는 플레이어를 찾습니다.</p>
                   <div class="language-pool-list">
                     <span>English ↔ Korean</span>
                     <span>English ↔ Japanese</span>
                     <span>English ↔ Thai</span>
                   </div>
-                  <span class="pool-live-pill" id="lobbySummary">Live pools ready</span>
+                  <span class="pool-live-pill" id="lobbySummary">대기 풀 준비됨</span>
                 </aside>
 
                 <div class="seek-composer" id="seekComposer" hidden>
                   <div class="panel-heading compact">
                     <div>
-                      <span class="label">Create game</span>
-                      <h3>Match by shared settings</h3>
+                      <span class="label">게임 만들기</span>
+                      <h3>같은 설정으로 매칭</h3>
                     </div>
                   </div>
                   <label>
-                    Game type
-                    <div class="segmented" role="group" aria-label="Game type">
-                      <button class="segment active" data-mode="Casual">Casual</button>
-                      <button class="segment" data-mode="Rated">Rated</button>
+                    게임 유형
+                    <div class="segmented" role="group" aria-label="게임 유형">
+                      <button class="segment active" data-mode="Casual">친선</button>
+                      <button class="segment" data-mode="Rated">기록</button>
                     </div>
                   </label>
                   <label>
-                    Time control
+                    시간 제한
                     <select id="seekTimeControl">
                       <option>3+2</option>
                       <option selected>10+0</option>
@@ -328,32 +296,32 @@
                     </select>
                   </label>
                   <label>
-                    Partner language
+                    파트너 언어
                     <select id="partnerLanguage">
-                      <option>English</option>
-                      <option>Korean</option>
-                      <option>Thai</option>
-                      <option>Japanese</option>
+                      <option value="English">영어</option>
+                      <option value="Korean">한국어</option>
+                      <option value="Thai">태국어</option>
+                      <option value="Japanese">일본어</option>
                     </select>
                   </label>
                   <label>
-                    Conversation goal
+                    대화 목표
                     <select id="conversationGoal">
                       <option>Explain chess moves</option>
                       <option>Practice daily conversation</option>
                       <option>Learn sports phrases</option>
                     </select>
                   </label>
-                  <button class="button secondary full" id="createSeek">Create game</button>
+                  <button class="button secondary full" id="createSeek">게임 만들기</button>
                 </div>
               </aside>
 
-              <section class="board-panel" aria-label="Synchronized chess board">
+              <section class="board-panel" aria-label="실시간 체스 보드">
                 <div class="board-toolbar">
                   <div>
-                    <span class="label" id="matchSourceBadge">Lobby sync</span>
-                    <strong id="syncState">Live chess ready</strong>
-                    <p class="board-meta" id="timeControlBadge">No active clock yet</p>
+                    <span class="label" id="matchSourceBadge">대기실 동기화</span>
+                    <strong id="syncState">실시간 체스 준비됨</strong>
+                    <p class="board-meta" id="timeControlBadge">아직 시작된 시계가 없어요.</p>
                   </div>
                 </div>
                 <div class="match-play-grid">
@@ -361,88 +329,95 @@
                     <div class="chess-board" id="chessBoard" aria-label="Interactive chess board"></div>
                     <div class="match-result" id="matchResult">
                       <strong>Game status</strong>
-                      <span>In progress</span>
+                      <span>대국 중</span>
                       <div class="match-result-actions">
-                        <button class="button secondary small" id="newGame" type="button" hidden>New game</button>
-                        <button class="button dark small" id="generateReview" data-view-link="review" hidden>Generate AI Review</button>
+                        <button class="button secondary small" id="newGame" type="button" hidden>새 대국</button>
+                        <button class="button dark small" id="generateReview" data-view-link="review" hidden>AI 복습 만들기</button>
                       </div>
                     </div>
                   </div>
-                  <aside class="match-game-panel" aria-label="Match information and live captions">
+                  <aside class="match-game-panel" aria-label="대국 정보와 실시간 자막">
                     <section class="player-clock-card opponent-clock-card" id="blackClockCard">
-                      <strong id="blackClock">--:--</strong>
+                      <strong id="blackClock">준비 전</strong>
                       <div>
                         <span class="online-dot"></span>
-                        <span id="boardPartnerName">Waiting</span>
-                        <small>ID <span id="boardPartnerId">waiting</span></small>
+                        <span id="boardPartnerName">상대 대기</span>
+                        <small>ID <span id="boardPartnerId">대기 중</span></small>
                       </div>
                     </section>
 
-                    <section class="notation-caption-panel" aria-label="Live captions during chess match">
+                    <section class="match-safety-promise" aria-label="대국 매너 약속">
+                      <span class="label">매너 약속</span>
+                      <strong>존댓말로 시작해요.</strong>
+                      <p>불편한 말이 들리면 언제든 신고할 수 있습니다.</p>
+                    </section>
+
+                    <section class="notation-caption-panel" aria-label="대국 중 실시간 자막">
                       <div class="match-subtitle-header">
                         <div>
-                          <span class="label">Live captions</span>
-                          <h3>Captions while playing</h3>
+                          <span class="label">실시간 자막</span>
+                          <h3>두면서 바로 보기</h3>
                         </div>
-                        <button class="button dark small" id="matchActivateStt" type="button">Start captions</button>
+                        <button class="button dark small" id="matchActivateStt" type="button">자막 시작</button>
                       </div>
                       <div class="match-stt-controls">
                         <label>
-                          Source
+                          말하는 언어
                           <select id="matchSttSourceLanguage">
-                            <option value="">Browser Default</option>
-                            <option value="en-US">English</option>
-                            <option value="ko-KR">Korean</option>
-                            <option value="th-TH">Thai</option>
-                            <option value="ja-JP">Japanese</option>
+                            <option value="">브라우저 기본값</option>
+                            <option value="en-US">영어</option>
+                            <option value="ko-KR">한국어</option>
+                            <option value="th-TH">태국어</option>
+                            <option value="ja-JP">일본어</option>
                           </select>
                         </label>
                         <label>
-                          Translate
+                          번역
                           <select id="matchSubtitleTargetLanguage">
-                            <option>Korean</option>
-                            <option>English</option>
-                            <option>Thai</option>
-                            <option>Japanese</option>
+                            <option value="Korean">한국어</option>
+                            <option value="English">영어</option>
+                            <option value="Thai">태국어</option>
+                            <option value="Japanese">일본어</option>
                           </select>
                         </label>
                       </div>
                       <div class="match-stt-meta">
-                        <span>Status <strong id="matchSttStatus">Paused</strong></span>
-                        <span>Time <strong id="matchSessionDuration">00:00</strong></span>
-                        <span>Words <strong id="matchWordsRecognized">0</strong></span>
+                        <span>상태 <strong id="matchSttStatus">대기 중</strong></span>
+                        <span>시간 <strong id="matchSessionDuration">시작 전</strong></span>
+                        <span>단어 <strong id="matchWordsRecognized">아직 없음</strong></span>
                       </div>
                       <div class="match-subtitle-scroll">
                         <div>
-                          <h4>Original</h4>
+                          <h4>원문</h4>
                           <div class="subtitle-lines compact" id="matchOriginalSpeech"></div>
                         </div>
                         <div>
-                          <h4>Translation</h4>
+                          <h4>번역</h4>
                           <div class="subtitle-lines compact" id="matchTranslatedSpeech"></div>
                         </div>
                       </div>
                     </section>
 
-                    <section class="match-action-strip" aria-label="Match actions">
-                      <button class="icon-action" id="drawMatch" type="button" title="Offer draw" aria-label="Offer draw">1/2</button>
-                      <button class="icon-action danger" id="resignMatch" type="button" title="Resign" aria-label="Resign">⚑</button>
+                    <section class="match-action-strip" aria-label="대국 행동">
+                      <button class="icon-action" id="drawMatch" type="button" title="무승부 제안" aria-label="무승부 제안">1/2</button>
+                      <button class="icon-action danger" id="resignMatch" type="button" title="기권" aria-label="기권">⚑</button>
+                      <button class="icon-action danger report-inline" id="reportUser" type="button" title="신고하기" aria-label="신고하기">!</button>
                     </section>
 
                     <section class="player-clock-card self-clock-card" id="whiteClockCard">
                       <div>
                         <span class="online-dot"></span>
-                        <span id="selfPlayerName">You</span>
+                        <span id="selfPlayerName">나</span>
                       </div>
-                      <strong id="whiteClock">--:--</strong>
+                      <strong id="whiteClock">준비 전</strong>
                     </section>
 
                     <div class="match-voice-bar">
                       <div class="match-voice-actions">
-                        <button class="button secondary small" id="startVoiceCall">Start mic</button>
-                        <button class="button danger small" id="endVoiceCall" disabled>End voice</button>
+                        <button class="button secondary small" id="startVoiceCall">마이크 시작</button>
+                        <button class="button danger small" id="endVoiceCall" disabled>통화 종료</button>
                       </div>
-                      <p class="voice-status" data-voice-status>Start a matched game, then turn on your mic.</p>
+                      <p class="voice-status" data-voice-status>매칭 후 마이크를 켜세요.</p>
                       <audio id="remoteVoiceAudio" autoplay playsinline></audio>
                     </div>
                   </aside>
@@ -452,48 +427,47 @@
               <aside class="panel match-side-panel">
                 <div class="panel-heading">
                   <div>
-                    <span class="label">Open games</span>
-                    <h3>Players waiting</h3>
+                    <span class="label">열린 게임</span>
+                    <h3>대기 중인 플레이어</h3>
                   </div>
-                  <button class="text-link" id="refreshLobby" type="button">Refresh</button>
+                  <button class="text-link" id="refreshLobby" type="button">새로고침</button>
                 </div>
                 <div class="open-seek-list" id="openSeeksList" aria-live="polite"></div>
-                <h3>Partner</h3>
+                <h3>파트너</h3>
                 <div class="partner-card">
                   <div class="avatar speaking" id="voiceRing">MK</div>
                   <div>
                     <strong id="partnerName">Mina K.</strong>
-                    <p class="partner-id">ID <span id="partnerId">waiting</span></p>
-                    <p><span id="mannerTemp">42.8</span> fair play score</p>
+                    <p class="partner-id">ID <span id="partnerId">대기 중</span></p>
+                    <p><span id="mannerTemp">🌱 친절한 대화 상대</span></p>
                   </div>
                 </div>
-                <button class="button danger full" id="reportUser">Submit safety report</button>
                 <div class="icebreaker">
-                  <span class="label">Icebreaker mission</span>
-                  <p id="icebreakerText">Ask your partner what opening they enjoy most.</p>
-                  <button class="button secondary full" id="nextMission">Next mission</button>
+                  <span class="label">첫 만남 미션</span>
+                  <p id="icebreakerText">상대가 좋아하는 오프닝을 물어보세요.</p>
+                  <button class="button secondary full" id="nextMission">다음 미션</button>
                 </div>
               </aside>
             </div>
 
             <dialog id="friendRoomDialog">
               <div class="dialog-card friend-room-card">
-                <button class="close" id="closeFriendRoom" type="button" aria-label="Close friend room dialog">x</button>
-                <span class="label">Play with a friend</span>
-                <h3>Create or join a room</h3>
+                <button class="close" id="closeFriendRoom" type="button" aria-label="친구 방 닫기">x</button>
+                <span class="label">친구와 플레이</span>
+                <h3>방 만들기 또는 참여</h3>
                 <div class="friend-room-actions">
-                  <button class="button secondary full" id="createPrivateChallenge" type="button">Create room</button>
+                  <button class="button secondary full" id="createPrivateChallenge" type="button">방 만들기</button>
                   <div class="challenge-code" id="privateChallengeCode">----</div>
                 </div>
                 <label>
-                  Join with code
+                  코드로 참여
                   <input id="privateChallengeInput" type="text" placeholder="ABC123" autocomplete="off" />
                 </label>
-                <button class="button primary full" id="joinPrivateChallenge" type="button">Join room</button>
+                <button class="button primary full" id="joinPrivateChallenge" type="button">방 참여</button>
                 <div class="room-share">
-                  <span class="label">Room link</span>
-                  <input id="matchRoomLink" type="text" value="No match yet" readonly />
-                  <button class="button secondary full" id="copyMatchRoomLink" type="button" disabled>Copy room link</button>
+                  <span class="label">방 링크</span>
+                  <input id="matchRoomLink" type="text" value="아직 만들어진 방이 없어요" readonly />
+                  <button class="button secondary full" id="copyMatchRoomLink" type="button" disabled>방 링크 복사</button>
                 </div>
               </div>
             </dialog>
@@ -502,76 +476,75 @@
           <section class="view" data-view="review" aria-labelledby="reviewTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">Match Result</span>
-                <h2 id="reviewTitle">AI Language Review</h2>
+                <span class="eyebrow">대국 복습</span>
+                <h2 id="reviewTitle">AI 언어 복습</h2>
               </div>
               <div class="button-row">
-                <button class="button secondary" data-view-link="match">Back to Match</button>
-                <button class="button primary" id="refreshReview">Regenerate Review</button>
+                <button class="button secondary" data-view-link="match">대국으로 돌아가기</button>
+                <button class="button primary" id="refreshReview">복습 다시 만들기</button>
               </div>
             </div>
-            <p class="review-status-line" id="pronunciationStatus">Click any word to replay pronunciation.</p>
+            <p class="review-status-line" id="pronunciationStatus">단어를 누르면 발음을 다시 들을 수 있어요.</p>
 
             <div class="learning-layout">
               <section class="wire-card">
                 <div class="section-heading">
                   <div>
-                    <span class="eyebrow">Vocabulary Chest</span>
-                    <h3>Key match vocabulary</h3>
+                    <span class="eyebrow">단어 상자</span>
+                    <h3>대국 중 나온 핵심 표현</h3>
                   </div>
-                  <span class="pill" id="reviewStatus">7 items ready</span>
+                  <span class="pill" id="reviewStatus">7개 표현 준비됨</span>
                 </div>
 
                 <div class="vocab-list" id="vocabList">
                   <article class="vocab-item">
                     <button class="vocab-term" data-say="calm position" data-lang="en-US">calm position</button>
                     <strong>침착한 포지션</strong>
-                    <p>Used when Mina explained why she likes quiet openings before attacking.</p>
+                    <p>Mina가 공격 전 조용한 오프닝을 좋아한다고 설명할 때 나온 표현입니다.</p>
                   </article>
                   <article class="vocab-item">
                     <button class="vocab-term" data-say="London System" data-lang="en-US">London System</button>
                     <strong>런던 시스템</strong>
-                    <p>A chess opening mentioned when discussing stable beginner-friendly plans.</p>
+                    <p>초보자도 안정적으로 둘 수 있는 계획을 이야기할 때 나온 오프닝입니다.</p>
                   </article>
                   <article class="vocab-item">
                     <button class="vocab-term" data-say="knight fork" data-lang="en-US">knight fork</button>
                     <strong>나이트 포크</strong>
-                    <p>Used after a move attacked two pieces at the same time.</p>
+                    <p>나이트가 두 기물을 동시에 공격했을 때 나온 표현입니다.</p>
                   </article>
                   <article class="vocab-item">
                     <button class="vocab-term" data-say="protect my king" data-lang="en-US">protect my king</button>
                     <strong>왕을 보호하다</strong>
-                    <p>Used when explaining a defensive move before starting an attack.</p>
+                    <p>공격 전 수비 수를 설명할 때 쓰기 좋은 표현입니다.</p>
                   </article>
                   <article class="vocab-item">
                     <button class="vocab-term" data-say="good game" data-lang="en-US">good game</button>
                     <strong>좋은 경기였어요</strong>
-                    <p>A polite closing phrase used after the match result.</p>
+                    <p>대국이 끝난 뒤 예의 있게 마무리할 때 쓰는 말입니다.</p>
                   </article>
                   <article class="vocab-item">
                     <button class="vocab-term" data-say="Could you replay that move?" data-lang="en-US">Could you replay that move?</button>
                     <strong>그 수를 다시 보여줄 수 있나요?</strong>
-                    <p>Used when a player wanted to review a position.</p>
+                    <p>방금 둔 수를 다시 보고 싶을 때 쓸 수 있는 문장입니다.</p>
                   </article>
                   <article class="vocab-item">
                     <button class="vocab-term" data-say="center control" data-lang="en-US">center control</button>
                     <strong>중앙 장악</strong>
-                    <p>Used while describing why a bishop move was strategically useful.</p>
+                    <p>비숍 수가 왜 좋은지 설명할 때 나온 전략 표현입니다.</p>
                   </article>
                 </div>
               </section>
 
               <aside class="review-side">
                 <article class="wire-card cultural-card">
-                  <span class="eyebrow">Cultural Exchange Insight</span>
-                  <h3 id="culturalTitle">Detected reference: saying "GG"</h3>
+                  <span class="eyebrow">문화 교류 메모</span>
+                  <h3 id="culturalTitle">"GG" 인사 표현 발견</h3>
                   <p id="culturalBody">
-                    The AI noticed both players used "good game" and "GG" as a friendly closing. In many online
-                    game communities this means respect, not just the literal game result. The user could research
-                    how their partner's language expresses sportsmanship after a match.
+                    AI가 두 플레이어가 "good game"과 "GG"를 친근한 마무리 인사로 쓴 것을 발견했습니다.
+                    여러 온라인 게임 문화에서 이 표현은 단순한 경기 결과보다 서로에 대한 존중을 뜻합니다.
                   </p>
-                  <p id="culturalPrompt">Research prompt: compare polite post-game phrases in your partner's language.</p>
-                  <button class="button secondary full">Save to Culture Guide</button>
+                  <p id="culturalPrompt">다음 질문: 파트너의 언어에서는 대국 뒤 어떤 말로 예의를 표현하나요?</p>
+                  <button class="button secondary full">문화 노트에 저장</button>
                 </article>
 
               </aside>
@@ -581,19 +554,29 @@
           <section class="view how-to-play-view" data-view="how-to-play" aria-labelledby="howToPlayTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">Guide</span>
-                <h2 id="howToPlayTitle">How to play</h2>
+                <span class="eyebrow">가이드</span>
+                <h2 id="howToPlayTitle">튜토리얼</h2>
               </div>
+              <button class="button primary" id="tutorialLoginButton" type="button">로그인 화면으로 가기</button>
+            </div>
+
+            <div class="tutorial-tabs" aria-label="튜토리얼과 퍼즐">
+              <button class="active" id="showTutorialGuide" type="button">튜토리얼</button>
+              <button id="showPuzzleGuide" type="button">고려 vs 몽골 퍼즐</button>
             </div>
 
             <div class="how-to-play-shell">
               <div class="tutorial-gate-note" id="tutorialGateNote" hidden>
                 초등학생 모드입니다. 튜토리얼을 끝내면 모든 메뉴가 열립니다.
               </div>
+              <div class="tutorial-puzzle-note" id="tutorialPuzzleNote">
+                튜토리얼을 완료하면 고려 vs 몽골 퍼즐을 열 수 있습니다.
+              </div>
               <iframe
                 class="how-to-play-frame"
+                id="howToPlayFrame"
                 src="/assets/how-to-play.html"
-                title="How to play interactive guide"
+                title="EasyMate 튜토리얼"
                 loading="lazy"
               ></iframe>
             </div>
@@ -602,41 +585,41 @@
           <section class="view" data-view="forum" aria-labelledby="forumTitle">
             <div class="forum-board">
               <header class="forum-heading">
-                <h2 id="forumTitle">Forum</h2>
-                <p>Announcements, questions, and open discussion for players.</p>
+                <h2 id="forumTitle">게시판</h2>
+                <p>공지, 질문, 플레이어들의 자유로운 대화 공간입니다.</p>
               </header>
 
               <div class="forum-actions">
-                <button class="button secondary" data-view-link="dashboard" type="button">← Back to dashboard</button>
-                <button class="button primary" id="showForumComposer" type="button">+ New post</button>
+                <button class="button secondary" data-view-link="dashboard" type="button">대국으로 돌아가기</button>
+                <button class="button primary" id="showForumComposer" type="button">+ 새 글</button>
               </div>
 
               <article class="wire-card forum-composer" id="forumComposer" hidden>
-                <h3>New post</h3>
+                <h3>새 글</h3>
                 <label>
-                  Title
-                  <input id="forumPostTitle" type="text" placeholder="Enter a title" maxlength="80" />
+                  제목
+                  <input id="forumPostTitle" type="text" placeholder="제목 입력" maxlength="80" />
                 </label>
                 <label>
-                  Category
+                  분류
                   <select id="forumPostCategory">
-                    <option value="Notice">Notice</option>
-                    <option value="Question">Question</option>
-                    <option value="Free">Free</option>
+                    <option value="Notice">공지</option>
+                    <option value="Question">질문</option>
+                    <option value="Free">자유</option>
                   </select>
                 </label>
                 <label>
-                  Message
-                  <textarea id="forumPostBody" placeholder="Write your message" maxlength="420"></textarea>
+                  내용
+                  <textarea id="forumPostBody" placeholder="내용을 작성하세요" maxlength="420"></textarea>
                 </label>
-                <button class="button primary full" id="publishForumPost" type="button">Publish</button>
+                <button class="button primary full" id="publishForumPost" type="button">게시</button>
               </article>
 
-              <nav class="forum-tabs" aria-label="Forum categories">
-                <button class="active" type="button" data-forum-filter="All">All</button>
-                <button type="button" data-forum-filter="Notice">Notice</button>
-                <button type="button" data-forum-filter="Question">Question</button>
-                <button type="button" data-forum-filter="Free">Free</button>
+              <nav class="forum-tabs" aria-label="게시판 분류">
+                <button class="active" type="button" data-forum-filter="All">전체</button>
+                <button type="button" data-forum-filter="Notice">공지</button>
+                <button type="button" data-forum-filter="Question">질문</button>
+                <button type="button" data-forum-filter="Free">자유</button>
               </nav>
 
               <div class="forum-list" id="forumPostList"></div>
@@ -646,71 +629,71 @@
           <section class="view" data-view="chessboards" aria-labelledby="chessboardsTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">Shop</span>
-                <h2 id="chessboardsTitle">Chessboards</h2>
+                <span class="eyebrow">상점</span>
+                <h2 id="chessboardsTitle">체스보드</h2>
               </div>
             </div>
 
             <section class="shop-hero">
               <div>
-                <span class="eyebrow">Live Chess Hardware</span>
-                <h3>Boards made for chess and language practice.</h3>
-                <p>Sell your dedicated board here with product details, reservation interest, and future checkout flow.</p>
+                <span class="eyebrow">실물 체스 키트</span>
+                <h3>체스와 언어 연습을 위한 보드입니다.</h3>
+                <p>상품 정보, 관심 예약, 향후 결제 흐름을 이곳에서 관리합니다.</p>
               </div>
-              <button class="button primary" data-shop-interest="Founder's Board">Reserve interest</button>
+              <button class="button primary" data-shop-interest="Founder's Board">관심 예약</button>
             </section>
 
             <div class="shop-grid">
               <article class="wire-card product-card">
-                <span class="product-tag">Prototype</span>
-                <h3>Founder's Board</h3>
-                <p>Portable tournament-size board for live matches, captions, and lesson review.</p>
-                <strong>$149 estimated</strong>
-                <button class="button secondary full" data-shop-interest="Founder's Board" type="button">Join waitlist</button>
+                <span class="product-tag">프로토타입</span>
+                <h3>파운더스 보드</h3>
+                <p>라이브 대국, 자막, 수업 복습을 위한 휴대용 보드입니다.</p>
+                <strong>예상가 $149</strong>
+                <button class="button secondary full" data-shop-interest="Founder's Board" type="button">대기자 명단 참여</button>
               </article>
               <article class="wire-card product-card">
-                <span class="product-tag">Studio</span>
-                <h3>Coach Board</h3>
-                <p>Larger tabletop board for tutors, clubs, and language exchange sessions.</p>
-                <strong>$229 estimated</strong>
-                <button class="button secondary full" data-shop-interest="Coach Board" type="button">Join waitlist</button>
+                <span class="product-tag">스튜디오</span>
+                <h3>코치 보드</h3>
+                <p>튜터, 동아리, 언어 교환 세션을 위한 큰 탁상용 보드입니다.</p>
+                <strong>예상가 $229</strong>
+                <button class="button secondary full" data-shop-interest="Coach Board" type="button">대기자 명단 참여</button>
               </article>
               <article class="wire-card product-card">
-                <span class="product-tag">Accessory</span>
-                <h3>Travel Kit</h3>
-                <p>Compact pieces, carrying case, and setup guide for in-person practice games.</p>
-                <strong>$49 estimated</strong>
-                <button class="button secondary full" data-shop-interest="Travel Kit" type="button">Join waitlist</button>
+                <span class="product-tag">액세서리</span>
+                <h3>여행 키트</h3>
+                <p>대면 연습 게임을 위한 소형 말, 휴대 케이스, 설치 가이드입니다.</p>
+                <strong>예상가 $49</strong>
+                <button class="button secondary full" data-shop-interest="Travel Kit" type="button">대기자 명단 참여</button>
               </article>
             </div>
-            <p class="shop-interest-status" id="shopInterestStatus">Select a product to save interest.</p>
+            <p class="shop-interest-status" id="shopInterestStatus">관심 상품을 선택하세요.</p>
           </section>
 
           <section class="view" data-view="stt" aria-labelledby="sttTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">Live captions</span>
-                <h2 id="sttTitle">Caption workspace</h2>
+                <span class="eyebrow">실시간 자막</span>
+                <h2 id="sttTitle">자막 연습 화면</h2>
               </div>
-              <button class="text-link" data-view-link="dashboard" type="button">Back to dashboard</button>
+              <button class="text-link" data-view-link="dashboard" type="button">대국으로 돌아가기</button>
             </div>
 
             <div class="stt-status">
-              <span>Status</span>
-              <span class="pill">Live</span>
-              <span class="pill" id="sttPill">Captions paused</span>
+              <span>상태</span>
+              <span class="pill">실시간</span>
+              <span class="pill" id="sttPill">자막 대기 중</span>
             </div>
 
             <div class="stt-layout">
               <section class="subtitle-stack">
                 <article class="wire-card subtitle-card">
-                  <h3>Original speech</h3>
+                  <h3>원문 음성</h3>
                   <div class="subtitle-lines" id="originalSpeech">
-                    <p class="subtitle-placeholder">Start captions, allow microphone access, then speak.</p>
+                    <p class="subtitle-placeholder">자막을 시작하고 마이크 권한을 허용한 뒤 말해보세요.</p>
                   </div>
                 </article>
                 <article class="wire-card subtitle-card">
-                  <h3>Translated Subtitles</h3>
+                  <h3>번역 자막</h3>
                   <div class="subtitle-lines" id="translatedSpeech">
                     <p><strong>Mina:</strong> 침착한 포지션을 원할 때 저는 보통 런던 시스템을 둡니다.</p>
                     <p><strong>You:</strong> 좋아요. 방금 비숍 수가 중앙을 잘 잡고 있어요.</p>
@@ -720,66 +703,66 @@
 
               <aside class="control-stack">
                 <article class="wire-card">
-                  <h3>Caption controls</h3>
+                  <h3>자막 설정</h3>
                   <label class="toggle-row">
-                    Speech Recognition
+                    음성 인식
                     <input type="checkbox" id="sttToggle" />
-                    <span>Captions active</span>
+                    <span>자막 켜짐</span>
                   </label>
                   <label class="toggle-row">
-                    Translation
+                    번역
                     <input type="checkbox" id="translationToggle" checked />
-                    <span>Show Translation</span>
+                    <span>번역 보기</span>
                   </label>
                   <label>
-                    Source Language
+                    말하는 언어
                     <select id="sttSourceLanguage">
-                      <option value="">Browser Default</option>
-                      <option value="en-US">English</option>
-                      <option value="ko-KR">Korean</option>
-                      <option value="th-TH">Thai</option>
-                      <option value="ja-JP">Japanese</option>
+                      <option value="">브라우저 기본값</option>
+                      <option value="en-US">영어</option>
+                      <option value="ko-KR">한국어</option>
+                      <option value="th-TH">태국어</option>
+                      <option value="ja-JP">일본어</option>
                     </select>
                   </label>
                   <label>
-                    Translate To
+                    번역 언어
                     <select id="subtitleTargetLanguage">
-                      <option>Korean</option>
-                      <option>English</option>
-                      <option>Thai</option>
-                      <option>Japanese</option>
+                      <option value="Korean">한국어</option>
+                      <option value="English">영어</option>
+                      <option value="Thai">태국어</option>
+                      <option value="Japanese">일본어</option>
                     </select>
                   </label>
-                  <button class="button dark full" id="activateStt">Start captions</button>
+                  <button class="button dark full" id="activateStt">자막 시작</button>
                 </article>
 
                 <article class="wire-card">
-                  <h3>Display Settings</h3>
+                  <h3>보기 설정</h3>
                   <label>
-                    Font Size
+                    글자 크기
                     <select id="subtitleSize">
-                      <option value="small">Small</option>
-                      <option value="medium" selected>Medium</option>
-                      <option value="large">Large</option>
+                      <option value="small">작게</option>
+                      <option value="medium" selected>보통</option>
+                      <option value="large">크게</option>
                     </select>
                   </label>
                   <label class="toggle-row">
-                    High Contrast Mode
+                    고대비 모드
                     <input type="checkbox" id="contrastToggle" />
-                    <span>High Contrast</span>
+                    <span>고대비</span>
                   </label>
                   <label class="toggle-row">
-                    Show Speaker Name
+                    말한 사람 표시
                     <input type="checkbox" checked />
-                    <span>Speaker Tag</span>
+                    <span>이름 표시</span>
                   </label>
                 </article>
 
                 <article class="wire-card session-info">
-                  <h3>Session Info</h3>
-                  <p>Session Duration <strong id="sessionDuration">00:00</strong></p>
-                  <p>Words Recognized <strong id="wordsRecognized">0</strong></p>
-                  <p>Accuracy <strong>Browser captions</strong></p>
+                  <h3>세션 정보</h3>
+                  <p>진행 시간 <strong id="sessionDuration">시작 전</strong></p>
+                  <p>인식한 단어 <strong id="wordsRecognized">아직 없음</strong></p>
+                  <p>정확도 <strong>브라우저 자막</strong></p>
                 </article>
               </aside>
             </div>
@@ -788,73 +771,80 @@
           <section class="view" data-view="profile" aria-labelledby="profileTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">Profile and Culture</span>
-                <h2 id="profileTitle">Progress, feedback, and manners</h2>
+                <span class="eyebrow">프로필과 문화</span>
+                <h2 id="profileTitle">진행 상황, 피드백, 매너</h2>
               </div>
-              <button class="button secondary" id="refreshProfile">Refresh Profile</button>
+              <button class="button secondary" id="refreshProfile">프로필 새로고침</button>
             </div>
-            <p class="profile-status" id="profileStatus">Sign in to load your saved profile.</p>
+            <p class="profile-status" id="profileStatus">저장된 프로필을 불러오려면 로그인하세요.</p>
 
             <div class="profile-grid">
               <article class="wire-card">
-                <h3>User Profile</h3>
+                <h3>사용자 프로필</h3>
                 <div class="profile-head">
                   <span class="avatar" id="profileAvatar">CL</span>
                   <div>
                     <strong id="profileName">ChessLearner</strong>
                     <p id="profileEmail">player@example.com</p>
-                    <p id="profileLanguageText">English learner, Korean speaker</p>
+                    <p id="profileLanguageText">영어 학습자, 한국어 사용자</p>
                   </div>
                 </div>
                 <label>
-                  Display name
+                  표시 이름
                   <input id="profileDisplayName" type="text" placeholder="ChessLearner" />
                 </label>
                 <label>
-                  Language pair
+                  언어 조합
                   <select id="profileLanguagePair">
-                    <option>English to Korean</option>
-                    <option>Korean to English</option>
-                    <option>Thai to English</option>
-                    <option>Japanese to Korean</option>
+                    <option value="English to Korean">영어에서 한국어</option>
+                    <option value="Korean to English">한국어에서 영어</option>
+                    <option value="Thai to English">태국어에서 영어</option>
+                    <option value="Japanese to Korean">일본어에서 한국어</option>
                   </select>
                 </label>
                 <label>
-                  Bio
-                  <textarea id="profileBio" placeholder="Add a short intro for language partners."></textarea>
+                  말 디자인
+                  <select id="profilePieceEdition">
+                    <option value="cheoinseong">처인성 에디션</option>
+                    <option value="beta">Beta 에디션</option>
+                  </select>
                 </label>
-                <button class="button secondary full" id="saveProfile">Save Profile</button>
+                <label>
+                  소개
+                  <textarea id="profileBio" placeholder="언어 파트너에게 보여줄 짧은 소개를 적어보세요."></textarea>
+                </label>
+                <button class="button secondary full" id="saveProfile">프로필 저장</button>
               </article>
               <article class="wire-card">
-                <h3>Fair play score</h3>
-                <div class="temperature"><span id="profileTemp">42.8 C</span></div>
+                <h3>매너 배지</h3>
+                <div class="temperature badge-temperature"><span id="profileTemp">🌱 친절한 대화 상대</span></div>
                 <label>
-                  Peer feedback
+                  파트너 피드백
                   <select id="peerFeedbackType">
-                    <option value="positive">Helpful and respectful</option>
-                    <option value="clear">Clear communicator</option>
-                    <option value="concern">Needs moderation attention</option>
+                    <option value="positive">친절하고 존중해요</option>
+                    <option value="clear">설명이 또렷해요</option>
+                    <option value="concern">운영자 확인이 필요해요</option>
                   </select>
                 </label>
                 <label>
-                  Note
-                  <textarea id="peerFeedbackNote" placeholder="Optional feedback note"></textarea>
+                  메모
+                  <textarea id="peerFeedbackNote" placeholder="선택 사항: 피드백 메모"></textarea>
                 </label>
-                <button class="button secondary full" id="submitPeerFeedback">Submit Peer Feedback</button>
+                <button class="button secondary full" id="submitPeerFeedback">피드백 보내기</button>
               </article>
               <article class="wire-card">
-                <h3>Badges</h3>
+                <h3>배지</h3>
                 <div class="badge-list" id="badgeList"></div>
                 <div class="profile-detail-list" id="badgeDetails"></div>
               </article>
               <article class="wire-card">
-                <h3>Culture Guide</h3>
+                <h3>문화 노트</h3>
                 <div class="profile-detail-list" id="cultureGuideList"></div>
                 <label>
-                  Save a culture note
-                  <textarea id="cultureGuideInput" placeholder="Example: How my partner says good game after a match."></textarea>
+                  문화 노트 저장
+                  <textarea id="cultureGuideInput" placeholder="예: 파트너의 언어에서는 대국 뒤 어떻게 인사하는지"></textarea>
                 </label>
-                <button class="button secondary full" id="saveCultureGuide">Save Culture Note</button>
+                <button class="button secondary full" id="saveCultureGuide">문화 노트 저장</button>
               </article>
             </div>
           </section>
@@ -862,38 +852,45 @@
           <section class="view" data-view="settings" aria-labelledby="settingsTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">Account</span>
-                <h2 id="settingsTitle">Settings</h2>
+                <span class="eyebrow">계정</span>
+                <h2 id="settingsTitle">설정</h2>
               </div>
             </div>
 
             <div class="settings-grid">
               <article class="wire-card settings-card">
-                <h3>Accessibility</h3>
-                <p>Adjust the interface for readability.</p>
+                <h3>접근성</h3>
+                <p>읽기 편하도록 화면을 조정합니다.</p>
+                <label>
+                  화면 언어
+                  <select id="languageSelect" aria-label="화면 언어">
+                    <option value="Korean" selected>한국어</option>
+                    <option value="English">English</option>
+                  </select>
+                </label>
                 <button class="mode-toggle settings-toggle" id="contrastModeButton" type="button" aria-pressed="false">
                   <span class="toggle-track" aria-hidden="true"><span></span></span>
-                  <span>High contrast</span>
+                  <span>고대비</span>
                 </button>
                 <div class="text-size-panel">
                   <button class="mode-toggle settings-toggle" id="largeTextButton" type="button" aria-pressed="false">
                     <span class="toggle-track" aria-hidden="true"><span></span></span>
-                    <span>Larger text</span>
+                    <span>큰 글자</span>
                   </button>
-                  <p>Adjust the app text size.</p>
+                  <p>앱 글자 크기를 조정합니다.</p>
                   <div class="text-size-slider-row">
                     <span class="text-size-a small" aria-hidden="true">A</span>
-                    <input id="textSizeSlider" type="range" min="0" max="6" step="1" value="2" aria-label="Text size" />
+                    <input id="textSizeSlider" type="range" min="0" max="6" step="1" value="2" aria-label="글자 크기" />
                     <span class="text-size-a large" aria-hidden="true">A</span>
                   </div>
                 </div>
               </article>
 
               <article class="wire-card settings-card">
-                <h3>Account</h3>
-                <p id="settingsAccountName">Signed in</p>
+                <h3>계정</h3>
+                <p id="settingsAccountName">로그인됨</p>
                 <div class="account-actions">
-                  <button class="button danger full" id="deleteAccount" type="button">Delete account</button>
+                  <button class="button danger full" id="deleteAccount" type="button">계정 삭제</button>
                 </div>
               </article>
             </div>
@@ -902,50 +899,50 @@
           <section class="view" data-view="staff" aria-labelledby="adminTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">Admin Panel</span>
-                <h2 id="adminTitle">Safety and moderation</h2>
+                <span class="eyebrow">운영자 전용</span>
+                <h2 id="adminTitle">안전 관리</h2>
               </div>
-              <button class="button secondary" id="refreshAdmin">Refresh Admin Data</button>
+              <button class="button secondary" id="refreshAdmin">운영자 데이터 새로고침</button>
             </div>
 
             <div class="status-strip admin-stats" id="adminStats">
               <article>
-                <span class="label">Users</span>
+                <span class="label">사용자</span>
                 <strong id="adminUsersCount">0</strong>
               </article>
               <article>
-                <span class="label">Active matches</span>
+                <span class="label">진행 중 대국</span>
                 <strong id="adminMatchesCount">0</strong>
               </article>
               <article>
-                <span class="label">Open reports</span>
+                <span class="label">열린 신고</span>
                 <strong id="adminReportsCount">0</strong>
               </article>
             </div>
-            <p class="admin-status" id="adminStatus">Admin tools load after signing in with an admin account.</p>
+            <p class="admin-status" id="adminStatus">운영자 계정으로 로그인해야 이 화면을 볼 수 있습니다.</p>
 
             <div class="admin-grid">
               <article class="wire-card">
-                <h3>Match Monitor</h3>
-                <p>Review live match logs and intervene when safety reports arrive.</p>
+                <h3>대국 모니터</h3>
+                <p>실시간 대국 기록을 확인하고 안전 신고가 들어오면 개입합니다.</p>
                 <label class="admin-search">
-                  <span>Search matches</span>
-                  <input id="adminMatchSearch" type="search" placeholder="Player, status, result, time control" />
+                  <span>대국 검색</span>
+                  <input id="adminMatchSearch" type="search" placeholder="플레이어, 상태, 결과, 시간 제한" />
                 </label>
                 <div class="admin-list" id="adminMatchesList"></div>
               </article>
               <article class="wire-card">
-                <h3>User Management</h3>
-                <p>Manage user accounts, profile flags, and repeated feedback patterns.</p>
+                <h3>사용자 관리</h3>
+                <p>사용자 계정, 프로필 표시, 반복 피드백 패턴을 관리합니다.</p>
                 <label class="admin-search">
-                  <span>Search users</span>
-                  <input id="adminUserSearch" type="search" placeholder="Name, email, role, warning count" />
+                  <span>사용자 검색</span>
+                  <input id="adminUserSearch" type="search" placeholder="이름, 이메일, 역할, 경고 수" />
                 </label>
                 <div class="admin-list" id="adminUsersList"></div>
               </article>
               <article class="wire-card">
-                <h3>Safety and Moderation</h3>
-                <p>Warnings are tracked with context from transcript, match result, and reports.</p>
+                <h3>신고와 경고</h3>
+                <p>경고는 자막 기록, 대국 결과, 신고 맥락과 함께 추적됩니다.</p>
                 <div class="admin-list" id="adminReportsList"></div>
               </article>
             </div>
@@ -954,6 +951,6 @@
       </section>
     </main>
 
-    <script src="/app.js?v=20260725-how-to-play"></script>
+    <script src="/app.js?v=20260812-ui-refresh"></script>
   </body>
 </html>

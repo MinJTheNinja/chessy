@@ -19,8 +19,8 @@ const nvidiaTranslationModel = process.env.NVIDIA_TRANSLATION_MODEL || "nvidia/r
 const nvidiaSafetyModel = process.env.NVIDIA_SAFETY_MODEL || "nvidia/nemotron-3.5-content-safety";
 const meteredTurnApiUrl = String(process.env.METERED_TURN_API_URL || "").trim().replace(/\/$/, "");
 const meteredTurnApiKey = process.env.METERED_TURN_API_KEY;
-const adminEmails = new Set(
-  String(process.env.ADMIN_EMAILS || "")
+const staffEmails = new Set(
+  String(process.env.STAFF_EMAILS || "")
     .split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean),
@@ -32,6 +32,7 @@ const nvidiaEnabled = Boolean(nvidiaApiKey);
 const rateLimitBuckets = new Map();
 let cachedIceServers = null;
 let cachedIceServersAt = 0;
+const pieceEditions = new Set(["cheoinseong", "beta"]);
 const pgPool = databaseUrl
   ? new Pool({
       connectionString: databaseUrl,
@@ -179,6 +180,7 @@ function defaultDb() {
     voiceLetters: [],
     reviews: [],
     reports: [],
+    shopInterests: [],
   };
 }
 
@@ -195,6 +197,7 @@ function normalizeDb(db = {}) {
     voiceLetters: db.voiceLetters || [],
     reviews: db.reviews || [],
     reports: db.reports || [],
+    shopInterests: db.shopInterests || [],
   };
 }
 
@@ -767,9 +770,19 @@ async function voiceIceServers() {
 }
 
 function signupRole(email, db) {
-  if (adminEmails.has(String(email || "").toLowerCase())) return "admin";
-  if (process.env.NODE_ENV !== "production" && adminEmails.size === 0 && db.users.length === 0) return "admin";
+  const normalizedEmail = String(email || "").toLowerCase();
+  if (staffEmails.has(normalizedEmail)) return "staff";
+  if (process.env.NODE_ENV !== "production" && staffEmails.size === 0 && db.users.length === 0) return "staff";
   return "player";
+}
+
+function normalizedRole(user) {
+  if (user?.role === "admin") return "staff";
+  return user?.role || "player";
+}
+
+function normalizedPieceEdition(value) {
+  return pieceEditions.has(value) ? value : "cheoinseong";
 }
 
 function getSessionUser(req, db) {
@@ -788,7 +801,8 @@ function publicUser(user) {
     displayName: user.displayName,
     languagePair: user.languagePair,
     mannerTemperature: user.mannerTemperature,
-    role: user.role || "player",
+    role: normalizedRole(user),
+    pieceEdition: normalizedPieceEdition(user.pieceEdition),
   };
 }
 
@@ -799,7 +813,8 @@ function playerUser(user) {
     displayName: user.displayName,
     languagePair: user.languagePair,
     mannerTemperature: user.mannerTemperature,
-    role: user.role || "player",
+    role: normalizedRole(user),
+    pieceEdition: normalizedPieceEdition(user.pieceEdition),
   };
 }
 
@@ -810,7 +825,8 @@ function adminUser(user) {
     displayName: user.displayName,
     languagePair: user.languagePair,
     mannerTemperature: user.mannerTemperature,
-    role: user.role || "player",
+    role: normalizedRole(user),
+    pieceEdition: normalizedPieceEdition(user.pieceEdition),
     warnings: user.warnings || [],
     createdAt: user.createdAt,
   };
@@ -844,9 +860,18 @@ function adminReport(report, db) {
   };
 }
 
-function requireAdmin(user, res) {
-  if (user?.role === "admin") return true;
-  sendJson(res, 403, { error: "Admin access required." });
+function shopInterestView(interest, db) {
+  const user = db.users.find((item) => item.id === interest.userId);
+  return {
+    ...interest,
+    displayName: user?.displayName || interest.displayName || "Guest Player",
+    email: user?.email || interest.email || "",
+  };
+}
+
+function requireStaff(user, res) {
+  if (normalizedRole(user) === "staff") return true;
+  sendJson(res, 403, { error: "Staff access required." });
   return false;
 }
 
@@ -1080,11 +1105,11 @@ function createMatch(db, user, body = {}, opponent = null) {
   const createdAt = new Date().toISOString();
   const timeControl = body.timeControl || "10+0";
   const white = user
-    ? { userId: user.id, displayName: user.displayName, color: "white" }
-    : { userId: null, displayName: "Guest", color: "white" };
+    ? { userId: user.id, displayName: user.displayName, color: "white", pieceEdition: normalizedPieceEdition(user.pieceEdition) }
+    : { userId: null, displayName: "Guest", color: "white", pieceEdition: "cheoinseong" };
   const black = opponent
-    ? { userId: opponent.id, displayName: opponent.displayName, color: "black" }
-    : { userId: null, displayName: "Mina K.", color: "black" };
+    ? { userId: opponent.id, displayName: opponent.displayName, color: "black", pieceEdition: normalizedPieceEdition(opponent.pieceEdition) }
+    : { userId: null, displayName: "Mina K.", color: "black", pieceEdition: "beta" };
 
   const match = {
     id: id("match"),
@@ -1256,6 +1281,7 @@ async function handleApi(req, res, pathname) {
     const languagePair = String(body.languagePair || "").trim();
     if (displayName) user.displayName = displayName.slice(0, 60);
     if (languagePair) user.languagePair = languagePair.slice(0, 80);
+    user.pieceEdition = normalizedPieceEdition(body.pieceEdition);
     user.bio = String(body.bio || "").trim().slice(0, 280);
     user.nativeLanguage = String(body.nativeLanguage || "").trim().slice(0, 40);
     user.learningLanguage = String(body.learningLanguage || "").trim().slice(0, 40);
@@ -1347,7 +1373,7 @@ async function handleApi(req, res, pathname) {
   }
 
   if (req.method === "GET" && pathname === "/api/admin/overview") {
-    if (!requireAdmin(user, res)) return true;
+    if (!requireStaff(user, res)) return true;
     const openReports = db.reports.filter((report) => report.status !== "resolved").length;
     sendJson(res, 200, {
       stats: {
@@ -1359,13 +1385,44 @@ async function handleApi(req, res, pathname) {
       users: db.users.slice(-30).reverse().map(adminUser),
       matches: db.matches.slice(-30).reverse().map(adminMatch),
       reports: db.reports.slice(-30).reverse().map((report) => adminReport(report, db)),
+      shopInterests: db.shopInterests.slice(-50).reverse().map((interest) => shopInterestView(interest, db)),
     });
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/shop/interests") {
+    if (!requireUser(user, res)) return true;
+    const body = await readBody(req);
+    const productName = String(body.productName || "").trim().slice(0, 120);
+    if (!productName) {
+      sendJson(res, 400, { error: "Product name is required." });
+      return true;
+    }
+    const existing = db.shopInterests.find((interest) => interest.userId === user.id && interest.productName === productName);
+    if (existing) {
+      existing.updatedAt = new Date().toISOString();
+      await writeDb(db);
+      sendJson(res, 200, { interest: shopInterestView(existing, db), duplicate: true });
+      return true;
+    }
+    const interest = {
+      id: id("shop_interest"),
+      productName,
+      userId: user.id,
+      displayName: user.displayName || "Player",
+      email: user.email || "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    db.shopInterests.push(interest);
+    await writeDb(db);
+    sendJson(res, 201, { interest: shopInterestView(interest, db) });
     return true;
   }
 
   const resolveReportParams = routePattern(pathname, "/api/admin/reports/:id/resolve");
   if (req.method === "POST" && resolveReportParams) {
-    if (!requireAdmin(user, res)) return true;
+    if (!requireStaff(user, res)) return true;
     const report = db.reports.find((item) => item.id === resolveReportParams.id);
     if (!report) {
       sendJson(res, 404, { error: "Report not found." });
@@ -1381,7 +1438,7 @@ async function handleApi(req, res, pathname) {
 
   const warnUserParams = routePattern(pathname, "/api/admin/users/:id/warn");
   if (req.method === "POST" && warnUserParams) {
-    if (!requireAdmin(user, res)) return true;
+    if (!requireStaff(user, res)) return true;
     const body = await readBody(req);
     const target = db.users.find((item) => item.id === warnUserParams.id);
     if (!target) {
@@ -1391,7 +1448,7 @@ async function handleApi(req, res, pathname) {
     target.warnings = target.warnings || [];
     target.warnings.push({
       id: id("warning"),
-      reason: body.reason || "Admin warning",
+      reason: body.reason || "Staff warning",
       by: user.id,
       createdAt: new Date().toISOString(),
     });
@@ -1401,8 +1458,8 @@ async function handleApi(req, res, pathname) {
       type: "notification",
       category: "warning",
       userId: target.id,
-      title: "Admin warning",
-      body: body.reason || "Admin safety warning",
+      title: "Staff warning",
+      body: body.reason || "Staff safety warning",
     });
     sendJson(res, 200, { user: adminUser(target) });
     return true;
@@ -1410,7 +1467,7 @@ async function handleApi(req, res, pathname) {
 
   const endAdminMatchParams = routePattern(pathname, "/api/admin/matches/:id/end");
   if (req.method === "POST" && endAdminMatchParams) {
-    if (!requireAdmin(user, res)) return true;
+    if (!requireStaff(user, res)) return true;
     const body = await readBody(req);
     const match = db.matches.find((item) => item.id === endAdminMatchParams.id);
     if (!match) {
@@ -1418,7 +1475,7 @@ async function handleApi(req, res, pathname) {
       return true;
     }
     match.status = "ended";
-    match.result = body.result || "Ended by admin";
+    match.result = body.result || "Ended by staff";
     match.endedAt = new Date().toISOString();
     await writeDb(db);
     await syncRedisRoom(match);
@@ -1468,6 +1525,7 @@ async function handleApi(req, res, pathname) {
         email,
         displayName,
         languagePair: body.languagePair || "English to Korean",
+        pieceEdition: normalizedPieceEdition(body.pieceEdition),
         passwordHash: hashPassword(password),
         mannerTemperature: 42.8,
         role: signupRole(email, db),
@@ -1873,6 +1931,7 @@ async function handleApi(req, res, pathname) {
       }
       openSlot.userId = user.id;
       openSlot.displayName = user.displayName;
+      openSlot.pieceEdition = normalizedPieceEdition(user.pieceEdition);
       match.partnerName = user.displayName;
       match.joinedAt = new Date().toISOString();
     }
@@ -2100,8 +2159,8 @@ async function handleApi(req, res, pathname) {
   }
 
   if (req.method === "GET" && pathname === "/api/reports") {
-    if (user?.role !== "admin") {
-      sendJson(res, 403, { error: "Admin access required." });
+    if (normalizedRole(user) !== "staff") {
+      sendJson(res, 403, { error: "Staff access required." });
       return true;
     }
     sendJson(res, 200, { reports: db.reports.slice(-50).reverse() });
@@ -2136,7 +2195,9 @@ async function handleApi(req, res, pathname) {
 
 function serveStatic(req, res, pathname) {
   const matchRoute = routePattern(pathname, "/match/:id");
-  const requested = pathname === "/" || matchRoute ? "/index.html" : decodeURIComponent(pathname);
+  const tutorialRoute = pathname === "/tutorial" || pathname === "/tutorial/";
+  const staffRoute = pathname === "/staff" || pathname === "/staff/";
+  const requested = pathname === "/" || matchRoute || tutorialRoute || staffRoute ? "/index.html" : decodeURIComponent(pathname);
   const filePath = path.normalize(path.join(rootDir, requested));
   const relative = path.relative(rootDir, filePath);
   if (relative.startsWith("..") || path.isAbsolute(relative)) {

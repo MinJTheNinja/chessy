@@ -1,6 +1,8 @@
 const board = document.querySelector("#chessBoard");
 const menuToggle = document.querySelector("#menuToggle");
 const languageSelect = document.querySelector("#languageSelect");
+const headerPieceEditionToggle = document.querySelector("#headerPieceEditionToggle");
+const headerPieceEditionButtons = document.querySelectorAll("[data-piece-edition]");
 const sidebarMenu = document.querySelector("#sidebarMenu");
 const syncState = document.querySelector("#syncState");
 const queueTime = document.querySelector("#queueTime");
@@ -76,7 +78,13 @@ const authSubmit = document.querySelector("#authSubmit");
 const continueToDashboardButton = document.querySelector("#continueToDashboard");
 const googleSignInButton = document.querySelector("#googleSignIn");
 const tutorialGateNote = document.querySelector("#tutorialGateNote");
+const tutorialLoginButton = document.querySelector("#tutorialLoginButton");
+const mainAccountButton = document.querySelector("#mainAccountButton");
+const mainTutorialButton = document.querySelector("#mainTutorialButton");
 const howToPlayFrame = document.querySelector(".how-to-play-frame");
+const showTutorialGuideButton = document.querySelector("#showTutorialGuide");
+const showPuzzleGuideButton = document.querySelector("#showPuzzleGuide");
+const tutorialPuzzleNote = document.querySelector("#tutorialPuzzleNote");
 const headerProfile = document.querySelector("#headerProfile");
 const headerProfileButton = document.querySelector("#headerProfileButton");
 const headerProfileMenu = document.querySelector("#headerProfileMenu");
@@ -158,6 +166,7 @@ const profileEmail = document.querySelector("#profileEmail");
 const profileLanguageText = document.querySelector("#profileLanguageText");
 const profileDisplayName = document.querySelector("#profileDisplayName");
 const profileLanguagePair = document.querySelector("#profileLanguagePair");
+const profilePieceEdition = document.querySelector("#profilePieceEdition");
 const profileBio = document.querySelector("#profileBio");
 const saveProfileButton = document.querySelector("#saveProfile");
 const peerFeedbackType = document.querySelector("#peerFeedbackType");
@@ -171,6 +180,7 @@ const saveCultureGuideButton = document.querySelector("#saveCultureGuide");
 const demoAuthAllowed = ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
 const studentTutorialRequiredKey = "easyMateStudentTutorialRequired";
 const studentTutorialCompleteKey = "easyMateStudentTutorialComplete";
+const pieceEditionStorageKey = "easyMatePieceEdition";
 
 const koreanText = {
   "Notifications": "알림",
@@ -319,22 +329,243 @@ const koreanText = {
   "Open menu": "메뉴 열기",
   "Open profile menu": "프로필 메뉴 열기",
 };
+Object.assign(koreanText, {
+  "EasyMate Chess Matching": "EasyMate 체스 매칭",
+  "EasyMate home": "EasyMate 홈",
+  "Piece edition": "말 디자인 선택",
+  "Chess . Conversation . Connection": "체스 · 대화 · 연결",
+  "Make chess easier!": "체스를 더 쉽게!",
+  "64 squares connect generations and languages": "64개의 칸이 여는 세대와 언어의 연결",
+  "Start with account": "계정으로 시작",
+  "View tutorial first": "튜토리얼 먼저 보기",
+  "EasyMate Account": "EasyMate 계정",
+  "Start a conversation": "대화를 시작하세요",
+  "Choose a language pair and enter with your account to start live chess matching.":
+    "언어 조합을 고르고 계정으로 입장하면 실시간 체스 매칭을 시작할 수 있습니다.",
+  "New account": "새 계정",
+  "Name shown to opponents": "상대에게 보일 이름",
+  "Demo login": "데모 로그인",
+  "Enter your existing email and password.": "기존 이메일과 비밀번호를 입력하세요.",
+  "Create an account to save matches and language review.": "대국과 언어 복습을 저장하려면 계정을 만드세요.",
+  "How it works": "이렇게 진행합니다",
+  "Request a meeting": "만남 신청",
+  "Connect through a welfare center or online matching.": "복지관 또는 온라인 매칭을 통해 파트너를 연결합니다.",
+  "Play chess": "체스 한 판",
+  "Beginners are welcome. Conversation comes before rules.": "초보자도 괜찮습니다. 규칙보다 대화가 먼저입니다.",
+  "Share stories": "이야기 나누기",
+  "After the game, continue the relationship through voice letters and review.":
+    "게임 뒤 보이스레터와 복습으로 관계를 이어갑니다.",
+  "App workspace": "앱 작업 공간",
+  "Play": "대국",
+  "Tutorial": "튜토리얼",
+  "Overview": "한눈에 보기",
+  "Start playing": "대국을 시작하세요",
+  "Find an opponent and start a live chess language match.": "상대를 찾아 체스를 두며 언어 대화를 시작합니다.",
+  "AI Language Review": "AI 언어 복습",
+  "Review vocabulary, culture notes, and pronunciation after a match.": "대국 뒤 단어, 문화 메모, 발음을 다시 확인합니다.",
+  "Profile and Culture": "프로필과 문화",
+  "Manage your profile, badges, feedback, and culture guide.": "프로필, 배지, 피드백, 문화 노트를 관리합니다.",
+  "Announcements, questions, and player discussions.": "공지, 질문, 플레이어 이야기를 모아 봅니다.",
+  "Chessboards": "체스보드",
+  "Explore physical boards for live language chess.": "현장 언어 체스에 쓸 실물 보드를 살펴봅니다.",
+  "Caption sessions": "자막 세션",
+  "Avg. latency": "평균 지연",
+  "Manner badge": "매너 배지",
+  "Friendly conversation partner": "친절한 대화 상대",
+  "Trusted conversation partner": "믿음직한 대화 상대",
+  "New conversation sprout": "새싹 대화 연습 중",
+  "Needs a staff check": "운영자 확인 필요",
+  "Find a game": "상대 찾기",
+  "Finding a player": "상대를 찾는 중",
+  "Live match": "실시간 대국",
+  "Match result": "대국 결과",
+  "Quick pair": "퀵 매칭",
+  "Start matching immediately with default settings.": "기본 설정으로 바로 상대를 찾습니다.",
+  "Choose time, language, and conversation goal.": "시간, 언어, 대화 목표를 고릅니다.",
+  "Create a room or join one with a code.": "방을 만들거나 코드로 참여합니다.",
+  "Default search": "기본 검색",
+  "Fast chess, short phrases": "짧은 표현으로 빠르게 둡니다.",
+  "Quick talk between moves": "수 사이에 짧게 대화합니다.",
+  "Best for caption practice": "자막 연습에 가장 좋습니다.",
+  "Slow game, deeper review": "천천히 두고 깊게 복습합니다.",
+  "Friendly": "친선",
+  "Recorded": "기록",
+  "Select how you want to play.": "원하는 대국 방식을 선택하세요.",
+  "Language Pool": "언어 풀",
+  "Match by conversation fit": "대화 목표로 매칭",
+  "Find players who want the same language practice while playing chess.":
+    "체스를 두며 같은 언어 연습을 원하는 플레이어를 찾습니다.",
+  "Live pools ready": "대기 풀 준비됨",
+  "Match by shared settings": "같은 설정으로 매칭",
+  "Live chess ready": "실시간 체스 준비됨",
+  "No active clock yet": "아직 시작된 시계가 없어요.",
+  "Synchronized chess board": "실시간 체스 보드",
+  "Game status": "대국 상태",
+  "In progress": "대국 중",
+  "New game": "새 대국",
+  "Generate AI Review": "AI 복습 만들기",
+  "Match information and live captions": "대국 정보와 실시간 자막",
+  "Ready": "준비 전",
+  "Partner waiting": "상대 대기",
+  "Waiting": "대기 중",
+  "Manner promise": "매너 약속",
+  "Start with polite speech.": "존댓말로 시작해요.",
+  "If a message feels uncomfortable, you can report it at any time.": "불편한 말이 들리면 언제든 신고할 수 있습니다.",
+  "Live captions during chess match": "대국 중 실시간 자막",
+  "Live captions": "실시간 자막",
+  "Captions while playing": "두면서 바로 보기",
+  "Start captions": "자막 시작",
+  "Stop captions": "자막 중지",
+  "Source": "말하는 언어",
+  "Browser Default": "브라우저 기본값",
+  "Translate": "번역",
+  "Status": "상태",
+  "Paused": "일시 중지",
+  "Time": "시간",
+  "Not started": "시작 전",
+  "Words": "단어",
+  "No words yet": "아직 없음",
+  "Original": "원문",
+  "Translation": "번역",
+  "Offer draw": "무승부 제안",
+  "Resign": "기권",
+  "Report": "신고하기",
+  "You": "나",
+  "Start mic": "마이크 시작",
+  "End voice": "통화 종료",
+  "Start a matched game, then turn on your mic.": "매칭 후 마이크를 켜세요.",
+  "Open games": "열린 게임",
+  "Players waiting": "대기 중인 플레이어",
+  "Refresh": "새로고침",
+  "Partner": "파트너",
+  "Submit safety report": "신고하기",
+  "Icebreaker mission": "첫 만남 미션",
+  "Ask your partner what opening they enjoy most.": "상대가 좋아하는 오프닝을 물어보세요.",
+  "Compliment one move and ask why they chose it.": "좋았던 수 하나를 칭찬하고 왜 그 수를 골랐는지 물어보세요.",
+  "Explain your next move in one short sentence.": "다음 수를 한 문장으로 짧게 설명해보세요.",
+  "Ask your partner how to say 'good game' in their language.": "파트너의 언어로 '좋은 경기였어요'를 어떻게 말하는지 물어보세요.",
+  "Send one chess phrase to the subtitle view for practice.": "체스 표현 하나를 자막으로 말해 연습해보세요.",
+  "Next mission": "다음 미션",
+  "Create or join a room": "방 만들기 또는 참여",
+  "Create room": "방 만들기",
+  "Join with code": "코드로 참여",
+  "Room link": "방 링크",
+  "No match yet": "아직 만들어진 방이 없어요",
+  "Copy room link": "방 링크 복사",
+  "Match Result": "대국 복습",
+  "Back to Match": "대국으로 돌아가기",
+  "Regenerate Review": "복습 다시 만들기",
+  "Click any word to replay pronunciation.": "단어를 누르면 발음을 다시 들을 수 있어요.",
+  "Vocabulary Chest": "단어 상자",
+  "Key match vocabulary": "대국 중 나온 핵심 표현",
+  "7 items ready": "7개 표현 준비됨",
+  "Cultural Exchange Insight": "문화 교류 메모",
+  'Detected reference: saying "GG"': '"GG" 인사 표현 발견',
+  "Research prompt: compare polite post-game phrases in your partner's language.":
+    "다음 질문: 파트너의 언어에서는 대국 뒤 어떤 말로 예의를 표현하나요?",
+  "Save to Culture Guide": "문화 노트에 저장",
+  "Guide": "가이드",
+  "How to play": "튜토리얼",
+  "Tutorial and puzzle": "튜토리얼과 퍼즐",
+  "EasyMate tutorial": "EasyMate 튜토리얼",
+  "Back to dashboard": "대국으로 돌아가기",
+  "No posts yet.": "아직 게시글이 없어요. 첫 질문이나 공지를 남겨보세요.",
+  "No notifications yet.": "아직 알림이 없어요. 매칭이 시작되면 이곳에 알려드릴게요.",
+  "Live Chess Hardware": "실물 체스 키트",
+  "Boards made for chess and language practice.": "체스와 언어 연습을 위한 보드입니다.",
+  "Reserve interest": "관심 예약",
+  "User Profile": "사용자 프로필",
+  "English learner, Korean speaker": "영어 학습자, 한국어 사용자",
+  "Language pair": "언어 조합",
+  "Cheoinseong Edition": "처인성 에디션",
+  "Beta Edition": "Beta 에디션",
+  "Add a short intro for language partners.": "언어 파트너에게 보여줄 짧은 소개를 적어보세요.",
+  "Save Profile": "프로필 저장",
+  "Peer feedback": "파트너 피드백",
+  "Helpful and respectful": "친절하고 존중해요",
+  "Clear communicator": "설명이 또렷해요",
+  "Needs moderation attention": "운영자 확인이 필요해요",
+  "Note": "메모",
+  "Optional feedback note": "선택 사항: 피드백 메모",
+  "Submit Peer Feedback": "피드백 보내기",
+  "Badges": "배지",
+  "Culture Guide": "문화 노트",
+  "Culture note": "문화 노트",
+  "Save a culture note": "문화 노트 저장",
+  "Save Culture Note": "문화 노트 저장",
+  "Account": "계정",
+  "Accessibility": "접근성",
+  "Adjust the interface for readability.": "읽기 편하도록 화면을 조정합니다.",
+  "Interface language": "화면 언어",
+  "High contrast": "고대비",
+  "Larger text": "큰 글자",
+  "Adjust the app text size.": "앱 글자 크기를 조정합니다.",
+  "Text size": "글자 크기",
+  "Signed in": "로그인됨",
+  "Delete account": "계정 삭제",
+  "Admin Panel": "운영자 전용",
+  "Safety and moderation": "안전 관리",
+  "Refresh Admin Data": "운영자 데이터 새로고침",
+  "Admin tools load after signing in with an admin account.": "운영자 계정으로 로그인해야 이 화면을 볼 수 있습니다.",
+  "Search matches": "대국 검색",
+  "Player, status, result, time control": "플레이어, 상태, 결과, 시간 제한",
+  "Search users": "사용자 검색",
+  "Name, email, role, warning count": "이름, 이메일, 역할, 경고 수",
+  "Safety warning": "안전 알림",
+  "Possible disrespectful speech detected.": "불편한 말이 감지되었을 수 있습니다.",
+  "Safety report": "안전 신고",
+  "open": "열림",
+  "matched": "매칭됨",
+  "ended": "종료됨",
+  "resolved": "해결됨",
+  "Draw agreed": "무승부 합의",
+  "Draw accepted": "무승부 수락",
+  "White lost on time": "백 시간패",
+  "Black lost on time": "흑 시간패",
+  "White won by checkmate": "백 체크메이트 승",
+  "Black won by checkmate": "흑 체크메이트 승",
+  "Game over": "대국 종료",
+  "Time expired": "시간이 끝났습니다",
+  "Account deleted": "계정 삭제됨",
+});
+const englishText = Object.entries(koreanText).reduce((map, [english, korean]) => {
+  map[korean] = english;
+  return map;
+}, {});
 const originalTextNodes = new WeakMap();
 const originalAttributes = new WeakMap();
 let applyingLanguage = false;
 
 function currentInterfaceLanguage() {
-  return languageSelect?.value || "English";
+  return languageSelect?.value || "Korean";
 }
 
 function translateCopy(value) {
-  return currentInterfaceLanguage() === "Korean" ? koreanText[value] || value : value;
+  const text = String(value ?? "");
+  return currentInterfaceLanguage() === "Korean" ? koreanText[text] || text : englishText[text] || text;
+}
+
+function originalCopy(value) {
+  const text = String(value ?? "");
+  return englishText[text] || text;
+}
+
+function canonicalOriginalText(value) {
+  const text = String(value ?? "");
+  const leading = text.match(/^\s*/)?.[0] || "";
+  const trailing = text.match(/\s*$/)?.[0] || "";
+  const trimmed = text.trim();
+  if (!trimmed) return text;
+  return `${leading}${originalCopy(trimmed)}${trailing}`;
 }
 
 function updateLandingHeroCopy() {
   const entryTitle = document.querySelector("#entryTitle");
   if (!entryTitle) return;
-  entryTitle.textContent = currentInterfaceLanguage() === "Korean" ? "체스를 더 쉽게!" : "Make chess easier!";
+  entryTitle.innerHTML =
+    currentInterfaceLanguage() === "Korean"
+      ? "64개의 칸이 여는<br><em>세대와 언어의 연결</em>"
+      : "64 squares connect<br><em>generations and languages</em>";
 }
 
 function translateTextNode(node) {
@@ -346,8 +577,8 @@ function translateTextNode(node) {
     const currentTrimmed = currentText.trim();
     const previousTranslation = original ? translateCopy(original.trim()) : null;
     if (!original || currentTrimmed !== previousTranslation) {
-      originalTextNodes.set(node, currentText);
-      original = currentText;
+      original = canonicalOriginalText(currentText);
+      originalTextNodes.set(node, original);
     }
     const trimmed = original.trim();
     const translated = koreanText[trimmed];
@@ -361,7 +592,15 @@ function translateTextNode(node) {
     return;
   }
 
-  if (original) node.textContent = original;
+  if (original) {
+    node.textContent = canonicalOriginalText(original);
+    return;
+  }
+  const canonical = canonicalOriginalText(currentText);
+  if (canonical !== currentText) {
+    originalTextNodes.set(node, canonical);
+    node.textContent = canonical;
+  }
 }
 
 function translateAttribute(element, attribute) {
@@ -377,13 +616,21 @@ function translateAttribute(element, attribute) {
 
   if (currentInterfaceLanguage() === "Korean") {
     const previousTranslation = originals[attribute] ? translateCopy(originals[attribute]) : null;
-    if (!originals[attribute] || currentValue !== previousTranslation) originals[attribute] = currentValue;
+    if (!originals[attribute] || currentValue !== previousTranslation) originals[attribute] = originalCopy(currentValue);
     const translated = koreanText[originals[attribute]];
     if (translated) element.setAttribute(attribute, translated);
     return;
   }
 
-  if (originals[attribute]) element.setAttribute(attribute, originals[attribute]);
+  if (originals[attribute]) {
+    element.setAttribute(attribute, originalCopy(originals[attribute]));
+    return;
+  }
+  const canonical = originalCopy(currentValue);
+  if (canonical !== currentValue) {
+    originals[attribute] = canonical;
+    element.setAttribute(attribute, canonical);
+  }
 }
 
 function applyInterfaceLanguage(root = document.body) {
@@ -441,7 +688,16 @@ const pieceNames = {
   k: "king",
 };
 
-function pieceSvg(pieceCode) {
+const pieceEditionNames = {
+  cheoinseong: "Cheoinseong Edition",
+  beta: "Beta Edition",
+};
+
+function normalizePieceEdition(edition) {
+  return Object.prototype.hasOwnProperty.call(pieceEditionNames, edition) ? edition : "cheoinseong";
+}
+
+function betaPieceSvg(pieceCode) {
   const color = pieceCode?.[0] === "w" ? "white" : "black";
   const type = pieceCode?.[1] || "p";
   const light = color === "white";
@@ -460,6 +716,43 @@ function pieceSvg(pieceCode) {
   };
 
   return `<svg viewBox="0 0 100 100" role="img" aria-label="${color} ${pieceNames[type] || "piece"}">${details[type] || details.p}</svg>`;
+}
+
+function cheoinseongPieceSvg(pieceCode) {
+  const color = pieceCode?.[0] === "w" ? "white" : "black";
+  const type = pieceCode?.[1] || "p";
+  const goryeo = color === "white";
+  const fill = goryeo ? "#f4ead5" : "#4b241b";
+  const robe = goryeo ? "#7b9276" : "#7f3228";
+  const trim = goryeo ? "#b9934b" : "#c29a50";
+  const stroke = goryeo ? "#263831" : "#1b0f0d";
+  const shadow = goryeo ? "#d8ccb4" : "#2a1714";
+  const common = `stroke="${stroke}" stroke-width="4.2" stroke-linejoin="round" stroke-linecap="round"`;
+  const base = `<path fill="${shadow}" ${common} d="M20 79h60l7 10H13z"/><path fill="${goryeo ? "#7c8f72" : "#5b251f"}" ${common} d="M29 69h42l6 11H23z"/>`;
+  const bead = `<circle fill="${trim}" stroke="${stroke}" stroke-width="2.2" cx="42" cy="43" r="2.8"/><circle fill="${trim}" stroke="${stroke}" stroke-width="2.2" cx="50" cy="45" r="2.8"/><circle fill="${trim}" stroke="${stroke}" stroke-width="2.2" cx="58" cy="43" r="2.8"/>`;
+  const details = goryeo
+    ? {
+        p: `<circle fill="${fill}" ${common} cx="50" cy="26" r="12"/><path fill="${robe}" ${common} d="M36 68c2-16 8-26 14-26s12 10 14 26z"/><path fill="none" stroke="${trim}" stroke-width="3" d="M42 48l16 13"/>${base}`,
+        n: `<path fill="${fill}" ${common} d="M27 73c2-22 18-38 34-43 16 8 21 23 13 38l7 14H25z"/><path fill="${robe}" stroke="${stroke}" stroke-width="3" d="M46 39l-7 11 14-5z"/><circle fill="${stroke}" cx="61" cy="45" r="2.6"/>${base}`,
+        b: `<circle fill="${fill}" ${common} cx="50" cy="23" r="11"/><path fill="${robe}" ${common} d="M34 68c4-22 10-33 16-33s12 11 16 33z"/>${bead}<path fill="none" stroke="${trim}" stroke-width="3.2" d="M50 35v30"/>${base}`,
+        r: `<path fill="#7c7668" ${common} d="M23 27h11v-7h12v7h8v-7h12v7h11v17H23z"/><path fill="#8b8170" ${common} d="M28 43h44v29H28z"/><path fill="none" stroke="${stroke}" stroke-width="3" d="M36 52h28M36 62h28M44 44v28M57 44v28"/>${base}`,
+        q: `<path fill="${robe}" ${common} d="M23 67c4-23 13-36 27-36s23 13 27 36z"/><path fill="none" stroke="${trim}" stroke-width="4" d="M33 26h34M50 14v18"/><circle fill="${trim}" stroke="${stroke}" stroke-width="3" cx="50" cy="18" r="7"/>${bead}${base}`,
+        k: `<path fill="${robe}" ${common} d="M25 68c4-22 14-34 25-34s21 12 25 34z"/><circle fill="${fill}" ${common} cx="50" cy="25" r="12"/><path fill="none" stroke="${trim}" stroke-width="4" d="M35 20c9-7 21-7 30 0"/><path fill="none" stroke="${trim}" stroke-width="3" d="M70 20c7 15 6 29-2 43"/>${bead}${base}`,
+      }
+    : {
+        p: `<circle fill="${fill}" ${common} cx="50" cy="27" r="12"/><path fill="${robe}" ${common} d="M35 68c3-17 9-27 15-27s12 10 15 27z"/><path fill="none" stroke="${trim}" stroke-width="3" d="M39 46h22M50 39v29"/>${base}`,
+        n: `<path fill="${fill}" ${common} d="M26 74c3-24 19-40 35-45 17 9 22 25 13 40l7 13H25z"/><path fill="${robe}" stroke="${stroke}" stroke-width="3" d="M45 39l-7 11 14-5z"/><circle fill="${trim}" cx="61" cy="44" r="2.7"/>${base}`,
+        b: `<path fill="${robe}" ${common} d="M49 15c13 11 18 22 15 34-3 10-8 15-14 20-6-5-11-10-14-20-3-12 2-23 13-34z"/><path fill="none" stroke="${trim}" stroke-width="4" d="M38 30c8 5 17 5 25 0"/><circle fill="${trim}" stroke="${stroke}" stroke-width="3" cx="50" cy="24" r="6"/>${base}`,
+        r: `<path fill="#6a3c23" ${common} d="M25 25h9v-7h12v7h8v-7h12v7h9v17H25z"/><path fill="#7b4728" ${common} d="M29 42h42v31H29z"/><path fill="none" stroke="${trim}" stroke-width="3" d="M37 51h26M37 61h26M45 43v30M57 43v30"/>${base}`,
+        q: `<circle fill="${trim}" stroke="${stroke}" stroke-width="4" cx="25" cy="28" r="6"/><circle fill="${trim}" stroke="${stroke}" stroke-width="4" cx="50" cy="19" r="6"/><circle fill="${trim}" stroke="${stroke}" stroke-width="4" cx="75" cy="28" r="6"/><path fill="${robe}" ${common} d="M22 36l14 30h28l14-30-20 16-8-25-8 25z"/>${base}`,
+        k: `<path fill="${robe}" ${common} d="M28 68c3-20 12-32 22-32s19 12 22 32z"/><circle fill="${fill}" ${common} cx="50" cy="26" r="11"/><path fill="none" stroke="${trim}" stroke-width="4" d="M38 18h24M50 13v20"/><path fill="none" stroke="${trim}" stroke-width="3" d="M65 36l7 26"/>${base}`,
+      };
+
+  return `<svg viewBox="0 0 100 100" role="img" aria-label="${pieceEditionNames.cheoinseong} ${color} ${pieceNames[type] || "piece"}">${details[type] || details.p}</svg>`;
+}
+
+function pieceSvg(pieceCode, edition = "beta") {
+  return normalizePieceEdition(edition) === "cheoinseong" ? cheoinseongPieceSvg(pieceCode) : betaPieceSvg(pieceCode);
 }
 
 const initialPieces = {
@@ -509,11 +802,11 @@ const plannedMoves = [
 ];
 
 const missions = [
-  "Ask your partner what opening they enjoy most.",
-  "Compliment one move and ask why they chose it.",
-  "Explain your next move in one short sentence.",
-  "Ask your partner how to say 'good game' in their language.",
-  "Send one chess phrase to the subtitle view for practice.",
+  "상대가 좋아하는 오프닝을 물어보세요.",
+  "좋았던 수 하나를 칭찬하고 왜 그 수를 골랐는지 물어보세요.",
+  "다음 수를 한 문장으로 짧게 설명해보세요.",
+  "파트너의 언어로 '좋은 경기였어요'를 어떻게 말하는지 물어보세요.",
+  "체스 표현 하나를 자막으로 말해 연습해보세요.",
 ];
 
 const subtitleSamples = [
@@ -535,44 +828,44 @@ const defaultReview = {
   vocabulary: [
     {
       term: "calm position",
-      translation: "Korean: calm position",
-      context: "Used when a player described choosing a quiet opening before attacking.",
+      translation: "침착한 포지션",
+      context: "공격하기 전 조용한 오프닝을 고른 이유를 설명할 때 나온 표현입니다.",
       pronunciationText: "calm position",
       language: "en-US",
     },
     {
       term: "London System",
-      translation: "Korean: London System",
-      context: "A stable chess opening discussed during beginner-friendly planning.",
+      translation: "런던 시스템",
+      context: "초보자도 안정적으로 둘 수 있는 계획을 이야기할 때 나온 오프닝입니다.",
       pronunciationText: "London System",
       language: "en-US",
     },
     {
       term: "knight fork",
-      translation: "Korean: knight fork",
-      context: "Used after a knight attacked two pieces at the same time.",
+      translation: "나이트 포크",
+      context: "나이트가 두 기물을 동시에 공격했을 때 나온 표현입니다.",
       pronunciationText: "knight fork",
       language: "en-US",
     },
     {
       term: "center control",
-      translation: "Korean: center control",
-      context: "Used while explaining why a move was strategically useful.",
+      translation: "중앙 장악",
+      context: "어떤 수가 전략적으로 좋은지 설명할 때 쓰기 좋은 표현입니다.",
       pronunciationText: "center control",
       language: "en-US",
     },
     {
       term: "good game",
-      translation: "Korean: good game",
-      context: "A polite phrase used after the match result.",
+      translation: "좋은 경기였어요",
+      context: "대국이 끝난 뒤 예의 있게 마무리할 때 쓰는 말입니다.",
       pronunciationText: "good game",
       language: "en-US",
     },
   ],
   culturalInsight: {
-    title: "Detected reference: saying GG",
-    summary: 'The AI can flag "GG" and "good game" as respectful online-game closings.',
-    researchPrompt: "Compare polite post-game phrases in your partner's language.",
+    title: '"GG" 인사 표현 발견',
+    summary: 'AI가 "GG"와 "good game"을 서로 존중하는 마무리 표현으로 확인했습니다.',
+    researchPrompt: "파트너의 언어에서는 대국 뒤 어떤 말로 예의를 표현하나요?",
   },
 };
 
@@ -584,6 +877,8 @@ let missionIndex = 0;
 let currentManner = 42.8;
 let backendOnline = false;
 let currentUser = null;
+let selectedPieceEdition = "cheoinseong";
+let currentMatchPlayers = [];
 let currentMatchId = null;
 let drawOfferFromOpponent = false;
 let selectedSquare = null;
@@ -615,6 +910,7 @@ let sttSessionTimer = null;
 let notifications = [];
 let unreadNotifications = 0;
 let cachedAdminData = null;
+let cachedLobbyData = null;
 let adminCommandBuffer = "";
 let forumFilter = "All";
 let forumPosts = [];
@@ -792,10 +1088,10 @@ function setMatchState(state) {
   if (!isIdle) seekComposer.hidden = true;
 
   const titles = {
-    idle: "Find a game",
-    searching: "Finding a player",
-    playing: "Live match",
-    ended: "Match result",
+    idle: translateCopy("Find a game"),
+    searching: translateCopy("Finding a player"),
+    playing: translateCopy("Live match"),
+    ended: translateCopy("Match result"),
   };
   const dashboardTitle = document.querySelector("#dashboardTitle");
   if (dashboardTitle) dashboardTitle.textContent = titles[nextState];
@@ -1238,11 +1534,18 @@ function renderAuthState() {
   authForm.classList.toggle("signed-in", signedIn);
   headerProfile.hidden = !signedIn;
   if (signedIn) {
-    headerProfileName.textContent = currentUser.displayName || "Player";
+    headerProfileName.textContent = currentUser.displayName || translateCopy("Player");
     headerProfileAvatar.textContent = initials(currentUser.displayName || "Player");
-    if (settingsAccountName) settingsAccountName.textContent = `Signed in as ${currentUser.displayName || "Player"}`;
+    if (settingsAccountName) {
+      settingsAccountName.textContent =
+        currentInterfaceLanguage() === "Korean"
+          ? `${currentUser.displayName || "플레이어"}님으로 로그인됨`
+          : `Signed in as ${currentUser.displayName || "Player"}`;
+    }
+    updateHeaderPieceEditionToggle(currentUser.pieceEdition);
   } else {
-    if (settingsAccountName) settingsAccountName.textContent = "Signed out";
+    if (settingsAccountName) settingsAccountName.textContent = currentInterfaceLanguage() === "Korean" ? "로그아웃됨" : "Signed out";
+    updateHeaderPieceEditionToggle(selectedPieceEdition);
     closeProfileMenu();
     if (authSubmit.disabled) document.body.classList.remove("auth-entry-open");
   }
@@ -1250,11 +1553,11 @@ function renderAuthState() {
   if (deleteAccountButton) deleteAccountButton.disabled = !signedIn;
   if (forumPostList) renderForumPosts();
   continueToDashboardButton.hidden = !signedIn;
-  loginButton.textContent = signedIn ? "Play" : "Login";
-  signupButton.textContent = signedIn ? "Sign out" : "New user";
+  loginButton.textContent = signedIn ? translateCopy("Play") : translateCopy("Login");
+  signupButton.textContent = signedIn ? translateCopy("Sign out") : translateCopy("New account");
   loginButton.classList.toggle("active", !signedIn && authMode === "login");
   signupButton.classList.toggle("active", !signedIn && authMode === "signup");
-  authSubmit.textContent = signedIn ? "Signed in" : authMode === "login" ? "Log in" : "Create account";
+  authSubmit.textContent = signedIn ? translateCopy("Signed in") : authMode === "login" ? translateCopy("Log in") : translateCopy("Create account");
   authSubmit.disabled = signedIn;
   googleSignInButton.hidden = !demoAuthAllowed;
   googleSignInButton.disabled = signedIn || !demoAuthAllowed;
@@ -1270,13 +1573,57 @@ function renderAuthState() {
   updateTutorialGateState();
 }
 
+function updateHeaderPieceEditionToggle(edition = currentUser?.pieceEdition) {
+  const activeEdition = normalizePieceEdition(edition);
+  selectedPieceEdition = activeEdition;
+  applyPieceEditionTheme(activeEdition);
+  headerPieceEditionButtons.forEach((button) => {
+    const active = button.dataset.pieceEdition === activeEdition;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
+async function setPieceEdition(edition) {
+  const nextEdition = normalizePieceEdition(edition);
+  selectedPieceEdition = nextEdition;
+  writeLocalSetting(pieceEditionStorageKey, nextEdition);
+  updateHeaderPieceEditionToggle(nextEdition);
+  if (profilePieceEdition) profilePieceEdition.value = nextEdition;
+  if (currentUser) currentUser = { ...currentUser, pieceEdition: nextEdition };
+  if (currentMatchPlayers.length) {
+    currentMatchPlayers = currentMatchPlayers.map((player) =>
+      player.userId === currentUser?.id ? { ...player, pieceEdition: nextEdition } : player,
+    );
+  }
+  buildBoard();
+  if (!currentUser || !backendOnline) return;
+
+  try {
+    const profile = await api("/api/profile", {
+      method: "PUT",
+      body: {
+        displayName: currentUser.displayName,
+        languagePair: currentUser.languagePair,
+        pieceEdition: nextEdition,
+        bio: currentUser.bio || "",
+      },
+    });
+    currentUser = profile.user;
+    renderProfile(profile);
+    updateHeaderPieceEditionToggle(currentUser.pieceEdition);
+  } catch (error) {
+    if (profileStatus) profileStatus.textContent = error.message;
+  }
+}
+
 function setAuthMode(mode) {
   authMode = mode;
   authConfirmPassword.value = "";
   document.body.classList.add("auth-entry-open");
   renderAuthState();
   authStatus.textContent =
-    mode === "login" ? "Enter your existing email and password." : "Create an account to save matches and language review.";
+    mode === "login" ? translateCopy("Enter your existing email and password.") : translateCopy("Create an account to save matches and language review.");
   document.querySelector(".entry-auth")?.scrollIntoView({ behavior: "smooth", block: "start" });
   window.setTimeout(() => (mode === "login" ? authEmail : authDisplayName).focus(), 260);
 }
@@ -1305,6 +1652,15 @@ function removeLocalSetting(key) {
   }
 }
 
+selectedPieceEdition = normalizePieceEdition(readLocalSetting(pieceEditionStorageKey) || selectedPieceEdition);
+
+function applyPieceEditionTheme(edition = selectedPieceEdition) {
+  selectedPieceEdition = normalizePieceEdition(edition);
+  document.body.classList.toggle("piece-theme-cheoinseong", selectedPieceEdition === "cheoinseong");
+  document.body.classList.toggle("piece-theme-beta", selectedPieceEdition === "beta");
+  document.body.dataset.pieceEdition = selectedPieceEdition;
+}
+
 function isStudentTutorialComplete() {
   return readLocalSetting(studentTutorialCompleteKey) === "true";
 }
@@ -1313,17 +1669,65 @@ function isStudentTutorialRequired() {
   return readLocalSetting(studentTutorialRequiredKey) === "true" && !isStudentTutorialComplete();
 }
 
+function setHowToPlayMode(mode) {
+  const puzzleUnlocked = isStudentTutorialComplete();
+  if (mode === "puzzle" && !puzzleUnlocked && tutorialPuzzleNote) {
+    tutorialPuzzleNote.textContent = "튜토리얼을 완료해야 고려 vs 몽골 퍼즐을 열 수 있습니다.";
+  }
+  const nextMode = mode === "puzzle" && puzzleUnlocked ? "puzzle" : "tutorial";
+  if (howToPlayFrame) {
+    const nextSrc = nextMode === "puzzle" ? "/assets/goryeo-vs-mongol-puzzle.html" : "/assets/how-to-play.html";
+    if (!howToPlayFrame.src.endsWith(nextSrc)) howToPlayFrame.src = nextSrc;
+  }
+  showTutorialGuideButton?.classList.toggle("active", nextMode === "tutorial");
+  showPuzzleGuideButton?.classList.toggle("active", nextMode === "puzzle");
+  showPuzzleGuideButton?.classList.toggle("locked", !puzzleUnlocked);
+  showPuzzleGuideButton?.setAttribute("aria-disabled", puzzleUnlocked ? "false" : "true");
+  if (tutorialPuzzleNote) tutorialPuzzleNote.hidden = puzzleUnlocked;
+}
+
 function updateTutorialGateState() {
   const required = isStudentTutorialRequired();
   const complete = isStudentTutorialComplete();
   document.body.classList.toggle("tutorial-required", required);
   document.body.classList.toggle("tutorial-complete", complete);
   if (tutorialGateNote) tutorialGateNote.hidden = !required;
+  setHowToPlayMode(showPuzzleGuideButton?.classList.contains("active") ? "puzzle" : "tutorial");
   document.querySelectorAll("[data-view-link]").forEach((link) => {
     const blocked = required && link.dataset.viewLink !== "how-to-play";
     link.classList.toggle("tutorial-locked-link", blocked);
     link.setAttribute("aria-disabled", blocked ? "true" : "false");
   });
+}
+
+function isTutorialRoute() {
+  return /^\/tutorial\/?$/.test(location.pathname);
+}
+
+function isStaffRoute() {
+  return /^\/staff\/?$/.test(location.pathname);
+}
+
+function updateRouteForView(viewName) {
+  if (location.protocol === "file:") return;
+  if (viewName === "how-to-play") {
+    if (!isTutorialRoute()) history.replaceState({ viewName }, "", "/tutorial");
+    return;
+  }
+  if (viewName === "staff") {
+    if (!isStaffRoute()) history.replaceState({ viewName }, "", "/staff");
+    return;
+  }
+  if (isTutorialRoute() || isStaffRoute()) history.replaceState({ viewName }, "", "/");
+}
+
+function openAccountEntry(mode = "signup") {
+  if (currentUser) {
+    setView("dashboard");
+    return;
+  }
+  setView("home");
+  setAuthMode(mode);
 }
 
 function beginStudentTutorial() {
@@ -1337,8 +1741,8 @@ function completeStudentTutorial() {
   writeLocalSetting(studentTutorialCompleteKey, "true");
   removeLocalSetting(studentTutorialRequiredKey);
   updateTutorialGateState();
-  authStatus.textContent = "튜토리얼 완료! 이제 사이트를 자유롭게 이용할 수 있습니다.";
-  setView("dashboard");
+  authStatus.textContent = "튜토리얼 완료! 계정으로 입장하면 실시간 체스 매칭을 시작할 수 있습니다.";
+  openAccountEntry("signup");
 }
 
 async function api(path, options = {}) {
@@ -1372,7 +1776,7 @@ function roomUrl(matchId = currentMatchId) {
 
 function updateRoomLink(matchId = currentMatchId) {
   const link = roomUrl(matchId);
-  matchRoomLink.value = link || "No match yet";
+  matchRoomLink.value = link || translateCopy("No match yet");
   copyMatchRoomLinkButton.disabled = !link;
 }
 
@@ -1386,7 +1790,7 @@ function updateMatchRoute(matchId) {
 
 async function copyRoomLink() {
   const link = matchRoomLink.value;
-  if (!currentMatchId || !link || link === "No match yet") return;
+  if (!currentMatchId || !link || link === translateCopy("No match yet") || link === "No match yet") return;
 
   try {
     if (navigator.clipboard?.writeText) {
@@ -1395,10 +1799,10 @@ async function copyRoomLink() {
       matchRoomLink.select();
       document.execCommand("copy");
     }
-    setVoiceStatus("Match room link copied.");
+    setVoiceStatus(currentInterfaceLanguage() === "Korean" ? "방 링크를 복사했습니다." : "Match room link copied.");
   } catch {
     matchRoomLink.select();
-    setVoiceStatus("Room link selected. Copy it manually.");
+    setVoiceStatus(currentInterfaceLanguage() === "Korean" ? "방 링크를 선택했습니다. 직접 복사하세요." : "Room link selected. Copy it manually.");
   }
 }
 
@@ -1413,11 +1817,11 @@ async function loadMatchFromRoute() {
     }
     renderMatch(data.match);
     setView("dashboard");
-    matchResult.textContent = data.match.result || "Joined room from link";
+    matchResult.textContent = data.match.result ? translateCopy(data.match.result) : currentInterfaceLanguage() === "Korean" ? "링크로 방에 참여했습니다" : "Joined room from link";
     return true;
   } catch (error) {
     setView("dashboard");
-    matchResult.textContent = "Room not found";
+    matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "방을 찾을 수 없어요" : "Room not found";
     syncState.textContent = error.message;
     return true;
   }
@@ -1452,8 +1856,8 @@ function matchHasOpenSlot(match) {
 }
 
 function shortPlayerId(player) {
-  if (!player) return "waiting";
-  if (!player.userId) return "guest";
+  if (!player) return translateCopy("Waiting");
+  if (!player.userId) return currentInterfaceLanguage() === "Korean" ? "게스트" : "guest";
   return player.userId.replace(/^user_/, "user_").slice(0, 18);
 }
 
@@ -1477,8 +1881,8 @@ function clockValue(color) {
 function updateClockDisplay() {
   const whiteMs = clockValue("white");
   const blackMs = clockValue("black");
-  whiteClock.textContent = whiteMs === null ? "--:--" : formatClock(whiteMs);
-  blackClock.textContent = blackMs === null ? "--:--" : formatClock(blackMs);
+  whiteClock.textContent = whiteMs === null ? translateCopy("Ready") : formatClock(whiteMs);
+  blackClock.textContent = blackMs === null ? translateCopy("Ready") : formatClock(blackMs);
   whiteClockCard.classList.toggle("active", clockSnapshot?.running && clockSnapshot.activeColor === "white");
   blackClockCard.classList.toggle("active", clockSnapshot?.running && clockSnapshot.activeColor === "black");
   whiteClockCard.classList.toggle("low-time", whiteMs !== null && whiteMs <= 30_000);
@@ -1517,14 +1921,16 @@ async function notifyClockTimeout(color) {
   timeoutNotifiedFor = timeoutKey;
   const loser = color === "white" ? "White" : "Black";
   const result = `${loser} lost on time`;
-  matchResult.textContent = result;
-  syncState.textContent = "Time expired";
+  matchResult.textContent = translateCopy(result);
+  syncState.textContent = currentInterfaceLanguage() === "Korean" ? "시간이 끝났습니다" : "Time expired";
   window.clearInterval(clockInterval);
   if ("Notification" in window && Notification.permission === "granted") {
-    new Notification("Chess clock expired", { body: result });
+    new Notification(currentInterfaceLanguage() === "Korean" ? "체스 시계 종료" : "Chess clock expired", {
+      body: translateCopy(result),
+    });
   }
   if (backendOnline) {
-    await finishMatch(result, { review: false, statusText: "Time expired" });
+    await finishMatch(result, { review: false, statusText: currentInterfaceLanguage() === "Korean" ? "시간이 끝났습니다" : "Time expired" });
   }
 }
 
@@ -1545,7 +1951,7 @@ function renderNotifications() {
   if (!notifications.length) {
     const empty = document.createElement("p");
     empty.className = "notification-empty";
-    empty.textContent = "No notifications yet.";
+    empty.textContent = translateCopy("No notifications yet.");
     notificationList.append(empty);
     return;
   }
@@ -1556,9 +1962,9 @@ function renderNotifications() {
     const categoryClass = String(item.category || "info").replace(/[^a-z0-9_-]/gi, "");
     button.className = `notification-item ${categoryClass || "info"}`;
     const title = document.createElement("span");
-    title.textContent = item.title || "New notification";
+    title.textContent = translateCopy(item.title || "New notification");
     const body = document.createElement("small");
-    body.textContent = item.body || "";
+    body.textContent = translateCopy(item.body || "");
     button.append(title, body);
     button.addEventListener("click", () => {
       notificationPanel.hidden = true;
@@ -1598,7 +2004,7 @@ function handleNotificationMessage(message) {
 
   addNotification({
     category: message.category,
-    title: message.title || "New notification",
+    title: translateCopy(message.title || "New notification"),
     body: message.body || "",
     view: views[message.category] || null,
   });
@@ -1607,22 +2013,24 @@ function handleNotificationMessage(message) {
 function matchSourceLabel(match) {
   const source = match?.pairingType || "practice";
   const labels = {
-    "quick-pool": "Quick pair",
-    "open-seek": "Created game",
-    "language-pool": "Language match",
-    "private-challenge": "Friend room",
-    "guest-practice": "Practice game",
-    practice: "Practice game",
+    "quick-pool": currentInterfaceLanguage() === "Korean" ? "퀵 매칭" : "Quick pair",
+    "open-seek": currentInterfaceLanguage() === "Korean" ? "만든 게임" : "Created game",
+    "language-pool": currentInterfaceLanguage() === "Korean" ? "언어 매칭" : "Language match",
+    "private-challenge": currentInterfaceLanguage() === "Korean" ? "친구 방" : "Friend room",
+    "guest-practice": currentInterfaceLanguage() === "Korean" ? "연습 대국" : "Practice game",
+    practice: currentInterfaceLanguage() === "Korean" ? "연습 대국" : "Practice game",
   };
-  return labels[source] || "Lobby match";
+  return labels[source] || (currentInterfaceLanguage() === "Korean" ? "대기실 매칭" : "Lobby match");
 }
 
 function matchClockLabel(match) {
-  if (!match) return "No active clock yet";
+  if (!match) return translateCopy("No active clock yet");
   const clock = match.timeControl || "10+0";
-  const type = match.rated ? "Rated" : "Casual";
+  const type = match.rated
+    ? currentInterfaceLanguage() === "Korean" ? "기록" : "Rated"
+    : currentInterfaceLanguage() === "Korean" ? "친선" : "Casual";
   const goal = match.goal || "Explain chess moves";
-  return `${clock} - ${type} - ${goal}`;
+  return `${clock} - ${type} - ${translateCopy(goal)}`;
 }
 
 function currentPlayerColor(match) {
@@ -1631,6 +2039,14 @@ function currentPlayerColor(match) {
     return match.players.find((player) => player.userId === currentUser.id)?.color || "white";
   }
   return match.players.find((player) => player.userId === null)?.color || "white";
+}
+
+function pieceEditionForColor(color) {
+  if (!currentMatchPlayers.length) return selectedPieceEdition;
+  if (currentPlayerColor({ players: currentMatchPlayers }) === color) return selectedPieceEdition;
+  const player = currentMatchPlayers.find((item) => item.color === color);
+  if (player?.pieceEdition) return normalizePieceEdition(player.pieceEdition);
+  return selectedPieceEdition;
 }
 
 async function refreshStats() {
@@ -1645,22 +2061,24 @@ async function refreshStats() {
 }
 
 function renderLobby(lobby = {}) {
+  cachedLobbyData = lobby;
   const seeks = lobby.openSeeks || [];
   openSeeksList.innerHTML = "";
   const openCount = Number(lobby.openSeeksTotal ?? seeks.length);
-  lobbySummary.textContent = `${openCount} live`;
+  lobbySummary.textContent =
+    currentInterfaceLanguage() === "Korean" ? `${openCount}명 대기 중` : `${openCount} live`;
 
   if (!seeks.length) {
     const empty = document.createElement("article");
     empty.className = "open-seek-card empty-state";
 
     const title = document.createElement("strong");
-    title.textContent = backendOnline ? "No players waiting" : "Live lobby unavailable";
+    title.textContent = backendOnline ? "아직 대기 중인 플레이어가 없어요" : "실시간 대기실을 불러올 수 없어요";
 
     const text = document.createElement("p");
     text.textContent = backendOnline
-      ? "Create a game or ask a friend to create one. Matching games will appear here."
-      : "Start the backend to see real players instead of demo content.";
+      ? "퀵 매칭으로 첫 상대를 찾아보거나 친구에게 방 코드를 보내보세요."
+      : "로컬 서버를 시작하면 실제 플레이어 대기 목록을 볼 수 있습니다.";
 
     empty.append(title, text);
     openSeeksList.append(empty);
@@ -1682,18 +2100,20 @@ function renderLobby(lobby = {}) {
     const meta = document.createElement("div");
     meta.className = "open-seek-meta";
     const type = document.createElement("span");
-    type.textContent = seek.rated ? "Rated" : "Casual";
+    type.textContent = seek.rated
+      ? currentInterfaceLanguage() === "Korean" ? "기록" : "Rated"
+      : currentInterfaceLanguage() === "Korean" ? "친선" : "Casual";
     const language = document.createElement("span");
-    language.textContent = seek.partnerLanguage || "English";
+    language.textContent = translateCopy(seek.partnerLanguage || "English");
     meta.append(type, language);
 
     const goal = document.createElement("p");
-    goal.textContent = seek.goal || "Explain chess moves";
+    goal.textContent = translateCopy(seek.goal || "Explain chess moves");
 
     const joinButton = document.createElement("button");
     joinButton.className = "button secondary full small";
     joinButton.type = "button";
-    joinButton.textContent = "Join game";
+    joinButton.textContent = currentInterfaceLanguage() === "Korean" ? "참여하기" : "Join game";
     joinButton.addEventListener("click", () => acceptSeek(seek));
 
     card.append(header, meta, goal, joinButton);
@@ -1740,7 +2160,10 @@ function renderAdminOverview(data) {
   adminMatchesCount.textContent = String(data.stats.activeMatches);
   adminReportsCount.textContent = String(data.stats.openReports);
   if (shopInterestCount) shopInterestCount.textContent = String(data.shopInterests?.length || 0);
-  adminStatus.textContent = `Staff data loaded. ${data.stats.totalReports} total report(s).`;
+  adminStatus.textContent =
+    currentInterfaceLanguage() === "Korean"
+      ? `운영자 데이터가 로드되었습니다. 전체 신고 ${data.stats.totalReports}건`
+      : `Staff data loaded. ${data.stats.totalReports} total report(s).`;
   const matchQuery = adminSearchText(adminMatchSearch.value);
   const userQuery = adminSearchText(adminUserSearch.value);
   const matches = matchQuery ? data.matches.filter((match) => adminMatchSearchText(match).includes(matchQuery)) : data.matches;
@@ -1752,35 +2175,47 @@ function renderAdminOverview(data) {
     (match) => {
       const card = document.createElement("details");
       card.className = "admin-item admin-disclosure";
-      const players = (match.players || []).map((player) => `${player.displayName} (${player.color})`).join(" vs ") || "No players";
+      const players =
+        (match.players || [])
+          .map((player) => `${player.displayName} (${player.color === "white" ? currentInterfaceLanguage() === "Korean" ? "백" : "white" : currentInterfaceLanguage() === "Korean" ? "흑" : "black"})`)
+          .join(" vs ") || (currentInterfaceLanguage() === "Korean" ? "플레이어 없음" : "No players");
       const summary = document.createElement("summary");
       const summaryText = document.createElement("span");
       const label = document.createElement("strong");
-      label.textContent = `${match.timeControl || "10+0"} ${match.rated ? "Rated" : "Casual"}`;
+      label.textContent = `${match.timeControl || "10+0"} ${
+        match.rated ? currentInterfaceLanguage() === "Korean" ? "기록" : "Rated" : currentInterfaceLanguage() === "Korean" ? "친선" : "Casual"
+      }`;
       const playerText = document.createElement("small");
       playerText.textContent = players;
       const status = document.createElement("b");
-      status.textContent = match.status || "unknown";
+      status.textContent = translateCopy(match.status || (currentInterfaceLanguage() === "Korean" ? "알 수 없음" : "unknown"));
       summaryText.append(label, playerText);
       summary.append(summaryText, status);
       const detail = document.createElement("div");
       detail.className = "admin-disclosure-body";
       const result = document.createElement("p");
-      result.textContent = match.result || "In progress";
+      result.textContent = match.result ? translateCopy(match.result) : translateCopy("In progress");
       const counts = document.createElement("p");
-      counts.textContent = `${match.moveCount} move(s), ${match.transcriptCount} transcript item(s)`;
+      counts.textContent =
+        currentInterfaceLanguage() === "Korean"
+          ? `수 ${match.moveCount}개, 자막 기록 ${match.transcriptCount}개`
+          : `${match.moveCount} move(s), ${match.transcriptCount} transcript item(s)`;
       detail.append(result, counts);
       const button = document.createElement("button");
       button.className = "button danger full small";
       button.type = "button";
-      button.textContent = match.status === "ended" ? "Match Ended" : "End Match";
+      button.textContent = match.status === "ended"
+        ? currentInterfaceLanguage() === "Korean" ? "종료된 대국" : "Match Ended"
+        : currentInterfaceLanguage() === "Korean" ? "대국 종료" : "End Match";
       button.disabled = match.status === "ended";
       button.addEventListener("click", () => endAdminMatch(match.id));
       detail.append(button);
       card.append(summary, detail);
       return card;
     },
-    matchQuery ? "No matches match your search." : "No matches yet.",
+    matchQuery
+      ? currentInterfaceLanguage() === "Korean" ? "검색 조건에 맞는 대국이 없습니다." : "No matches match your search."
+      : currentInterfaceLanguage() === "Korean" ? "아직 대국이 없습니다." : "No matches yet.",
   );
 
   renderAdminList(
@@ -1797,27 +2232,35 @@ function renderAdminOverview(data) {
       const email = document.createElement("small");
       email.textContent = user.email || "";
       const warningLabel = document.createElement("b");
-      warningLabel.textContent = `${warningCount} warning${warningCount === 1 ? "" : "s"}`;
+      warningLabel.textContent =
+        currentInterfaceLanguage() === "Korean" ? `경고 ${warningCount}개` : `${warningCount} warning${warningCount === 1 ? "" : "s"}`;
       summaryText.append(name, email);
       summary.append(summaryText, warningLabel);
       const detail = document.createElement("div");
       detail.className = "admin-disclosure-body";
       const score = document.createElement("p");
-      score.textContent = `${user.role || "player"} - ${Number(user.mannerTemperature ?? 0).toFixed(1)} fair play score`;
+      score.textContent =
+        currentInterfaceLanguage() === "Korean"
+          ? `${user.role || "player"} - ${mannerBadgeText(Number(user.mannerTemperature ?? 0))}`
+          : `${user.role || "player"} - ${mannerBadgeText(Number(user.mannerTemperature ?? 0))}`;
       const warningText = document.createElement("p");
-      warningText.textContent = `${warningCount} warning(s)`;
+      warningText.textContent = currentInterfaceLanguage() === "Korean" ? `경고 ${warningCount}개` : `${warningCount} warning(s)`;
       detail.append(score, warningText);
       const button = document.createElement("button");
       button.className = "button danger full small";
       button.type = "button";
-      button.textContent = isStaffUser(user) ? "Staff Account" : "Issue Warning";
+      button.textContent = isStaffUser(user)
+        ? currentInterfaceLanguage() === "Korean" ? "운영자 계정" : "Staff Account"
+        : currentInterfaceLanguage() === "Korean" ? "경고 주기" : "Issue Warning";
       button.disabled = isStaffUser(user);
       button.addEventListener("click", () => warnAdminUser(user.id));
       detail.append(button);
       card.append(summary, detail);
       return card;
     },
-    userQuery ? "No users match your search." : "No users yet.",
+    userQuery
+      ? currentInterfaceLanguage() === "Korean" ? "검색 조건에 맞는 사용자가 없습니다." : "No users match your search."
+      : currentInterfaceLanguage() === "Korean" ? "아직 사용자가 없습니다." : "No users yet.",
   );
 
   renderAdminList(
@@ -1827,24 +2270,30 @@ function renderAdminOverview(data) {
       const card = document.createElement("article");
       card.className = "admin-item";
       const reason = document.createElement("strong");
-      reason.textContent = report.reason || "Safety report";
+      reason.textContent = translateCopy(report.reason || "Safety report");
       const status = document.createElement("span");
-      status.textContent = report.status || "open";
+      status.textContent = translateCopy(report.status || "open");
       const reporter = document.createElement("p");
-      reporter.textContent = `Reporter: ${report.reporterName || "Guest"}`;
+      reporter.textContent =
+        currentInterfaceLanguage() === "Korean"
+          ? `신고자: ${report.reporterName || "게스트"}`
+          : `Reporter: ${report.reporterName || "Guest"}`;
       const detail = document.createElement("p");
-      detail.textContent = report.detail || "No details provided.";
+      detail.textContent =
+        report.detail || (currentInterfaceLanguage() === "Korean" ? "상세 내용이 없습니다." : "No details provided.");
       card.append(reason, status, reporter, detail);
       const button = document.createElement("button");
       button.className = "button secondary full small";
       button.type = "button";
-      button.textContent = report.status === "resolved" ? "Resolved" : "Mark Resolved";
+      button.textContent = report.status === "resolved"
+        ? currentInterfaceLanguage() === "Korean" ? "해결됨" : "Resolved"
+        : currentInterfaceLanguage() === "Korean" ? "해결 처리" : "Mark Resolved";
       button.disabled = report.status === "resolved";
       button.addEventListener("click", () => resolveAdminReport(report.id));
       card.append(button);
       return card;
     },
-    "No safety reports yet.",
+    currentInterfaceLanguage() === "Korean" ? "아직 안전 신고가 없습니다." : "No safety reports yet.",
   );
 
   if (shopInterestList) {
@@ -1872,15 +2321,15 @@ function renderAdminOverview(data) {
 
 async function refreshAdmin() {
   if (!backendOnline) {
-    adminStatus.textContent = "Start the backend to use staff tools.";
+    adminStatus.textContent = currentInterfaceLanguage() === "Korean" ? "운영자 도구를 쓰려면 서버를 시작하세요." : "Start the backend to use staff tools.";
     return;
   }
   if (!isStaffUser()) {
-    adminStatus.textContent = "Staff access required.";
+    adminStatus.textContent = currentInterfaceLanguage() === "Korean" ? "운영자 권한이 필요합니다." : "Staff access required.";
     return;
   }
 
-  adminStatus.textContent = "Loading staff data...";
+  adminStatus.textContent = currentInterfaceLanguage() === "Korean" ? "운영자 데이터를 불러오는 중..." : "Loading staff data...";
   try {
     const data = await api("/api/admin/overview");
     renderAdminOverview(data);
@@ -1943,11 +2392,12 @@ async function checkBackend() {
   try {
     const health = await api("/api/health");
     backendOnline = Boolean(health.ok);
-    setServerStatus("Backend online", true);
+    setServerStatus(currentInterfaceLanguage() === "Korean" ? "서버 연결됨" : "Backend online", true);
     const session = await api("/api/session");
     currentUser = session.user;
     if (currentUser) {
-      authStatus.textContent = `Signed in as ${currentUser.displayName}`;
+      authStatus.textContent =
+        currentInterfaceLanguage() === "Korean" ? `${currentUser.displayName}님으로 로그인됨` : `Signed in as ${currentUser.displayName}`;
       updateTemperature(Number(currentUser.mannerTemperature ?? currentManner));
       await refreshProfile();
     }
@@ -1956,10 +2406,14 @@ async function checkBackend() {
     await refreshStats();
     await refreshLobby();
     const routedToMatch = await loadMatchFromRoute();
-    if (currentUser && !routedToMatch) setView("dashboard");
+    if (isStaffRoute()) {
+      setView(isStaffUser() ? "staff" : "dashboard");
+    } else if (currentUser && !routedToMatch) {
+      setView("dashboard");
+    }
   } catch {
     backendOnline = false;
-    setServerStatus("Prototype mode", false);
+    setServerStatus(currentInterfaceLanguage() === "Korean" ? "프로토타입 모드" : "Prototype mode", false);
     renderLobby({ openSeeks: [], openSeeksTotal: 0, queuedPlayers: 0 });
   }
 }
@@ -1979,7 +2433,7 @@ function connectSocket(matchId) {
   socket = new WebSocket(`${protocol}://${location.host}/ws`);
   socket.addEventListener("open", () => {
     sendSocketMessage({ type: "join", matchId, clientId: voiceClientId });
-    syncState.textContent = "Live socket connected";
+    syncState.textContent = currentInterfaceLanguage() === "Korean" ? "실시간 연결됨" : "Live socket connected";
   });
   socket.addEventListener("message", (event) => {
     const message = JSON.parse(event.data);
@@ -1993,11 +2447,13 @@ function connectSocket(matchId) {
     if (message.type === "stt:subtitle") handleSubtitleSignal(message);
     if (message.type === "draw:offer") handleDrawOffer(message);
     if (message.type === "notification") handleNotificationMessage(message);
-    if (message.type === "queue:waiting") queuePrompt.textContent = "Waiting for another player to join.";
+    if (message.type === "queue:waiting") {
+      queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "다른 플레이어가 들어오기를 기다리는 중입니다." : "Waiting for another player to join.";
+    }
     if (message.type === "lobby:updated") refreshLobby();
   });
   socket.addEventListener("close", () => {
-    syncState.textContent = "Live socket disconnected";
+    syncState.textContent = currentInterfaceLanguage() === "Korean" ? "실시간 연결이 끊겼습니다" : "Live socket disconnected";
   });
 }
 
@@ -2007,29 +2463,32 @@ async function signInOrRegister() {
   const password = authPassword.value;
   const confirmPassword = authConfirmPassword.value;
   if (!email || !password) {
-    authStatus.textContent = "Enter an email and password to continue.";
+    authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "계속하려면 이메일과 비밀번호를 입력하세요." : "Enter an email and password to continue.";
     return;
   }
   if (authMode === "signup" && !displayName) {
-    authStatus.textContent = "Choose a display name shown to opponents.";
+    authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "상대에게 보일 이름을 입력하세요." : "Choose a display name shown to opponents.";
     authDisplayName.focus();
     return;
   }
   if (authMode === "signup" && !confirmPassword) {
-    authStatus.textContent = "Type your password again to confirm it.";
+    authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "확인을 위해 비밀번호를 한 번 더 입력하세요." : "Type your password again to confirm it.";
     authConfirmPasswordField.hidden = false;
     authConfirmPassword.focus();
     return;
   }
   if (authMode === "signup" && password !== confirmPassword) {
-    authStatus.textContent = "Passwords do not match.";
+    authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "비밀번호가 서로 다릅니다." : "Passwords do not match.";
     authConfirmPassword.focus();
     return;
   }
 
   authSubmit.disabled = true;
-  authSubmit.textContent = authMode === "login" ? "Logging in..." : "Creating account...";
-  authStatus.textContent = "Checking your account...";
+  authSubmit.textContent =
+    authMode === "login"
+      ? currentInterfaceLanguage() === "Korean" ? "로그인 중..." : "Logging in..."
+      : currentInterfaceLanguage() === "Korean" ? "계정 만드는 중..." : "Creating account...";
+  authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "계정을 확인하는 중..." : "Checking your account...";
 
   try {
     const data = await api(authMode === "login" ? "/api/auth/login" : "/api/auth/signup", {
@@ -2042,7 +2501,10 @@ async function signInOrRegister() {
       },
     });
     currentUser = data.user;
-    authStatus.textContent = `Signed in as ${currentUser.displayName}. Continue to play.`;
+    authStatus.textContent =
+      currentInterfaceLanguage() === "Korean"
+        ? `${currentUser.displayName}님으로 로그인되었습니다. 대국을 시작하세요.`
+        : `Signed in as ${currentUser.displayName}. Continue to play.`;
     authDisplayName.value = "";
     authPassword.value = "";
     authConfirmPassword.value = "";
@@ -2074,7 +2536,7 @@ async function signOut() {
   authEmail.disabled = false;
   authPassword.disabled = false;
   authLanguagePair.disabled = false;
-  authStatus.textContent = "Signed out. You can log in again anytime.";
+  authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "로그아웃되었습니다. 언제든 다시 로그인할 수 있어요." : "Signed out. You can log in again anytime.";
   clearProfile();
   renderAuthState();
   setView("home");
@@ -2082,13 +2544,15 @@ async function signOut() {
 
 async function deleteAccount() {
   if (!currentUser) {
-    authStatus.textContent = "Sign in before deleting an account.";
+    authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "계정을 삭제하려면 먼저 로그인하세요." : "Sign in before deleting an account.";
     setView("home");
     return;
   }
 
   const confirmed = window.confirm(
-    "Delete your account? This removes your profile, active rooms, and queue entries."
+    currentInterfaceLanguage() === "Korean"
+      ? "계정을 삭제할까요? 프로필, 진행 중인 방, 대기열 정보가 삭제됩니다."
+      : "Delete your account? This removes your profile, active rooms, and queue entries."
   );
   if (!confirmed) return;
 
@@ -2096,34 +2560,37 @@ async function deleteAccount() {
     currentUser = null;
     clearProfile();
     renderAuthState();
-    authStatus.textContent = "Local account state cleared. Start the server to delete saved account data.";
+    authStatus.textContent =
+      currentInterfaceLanguage() === "Korean"
+        ? "로컬 계정 상태를 지웠습니다. 저장된 계정 데이터 삭제는 서버를 시작한 뒤 가능합니다."
+        : "Local account state cleared. Start the server to delete saved account data.";
     setView("home");
     return;
   }
 
   deleteAccountButton.disabled = true;
-  deleteAccountButton.textContent = "Deleting...";
+  deleteAccountButton.textContent = currentInterfaceLanguage() === "Korean" ? "삭제 중..." : "Deleting...";
   try {
     await api("/api/auth/delete", { method: "DELETE" });
     currentUser = null;
     clearProfile();
     renderAuthState();
-    authStatus.textContent = "Account deleted.";
+    authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "계정을 삭제했습니다." : "Account deleted.";
     setView("home");
   } catch (error) {
     authStatus.textContent = error.message;
   } finally {
     deleteAccountButton.disabled = false;
-    deleteAccountButton.textContent = "Delete account";
+    deleteAccountButton.textContent = translateCopy("Delete account");
   }
 }
 
 async function signInWithGoogle() {
   if (!demoAuthAllowed) {
-    authStatus.textContent = "Demo sign-in is disabled on the deployed site.";
+    authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "배포된 사이트에서는 데모 로그인을 사용할 수 없습니다." : "Demo sign-in is disabled on the deployed site.";
     return;
   }
-  authStatus.textContent = "Signing in with demo account...";
+  authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "데모 계정으로 로그인하는 중..." : "Signing in with demo account...";
   googleSignInButton.disabled = true;
   try {
     const data = await api("/api/auth/signup", {
@@ -2136,7 +2603,10 @@ async function signInWithGoogle() {
       },
     });
     currentUser = data.user;
-    authStatus.textContent = `Signed in with demo account as ${currentUser.displayName}.`;
+    authStatus.textContent =
+      currentInterfaceLanguage() === "Korean"
+        ? `${currentUser.displayName} 데모 계정으로 로그인되었습니다.`
+        : `Signed in with demo account as ${currentUser.displayName}.`;
     renderAuthState();
     setView("dashboard");
     await refreshStats();
@@ -2166,6 +2636,7 @@ function renderForumPosts() {
   forumPostList.replaceChildren();
   forumFilterButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.forumFilter === forumFilter);
+    button.textContent = translateCopy(button.dataset.forumFilter);
   });
   const visiblePosts = (forumFilter === "All" ? forumPosts : forumPosts.filter((post) => post.category === forumFilter)).sort(
     (first, second) => Number(second.pinned) - Number(first.pinned)
@@ -2173,7 +2644,7 @@ function renderForumPosts() {
   if (visiblePosts.length === 0) {
     const empty = document.createElement("p");
     empty.className = "forum-empty";
-    empty.textContent = "No posts yet.";
+    empty.textContent = translateCopy("No posts yet.");
     forumPostList.append(empty);
     return;
   }
@@ -2183,7 +2654,7 @@ function renderForumPosts() {
 
     const pin = document.createElement("span");
     pin.className = "forum-post-pin";
-    pin.textContent = post.pinned ? "?��" : "";
+    pin.textContent = post.pinned ? "고정" : "";
 
     const main = document.createElement("div");
     main.className = "forum-post-main";
@@ -2206,14 +2677,16 @@ function renderForumPosts() {
 
     const comments = document.createElement("span");
     comments.className = "forum-comments";
-    comments.textContent = `?�� ${post.comments || 0}`;
+    comments.textContent = currentInterfaceLanguage() === "Korean" ? `댓글 ${post.comments || 0}` : `${post.comments || 0} comments`;
 
     let pinButton = null;
     if (isStaffUser()) {
       pinButton = document.createElement("button");
       pinButton.className = "forum-pin-action";
       pinButton.type = "button";
-      pinButton.textContent = post.pinned ? "Unpin" : "Pin";
+      pinButton.textContent = post.pinned
+        ? currentInterfaceLanguage() === "Korean" ? "고정 해제" : "Unpin"
+        : currentInterfaceLanguage() === "Korean" ? "고정" : "Pin";
       pinButton.addEventListener("click", () => toggleForumPin(post.id));
     }
 
@@ -2244,7 +2717,7 @@ function publishForumPost() {
       category: forumPostCategory.value,
       body,
       author: currentUser?.displayName || "Guest Player",
-      time: "Just now",
+      time: currentInterfaceLanguage() === "Korean" ? "방금 전" : "Just now",
       comments: 0,
       pinned: false,
     },
@@ -2460,6 +2933,7 @@ async function publishStaffProduct() {
 }
 
 function setView(viewName) {
+  if (viewName === "match") viewName = "dashboard";
   if (viewName === "review") viewName = "dashboard";
   if (viewName === "admin") viewName = "staff";
   if (viewName === "staff" && !isStaffUser()) viewName = "dashboard";
@@ -2468,6 +2942,7 @@ function setView(viewName) {
     viewName = "how-to-play";
   }
   if (viewName === "home") {
+    updateRouteForView(viewName);
     document.body.classList.add("show-landing");
     document.body.classList.remove("show-how-to-play");
     document.body.classList.remove("auth-entry-open");
@@ -2480,6 +2955,7 @@ function setView(viewName) {
 
   document.body.classList.remove("show-landing");
   document.body.classList.toggle("show-how-to-play", viewName === "how-to-play");
+  updateRouteForView(viewName);
   document.querySelectorAll(".view").forEach((view) => {
     view.classList.toggle("active", view.dataset.view === viewName);
   });
@@ -2646,8 +3122,10 @@ function buildBoard() {
       }
       if (pieces[id]) {
         const piece = document.createElement("span");
-        piece.className = `piece ${pieces[id].startsWith("w") ? "white-piece" : "black-piece"} piece-${pieces[id][1]}`;
-        piece.innerHTML = pieceSvg(pieces[id]);
+        const pieceColor = pieces[id].startsWith("w") ? "white" : "black";
+        const pieceEdition = pieceEditionForColor(pieceColor);
+        piece.className = `piece ${pieceColor}-piece piece-${pieces[id][1]} piece-edition-${pieceEdition}`;
+        piece.innerHTML = pieceSvg(pieces[id], pieceEdition);
         square.append(piece);
       }
 
@@ -2668,20 +3146,28 @@ function renderMatch(match) {
   setMatchState(matchEnded ? "ended" : "playing");
   if (!matchEnded) timeoutNotifiedFor = null;
   boardOrientation = currentPlayerColor(match);
+  currentMatchPlayers = match.players || [];
   if (match.game?.board) {
     pieces = piecesFromBoard(match.game.board);
     selectedSquare = null;
     buildBoard();
   }
   const opponent = match.players?.find((player) => player.userId !== currentUser?.id) || match.players?.[1];
-  partnerName.textContent = opponent ? `${opponent.displayName} (${match.partnerLanguage})` : `Mina K. (${match.partnerLanguage})`;
+  partnerName.textContent = opponent
+    ? `${opponent.displayName} (${translateCopy(match.partnerLanguage)})`
+    : `Mina K. (${translateCopy(match.partnerLanguage)})`;
   partnerId.textContent = shortPlayerId(opponent);
-  boardPartnerName.textContent = opponent ? opponent.displayName : "Waiting";
+  boardPartnerName.textContent = opponent ? opponent.displayName : translateCopy("Partner waiting");
   boardPartnerId.textContent = shortPlayerId(opponent);
-  if (selfPlayerName) selfPlayerName.textContent = currentUser?.displayName || "You";
+  if (selfPlayerName) selfPlayerName.textContent = currentUser?.displayName || translateCopy("You");
   voiceRing.textContent = initials(opponent?.displayName || "Mina K.");
-  matchResult.textContent = match.result || "In progress";
-  syncState.textContent = match.game?.gameOver ? "Game over" : `${match.game?.turn || "white"} to move`;
+  matchResult.textContent = match.result ? translateCopy(match.result) : translateCopy("In progress");
+  const turn = match.game?.turn || "white";
+  syncState.textContent = match.game?.gameOver
+    ? currentInterfaceLanguage() === "Korean" ? "대국 종료" : "Game over"
+    : currentInterfaceLanguage() === "Korean"
+      ? `${turn === "white" ? "백" : "흑"} 차례`
+      : `${turn} to move`;
   matchSourceBadge.textContent = matchSourceLabel(match);
   timeControlBadge.textContent = matchClockLabel(match);
   startMatchClock(match);
@@ -2689,7 +3175,7 @@ function renderMatch(match) {
   if (matchEnded) {
     endVoiceCall(false);
   } else if (!localVoiceStream) {
-    setVoiceStatus("Match paired. You can start your mic.");
+    setVoiceStatus(currentInterfaceLanguage() === "Korean" ? "매칭되었습니다. 마이크를 시작할 수 있습니다." : "Match paired. You can start your mic.");
   }
 }
 
@@ -2703,7 +3189,8 @@ function localMove(from, to) {
   buildBoard();
   document.querySelector(`[data-square="${from}"]`)?.classList.add("moved");
   document.querySelector(`[data-square="${to}"]`)?.classList.add("recent");
-  syncState.textContent = `${from} to ${to} moved locally`;
+  syncState.textContent =
+    currentInterfaceLanguage() === "Korean" ? `${from}에서 ${to}로 움직였습니다` : `${from} to ${to} moved locally`;
 }
 
 async function makeMove(from, to) {
@@ -2722,7 +3209,7 @@ async function makeMove(from, to) {
   selectedSquare = null;
   legalMoveTargets = [];
   buildBoard();
-  syncState.textContent = "Sending move...";
+  syncState.textContent = currentInterfaceLanguage() === "Korean" ? "수를 보내는 중..." : "Sending move...";
 
   try {
     const data = await api(`/api/matches/${currentMatchId}/move`, {
@@ -2730,7 +3217,8 @@ async function makeMove(from, to) {
       body: { from, to, promotion: "q" },
     });
     renderMatch(data.match);
-    syncState.textContent = `${data.move.san} accepted`;
+    syncState.textContent =
+      currentInterfaceLanguage() === "Korean" ? `${data.move.san} 수가 반영되었습니다` : `${data.move.san} accepted`;
     refreshStats();
   } catch (error) {
     selectedSquare = null;
@@ -2772,9 +3260,9 @@ async function applyPlannedMove() {
 async function finishMatch(result, options = {}) {
   const review = options.review ?? true;
   setMatchState("ended");
-  matchResult.textContent = result;
-  syncState.textContent = options.statusText || "Match ended";
-  if (generateReviewButton) generateReviewButton.textContent = "";
+  matchResult.textContent = translateCopy(result);
+  syncState.textContent = options.statusText ? translateCopy(options.statusText) : currentInterfaceLanguage() === "Korean" ? "대국 종료" : "Match ended";
+  if (generateReviewButton) generateReviewButton.textContent = translateCopy("Generate AI Review");
   window.clearInterval(clockInterval);
   if (backendOnline && currentMatchId) {
     try {
@@ -2789,32 +3277,32 @@ async function finishMatch(result, options = {}) {
       return;
     }
   }
-  if (review) await requestReview("the completed match");
+  if (review) await requestReview(currentInterfaceLanguage() === "Korean" ? "완료된 대국" : "the completed match");
 }
 
 function offerDraw() {
   if (!currentMatchId) {
-    matchResult.textContent = "Start a game first";
+    matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "먼저 대국을 시작하세요" : "Start a game first";
     return;
   }
   if (drawOfferFromOpponent) {
     drawOfferFromOpponent = false;
-    finishMatch("Draw agreed", { statusText: "Draw accepted" });
+    finishMatch("Draw agreed", { statusText: currentInterfaceLanguage() === "Korean" ? "무승부를 수락했습니다" : "Draw accepted" });
     return;
   }
-  matchResult.textContent = "Draw offered";
-  syncState.textContent = "Draw offer sent. Waiting for opponent.";
+  matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "무승부 제안함" : "Draw offered";
+  syncState.textContent = currentInterfaceLanguage() === "Korean" ? "무승부를 제안했습니다. 상대 응답을 기다립니다." : "Draw offer sent. Waiting for opponent.";
   sendSocketMessage({ type: "draw:offer", matchId: currentMatchId, from: voiceClientId });
 }
 
 function handleDrawOffer(message) {
   if (!message.matchId || message.matchId !== currentMatchId || message.from === voiceClientId) return;
   drawOfferFromOpponent = true;
-  matchResult.textContent = "Draw offered by opponent";
-  syncState.textContent = "Opponent offered a draw. Press 1/2 to accept.";
+  matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "상대가 무승부를 제안했습니다" : "Draw offered by opponent";
+  syncState.textContent = currentInterfaceLanguage() === "Korean" ? "수락하려면 1/2 버튼을 누르세요." : "Opponent offered a draw. Press 1/2 to accept.";
 }
 
-async function startQueue(label = "Searching for a safe partner with matching goals.", liveQueue = false, overrides = {}) {
+async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안전하게 대화할 수 있는 파트너를 찾는 중입니다." : "Searching for a safe partner with matching goals.", liveQueue = false, overrides = {}) {
   clearInterval(queueInterval);
   clearInterval(queuePollInterval);
   requestNotificationPermission();
@@ -2825,7 +3313,7 @@ async function startQueue(label = "Searching for a safe partner with matching go
   cancelMatchSearchButton.hidden = false;
   queuePrompt.textContent = label;
   queueProgress.style.width = `${progress}%`;
-  matchResult.textContent = "Searching";
+  matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "검색 중" : "Searching";
   queueTime.textContent = "00:25";
 
   if (backendOnline) {
@@ -2848,7 +3336,7 @@ async function startQueue(label = "Searching for a safe partner with matching go
       });
 
       if (data.waiting) {
-        queuePrompt.textContent = "Waiting for a matching player.";
+        queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "조건이 맞는 플레이어를 기다리는 중입니다." : "Waiting for a matching player.";
         queuePollInterval = setInterval(async () => {
           if (currentMatchId) {
             clearInterval(queuePollInterval);
@@ -2860,7 +3348,7 @@ async function startQueue(label = "Searching for a safe partner with matching go
               clearInterval(queuePollInterval);
               clearInterval(queueInterval);
               renderMatch(next.match);
-              matchResult.textContent = overrides.readyText || "Opponent matched";
+              matchResult.textContent = overrides.readyText || (currentInterfaceLanguage() === "Korean" ? "상대를 찾았습니다" : "Opponent matched");
               await refreshStats();
               await refreshLobby();
             }
@@ -2870,7 +3358,7 @@ async function startQueue(label = "Searching for a safe partner with matching go
         }, 1200);
       } else {
         renderMatch(data.match);
-        matchResult.textContent = overrides.readyText || (liveQueue ? "Opponent matched" : "Game ready");
+        matchResult.textContent = overrides.readyText || (liveQueue ? currentInterfaceLanguage() === "Korean" ? "상대를 찾았습니다" : "Opponent matched" : currentInterfaceLanguage() === "Korean" ? "대국 준비 완료" : "Game ready");
       }
       await refreshStats();
       await refreshLobby();
@@ -2896,10 +3384,10 @@ function cancelMatchSearch() {
   clearInterval(queueInterval);
   clearInterval(queuePollInterval);
   setMatchState("idle");
-  queueTime.textContent = "Choose mode";
+  queueTime.textContent = currentInterfaceLanguage() === "Korean" ? "방식 선택" : "Choose mode";
   queueProgress.style.width = "0%";
-  queuePrompt.textContent = "Search canceled. Choose how you want to play.";
-  matchResult.textContent = "Canceled";
+  queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "검색을 취소했습니다. 대국 방식을 다시 선택하세요." : "Search canceled. Choose how you want to play.";
+  matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "취소됨" : "Canceled";
 }
 
 function resetToNewGame() {
@@ -2909,19 +3397,24 @@ function resetToNewGame() {
   currentMatchId = null;
   updateRoomLink(null);
   setMatchState("idle");
-  queueTime.textContent = "Choose mode";
+  queueTime.textContent = currentInterfaceLanguage() === "Korean" ? "방식 선택" : "Choose mode";
   queueProgress.style.width = "0%";
-  queuePrompt.textContent = "Choose how you want to play.";
-  matchResult.textContent = "No active match";
+  queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "원하는 대국 방식을 선택하세요." : "Choose how you want to play.";
+  matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "진행 중인 대국이 없어요" : "No active match";
   if (location.protocol !== "file:") history.replaceState({}, "", "/");
 }
 
 async function quickPairFromSelectedPool() {
   const pool = selectedPool();
   seekComposer.hidden = true;
-  await startQueue(`Quick pair is searching ${pool.label} ${pool.name}.`, false, {
+  await startQueue(
+    currentInterfaceLanguage() === "Korean"
+      ? `퀵 매칭으로 ${pool.label} ${pool.name} 상대를 찾고 있습니다.`
+      : `Quick pair is searching ${pool.label} ${pool.name}.`,
+    false,
+    {
     endpoint: "/api/matches/quick-pair",
-    readyText: "Quick pair matched",
+    readyText: currentInterfaceLanguage() === "Korean" ? "퀵 매칭 완료" : "Quick pair matched",
     body: {
       pairingType: "quick-pool",
       poolId: pool.id,
@@ -2933,15 +3426,18 @@ async function quickPairFromSelectedPool() {
 
 async function acceptSeek(seek) {
   if (!backendOnline) {
-    queuePrompt.textContent = "Start the backend to join live games.";
+    queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "실시간 게임에 참여하려면 로컬 서버를 시작하세요." : "Start the backend to join live games.";
     return;
   }
 
   try {
-    queuePrompt.textContent = `Joining ${seek.displayName}'s ${seek.timeControl} game.`;
+    queuePrompt.textContent =
+      currentInterfaceLanguage() === "Korean"
+        ? `${seek.displayName}님의 ${seek.timeControl} 게임에 참여하는 중입니다.`
+        : `Joining ${seek.displayName}'s ${seek.timeControl} game.`;
     const data = await api(`/api/matches/seeks/${seek.id}/accept`, { method: "POST" });
     renderMatch(data.match);
-    matchResult.textContent = "Game joined";
+    matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "게임에 참여했습니다" : "Game joined";
     await refreshStats();
     await refreshLobby();
   } catch (error) {
@@ -2952,7 +3448,7 @@ async function acceptSeek(seek) {
 async function createOpenSeek() {
   const gameType = activeGameType();
   if (!backendOnline) {
-    queuePrompt.textContent = "Start the backend and sign in to create a live game.";
+    queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "실시간 게임을 만들려면 서버를 시작하고 로그인하세요." : "Start the backend and sign in to create a live game.";
     renderLobby({ openSeeks: [], openSeeksTotal: 0, queuedPlayers: 0 });
     return;
   }
@@ -2969,13 +3465,16 @@ async function createOpenSeek() {
     });
     if (data.match) {
       renderMatch(data.match);
-      matchResult.textContent = "Matched by settings";
+      matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "설정에 맞는 상대를 찾았습니다" : "Matched by settings";
       await refreshStats();
       await refreshLobby();
       return;
     }
     setMatchState("searching");
-    queuePrompt.textContent = `Game created. Waiting for ${data.seek.timeControl}, ${data.seek.partnerLanguage}, ${data.seek.goal}.`;
+    queuePrompt.textContent =
+      currentInterfaceLanguage() === "Korean"
+        ? `게임을 만들었습니다. ${data.seek.timeControl}, ${translateCopy(data.seek.partnerLanguage)}, ${translateCopy(data.seek.goal)} 조건의 상대를 기다립니다.`
+        : `Game created. Waiting for ${data.seek.timeControl}, ${data.seek.partnerLanguage}, ${data.seek.goal}.`;
     await refreshLobby();
   } catch (error) {
     queuePrompt.textContent = error.message;
@@ -2986,7 +3485,7 @@ async function createPrivateChallenge() {
   const pool = selectedPool();
   if (!backendOnline) {
     privateChallengeCode.textContent = "LOCAL";
-    queuePrompt.textContent = "Private challenge preview created. Start the backend for shareable codes.";
+    queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "비공개 방 미리보기를 만들었습니다. 공유 코드는 서버를 시작하면 사용할 수 있습니다." : "Private challenge preview created. Start the backend for shareable codes.";
     return;
   }
 
@@ -3000,7 +3499,7 @@ async function createPrivateChallenge() {
       },
     });
     privateChallengeCode.textContent = data.challenge.code;
-    queuePrompt.textContent = "Private invite created. Share the code with a friend.";
+    queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "초대 코드를 만들었습니다. 친구에게 코드를 공유하세요." : "Private invite created. Share the code with a friend.";
   } catch (error) {
     queuePrompt.textContent = error.message;
   }
@@ -3009,21 +3508,21 @@ async function createPrivateChallenge() {
 async function joinPrivateChallenge() {
   const code = privateChallengeInput.value.trim().toUpperCase();
   if (!code) {
-    queuePrompt.textContent = "Enter a private challenge code first.";
+    queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "먼저 비공개 방 코드를 입력하세요." : "Enter a private challenge code first.";
     privateChallengeInput.focus();
     return;
   }
   if (!backendOnline) {
-    queuePrompt.textContent = "Start the backend to join private challenges.";
+    queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "비공개 방에 참여하려면 서버를 시작하세요." : "Start the backend to join private challenges.";
     return;
   }
 
   try {
-    queuePrompt.textContent = `Joining private challenge ${code}.`;
+    queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? `${code} 방에 참여하는 중입니다.` : `Joining private challenge ${code}.`;
     const data = await api(`/api/challenges/${encodeURIComponent(code)}/accept`, { method: "POST" });
     privateChallengeInput.value = "";
     renderMatch(data.match);
-    matchResult.textContent = "Private challenge joined";
+    matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "비공개 방에 참여했습니다" : "Private challenge joined";
     await refreshStats();
     await refreshLobby();
   } catch (error) {
@@ -3032,10 +3531,25 @@ async function joinPrivateChallenge() {
 }
 
 function updateTemperature(value) {
-  const text = `${value.toFixed(1)} C`;
-  mannerTemp.textContent = value.toFixed(1);
-  if (dashboardTemp) dashboardTemp.textContent = text;
-  profileTemp.textContent = text;
+  const label = mannerBadgeText(value);
+  mannerTemp.textContent = label;
+  if (dashboardTemp) dashboardTemp.textContent = label;
+  if (profileTemp) profileTemp.textContent = label;
+}
+
+function mannerBadgeText(value) {
+  const score = Number(value);
+  let label = "🌱 친절한 대화 상대";
+  if (Number.isFinite(score) && score >= 45) label = "🌿 믿음직한 대화 상대";
+  if (Number.isFinite(score) && score < 35) label = "🌱 새싹 대화 연습 중";
+  if (Number.isFinite(score) && score < 25) label = "운영자 확인 필요";
+  if (currentInterfaceLanguage() !== "Korean") {
+    if (label.includes("믿음직")) label = "🌿 Trusted conversation partner";
+    else if (label.includes("새싹")) label = "🌱 New conversation sprout";
+    else if (label.includes("운영자")) label = "Needs a staff check";
+    else label = "🌱 Friendly conversation partner";
+  }
+  return label;
 }
 
 function initials(name = "CL") {
@@ -3053,9 +3567,11 @@ function renderProfile(profile) {
   profileAvatar.textContent = initials(user.displayName);
   profileName.textContent = user.displayName;
   profileEmail.textContent = user.email;
-  profileLanguageText.textContent = user.languagePair || "Language pair not set";
+  profileLanguageText.textContent = user.languagePair ? translateCopy(user.languagePair) : currentInterfaceLanguage() === "Korean" ? "언어 조합이 아직 없습니다." : "Language pair not set";
   profileDisplayName.value = user.displayName || "";
   profileLanguagePair.value = user.languagePair || "English to Korean";
+  if (profilePieceEdition) profilePieceEdition.value = normalizePieceEdition(user.pieceEdition);
+  updateHeaderPieceEditionToggle(user.pieceEdition);
   profileBio.value = user.bio || "";
   updateTemperature(Number(user.mannerTemperature ?? currentManner));
 
@@ -3078,46 +3594,50 @@ function renderProfile(profile) {
   cultureGuideList.innerHTML = "";
   if (!profile.cultureGuide.length) {
     const empty = document.createElement("p");
-    empty.textContent = "No culture notes saved yet.";
+    empty.textContent = currentInterfaceLanguage() === "Korean" ? "아직 저장된 문화 노트가 없어요. 대국 뒤 인상 깊은 표현을 남겨보세요." : "No culture notes saved yet.";
     cultureGuideList.append(empty);
   } else {
     profile.cultureGuide.forEach((entry) => {
       const item = document.createElement("p");
       const source = document.createElement("strong");
-      source.textContent = entry.source || "Culture note";
+      source.textContent = translateCopy(entry.source || "Culture note");
       item.append(source, document.createTextNode(` ${entry.note || ""}`));
       cultureGuideList.append(item);
     });
   }
 
-  profileStatus.textContent = `${profile.stats.matches} match(es), ${profile.stats.reviews} review(s), ${profile.stats.cultureNotes} culture note(s).`;
+  profileStatus.textContent =
+    currentInterfaceLanguage() === "Korean"
+      ? `대국 ${profile.stats.matches}개, 복습 ${profile.stats.reviews}개, 문화 노트 ${profile.stats.cultureNotes}개`
+      : `${profile.stats.matches} match(es), ${profile.stats.reviews} review(s), ${profile.stats.cultureNotes} culture note(s).`;
 }
 
 function clearProfile() {
   profileAvatar.textContent = "CL";
   profileName.textContent = "ChessLearner";
   profileEmail.textContent = "player@example.com";
-  profileLanguageText.textContent = "Sign in to load language settings.";
+  profileLanguageText.textContent = currentInterfaceLanguage() === "Korean" ? "언어 설정을 불러오려면 로그인하세요." : "Sign in to load language settings.";
   profileDisplayName.value = "";
   profileLanguagePair.value = "English to Korean";
+  if (profilePieceEdition) profilePieceEdition.value = "cheoinseong";
   profileBio.value = "";
   badgeList.innerHTML = "";
   badgeDetails.innerHTML = "";
   cultureGuideList.innerHTML = "";
-  profileStatus.textContent = "Sign in to load your saved profile.";
+  profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "저장된 프로필을 불러오려면 로그인하세요." : "Sign in to load your saved profile.";
 }
 
 async function refreshProfile() {
   if (!backendOnline) {
-    profileStatus.textContent = "Start the backend to use profile tools.";
+    profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "프로필 기능을 쓰려면 로컬 서버를 시작하세요." : "Start the backend to use profile tools.";
     return;
   }
   if (!currentUser) {
-    profileStatus.textContent = "Sign in to load your saved profile.";
+    profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "저장된 프로필을 불러오려면 로그인하세요." : "Sign in to load your saved profile.";
     return;
   }
 
-  profileStatus.textContent = "Loading profile...";
+  profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "프로필을 불러오는 중..." : "Loading profile...";
   try {
     const profile = await api("/api/profile");
     currentUser = profile.user;
@@ -3130,18 +3650,21 @@ async function refreshProfile() {
 
 async function saveProfile() {
   try {
-    profileStatus.textContent = "Saving profile...";
+    profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "프로필을 저장하는 중..." : "Saving profile...";
     const profile = await api("/api/profile", {
       method: "PUT",
       body: {
         displayName: profileDisplayName.value,
         languagePair: profileLanguagePair.value,
+        pieceEdition: profilePieceEdition?.value,
         bio: profileBio.value,
       },
     });
     currentUser = profile.user;
     renderProfile(profile);
-    authStatus.textContent = `Signed in as ${currentUser.displayName}`;
+    authStatus.textContent =
+      currentInterfaceLanguage() === "Korean" ? `${currentUser.displayName}님으로 로그인됨` : `Signed in as ${currentUser.displayName}`;
+    updateHeaderPieceEditionToggle(currentUser.pieceEdition);
     renderAuthState();
   } catch (error) {
     profileStatus.textContent = error.message;
@@ -3150,7 +3673,7 @@ async function saveProfile() {
 
 async function submitPeerFeedback() {
   try {
-    profileStatus.textContent = "Submitting feedback...";
+    profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "피드백을 보내는 중..." : "Submitting feedback...";
     const data = await api("/api/profile/feedback", {
       method: "POST",
       body: {
@@ -3162,8 +3685,12 @@ async function submitPeerFeedback() {
     peerFeedbackNote.value = "";
     if (data.profile) renderProfile(data.profile);
     profileStatus.textContent = currentMatchId
-      ? `Feedback saved for ${data.target?.displayName || "your match partner"}.`
-      : "Feedback saved to your profile history.";
+      ? currentInterfaceLanguage() === "Korean"
+        ? `${data.target?.displayName || "대국 파트너"}에게 피드백을 저장했습니다.`
+        : `Feedback saved for ${data.target?.displayName || "your match partner"}.`
+      : currentInterfaceLanguage() === "Korean"
+        ? "프로필 기록에 피드백을 저장했습니다."
+        : "Feedback saved to your profile history.";
   } catch (error) {
     profileStatus.textContent = error.message;
   }
@@ -3173,10 +3700,10 @@ async function saveCultureGuide() {
   try {
     const note = cultureGuideInput.value.trim();
     if (!note) {
-      profileStatus.textContent = "Enter a culture note first.";
+      profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "문화 노트를 먼저 입력하세요." : "Enter a culture note first.";
       return;
     }
-    profileStatus.textContent = "Saving culture note...";
+    profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "문화 노트를 저장하는 중..." : "Saving culture note...";
     const profile = await api("/api/profile/culture-guide", {
       method: "POST",
       body: { note, source: "Culture Guide" },
@@ -3248,16 +3775,20 @@ function setSttButtonText(text) {
 
 function setSttStatus(active, detail = "") {
   sttListening = active;
-  sttPill.textContent = active ? "Captions listening" : "Captions paused";
-  if (sttStatusText) sttStatusText.textContent = detail || (active ? "Listening" : "Paused");
-  if (matchSttStatus) matchSttStatus.textContent = detail || (active ? "Listening" : "Paused");
-  setSttButtonText(active ? "Stop captions" : "Start captions");
+  const listeningText = currentInterfaceLanguage() === "Korean" ? "자막 듣는 중" : "Captions listening";
+  const pausedText = currentInterfaceLanguage() === "Korean" ? "자막 대기 중" : "Captions paused";
+  const activeDetail = currentInterfaceLanguage() === "Korean" ? "듣는 중" : "Listening";
+  const pausedDetail = currentInterfaceLanguage() === "Korean" ? "대기 중" : "Paused";
+  sttPill.textContent = active ? listeningText : pausedText;
+  if (sttStatusText) sttStatusText.textContent = detail || (active ? activeDetail : pausedDetail);
+  if (matchSttStatus) matchSttStatus.textContent = detail || (active ? activeDetail : pausedDetail);
+  setSttButtonText(active ? translateCopy("Stop captions") : translateCopy("Start captions"));
 }
 
 function updateSessionDuration() {
   if (!sttSessionStart) {
-    sessionDuration.textContent = "00:00";
-    if (matchSessionDuration) matchSessionDuration.textContent = "00:00";
+    sessionDuration.textContent = translateCopy("Not started");
+    if (matchSessionDuration) matchSessionDuration.textContent = translateCopy("Not started");
     return;
   }
   const elapsed = Math.floor((Date.now() - sttSessionStart) / 1000);
@@ -3282,7 +3813,7 @@ function stopSessionTimer() {
 
 function subtitleTranslation(text) {
   const target = subtitleTargetLanguage.value || "Korean";
-  return `Translation pending (${target}): ${text}`;
+  return currentInterfaceLanguage() === "Korean" ? `번역 준비 중(${translateCopy(target)}): ${text}` : `Translation pending (${target}): ${text}`;
 }
 
 async function translateSubtitleText(text, options = {}) {
@@ -3303,7 +3834,11 @@ async function translateSubtitleText(text, options = {}) {
       provider: data.translation?.provider || "backend",
     };
   } catch (error) {
-    return { text: `Translation unavailable: ${text}`, provider: "fallback", error: error.message };
+    return {
+      text: currentInterfaceLanguage() === "Korean" ? `번역을 불러올 수 없어요: ${text}` : `Translation unavailable: ${text}`,
+      provider: "fallback",
+      error: error.message,
+    };
   }
 }
 
@@ -3316,11 +3851,17 @@ function subtitlePlaceholder(text) {
 
 function resetSubtitlePlaceholders() {
   originalSubtitleContainers().forEach((container) => {
-    container.replaceChildren(subtitlePlaceholder("Start captions, allow microphone access, then speak."));
+    container.replaceChildren(
+      subtitlePlaceholder(currentInterfaceLanguage() === "Korean" ? "자막을 시작하고 마이크 권한을 허용한 뒤 말해보세요." : "Start captions, allow microphone access, then speak."),
+    );
   });
   translatedSubtitleContainers().forEach((container) => {
-    container.replaceChildren(subtitlePlaceholder("Live captions capture speech first. Translation appears here."));
+    container.replaceChildren(
+      subtitlePlaceholder(currentInterfaceLanguage() === "Korean" ? "음성이 먼저 자막으로 잡히면 번역이 여기에 표시됩니다." : "Live captions capture speech first. Translation appears here."),
+    );
   });
+  if (wordsRecognized) wordsRecognized.textContent = translateCopy("No words yet");
+  if (matchWordsRecognized) matchWordsRecognized.textContent = translateCopy("No words yet");
 }
 
 function clearSubtitlePlaceholders() {
@@ -3376,8 +3917,13 @@ function appendFinalSubtitle({ speaker, text, sourceLanguage, persist = false })
   if (!phrase) return;
 
   appendSubtitleLines(originalSubtitleContainers(), speaker, phrase);
-  const translatedLines = appendSubtitleLines(translatedSubtitleContainers(), speaker, "Translating...");
-  const nextWords = Number(wordsRecognized.textContent || 0) + phrase.split(/\s+/).filter(Boolean).length;
+  const translatedLines = appendSubtitleLines(
+    translatedSubtitleContainers(),
+    speaker,
+    currentInterfaceLanguage() === "Korean" ? "번역 중..." : "Translating...",
+  );
+  const currentWordCount = Number(wordsRecognized.textContent);
+  const nextWords = (Number.isFinite(currentWordCount) ? currentWordCount : 0) + phrase.split(/\s+/).filter(Boolean).length;
   wordsRecognized.textContent = String(nextWords);
   if (matchWordsRecognized) matchWordsRecognized.textContent = String(nextWords);
 
@@ -3394,8 +3940,9 @@ function appendFinalSubtitle({ speaker, text, sourceLanguage, persist = false })
     });
     if (persist) persistSubtitleLine(phrase, result.text, speaker);
     if (["nvidia", "mymemory", "backend"].includes(result.provider)) {
-      if (sttStatusText) sttStatusText.textContent = "Translated";
-      if (matchSttStatus) matchSttStatus.textContent = "Translated";
+      const translated = currentInterfaceLanguage() === "Korean" ? "번역됨" : "Translated";
+      if (sttStatusText) sttStatusText.textContent = translated;
+      if (matchSttStatus) matchSttStatus.textContent = translated;
     }
   });
 }
@@ -3437,19 +3984,29 @@ function stopBrowserStt() {
   }
   removeInterimSpeech();
   stopSessionTimer();
-  setSttStatus(false, "Captions stopped.");
+  setSttStatus(false, currentInterfaceLanguage() === "Korean" ? "자막을 멈췄습니다." : "Captions stopped.");
 }
 
 function startBrowserStt() {
   const Recognition = browserSpeechRecognitionCtor();
   if (!Recognition) {
     sttToggle.checked = false;
-    setSttStatus(false, "Live captions need Chrome or another browser with speech recognition support.");
+    setSttStatus(
+      false,
+      currentInterfaceLanguage() === "Korean"
+        ? "실시간 자막은 Chrome처럼 음성 인식을 지원하는 브라우저가 필요합니다."
+        : "Live captions need Chrome or another browser with speech recognition support.",
+    );
     return;
   }
   if (!isSecureVoiceContext()) {
     sttToggle.checked = false;
-    setSttStatus(false, "Caption microphone access needs HTTPS. Render is OK, and localhost is OK.");
+    setSttStatus(
+      false,
+      currentInterfaceLanguage() === "Korean"
+        ? "마이크 자막은 HTTPS가 필요합니다. Render와 localhost는 사용할 수 있습니다."
+        : "Caption microphone access needs HTTPS. Render is OK, and localhost is OK.",
+    );
     return;
   }
 
@@ -3463,7 +4020,7 @@ function startBrowserStt() {
   sttShouldRestart = true;
   sttToggle.checked = true;
   startSessionTimer();
-  setSttStatus(true, "Listening for speech...");
+  setSttStatus(true, currentInterfaceLanguage() === "Korean" ? "음성을 듣는 중..." : "Listening for speech...");
 
   speechRecognition.onresult = (event) => {
     let finalText = "";
@@ -3484,15 +4041,15 @@ function startBrowserStt() {
 
   speechRecognition.onerror = (event) => {
     if (event.error === "no-speech") {
-      setSttStatus(true, "Listening");
+      setSttStatus(true, currentInterfaceLanguage() === "Korean" ? "듣는 중" : "Listening");
       return;
     }
     sttShouldRestart = false;
     sttToggle.checked = false;
     stopSessionTimer();
     const message = event.error === "not-allowed"
-      ? "Mic permission blocked"
-      : `Caption issue: ${event.error || "stopped"}`;
+      ? currentInterfaceLanguage() === "Korean" ? "마이크 권한이 차단되었습니다" : "Mic permission blocked"
+      : currentInterfaceLanguage() === "Korean" ? `자막 문제: ${event.error || "중지됨"}` : `Caption issue: ${event.error || "stopped"}`;
     setSttStatus(false, message);
   };
 
@@ -3505,7 +4062,7 @@ function startBrowserStt() {
       return;
     }
     stopSessionTimer();
-    setSttStatus(false, "Captions stopped.");
+    setSttStatus(false, currentInterfaceLanguage() === "Korean" ? "자막을 멈췄습니다." : "Captions stopped.");
   };
 
   try {
@@ -3513,15 +4070,21 @@ function startBrowserStt() {
   } catch (error) {
     sttShouldRestart = false;
     sttToggle.checked = false;
-    setSttStatus(false, `Caption error: ${error.message}`);
+    setSttStatus(false, currentInterfaceLanguage() === "Korean" ? `자막 오류: ${error.message}` : `Caption error: ${error.message}`);
   }
 }
 
 function renderReview(review) {
   if (!reviewStatus || !pronunciationStatus || !vocabList || !culturalTitle || !culturalBody || !culturalPrompt) return;
   if (!review) return;
-  reviewStatus.textContent = `${review.vocabulary.length} items generated`;
-  pronunciationStatus.textContent = "AI review generated. Click any word to replay pronunciation.";
+  reviewStatus.textContent =
+    currentInterfaceLanguage() === "Korean"
+      ? `${review.vocabulary.length}개 표현 생성됨`
+      : `${review.vocabulary.length} items generated`;
+  pronunciationStatus.textContent =
+    currentInterfaceLanguage() === "Korean"
+      ? "AI 복습이 만들어졌습니다. 단어를 누르면 발음을 다시 들을 수 있어요."
+      : "AI review generated. Click any word to replay pronunciation.";
   vocabList.innerHTML = "";
 
   review.vocabulary.forEach((item) => {
@@ -3547,16 +4110,23 @@ function renderReview(review) {
 
   culturalTitle.textContent = review.culturalInsight.title;
   culturalBody.textContent = review.culturalInsight.summary;
-  culturalPrompt.textContent = `Research prompt: ${review.culturalInsight.researchPrompt}`;
+  culturalPrompt.textContent =
+    currentInterfaceLanguage() === "Korean"
+      ? `다음 질문: ${translateCopy(review.culturalInsight.researchPrompt)}`
+      : `Research prompt: ${review.culturalInsight.researchPrompt}`;
 }
 
 async function requestReview(source = "the completed match") {
   if (!reviewStatus || !pronunciationStatus) return;
-  reviewStatus.textContent = "Generating";
-  pronunciationStatus.textContent = `Building AI review from ${source}.`;
+  reviewStatus.textContent = currentInterfaceLanguage() === "Korean" ? "생성 중" : "Generating";
+  pronunciationStatus.textContent =
+    currentInterfaceLanguage() === "Korean" ? `${source}에서 AI 복습을 만드는 중입니다.` : `Building AI review from ${source}.`;
   if (!backendOnline || !currentMatchId) {
-    reviewStatus.textContent = "Prototype review ready";
-    pronunciationStatus.textContent = "Start the backend and finish a match to generate a saved review.";
+    reviewStatus.textContent = currentInterfaceLanguage() === "Korean" ? "프로토타입 복습 준비됨" : "Prototype review ready";
+    pronunciationStatus.textContent =
+      currentInterfaceLanguage() === "Korean"
+        ? "저장된 복습을 만들려면 서버를 시작하고 대국을 완료하세요."
+        : "Start the backend and finish a match to generate a saved review.";
     return;
   }
 
@@ -3653,7 +4223,10 @@ document.querySelectorAll(".segment").forEach((button) => {
   button.addEventListener("click", () => {
     document.querySelectorAll(".segment").forEach((item) => item.classList.remove("active"));
     button.classList.add("active");
-    syncState.textContent = `${button.dataset.mode} game ready`;
+    syncState.textContent =
+      currentInterfaceLanguage() === "Korean"
+        ? `${button.dataset.mode === "Rated" ? "기록" : "친선"} 게임 준비됨`
+        : `${button.dataset.mode} game ready`;
   });
 });
 
@@ -3662,8 +4235,13 @@ document.querySelectorAll(".pool-button").forEach((button) => {
     document.querySelectorAll(".pool-button").forEach((item) => item.classList.remove("active"));
     button.classList.add("active");
     const pool = selectedPool();
-    queuePrompt.textContent = `${pool.label} ${pool.name} selected.`;
-    timeControlBadge.textContent = `${pool.timeControl} - ${pool.rated ? "Rated" : "Casual"} - ${conversationGoal.value}`;
+    queuePrompt.textContent =
+      currentInterfaceLanguage() === "Korean"
+        ? `${pool.label} ${pool.name}을 선택했습니다.`
+        : `${pool.label} ${pool.name} selected.`;
+    timeControlBadge.textContent = `${pool.timeControl} - ${
+      pool.rated ? currentInterfaceLanguage() === "Korean" ? "기록" : "Rated" : currentInterfaceLanguage() === "Korean" ? "친선" : "Casual"
+    } - ${translateCopy(conversationGoal.value)}`;
   });
 });
 
@@ -3689,6 +4267,23 @@ textSizeSlider.addEventListener("input", (event) => applyTextSize(event.target.v
 
 languageSelect?.addEventListener("change", () => {
   applyInterfaceLanguage();
+  renderAuthState();
+  updateTemperature(currentUser?.mannerTemperature ?? currentManner);
+  if (cachedLobbyData) renderLobby(cachedLobbyData);
+  if (cachedAdminData && isStaffUser()) renderAdminOverview(cachedAdminData);
+  renderForumPosts();
+  resetSubtitlePlaceholders();
+  setSttStatus(sttListening);
+});
+
+headerPieceEditionToggle?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-piece-edition]");
+  if (!button) return;
+  setPieceEdition(button.dataset.pieceEdition);
+});
+
+profilePieceEdition?.addEventListener("change", (event) => {
+  setPieceEdition(event.target.value);
 });
 
 signupButton.addEventListener("click", () => {
@@ -3707,17 +4302,15 @@ loginButton.addEventListener("click", () => {
   setAuthMode("login");
 });
 
-document.querySelector("#seniorEntryButton")?.addEventListener("click", () => {
-  if (currentUser) {
-    setView("dashboard");
-    return;
-  }
-  setAuthMode("signup");
-});
+mainAccountButton?.addEventListener("click", () => openAccountEntry("signup"));
 
-document.querySelector("#globalEntryButton")?.addEventListener("click", () => {
-  beginStudentTutorial();
-});
+mainTutorialButton?.addEventListener("click", () => setView("how-to-play"));
+
+tutorialLoginButton?.addEventListener("click", () => openAccountEntry("signup"));
+
+showTutorialGuideButton?.addEventListener("click", () => setHowToPlayMode("tutorial"));
+
+showPuzzleGuideButton?.addEventListener("click", () => setHowToPlayMode("puzzle"));
 
 window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin && event.origin !== "null") return;
@@ -3815,7 +4408,7 @@ endVoiceCallButton.addEventListener("click", () => endVoiceCall(true));
 reportUserButton.addEventListener("click", async () => {
   currentManner = Math.max(0, currentManner - 1.4);
   updateTemperature(currentManner);
-  matchResult.textContent = "Safety report submitted";
+  matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "안전 신고가 접수되었습니다" : "Safety report submitted";
   if (backendOnline) {
     try {
       await api("/api/reports", {
@@ -3915,6 +4508,8 @@ document.querySelectorAll(".vocab-term").forEach((button) => {
   button.addEventListener("click", () => playPronunciation(button));
 });
 
+applyPieceEditionTheme(selectedPieceEdition);
+updateHeaderPieceEditionToggle(selectedPieceEdition);
 buildBoard();
 renderReview(defaultReview);
 renderStaffShopProducts();
@@ -3923,7 +4518,9 @@ renderAuthState();
 applyInterfaceLanguage();
 if (isStudentTutorialRequired()) {
   setView("how-to-play");
+} else if (isTutorialRoute()) {
+  setView("how-to-play");
 } else if (isStudentTutorialComplete() && !currentUser) {
-  setView("dashboard");
+  openAccountEntry("signup");
 }
 checkBackend();

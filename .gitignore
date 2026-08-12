@@ -7,3 +7,20 @@ node_modules/
 *.log
 vercel-login-output.txt
 vercel-login-error.txt
+
+# Local design/model artifacts
+output/
+tools/
+split_*/
+*_separated/
+generated_models/
+*.stl
+*.3mf
+*.zip
+*.pdf
+preview_stl_parts.py
+split_stl_components.js
+combine_stl_shells_by_position.js
+make_joseon_king.js
+make_tiger_knight.js
+match_stl_base_size.js
