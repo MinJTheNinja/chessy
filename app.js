@@ -106,6 +106,16 @@ const notificationList = document.querySelector("#notificationList");
 const clearNotificationsButton = document.querySelector("#clearNotifications");
 const activeMatchesCount = document.querySelector("#activeMatchesCount");
 const subtitleSessionsCount = document.querySelector("#subtitleSessionsCount");
+const welcomeName = document.querySelector("#welcomeName");
+const dashboardHeroAvatar = document.querySelector("#dashboardHeroAvatar");
+const dashboardStreak = document.querySelector("#dashboardStreak");
+const dashboardEasyElo = document.querySelector("#dashboardEasyElo");
+const leaderboardList = document.querySelector("#leaderboardList");
+const leaderboardButtons = document.querySelectorAll("[data-leaderboard-period]");
+const leagueCodeInput = document.querySelector("#leagueCodeInput");
+const joinLeagueButton = document.querySelector("#joinLeagueButton");
+const createLeagueButton = document.querySelector("#createLeagueButton");
+const leagueStatus = document.querySelector("#leagueStatus");
 const conversationGoal = document.querySelector("#conversationGoal");
 const forumPostTitle = document.querySelector("#forumPostTitle");
 const forumPostCategory = document.querySelector("#forumPostCategory");
@@ -165,10 +175,12 @@ const profileStatus = document.querySelector("#profileStatus");
 const profileAvatar = document.querySelector("#profileAvatar");
 const profileName = document.querySelector("#profileName");
 const profileEmail = document.querySelector("#profileEmail");
+const profileBioText = document.querySelector("#profileBioText");
 const profileLanguageText = document.querySelector("#profileLanguageText");
 const profileDisplayName = document.querySelector("#profileDisplayName");
 const profileLanguagePair = document.querySelector("#profileLanguagePair");
 const profilePieceEdition = document.querySelector("#profilePieceEdition");
+const profileImage = document.querySelector("#profileImage");
 const profileBio = document.querySelector("#profileBio");
 const saveProfileButton = document.querySelector("#saveProfile");
 const peerFeedbackType = document.querySelector("#peerFeedbackType");
@@ -176,6 +188,14 @@ const peerFeedbackNote = document.querySelector("#peerFeedbackNote");
 const submitPeerFeedbackButton = document.querySelector("#submitPeerFeedback");
 const badgeList = document.querySelector("#badgeList");
 const badgeDetails = document.querySelector("#badgeDetails");
+const profileStreak = document.querySelector("#profileStreak");
+const profileEasyElo = document.querySelector("#profileEasyElo");
+const profileSideElo = document.querySelector("#profileSideElo");
+const profileUserId = document.querySelector("#profileUserId");
+const profileLessonsCount = document.querySelector("#profileLessonsCount");
+const profileWordsCount = document.querySelector("#profileWordsCount");
+const profileQuestionsCount = document.querySelector("#profileQuestionsCount");
+const profileTestsCount = document.querySelector("#profileTestsCount");
 const cultureGuideList = document.querySelector("#cultureGuideList");
 const cultureGuideInput = document.querySelector("#cultureGuideInput");
 const saveCultureGuideButton = document.querySelector("#saveCultureGuide");
@@ -183,6 +203,7 @@ const demoAuthAllowed = ["localhost", "127.0.0.1", ""].includes(window.location.
 const studentTutorialRequiredKey = "easyMateStudentTutorialRequired";
 const studentTutorialCompleteKey = "easyMateStudentTutorialComplete";
 const pieceEditionStorageKey = "easyMatePieceEdition";
+let leaderboardPeriod = "weekly";
 
 const koreanText = {
   "Notifications": "알림",
@@ -530,6 +551,20 @@ Object.assign(koreanText, {
   "Time expired": "시간이 끝났습니다",
   "Account deleted": "계정 삭제됨",
 });
+Object.assign(koreanText, {
+  "64 squares connect generations and languages": "EasyMate",
+  "View tutorial first": "훈련장으로 가기",
+  "Start a conversation": "계정으로 입장하기",
+  "Play": "플레이",
+  "Tutorial": "훈련장",
+  "Start playing": "플레이를 시작하세요",
+  "Profile and Culture": "프로필",
+  "Manage your profile, badges, feedback, and culture guide.": "아이디, streak, Easy Elo, 배지를 확인합니다.",
+  "How to play": "훈련장",
+  "Tutorial and puzzle": "훈련장과 퍼즐",
+  "EasyMate tutorial": "EasyMate 훈련장",
+});
+
 const englishText = Object.entries(koreanText).reduce((map, [english, korean]) => {
   map[korean] = english;
   return map;
@@ -566,8 +601,8 @@ function updateLandingHeroCopy() {
   if (!entryTitle) return;
   entryTitle.innerHTML =
     currentInterfaceLanguage() === "Korean"
-      ? "64개의 칸이 여는<br><em>세대와 언어의 연결</em>"
-      : "64 squares connect<br><em>generations and languages</em>";
+      ? "EasyMate"
+      : "EasyMate";
 }
 
 function translateTextNode(node) {
@@ -1541,7 +1576,7 @@ function renderAuthState() {
   headerProfile.hidden = !signedIn;
   if (signedIn) {
     headerProfileName.textContent = currentUser.displayName || translateCopy("Player");
-    headerProfileAvatar.textContent = initials(currentUser.displayName || "Player");
+    renderAvatar(headerProfileAvatar, currentUser, "Player");
     if (settingsAccountName) {
       settingsAccountName.textContent =
         currentInterfaceLanguage() === "Korean"
@@ -1681,7 +1716,7 @@ function isStudentTutorialRequired() {
 function setHowToPlayMode(mode) {
   const puzzleUnlocked = isStudentTutorialComplete();
   if (mode === "puzzle" && !puzzleUnlocked && tutorialPuzzleNote) {
-    tutorialPuzzleNote.textContent = "튜토리얼을 완료해야 고려 vs 몽골 퍼즐을 열 수 있습니다.";
+    tutorialPuzzleNote.textContent = "훈련장을 완료해야 고려 vs 몽골 퍼즐을 열 수 있습니다.";
   }
   const nextMode = mode === "puzzle" && puzzleUnlocked ? "puzzle" : "tutorial";
   if (howToPlayFrame) {
@@ -1750,7 +1785,7 @@ function completeStudentTutorial() {
   writeLocalSetting(studentTutorialCompleteKey, "true");
   removeLocalSetting(studentTutorialRequiredKey);
   updateTutorialGateState();
-  authStatus.textContent = "튜토리얼 완료! 계정으로 입장하면 실시간 체스 매칭을 시작할 수 있습니다.";
+  authStatus.textContent = "훈련장 완료! 계정으로 입장하면 플레이와 퍼즐을 시작할 수 있습니다.";
   openAccountEntry("signup");
 }
 
@@ -1829,7 +1864,7 @@ async function loadMatchFromRoute() {
     matchResult.textContent = data.match.result ? translateCopy(data.match.result) : currentInterfaceLanguage() === "Korean" ? "링크로 방에 참여했습니다" : "Joined room from link";
     return true;
   } catch (error) {
-    setView("dashboard");
+    setView("overview");
     matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "방을 찾을 수 없어요" : "Room not found";
     syncState.textContent = error.message;
     return true;
@@ -2414,11 +2449,12 @@ async function checkBackend() {
     connectSocket(null);
     await refreshStats();
     await refreshLobby();
+    await refreshLeaderboard();
     const routedToMatch = await loadMatchFromRoute();
     if (isStaffRoute()) {
-      setView(isStaffUser() ? "staff" : "dashboard");
+      setView(isStaffUser() ? "staff" : "overview");
     } else if (currentUser && !routedToMatch) {
-      setView("dashboard");
+      setView("overview");
     }
   } catch {
     backendOnline = false;
@@ -2518,9 +2554,10 @@ async function signInOrRegister() {
     authPassword.value = "";
     authConfirmPassword.value = "";
     renderAuthState();
-    setView("dashboard");
+    setView("overview");
     await refreshStats();
     await refreshLobby();
+    await refreshLeaderboard();
   } catch (error) {
     authStatus.textContent = error.message;
     renderAuthState();
@@ -2591,9 +2628,10 @@ async function finishGoogleLogin(credential) {
     authPassword.value = "";
     authConfirmPassword.value = "";
     renderAuthState();
-    setView("dashboard");
+    setView("overview");
     await refreshStats();
     await refreshLobby();
+    await refreshLeaderboard();
   } catch (error) {
     authStatus.textContent = error.message;
     renderAuthState();
@@ -3025,6 +3063,7 @@ function setView(viewName) {
   if (viewName === "match") viewName = "dashboard";
   if (viewName === "review") viewName = "dashboard";
   if (viewName === "admin") viewName = "staff";
+  if (viewName === "home" && currentUser) viewName = "overview";
   if (viewName === "staff" && !isStaffUser()) viewName = "dashboard";
   updateTutorialGateState();
   if (isStudentTutorialRequired() && viewName !== "how-to-play") {
@@ -3053,6 +3092,10 @@ function setView(viewName) {
     link.classList.toggle("active", link.dataset.viewLink === viewName);
   });
   if (viewName === "staff") refreshAdmin();
+  if (viewName === "overview") {
+    renderDashboardSummary();
+    refreshLeaderboard();
+  }
   if (viewName === "profile") refreshProfile();
   document.querySelector("#dashboard").scrollIntoView({ behavior: "smooth", block: "start" });
   closeMenu();
@@ -3651,10 +3694,132 @@ function initials(name = "CL") {
     .join("") || "CL";
 }
 
+function renderAvatar(target, user, fallback = "GP") {
+  if (!target) return;
+  const avatarUrl = user?.avatarUrl || "";
+  target.innerHTML = "";
+  if (avatarUrl) {
+    const image = document.createElement("img");
+    image.src = avatarUrl;
+    image.alt = `${user?.displayName || "Player"} avatar`;
+    target.append(image);
+  } else {
+    target.textContent = initials(user?.displayName || fallback);
+  }
+}
+
+function renderDashboardSummary() {
+  const user = currentUser || {};
+  if (welcomeName) welcomeName.textContent = user.displayName || "Player";
+  renderAvatar(dashboardHeroAvatar, user, "GP");
+  if (dashboardStreak) dashboardStreak.textContent = String(Number(user.streak || 0));
+  if (dashboardEasyElo) dashboardEasyElo.textContent = String(Number(user.easyElo || 1000));
+  if (leagueCodeInput && user.leagueCode) leagueCodeInput.value = user.leagueCode;
+  if (leagueStatus) {
+    leagueStatus.textContent = user.leagueCode
+      ? `참여 중인 리그 코드: ${user.leagueCode}`
+      : "아직 참여한 리그가 없습니다.";
+  }
+}
+
+function renderLeaderboard(data = {}) {
+  if (!leaderboardList) return;
+  leaderboardList.innerHTML = "";
+  const members = data.members || [];
+  if (!members.length) {
+    const empty = document.createElement("p");
+    empty.className = "admin-empty";
+    empty.textContent = "아직 리더보드에 표시할 플레이어가 없습니다.";
+    leaderboardList.append(empty);
+    return;
+  }
+  members.forEach((member) => {
+    const row = document.createElement("article");
+    row.className = "leaderboard-row";
+    const rank = document.createElement("strong");
+    rank.textContent = String(member.rank);
+    const avatar = document.createElement("span");
+    avatar.className = "leaderboard-avatar";
+    renderAvatar(avatar, member, "P");
+    const info = document.createElement("div");
+    const name = document.createElement("b");
+    name.textContent = member.displayName || "Player";
+    const meta = document.createElement("small");
+    meta.textContent = `${Number(member.streak || 0)}일 streak`;
+    info.append(name, meta);
+    const elo = document.createElement("span");
+    elo.className = "leaderboard-elo";
+    elo.textContent = `${Number(member.easyElo || 1000)} Elo`;
+    row.append(rank, avatar, info, elo);
+    leaderboardList.append(row);
+  });
+}
+
+async function refreshLeaderboard() {
+  if (!leaderboardList) return;
+  if (!backendOnline) {
+    renderLeaderboard({ members: [] });
+    return;
+  }
+  try {
+    const query = new URLSearchParams({ period: leaderboardPeriod });
+    if (currentUser?.leagueCode) query.set("code", currentUser.leagueCode);
+    const data = await api(`/api/leagues/leaderboard?${query.toString()}`);
+    renderLeaderboard(data);
+    if (leagueStatus && data.code) leagueStatus.textContent = `참여 중인 리그 코드: ${data.code}`;
+  } catch (error) {
+    if (leagueStatus) leagueStatus.textContent = error.message;
+  }
+}
+
+async function joinLeague() {
+  if (!currentUser) {
+    if (leagueStatus) leagueStatus.textContent = "리그에 참여하려면 먼저 로그인하세요.";
+    openAccountEntry("signup");
+    return;
+  }
+  const code = leagueCodeInput?.value.trim().toUpperCase();
+  if (!code) {
+    if (leagueStatus) leagueStatus.textContent = "선생님에게 받은 리그 코드를 입력하세요.";
+    return;
+  }
+  try {
+    if (leagueStatus) leagueStatus.textContent = "리그에 참여하는 중...";
+    const data = await api("/api/leagues/join", { method: "POST", body: { code } });
+    currentUser = data.user;
+    renderDashboardSummary();
+    renderLeaderboard(data.league);
+    renderAuthState();
+    if (leagueStatus) leagueStatus.textContent = `참여 완료: ${data.league.code}`;
+  } catch (error) {
+    if (leagueStatus) leagueStatus.textContent = error.message;
+  }
+}
+
+async function createLeague() {
+  if (!currentUser) {
+    if (leagueStatus) leagueStatus.textContent = "리그 코드를 만들려면 먼저 로그인하세요.";
+    openAccountEntry("signup");
+    return;
+  }
+  try {
+    if (leagueStatus) leagueStatus.textContent = "리그 코드를 생성하는 중...";
+    const data = await api("/api/leagues/create", { method: "POST", body: { name: "EasyMate Class League" } });
+    currentUser = data.user;
+    if (leagueCodeInput) leagueCodeInput.value = data.league.code;
+    renderDashboardSummary();
+    renderLeaderboard(data.league);
+    renderAuthState();
+    if (leagueStatus) leagueStatus.textContent = `새 리그 코드: ${data.league.code}`;
+  } catch (error) {
+    if (leagueStatus) leagueStatus.textContent = error.message;
+  }
+}
+
 function renderProfile(profile) {
   if (!profile?.user) return;
   const user = profile.user;
-  profileAvatar.textContent = initials(user.displayName);
+  renderAvatar(profileAvatar, user, "CL");
   profileName.textContent = user.displayName;
   profileEmail.textContent = user.email;
   if (profileLanguageText) {
@@ -3666,8 +3831,19 @@ function renderProfile(profile) {
   if (profileLanguagePair) profileLanguagePair.value = user.languagePair || "English to Korean";
   if (profilePieceEdition) profilePieceEdition.value = normalizePieceEdition(user.pieceEdition);
   updateHeaderPieceEditionToggle(user.pieceEdition);
-  profileBio.value = user.bio || "";
+  if (profileImage) profileImage.value = user.avatarUrl || "";
+  if (profileBio) profileBio.value = user.bio || "";
+  if (profileBioText) profileBioText.textContent = user.bio || "Easy Elo를 올리며 훈련 중입니다.";
+  if (profileStreak) profileStreak.textContent = String(Number(user.streak || 0));
+  if (profileEasyElo) profileEasyElo.textContent = String(Number(user.easyElo || 1000));
+  if (profileSideElo) profileSideElo.textContent = String(Number(user.easyElo || 1000));
+  if (profileUserId) profileUserId.textContent = user.id || "user";
+  if (profileLessonsCount) profileLessonsCount.textContent = String(profile.stats?.matches || 0);
+  if (profileWordsCount) profileWordsCount.textContent = String((profile.stats?.reviews || 0) * 7);
+  if (profileQuestionsCount) profileQuestionsCount.textContent = String(profile.badges?.length || 0);
+  if (profileTestsCount) profileTestsCount.textContent = String(profile.stats?.completedMatches || 0);
   updateTemperature(Number(user.mannerTemperature ?? currentManner));
+  renderDashboardSummary();
 
   badgeList.innerHTML = "";
   profile.badges.forEach((badge) => {
@@ -3685,18 +3861,18 @@ function renderProfile(profile) {
     badgeDetails.append(item);
   });
 
-  cultureGuideList.innerHTML = "";
-  if (!profile.cultureGuide.length) {
+  if (cultureGuideList) cultureGuideList.innerHTML = "";
+  if (cultureGuideList && !profile.cultureGuide.length) {
     const empty = document.createElement("p");
     empty.textContent = currentInterfaceLanguage() === "Korean" ? "아직 저장된 문화 노트가 없어요. 대국 뒤 인상 깊은 표현을 남겨보세요." : "No culture notes saved yet.";
-    cultureGuideList.append(empty);
-  } else {
+    cultureGuideList?.append(empty);
+  } else if (cultureGuideList) {
     profile.cultureGuide.forEach((entry) => {
       const item = document.createElement("p");
       const source = document.createElement("strong");
       source.textContent = translateCopy(entry.source || "Culture note");
       item.append(source, document.createTextNode(` ${entry.note || ""}`));
-      cultureGuideList.append(item);
+      cultureGuideList?.append(item);
     });
   }
 
@@ -3704,10 +3880,11 @@ function renderProfile(profile) {
     currentInterfaceLanguage() === "Korean"
       ? `대국 ${profile.stats.matches}개, 복습 ${profile.stats.reviews}개, 문화 노트 ${profile.stats.cultureNotes}개`
       : `${profile.stats.matches} match(es), ${profile.stats.reviews} review(s), ${profile.stats.cultureNotes} culture note(s).`;
+  profileStatus.textContent = "프로필 기록을 불러왔습니다.";
 }
 
 function clearProfile() {
-  profileAvatar.textContent = "CL";
+  renderAvatar(profileAvatar, null, "CL");
   profileName.textContent = "ChessLearner";
   profileEmail.textContent = "player@example.com";
   if (profileLanguageText) {
@@ -3717,10 +3894,20 @@ function clearProfile() {
   profileDisplayName.value = "";
   if (profileLanguagePair) profileLanguagePair.value = "English to Korean";
   if (profilePieceEdition) profilePieceEdition.value = "cheoinseong";
-  profileBio.value = "";
+  if (profileImage) profileImage.value = "";
+  if (profileBio) profileBio.value = "";
+  if (profileBioText) profileBioText.textContent = "Easy Elo를 올리며 훈련 중입니다.";
+  if (profileStreak) profileStreak.textContent = "0";
+  if (profileEasyElo) profileEasyElo.textContent = "1000";
+  if (profileSideElo) profileSideElo.textContent = "1000";
+  if (profileUserId) profileUserId.textContent = "user";
+  if (profileLessonsCount) profileLessonsCount.textContent = "0";
+  if (profileWordsCount) profileWordsCount.textContent = "0";
+  if (profileQuestionsCount) profileQuestionsCount.textContent = "0";
+  if (profileTestsCount) profileTestsCount.textContent = "0";
   badgeList.innerHTML = "";
   badgeDetails.innerHTML = "";
-  cultureGuideList.innerHTML = "";
+  if (cultureGuideList) cultureGuideList.innerHTML = "";
   profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "저장된 프로필을 불러오려면 로그인하세요." : "Sign in to load your saved profile.";
 }
 
@@ -3754,7 +3941,8 @@ async function saveProfile() {
         displayName: profileDisplayName.value,
         languagePair: profileLanguagePair?.value || currentUser?.languagePair || authLanguagePair?.value || "English to Korean",
         pieceEdition: profilePieceEdition?.value,
-        bio: profileBio.value,
+        avatarUrl: profileImage?.value || "",
+        bio: profileBio?.value || "",
       },
     });
     currentUser = profile.user;
@@ -3769,6 +3957,7 @@ async function saveProfile() {
 }
 
 async function submitPeerFeedback() {
+  if (!peerFeedbackType || !peerFeedbackNote) return;
   try {
     profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "피드백을 보내는 중..." : "Submitting feedback...";
     const data = await api("/api/profile/feedback", {
@@ -3794,6 +3983,7 @@ async function submitPeerFeedback() {
 }
 
 async function saveCultureGuide() {
+  if (!cultureGuideInput) return;
   try {
     const note = cultureGuideInput.value.trim();
     if (!note) {
@@ -4301,7 +4491,6 @@ document.querySelectorAll("[data-view-link]").forEach((link) => {
     let viewName = link.dataset.viewLink;
     if (!viewName) return;
     event.preventDefault();
-    if (viewName === "home" && currentUser) viewName = "dashboard";
     setView(viewName);
   });
 });
@@ -4394,7 +4583,7 @@ signupButton.addEventListener("click", () => {
 
 loginButton.addEventListener("click", () => {
   if (currentUser) {
-    setView("dashboard");
+    setView("overview");
     return;
   }
   setAuthMode("login");
@@ -4436,7 +4625,7 @@ clearNotificationsButton.addEventListener("click", () => {
 });
 
 continueToDashboardButton.addEventListener("click", () => {
-  setView("dashboard");
+  setView("overview");
 });
 
 findMatchButton.addEventListener("click", quickPairFromSelectedPool);
@@ -4474,8 +4663,26 @@ adminUserSearch.addEventListener("input", () => {
 });
 refreshProfileButton.addEventListener("click", refreshProfile);
 saveProfileButton.addEventListener("click", saveProfile);
-submitPeerFeedbackButton.addEventListener("click", submitPeerFeedback);
-saveCultureGuideButton.addEventListener("click", saveCultureGuide);
+submitPeerFeedbackButton?.addEventListener("click", submitPeerFeedback);
+saveCultureGuideButton?.addEventListener("click", saveCultureGuide);
+joinLeagueButton?.addEventListener("click", joinLeague);
+createLeagueButton?.addEventListener("click", createLeague);
+leagueCodeInput?.addEventListener("input", () => {
+  leagueCodeInput.value = leagueCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 16);
+});
+leagueCodeInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    joinLeague();
+  }
+});
+leaderboardButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    leaderboardPeriod = button.dataset.leaderboardPeriod || "weekly";
+    leaderboardButtons.forEach((item) => item.classList.toggle("active", item === button));
+    refreshLeaderboard();
+  });
+});
 showForumComposerButton.addEventListener("click", toggleForumComposer);
 publishForumPostButton.addEventListener("click", publishForumPost);
 forumPostCategory.addEventListener("change", () => {

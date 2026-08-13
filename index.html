@@ -62,15 +62,15 @@
             </a>
             <div class="entry-actions">
               <button class="button primary" id="mainAccountButton" type="button">계정으로 시작</button>
-              <button class="button secondary" id="mainTutorialButton" type="button">연습마당으로 가기</button>
+              <button class="button secondary" id="mainTutorialButton" type="button">훈련장으로 가기</button>
             </div>
           </div>
         </div>
         <div class="entry-auth" hidden>
           <form class="auth-card" id="authForm" aria-label="Account entry">
             <span class="eyebrow">EasyMate 계정</span>
-            <h2>대화를 시작하세요</h2>
-            <p class="auth-intro">계정으로 입장하면 실시간 체스 매칭을 시작할 수 있습니다.</p>
+            <h2>계정으로 입장하기</h2>
+            <p class="auth-intro">로그인하면 플레이, 훈련장, 리그 기록을 이어서 사용할 수 있습니다.</p>
             <div class="auth-tabs" aria-label="Account mode">
               <button class="auth-tab active" id="loginButton" type="button">로그인</button>
               <button class="auth-tab" id="signupButton" type="button">새 계정</button>
@@ -107,8 +107,9 @@
       <section class="app-shell" id="dashboard" aria-label="앱 작업 공간">
         <aside class="sidebar" id="sidebarMenu" hidden>
           <span class="sidebar-label">메뉴</span>
-          <button class="side-link active" data-view-link="dashboard">대국</button>
-          <button class="side-link" data-view-link="how-to-play">튜토리얼</button>
+          <button class="side-link active" data-view-link="overview">홈</button>
+          <button class="side-link" data-view-link="dashboard">플레이</button>
+          <button class="side-link" data-view-link="how-to-play">훈련장</button>
           <button class="side-link" data-view-link="forum">게시판</button>
           <button class="side-link" data-view-link="chessboards">상점</button>
           <button class="side-link staff-only" data-view-link="staff" hidden>운영자</button>
@@ -118,56 +119,48 @@
           <section class="view" data-view="overview" aria-labelledby="dashboardTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">한눈에 보기</span>
-                <h2 id="dashboardTitle">대국을 시작하세요</h2>
+                <span class="eyebrow">EasyMate 홈</span>
+                <h2 id="dashboardTitle">Welcome, <span id="welcomeName">Player</span>!</h2>
               </div>
-              <button class="button primary" data-view-link="match">대국하기</button>
+              <div class="dashboard-hero-score" aria-label="현재 연속 기록과 Easy Elo">
+                <span class="hero-avatar" id="dashboardHeroAvatar">GP</span>
+                <div>
+                  <strong><span id="dashboardStreak">0</span>일 streak</strong>
+                  <p>Easy Elo <span id="dashboardEasyElo">1000</span></p>
+                </div>
+              </div>
             </div>
 
-            <div class="flow-grid">
-              <article class="route-card" data-view-link="match">
-                <span>01</span>
-                <h3>대국</h3>
-                <p>상대를 찾아 체스를 두며 언어 대화를 시작합니다.</p>
-              </article>
-              <article class="route-card" data-view-link="review">
-                <span>02</span>
-                <h3>AI 언어 복습</h3>
-                <p>대국 뒤 단어, 문화 메모, 발음을 다시 확인합니다.</p>
-              </article>
-              <article class="route-card" data-view-link="profile">
-                <span>03</span>
-                <h3>프로필과 문화</h3>
-                <p>프로필, 배지, 피드백, 문화 노트를 관리합니다.</p>
-              </article>
-              <article class="route-card" data-view-link="forum">
-                <span>04</span>
-                <h3>게시판</h3>
-                <p>공지, 질문, 플레이어 이야기를 모아 봅니다.</p>
-              </article>
-              <article class="route-card" data-view-link="chessboards">
-                <span>05</span>
-                <h3>체스보드</h3>
-                <p>현장 언어 체스에 쓸 실물 보드를 살펴봅니다.</p>
-              </article>
+            <div class="dashboard-actions">
+              <button class="button secondary" data-view-link="how-to-play" type="button">훈련장으로</button>
+              <button class="button primary" data-view-link="dashboard" type="button">플레이</button>
             </div>
 
-            <div class="status-strip">
-              <article>
-                <span class="label">진행 중 대국</span>
-                <strong id="activeMatchesCount">18</strong>
+            <div class="league-layout">
+              <article class="wire-card league-card">
+                <div class="league-card-head">
+                  <div>
+                    <span class="eyebrow">리그</span>
+                    <h3>Easy Elo 리더보드</h3>
+                  </div>
+                  <div class="leaderboard-tabs" role="group" aria-label="리더보드 기간">
+                    <button class="active" type="button" data-leaderboard-period="weekly">Weekly</button>
+                    <button type="button" data-leaderboard-period="alltime">All time</button>
+                  </div>
+                </div>
+                <div class="leaderboard-list" id="leaderboardList"></div>
               </article>
-              <article>
-                <span class="label">자막 세션</span>
-                <strong id="subtitleSessionsCount">3</strong>
-              </article>
-              <article>
-                <span class="label">평균 지연</span>
-                <strong id="dashboardLatency">38 ms</strong>
-              </article>
-              <article>
-                <span class="label">매너 배지</span>
-                <strong id="dashboardTemp">🌱 친절한 대화 상대</strong>
+
+              <article class="wire-card league-card">
+                <span class="eyebrow">참가 코드</span>
+                <h3>같은 리그에 참여하기</h3>
+                <p>선생님이 만든 코드를 입력하면 같은 리그 리더보드에 들어갑니다.</p>
+                <div class="league-code-row">
+                  <input id="leagueCodeInput" type="text" placeholder="예: KING64" maxlength="16" />
+                  <button class="button primary small" id="joinLeagueButton" type="button">참여</button>
+                </div>
+                <button class="button secondary full" id="createLeagueButton" type="button">새 리그 코드 생성</button>
+                <p class="profile-status" id="leagueStatus">아직 참여한 리그가 없습니다.</p>
               </article>
             </div>
           </section>
@@ -175,7 +168,7 @@
           <section class="view active" data-view="dashboard" aria-labelledby="matchTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">대국</span>
+                <span class="eyebrow">플레이</span>
                 <h2 id="matchTitle">상대 찾기</h2>
               </div>
             </div>
@@ -537,28 +530,28 @@
           <section class="view how-to-play-view" data-view="how-to-play" aria-labelledby="howToPlayTitle">
             <div class="view-header">
               <div>
-                <h2 id="howToPlayTitle">연습마당</h2>
+                <h2 id="howToPlayTitle">훈련장</h2>
               </div>
               <button class="button primary" id="tutorialLoginButton" type="button">로그인 화면으로 가기</button>
             </div>
 
-            <div class="tutorial-tabs" aria-label="튜토리얼과 퍼즐">
-              <button class="active" id="showTutorialGuide" type="button">튜토리얼</button>
+            <div class="tutorial-tabs" aria-label="훈련장과 퍼즐">
+              <button class="active" id="showTutorialGuide" type="button">훈련장</button>
               <button id="showPuzzleGuide" type="button">고려 vs 몽골 퍼즐</button>
             </div>
 
             <div class="how-to-play-shell">
               <div class="tutorial-gate-note" id="tutorialGateNote" hidden>
-                초등학생 모드입니다. 튜토리얼을 끝내면 모든 메뉴가 열립니다.
+                초등학생 모드입니다. 훈련장을 끝내면 모든 메뉴가 열립니다.
               </div>
               <div class="tutorial-puzzle-note" id="tutorialPuzzleNote">
-                튜토리얼을 완료하면 고려 vs 몽골 퍼즐을 열 수 있습니다.
+                훈련장을 완료하면 고려 vs 몽골 퍼즐을 열 수 있습니다.
               </div>
               <iframe
                 class="how-to-play-frame"
                 id="howToPlayFrame"
                 src="/assets/how-to-play.html"
-                title="EasyMate 튜토리얼"
+                title="EasyMate 훈련장"
                 loading="lazy"
               ></iframe>
             </div>
@@ -572,7 +565,7 @@
               </header>
 
               <div class="forum-actions">
-                <button class="button secondary" data-view-link="dashboard" type="button">대국으로 돌아가기</button>
+                <button class="button secondary" data-view-link="overview" type="button">홈으로 돌아가기</button>
                 <button class="button primary" id="showForumComposer" type="button">+ 새 글</button>
               </div>
 
@@ -750,74 +743,117 @@
             </div>
           </section>
 
-          <section class="view" data-view="profile" aria-labelledby="profileTitle">
-            <div class="view-header">
-              <div>
-                <span class="eyebrow">프로필과 문화</span>
-                <h2 id="profileTitle">진행 상황, 피드백, 매너</h2>
-              </div>
-              <button class="button secondary" id="refreshProfile">프로필 새로고침</button>
-            </div>
-            <p class="profile-status" id="profileStatus">저장된 프로필을 불러오려면 로그인하세요.</p>
-
-            <div class="profile-grid">
-              <article class="wire-card">
-                <h3>사용자 프로필</h3>
-                <div class="profile-head">
-                  <span class="avatar" id="profileAvatar">CL</span>
-                  <div>
-                    <strong id="profileName">ChessLearner</strong>
-                    <p id="profileEmail">player@example.com</p>
+          <section class="view profile-view" data-view="profile" aria-labelledby="profileTitle">
+            <h2 class="sr-only" id="profileTitle">내 기록과 배지</h2>
+            <div class="profile-dashboard">
+              <article class="profile-hero-card">
+                <div class="profile-hero-main">
+                  <span class="avatar profile-hero-avatar" id="profileAvatar">CL</span>
+                  <div class="profile-hero-identity">
+                    <strong><span id="profileName">ChessLearner</span><i aria-hidden="true"></i></strong>
+                    <div class="profile-hero-scores">
+                      <span class="profile-score xp-score">
+                        <b aria-hidden="true">✦</b>
+                        <strong id="profileEasyElo">1000</strong>
+                        <small>Easy Elo</small>
+                      </span>
+                      <span class="profile-score streak-score">
+                        <b aria-hidden="true">🔥</b>
+                        <strong id="profileStreak">0</strong>
+                        <small>Streak</small>
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <label>
-                  표시 이름
-                  <input id="profileDisplayName" type="text" placeholder="ChessLearner" />
-                </label>
-                <label>
-                  말 디자인
-                  <select id="profilePieceEdition">
-                    <option value="cheoinseong">처인성 에디션</option>
-                    <option value="beta">Beta 에디션</option>
-                  </select>
-                </label>
-                <label>
-                  소개
-                  <textarea id="profileBio" placeholder="언어 파트너에게 보여줄 짧은 소개를 적어보세요."></textarea>
-                </label>
-                <button class="button secondary full" id="saveProfile">프로필 저장</button>
+                <div class="profile-hero-bio">
+                  <div class="profile-hero-bio-head">
+                    <strong>BIO</strong>
+                    <button class="icon-action" id="refreshProfile" type="button" title="프로필 새로고침" aria-label="프로필 새로고침">↻</button>
+                  </div>
+                  <p id="profileBioText">Easy Elo를 올리며 훈련 중입니다.</p>
+                  <small id="profileEmail">player@example.com</small>
+                </div>
               </article>
-              <article class="wire-card">
-                <h3>매너 배지</h3>
-                <div class="temperature badge-temperature"><span id="profileTemp">🌱 친절한 대화 상대</span></div>
-                <label>
-                  파트너 피드백
-                  <select id="peerFeedbackType">
-                    <option value="positive">친절하고 존중해요</option>
-                    <option value="clear">설명이 또렷해요</option>
-                    <option value="concern">운영자 확인이 필요해요</option>
-                  </select>
-                </label>
-                <label>
-                  메모
-                  <textarea id="peerFeedbackNote" placeholder="선택 사항: 피드백 메모"></textarea>
-                </label>
-                <button class="button secondary full" id="submitPeerFeedback">피드백 보내기</button>
-              </article>
-              <article class="wire-card">
-                <h3>배지</h3>
-                <div class="badge-list" id="badgeList"></div>
-                <div class="profile-detail-list" id="badgeDetails"></div>
-              </article>
-              <article class="wire-card">
-                <h3>문화 노트</h3>
-                <div class="profile-detail-list" id="cultureGuideList"></div>
-                <label>
-                  문화 노트 저장
-                  <textarea id="cultureGuideInput" placeholder="예: 파트너의 언어에서는 대국 뒤 어떻게 인사하는지"></textarea>
-                </label>
-                <button class="button secondary full" id="saveCultureGuide">문화 노트 저장</button>
-              </article>
+
+              <div class="profile-content-grid">
+                <main class="profile-main-column">
+                  <div class="profile-stat-grid">
+                    <article>
+                      <span aria-hidden="true">♟</span>
+                      <strong id="profileLessonsCount">0</strong>
+                      <small>Games played</small>
+                    </article>
+                    <article>
+                      <span aria-hidden="true">▰</span>
+                      <strong id="profileWordsCount">0</strong>
+                      <small>Words learned</small>
+                    </article>
+                    <article>
+                      <span aria-hidden="true">⚑</span>
+                      <strong id="profileQuestionsCount">0</strong>
+                      <small>Badges earned</small>
+                    </article>
+                    <article>
+                      <span aria-hidden="true">▤</span>
+                      <strong id="profileTestsCount">0</strong>
+                      <small>Puzzles solved</small>
+                    </article>
+                  </div>
+
+                  <article class="profile-panel profile-history-panel">
+                    <h3><span aria-hidden="true">🏆</span> 배지 Library</h3>
+                    <div class="badge-list" id="badgeList"></div>
+                    <div class="profile-detail-list" id="badgeDetails"></div>
+                  </article>
+                </main>
+
+                <aside class="profile-side-column">
+                  <article class="profile-panel profile-xp-panel">
+                    <h3><span aria-hidden="true">✦</span> XP</h3>
+                    <p>TOP-3 FINISHES</p>
+                    <div class="profile-medal-row" aria-label="리그 상위 입상 현황">
+                      <span class="gold">0</span>
+                      <span class="silver">0</span>
+                      <span class="bronze">0</span>
+                    </div>
+                    <div class="profile-xp-row">
+                      <span aria-hidden="true">📖</span>
+                      <strong>EasyMate League</strong>
+                      <b id="profileSideElo">1000</b>
+                    </div>
+                  </article>
+
+                  <article class="profile-panel">
+                    <h3><span aria-hidden="true">♚</span> 매너 상태</h3>
+                    <div class="temperature badge-temperature"><span id="profileTemp">친절한 대화 상대</span></div>
+                  </article>
+
+                  <details class="profile-panel profile-edit-panel">
+                    <summary>프로필 편집</summary>
+                    <label>
+                      표시 이름
+                      <input id="profileDisplayName" type="text" placeholder="ChessLearner" />
+                    </label>
+                    <label>
+                      유저 이미지
+                      <input id="profileImage" type="url" placeholder="이미지 URL을 붙여넣기" />
+                    </label>
+                    <label>
+                      한 줄 소개
+                      <textarea id="profileBio" placeholder="예: 1600아 내가 간다~"></textarea>
+                    </label>
+                    <label>
+                      말 디자인
+                      <select id="profilePieceEdition">
+                        <option value="cheoinseong">처인성 에디션</option>
+                        <option value="beta">Beta 에디션</option>
+                      </select>
+                    </label>
+                    <button class="button secondary full" id="saveProfile">프로필 저장</button>
+                    <p class="profile-status" id="profileStatus">저장된 프로필을 불러오려면 로그인하세요.</p>
+                  </details>
+                </aside>
+              </div>
             </div>
           </section>
 

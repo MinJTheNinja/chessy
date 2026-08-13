@@ -184,6 +184,7 @@ function defaultDb() {
     reviews: [],
     reports: [],
     shopInterests: [],
+    leagues: [],
   };
 }
 
@@ -201,6 +202,7 @@ function normalizeDb(db = {}) {
     reviews: db.reviews || [],
     reports: db.reports || [],
     shopInterests: db.shopInterests || [],
+    leagues: db.leagues || [],
   };
 }
 
@@ -855,6 +857,10 @@ function publicUser(user) {
     mannerTemperature: user.mannerTemperature,
     role: normalizedRole(user),
     pieceEdition: normalizedPieceEdition(user.pieceEdition),
+    avatarUrl: user.avatarUrl || "",
+    streak: Number(user.streak || 0),
+    easyElo: Number(user.easyElo || 1000),
+    leagueCode: user.leagueCode || "",
   };
 }
 
@@ -867,6 +873,10 @@ function playerUser(user) {
     mannerTemperature: user.mannerTemperature,
     role: normalizedRole(user),
     pieceEdition: normalizedPieceEdition(user.pieceEdition),
+    avatarUrl: user.avatarUrl || "",
+    streak: Number(user.streak || 0),
+    easyElo: Number(user.easyElo || 1000),
+    leagueCode: user.leagueCode || "",
   };
 }
 
@@ -961,18 +971,21 @@ function profileBadges(user, db) {
   const userMatches = db.matches.filter((match) => (match.players || []).some((player) => player.userId === user.id));
   const matchIds = new Set(userMatches.map((match) => match.id));
   const reviews = db.reviews.filter((review) => matchIds.has(review.matchId));
-  const cultureGuide = user.cultureGuide || [];
+  const wonBadges = user.leagueBadges || [];
   const badges = [];
 
-  if (userMatches.length > 0) badges.push({ name: "First Match", detail: "Completed or started your first chess language match." });
+  if (Number(user.easyElo || 1000) >= 1000) badges.push({ name: "Easy Elo 입문", detail: "Easy Elo 랭킹에 참여했습니다." });
+  if (Number(user.streak || 0) >= 1) badges.push({ name: "첫 출석", detail: "훈련장 또는 플레이 기록을 이어가기 시작했습니다." });
+  if (Number(user.streak || 0) >= 7) badges.push({ name: "7일 Streak", detail: "일주일 연속으로 EasyMate를 방문했습니다." });
+  if (userMatches.length > 0) badges.push({ name: "첫 플레이", detail: "체스 대국을 시작했습니다." });
   if (userMatches.some((match) => (match.transcript || []).length > 0)) {
-    badges.push({ name: "Good Listener", detail: "Used subtitles or transcript practice during a match." });
+    badges.push({ name: "대화 리스너", detail: "대국 중 자막이나 대화를 사용했습니다." });
   }
-  if (Number(user.mannerTemperature ?? 42.8) >= 42) badges.push({ name: "Kind Player", detail: "Maintained a strong manner temperature." });
-  if (reviews.length > 0) badges.push({ name: "Vocabulary Builder", detail: "Generated an AI vocabulary review after a match." });
-  if (cultureGuide.length > 0) badges.push({ name: "Culture Explorer", detail: "Saved at least one culture guide note." });
+  if (Number(user.mannerTemperature ?? 42.8) >= 42) badges.push({ name: "매너 플레이어", detail: "친절한 대화 상태를 유지하고 있습니다." });
+  if (reviews.length > 0) badges.push({ name: "복습 완료", detail: "대국 뒤 AI 언어 복습을 만들었습니다." });
+  wonBadges.forEach((badge) => badges.push({ name: badge.name, detail: badge.detail || "리그 순위 보상 배지입니다." }));
 
-  if (!badges.length) badges.push({ name: "New Player", detail: "Play a match to start collecting badges." });
+  if (!badges.length) badges.push({ name: "새 플레이어", detail: "훈련장이나 플레이로 배지를 모아보세요." });
   return badges;
 }
 
@@ -994,8 +1007,55 @@ function buildProfile(user, db) {
       cultureNotes: (user.cultureGuide || []).length,
     },
     badges: profileBadges(user, db),
-    feedback: (user.feedbackReceived || []).slice(-10).reverse(),
-    cultureGuide: (user.cultureGuide || []).slice(-10).reverse(),
+    feedback: [],
+    cultureGuide: [],
+  };
+}
+
+function leagueCode() {
+  return crypto.randomBytes(3).toString("hex").toUpperCase();
+}
+
+function leagueView(league, db, period = "weekly") {
+  const members = db.users
+    .filter((user) => user.leagueCode === league.code)
+    .map((user) => ({
+      id: user.id,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl || "",
+      streak: Number(user.streak || 0),
+      easyElo: Number(period === "weekly" ? user.weeklyEasyElo ?? user.easyElo ?? 1000 : user.easyElo ?? 1000),
+      badges: user.leagueBadges || [],
+    }))
+    .sort((a, b) => b.easyElo - a.easyElo)
+    .map((member, index) => ({ ...member, rank: index + 1 }));
+  return {
+    code: league.code,
+    name: league.name || `EasyMate League ${league.code}`,
+    period,
+    resetsAt: league.resetsAt,
+    members,
+  };
+}
+
+function defaultLeaderboard(db, period = "weekly") {
+  const members = db.users
+    .map((user) => ({
+      id: user.id,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl || "",
+      streak: Number(user.streak || 0),
+      easyElo: Number(period === "weekly" ? user.weeklyEasyElo ?? user.easyElo ?? 1000 : user.easyElo ?? 1000),
+      badges: user.leagueBadges || [],
+    }))
+    .sort((a, b) => b.easyElo - a.easyElo)
+    .slice(0, 10)
+    .map((member, index) => ({ ...member, rank: index + 1 }));
+  return {
+    code: "",
+    name: period === "weekly" ? "Weekly Easy Elo" : "All-time Easy Elo",
+    period,
+    members,
   };
 }
 
@@ -1250,7 +1310,7 @@ function routePattern(pathname, pattern) {
   return params;
 }
 
-async function handleApi(req, res, pathname) {
+async function handleApi(req, res, pathname, searchParams = new URLSearchParams()) {
   const db = await readDb();
   const user = getSessionUser(req, db);
 
@@ -1334,6 +1394,50 @@ async function handleApi(req, res, pathname) {
     return true;
   }
 
+  if (req.method === "GET" && pathname === "/api/leagues/leaderboard") {
+    const period = searchParams.get("period") === "alltime" ? "alltime" : "weekly";
+    const code = String(searchParams.get("code") || user?.leagueCode || "").trim().toUpperCase();
+    const league = code ? db.leagues.find((item) => item.code === code) : null;
+    sendJson(res, 200, league ? leagueView(league, db, period) : defaultLeaderboard(db, period));
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/leagues/create") {
+    if (!requireUser(user, res)) return true;
+    const body = await readBody(req);
+    let code = leagueCode();
+    while (db.leagues.some((league) => league.code === code)) code = leagueCode();
+    const league = {
+      id: id("league"),
+      code,
+      name: String(body.name || "EasyMate Class League").trim().slice(0, 80),
+      createdBy: user.id,
+      createdAt: new Date().toISOString(),
+      resetsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+    db.leagues.push(league);
+    user.leagueCode = code;
+    await writeDb(db);
+    sendJson(res, 201, { league: leagueView(league, db, "weekly"), user: publicUser(user) });
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/leagues/join") {
+    if (!requireUser(user, res)) return true;
+    const body = await readBody(req);
+    const code = String(body.code || "").trim().toUpperCase();
+    const league = db.leagues.find((item) => item.code === code);
+    if (!league) {
+      sendJson(res, 404, { error: "League code not found." });
+      return true;
+    }
+    user.leagueCode = code;
+    user.weeklyEasyElo = Number(user.weeklyEasyElo ?? user.easyElo ?? 1000);
+    await writeDb(db);
+    sendJson(res, 200, { league: leagueView(league, db, "weekly"), user: publicUser(user) });
+    return true;
+  }
+
   if (req.method === "PUT" && pathname === "/api/profile") {
     if (!requireUser(user, res)) return true;
     const body = await readBody(req);
@@ -1343,6 +1447,7 @@ async function handleApi(req, res, pathname) {
     if (languagePair) user.languagePair = languagePair.slice(0, 80);
     user.pieceEdition = normalizedPieceEdition(body.pieceEdition);
     user.bio = String(body.bio || "").trim().slice(0, 280);
+    user.avatarUrl = String(body.avatarUrl || user.avatarUrl || "").trim().slice(0, 500);
     user.nativeLanguage = String(body.nativeLanguage || "").trim().slice(0, 40);
     user.learningLanguage = String(body.learningLanguage || "").trim().slice(0, 40);
     await writeDb(db);
@@ -1588,6 +1693,10 @@ async function handleApi(req, res, pathname) {
         pieceEdition: normalizedPieceEdition(body.pieceEdition),
         passwordHash: hashPassword(password),
         mannerTemperature: 42.8,
+        streak: 0,
+        easyElo: 1000,
+        weeklyEasyElo: 1000,
+        leagueBadges: [],
         role: signupRole(email, db),
         createdAt: new Date().toISOString(),
       };
@@ -1633,6 +1742,10 @@ async function handleApi(req, res, pathname) {
           googleSub: googleProfile.googleSub,
           avatarUrl: googleProfile.picture,
           mannerTemperature: 42.8,
+          streak: 0,
+          easyElo: 1000,
+          weeklyEasyElo: 1000,
+          leagueBadges: [],
           role: signupRole(googleProfile.email, db),
           createdAt: new Date().toISOString(),
         };
@@ -2507,7 +2620,7 @@ const server = http.createServer(async (req, res) => {
 
   try {
     if (requestUrl.pathname.startsWith("/api/")) {
-      const handled = await handleApi(req, res, requestUrl.pathname);
+      const handled = await handleApi(req, res, requestUrl.pathname, requestUrl.searchParams);
       if (!handled) sendJson(res, 404, { error: "API route not found." });
       return;
     }
