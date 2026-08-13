@@ -372,7 +372,23 @@ body.piece-theme-beta .piece-edition-toggle button[data-piece-edition="beta"].ac
 }
 
 .google-button {
+  justify-content: center;
   gap: 10px;
+}
+
+.google-signin-slot {
+  display: grid;
+  justify-items: stretch;
+  min-height: 44px;
+}
+
+.google-signin-slot[hidden] {
+  display: none;
+}
+
+.google-signin-slot > div,
+.google-signin-slot iframe {
+  width: 100% !important;
 }
 
 .google-mark {
@@ -1060,11 +1076,11 @@ p {
 
 .entry-visual {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(280px, 2fr);
-  gap: clamp(28px, 5vw, 72px);
-  align-items: stretch;
-  min-height: calc(100vh - 84px);
-  padding: clamp(42px, 7vw, 88px) clamp(24px, 7vw, 92px) clamp(42px, 7vw, 88px);
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  align-items: center;
+  min-height: auto;
+  padding: clamp(42px, 7vw, 88px) clamp(24px, 7vw, 92px) clamp(24px, 4vw, 48px);
   background: linear-gradient(180deg, var(--em-panel) 0%, var(--em-cream) 100%);
 }
 
@@ -1076,12 +1092,12 @@ p {
 .entry-content {
   position: static;
   display: grid;
-  justify-items: start;
+  justify-items: center;
   align-content: center;
   width: min(100%, 720px);
-  margin: 0;
+  margin: 0 auto;
   color: var(--ink);
-  text-align: left;
+  text-align: center;
 }
 
 .entry-hero-media {

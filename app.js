@@ -77,6 +77,7 @@ const authStatus = document.querySelector("#authStatus");
 const authSubmit = document.querySelector("#authSubmit");
 const continueToDashboardButton = document.querySelector("#continueToDashboard");
 const googleSignInButton = document.querySelector("#googleSignIn");
+const googleSignInSlot = document.querySelector("#googleSignInSlot");
 const tutorialGateNote = document.querySelector("#tutorialGateNote");
 const tutorialLoginButton = document.querySelector("#tutorialLoginButton");
 const mainAccountButton = document.querySelector("#mainAccountButton");
@@ -210,7 +211,7 @@ const koreanText = {
   "Confirm password": "비밀번호 확인",
   "Log in": "로그인",
   "Create account": "계정 만들기",
-  "Demo sign in": "데모 로그인",
+  "Demo sign in": "Google 로그인",
   "Continue to play": "계속 플레이",
   "Enter password": "비밀번호 입력",
   "Enter password again": "비밀번호 다시 입력",
@@ -344,7 +345,7 @@ Object.assign(koreanText, {
     "언어 조합을 고르고 계정으로 입장하면 실시간 체스 매칭을 시작할 수 있습니다.",
   "New account": "새 계정",
   "Name shown to opponents": "상대에게 보일 이름",
-  "Demo login": "데모 로그인",
+  "Demo login": "Google 로그인",
   "Enter your existing email and password.": "기존 이메일과 비밀번호를 입력하세요.",
   "Create an account to save matches and language review.": "대국과 언어 복습을 저장하려면 계정을 만드세요.",
   "How it works": "이렇게 진행합니다",
@@ -886,6 +887,9 @@ let legalMoveTargets = [];
 let boardOrientation = "white";
 let socket = null;
 let authMode = "login";
+let googleClientId = "";
+let googleLoginReady = false;
+let googleScriptPromise = null;
 let cachedSpeechVoices = [];
 let peerConnection = null;
 let localVoiceStream = null;
@@ -1559,8 +1563,9 @@ function renderAuthState() {
   signupButton.classList.toggle("active", !signedIn && authMode === "signup");
   authSubmit.textContent = signedIn ? translateCopy("Signed in") : authMode === "login" ? translateCopy("Log in") : translateCopy("Create account");
   authSubmit.disabled = signedIn;
-  googleSignInButton.hidden = !demoAuthAllowed;
-  googleSignInButton.disabled = signedIn || !demoAuthAllowed;
+  googleSignInButton.hidden = googleLoginReady;
+  googleSignInButton.disabled = signedIn;
+  if (googleSignInSlot) googleSignInSlot.hidden = signedIn || !googleLoginReady;
   authEmail.disabled = signedIn;
   authDisplayName.disabled = signedIn;
   authPassword.disabled = signedIn;
@@ -1622,6 +1627,7 @@ function setAuthMode(mode) {
   authConfirmPassword.value = "";
   document.body.classList.add("auth-entry-open");
   renderAuthState();
+  if (googleLoginReady) initializeGoogleLogin();
   authStatus.textContent =
     mode === "login" ? translateCopy("Enter your existing email and password.") : translateCopy("Create an account to save matches and language review.");
   document.querySelector(".entry-auth")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2542,6 +2548,95 @@ async function signOut() {
   setView("home");
 }
 
+function loadGoogleIdentityScript() {
+  if (window.google?.accounts?.id) return Promise.resolve();
+  if (googleScriptPromise) return googleScriptPromise;
+  googleScriptPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error("Google 로그인 스크립트를 불러오지 못했습니다."));
+    document.head.append(script);
+  });
+  return googleScriptPromise;
+}
+
+async function finishGoogleLogin(credential) {
+  if (!credential) {
+    authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "Google 로그인 응답이 비어 있습니다." : "Google login response was empty.";
+    return;
+  }
+  authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "Google 계정을 확인하는 중..." : "Checking your Google account...";
+  googleSignInButton.disabled = true;
+  try {
+    const data = await api("/api/auth/google", {
+      method: "POST",
+      body: {
+        credential,
+        languagePair: authLanguagePair.value,
+        pieceEdition: selectedPieceEdition,
+      },
+    });
+    currentUser = data.user;
+    authStatus.textContent =
+      currentInterfaceLanguage() === "Korean"
+        ? `${currentUser.displayName}님으로 Google 로그인되었습니다.`
+        : `Signed in with Google as ${currentUser.displayName}.`;
+    authDisplayName.value = "";
+    authPassword.value = "";
+    authConfirmPassword.value = "";
+    renderAuthState();
+    setView("dashboard");
+    await refreshStats();
+    await refreshLobby();
+  } catch (error) {
+    authStatus.textContent = error.message;
+    renderAuthState();
+  } finally {
+    googleSignInButton.disabled = Boolean(currentUser);
+  }
+}
+
+async function initializeGoogleLogin() {
+  if (location.protocol === "file:") return;
+  try {
+    const config = await api("/api/config");
+    googleClientId = config.googleClientId || "";
+    if (!googleClientId) {
+      googleLoginReady = false;
+      googleSignInButton.textContent = currentInterfaceLanguage() === "Korean" ? "Google 로그인 설정 필요" : "Configure Google login";
+      renderAuthState();
+      return;
+    }
+    await loadGoogleIdentityScript();
+    window.google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: (response) => finishGoogleLogin(response.credential),
+      ux_mode: "popup",
+    });
+    if (googleSignInSlot) {
+      googleSignInSlot.innerHTML = "";
+      window.google.accounts.id.renderButton(googleSignInSlot, {
+        theme: "outline",
+        size: "large",
+        type: "standard",
+        shape: "rectangular",
+        text: authMode === "signup" ? "signup_with" : "signin_with",
+        width: Math.min(360, Math.max(240, Math.floor(googleSignInSlot.getBoundingClientRect().width || 320))),
+      });
+    }
+    googleLoginReady = true;
+    renderAuthState();
+  } catch (error) {
+    googleLoginReady = false;
+    googleSignInButton.hidden = false;
+    googleSignInButton.disabled = false;
+    authStatus.textContent = error.message;
+  }
+}
+
 async function deleteAccount() {
   if (!currentUser) {
     authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "계정을 삭제하려면 먼저 로그인하세요." : "Sign in before deleting an account.";
@@ -2586,34 +2681,25 @@ async function deleteAccount() {
 }
 
 async function signInWithGoogle() {
-  if (!demoAuthAllowed) {
-    authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "배포된 사이트에서는 데모 로그인을 사용할 수 없습니다." : "Demo sign-in is disabled on the deployed site.";
-    return;
-  }
-  authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "데모 계정으로 로그인하는 중..." : "Signing in with demo account...";
-  googleSignInButton.disabled = true;
-  try {
-    const data = await api("/api/auth/signup", {
-      method: "POST",
-      body: {
-        email: "google.player@livechess.local",
-        displayName: "Google Player",
-        password: "google-oauth-demo",
-        languagePair: authLanguagePair.value,
-      },
-    });
-    currentUser = data.user;
+  if (!googleClientId) {
     authStatus.textContent =
       currentInterfaceLanguage() === "Korean"
-        ? `${currentUser.displayName} 데모 계정으로 로그인되었습니다.`
-        : `Signed in with demo account as ${currentUser.displayName}.`;
-    renderAuthState();
-    setView("dashboard");
-    await refreshStats();
-    await refreshLobby();
+        ? "Render 환경변수 GOOGLE_CLIENT_ID를 설정한 뒤 다시 배포하세요."
+        : "Set GOOGLE_CLIENT_ID in Render and redeploy.";
+    return;
+  }
+  try {
+    await loadGoogleIdentityScript();
+    window.google.accounts.id.prompt((notification) => {
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        authStatus.textContent =
+          currentInterfaceLanguage() === "Korean"
+            ? "Google 로그인 팝업을 열 수 없습니다. 브라우저 팝업 허용 또는 아래 Google 버튼을 사용하세요."
+            : "Google login popup was not shown. Allow popups or use the Google button.";
+      }
+    });
   } catch (error) {
     authStatus.textContent = error.message;
-    renderAuthState();
   }
 }
 
@@ -4516,6 +4602,7 @@ renderStaffShopProducts();
 updateRoomLink(null);
 renderAuthState();
 applyInterfaceLanguage();
+initializeGoogleLogin();
 if (isStudentTutorialRequired()) {
   setView("how-to-play");
 } else if (isTutorialRoute()) {

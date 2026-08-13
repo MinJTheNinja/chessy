@@ -19,6 +19,7 @@ const nvidiaTranslationModel = process.env.NVIDIA_TRANSLATION_MODEL || "nvidia/r
 const nvidiaSafetyModel = process.env.NVIDIA_SAFETY_MODEL || "nvidia/nemotron-3.5-content-safety";
 const meteredTurnApiUrl = String(process.env.METERED_TURN_API_URL || "").trim().replace(/\/$/, "");
 const meteredTurnApiKey = process.env.METERED_TURN_API_KEY;
+const googleClientId = String(process.env.GOOGLE_CLIENT_ID || "").trim();
 const staffEmails = new Set(
   String(process.env.STAFF_EMAILS || "")
     .split(",")
@@ -32,6 +33,8 @@ const nvidiaEnabled = Boolean(nvidiaApiKey);
 const rateLimitBuckets = new Map();
 let cachedIceServers = null;
 let cachedIceServersAt = 0;
+let cachedGoogleKeys = null;
+let cachedGoogleKeysAt = 0;
 const pieceEditions = new Set(["cheoinseong", "beta"]);
 const pgPool = databaseUrl
   ? new Pool({
@@ -333,6 +336,7 @@ function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
 }
 
 function verifyPassword(password, stored) {
+  if (!stored) return false;
   const [salt] = stored.split(":");
   return hashPassword(password, salt) === stored;
 }
@@ -706,6 +710,54 @@ function sessionCookie(token, req, options = {}) {
   const secure = isSecureRequest(req) ? "; Secure" : "";
   const maxAge = options.clear ? "; Max-Age=0" : "";
   return `lc_session=${token || ""}; Path=/${maxAge}; HttpOnly; SameSite=Lax${secure}`;
+}
+
+function base64UrlDecode(value) {
+  const padded = `${value}${"=".repeat((4 - (value.length % 4)) % 4)}`;
+  return Buffer.from(padded.replace(/-/g, "+").replace(/_/g, "/"), "base64");
+}
+
+function decodeJwtPart(value) {
+  return JSON.parse(base64UrlDecode(value).toString("utf8"));
+}
+
+async function googlePublicKeys() {
+  const now = Date.now();
+  if (cachedGoogleKeys && now - cachedGoogleKeysAt < 60 * 60 * 1000) return cachedGoogleKeys;
+  const response = await fetch("https://www.googleapis.com/oauth2/v3/certs");
+  if (!response.ok) throw new Error(`Google keys request failed with ${response.status}`);
+  const payload = await response.json();
+  cachedGoogleKeys = Array.isArray(payload.keys) ? payload.keys : [];
+  cachedGoogleKeysAt = now;
+  return cachedGoogleKeys;
+}
+
+async function verifyGoogleCredential(credential) {
+  if (!googleClientId) throw new Error("Google login is not configured.");
+  const parts = String(credential || "").split(".");
+  if (parts.length !== 3) throw new Error("Invalid Google credential.");
+  const [encodedHeader, encodedPayload, encodedSignature] = parts;
+  const header = decodeJwtPart(encodedHeader);
+  const payload = decodeJwtPart(encodedPayload);
+  if (header.alg !== "RS256") throw new Error("Unsupported Google credential algorithm.");
+  const key = (await googlePublicKeys()).find((item) => item.kid === header.kid);
+  if (!key) throw new Error("Google credential signing key was not found.");
+  const publicKey = crypto.createPublicKey({ key, format: "jwk" });
+  const verifier = crypto.createVerify("RSA-SHA256");
+  verifier.update(`${encodedHeader}.${encodedPayload}`);
+  verifier.end();
+  const valid = verifier.verify(publicKey, base64UrlDecode(encodedSignature));
+  if (!valid) throw new Error("Google credential signature is invalid.");
+  if (!["accounts.google.com", "https://accounts.google.com"].includes(payload.iss)) throw new Error("Google credential issuer is invalid.");
+  if (payload.aud !== googleClientId) throw new Error("Google credential audience is invalid.");
+  if (Number(payload.exp || 0) * 1000 <= Date.now()) throw new Error("Google credential has expired.");
+  if (!payload.email || payload.email_verified === false) throw new Error("Google account email is not verified.");
+  return {
+    email: String(payload.email).trim().toLowerCase(),
+    displayName: String(payload.name || payload.given_name || payload.email || "Google Player").trim().slice(0, 40),
+    picture: payload.picture || "",
+    googleSub: payload.sub || "",
+  };
 }
 
 function clientAddress(req) {
@@ -1218,6 +1270,14 @@ async function handleApi(req, res, pathname) {
     return true;
   }
 
+  if (req.method === "GET" && pathname === "/api/config") {
+    sendJson(res, 200, {
+      googleClientId,
+      googleLoginConfigured: Boolean(googleClientId),
+    });
+    return true;
+  }
+
   if (req.method === "POST" && pathname === "/api/translate") {
     if (!requireUser(user, res)) return true;
     if (!requireRateLimit(req, res, user, "translate", 60)) return true;
@@ -1552,6 +1612,44 @@ async function handleApi(req, res, pathname) {
     const token = createSession(db, found.id);
     await writeDb(db);
     sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": sessionCookie(token, req) });
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/google") {
+    if (!requireRateLimit(req, res, user, "auth-google", 20)) return true;
+    const body = await readBody(req);
+    try {
+      const googleProfile = await verifyGoogleCredential(body.credential);
+      let found = db.users.find((item) => item.email === googleProfile.email);
+      if (!found) {
+        found = {
+          id: id("user"),
+          email: googleProfile.email,
+          displayName: googleProfile.displayName,
+          languagePair: body.languagePair || "English to Korean",
+          pieceEdition: normalizedPieceEdition(body.pieceEdition),
+          passwordHash: "",
+          authProvider: "google",
+          googleSub: googleProfile.googleSub,
+          avatarUrl: googleProfile.picture,
+          mannerTemperature: 42.8,
+          role: signupRole(googleProfile.email, db),
+          createdAt: new Date().toISOString(),
+        };
+        db.users.push(found);
+      } else {
+        found.authProvider = found.authProvider || "google";
+        found.googleSub = found.googleSub || googleProfile.googleSub;
+        found.avatarUrl = googleProfile.picture || found.avatarUrl;
+        if (!found.displayName) found.displayName = googleProfile.displayName;
+        found.pieceEdition = normalizedPieceEdition(found.pieceEdition);
+      }
+      const token = createSession(db, found.id);
+      await writeDb(db);
+      sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": sessionCookie(token, req) });
+    } catch (error) {
+      sendJson(res, 401, { error: error.message || "Google login failed." });
+    }
     return true;
   }
 

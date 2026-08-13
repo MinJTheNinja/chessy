@@ -54,22 +54,9 @@
     </header>
 
     <main>
-      <section class="entry" id="home" aria-labelledby="entryTitle">
+      <section class="entry" id="home" aria-label="EasyMate 시작">
         <div class="entry-visual">
           <div class="entry-content">
-            <span class="eyebrow">체스 · 대화 · 연결</span>
-            <div class="landing-board" aria-hidden="true">
-              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-            </div>
-            <h1 id="entryTitle">64개의 칸이 여는<br><em>세대와 언어의 연결</em></h1>
-            <p>체스 한 판으로 어르신, 학생, 해외 플레이어가 같은 화면에서 만나 대화하고 배웁니다.</p>
             <div class="entry-actions">
               <button class="button primary" id="mainAccountButton" type="button">계정으로 시작</button>
               <button class="button secondary" id="mainTutorialButton" type="button">튜토리얼 먼저 보기</button>
@@ -80,20 +67,12 @@
           <form class="auth-card" id="authForm" aria-label="Account entry">
             <span class="eyebrow">EasyMate 계정</span>
             <h2>대화를 시작하세요</h2>
-            <p class="auth-intro">언어 조합을 고르고 계정으로 입장하면 실시간 체스 매칭을 시작할 수 있습니다.</p>
+            <p class="auth-intro">계정으로 입장하면 실시간 체스 매칭을 시작할 수 있습니다.</p>
             <div class="auth-tabs" aria-label="Account mode">
               <button class="auth-tab active" id="loginButton" type="button">로그인</button>
               <button class="auth-tab" id="signupButton" type="button">새 계정</button>
             </div>
-            <label>
-              언어 선택
-              <select id="authLanguagePair">
-                <option value="English to Korean">영어에서 한국어</option>
-                <option value="Korean to English">한국어에서 영어</option>
-                <option value="Thai to English">태국어에서 영어</option>
-                <option value="Japanese to Korean">일본어에서 한국어</option>
-              </select>
-            </label>
+            <input id="authLanguagePair" type="hidden" value="English to Korean" />
             <label>
               이메일
               <input id="authEmail" type="email" placeholder="player@example.com" autocomplete="email" />
@@ -111,9 +90,10 @@
               <input id="authConfirmPassword" type="password" placeholder="비밀번호 다시 입력" autocomplete="new-password" />
             </label>
             <button class="button primary full" id="authSubmit" type="submit">로그인</button>
+            <div class="google-signin-slot" id="googleSignInSlot"></div>
             <button class="button secondary full google-button" id="googleSignIn" type="button">
               <span class="google-mark">G</span>
-              데모 로그인
+              Google 로그인
             </button>
             <button class="button secondary full" id="continueToDashboard" type="button" hidden>계속 플레이</button>
             <p id="authStatus">기존 이메일과 비밀번호를 입력하세요.</p>
