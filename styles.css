@@ -1094,10 +1094,25 @@ p {
   display: grid;
   justify-items: center;
   align-content: center;
+  gap: clamp(22px, 4vw, 34px);
   width: min(100%, 720px);
   margin: 0 auto;
   color: var(--ink);
   text-align: center;
+}
+
+.entry-logo {
+  color: var(--dark);
+  font-family: var(--font-display);
+  font-size: clamp(3.8rem, 10vw, 8.5rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.entry-logo strong {
+  color: var(--em-jinsa);
+  font-weight: 700;
 }
 
 .entry-hero-media {
@@ -1222,7 +1237,7 @@ p {
 }
 
 .entry-auth {
-  display: grid;
+  display: none;
   place-items: center;
   min-height: calc(100vh - 84px);
   padding: clamp(36px, 6vw, 72px) clamp(20px, 4vw, 44px);
@@ -1437,7 +1452,7 @@ body.auth-entry-open:not(.is-signed-in) .entry-auth {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--panel);
+  background: #fffcf5;
   box-shadow: var(--shadow);
 }
 
@@ -1468,7 +1483,7 @@ body.auth-entry-open:not(.is-signed-in) .entry-auth {
   height: min(760px, calc(100vh - 190px));
   min-height: 700px;
   border: 0;
-  background: #f8f2e8;
+  background: #fffcf5;
 }
 
 .button-row {
@@ -3357,6 +3372,10 @@ dialog::backdrop {
     line-height: 1.18;
   }
 
+  .entry-logo {
+    font-size: clamp(3.1rem, 18vw, 5.4rem);
+  }
+
   .entry-content > p {
     max-width: 354px;
     font-size: 0.96rem;
@@ -3380,9 +3399,10 @@ dialog::backdrop {
 
   .entry-content {
     position: static;
-    justify-self: start;
+    justify-self: center;
+    justify-items: center;
     width: min(100%, 354px);
-    margin: 0;
+    margin: 0 auto;
   }
 
   .view-header,

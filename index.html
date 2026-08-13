@@ -57,13 +57,16 @@
       <section class="entry" id="home" aria-label="EasyMate 시작">
         <div class="entry-visual">
           <div class="entry-content">
+            <a class="entry-logo" href="#home" data-view-link="home" aria-label="EasyMate 홈">
+              Easy<strong>Mate</strong>
+            </a>
             <div class="entry-actions">
               <button class="button primary" id="mainAccountButton" type="button">계정으로 시작</button>
-              <button class="button secondary" id="mainTutorialButton" type="button">튜토리얼 먼저 보기</button>
+              <button class="button secondary" id="mainTutorialButton" type="button">연습마당으로 가기</button>
             </div>
           </div>
         </div>
-        <div class="entry-auth">
+        <div class="entry-auth" hidden>
           <form class="auth-card" id="authForm" aria-label="Account entry">
             <span class="eyebrow">EasyMate 계정</span>
             <h2>대화를 시작하세요</h2>
@@ -534,8 +537,7 @@
           <section class="view how-to-play-view" data-view="how-to-play" aria-labelledby="howToPlayTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">가이드</span>
-                <h2 id="howToPlayTitle">튜토리얼</h2>
+                <h2 id="howToPlayTitle">연습마당</h2>
               </div>
               <button class="button primary" id="tutorialLoginButton" type="button">로그인 화면으로 가기</button>
             </div>
@@ -766,21 +768,11 @@
                   <div>
                     <strong id="profileName">ChessLearner</strong>
                     <p id="profileEmail">player@example.com</p>
-                    <p id="profileLanguageText">영어 학습자, 한국어 사용자</p>
                   </div>
                 </div>
                 <label>
                   표시 이름
                   <input id="profileDisplayName" type="text" placeholder="ChessLearner" />
-                </label>
-                <label>
-                  언어 조합
-                  <select id="profileLanguagePair">
-                    <option value="English to Korean">영어에서 한국어</option>
-                    <option value="Korean to English">한국어에서 영어</option>
-                    <option value="Thai to English">태국어에서 영어</option>
-                    <option value="Japanese to Korean">일본어에서 한국어</option>
-                  </select>
                 </label>
                 <label>
                   말 디자인

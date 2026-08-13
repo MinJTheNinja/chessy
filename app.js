@@ -66,6 +66,7 @@ const pronunciationStatus = document.querySelector("#pronunciationStatus");
 const reviewStatus = document.querySelector("#reviewStatus");
 const serverStatus = document.querySelector("#serverStatus");
 const authForm = document.querySelector("#authForm");
+const entryAuth = document.querySelector(".entry-auth");
 const authEmail = document.querySelector("#authEmail");
 const authDisplayNameField = document.querySelector("#authDisplayNameField");
 const authDisplayName = document.querySelector("#authDisplayName");
@@ -338,7 +339,7 @@ Object.assign(koreanText, {
   "Make chess easier!": "체스를 더 쉽게!",
   "64 squares connect generations and languages": "64개의 칸이 여는 세대와 언어의 연결",
   "Start with account": "계정으로 시작",
-  "View tutorial first": "튜토리얼 먼저 보기",
+  "View tutorial first": "연습마당으로 가기",
   "EasyMate Account": "EasyMate 계정",
   "Start a conversation": "대화를 시작하세요",
   "Choose a language pair and enter with your account to start live chess matching.":
@@ -1536,6 +1537,7 @@ function renderAuthState() {
   const signedIn = Boolean(currentUser);
   document.body.classList.toggle("is-signed-in", signedIn);
   authForm.classList.toggle("signed-in", signedIn);
+  if (!document.body.classList.contains("auth-entry-open") || signedIn) entryAuth.hidden = true;
   headerProfile.hidden = !signedIn;
   if (signedIn) {
     headerProfileName.textContent = currentUser.displayName || translateCopy("Player");
@@ -1625,6 +1627,7 @@ async function setPieceEdition(edition) {
 function setAuthMode(mode) {
   authMode = mode;
   authConfirmPassword.value = "";
+  entryAuth.hidden = false;
   document.body.classList.add("auth-entry-open");
   renderAuthState();
   if (googleLoginReady) initializeGoogleLogin();
@@ -3032,6 +3035,7 @@ function setView(viewName) {
     document.body.classList.add("show-landing");
     document.body.classList.remove("show-how-to-play");
     document.body.classList.remove("auth-entry-open");
+    entryAuth.hidden = true;
     document.querySelector("#home").scrollIntoView({ behavior: "smooth", block: "start" });
     document.querySelectorAll(".side-link").forEach((link) => link.classList.remove("active"));
     closeMenu();
@@ -3653,9 +3657,13 @@ function renderProfile(profile) {
   profileAvatar.textContent = initials(user.displayName);
   profileName.textContent = user.displayName;
   profileEmail.textContent = user.email;
-  profileLanguageText.textContent = user.languagePair ? translateCopy(user.languagePair) : currentInterfaceLanguage() === "Korean" ? "언어 조합이 아직 없습니다." : "Language pair not set";
+  if (profileLanguageText) {
+    profileLanguageText.textContent = user.languagePair
+      ? translateCopy(user.languagePair)
+      : currentInterfaceLanguage() === "Korean" ? "언어 조합이 아직 없습니다." : "Language pair not set";
+  }
   profileDisplayName.value = user.displayName || "";
-  profileLanguagePair.value = user.languagePair || "English to Korean";
+  if (profileLanguagePair) profileLanguagePair.value = user.languagePair || "English to Korean";
   if (profilePieceEdition) profilePieceEdition.value = normalizePieceEdition(user.pieceEdition);
   updateHeaderPieceEditionToggle(user.pieceEdition);
   profileBio.value = user.bio || "";
@@ -3702,9 +3710,12 @@ function clearProfile() {
   profileAvatar.textContent = "CL";
   profileName.textContent = "ChessLearner";
   profileEmail.textContent = "player@example.com";
-  profileLanguageText.textContent = currentInterfaceLanguage() === "Korean" ? "언어 설정을 불러오려면 로그인하세요." : "Sign in to load language settings.";
+  if (profileLanguageText) {
+    profileLanguageText.textContent =
+      currentInterfaceLanguage() === "Korean" ? "언어 설정을 불러오려면 로그인하세요." : "Sign in to load language settings.";
+  }
   profileDisplayName.value = "";
-  profileLanguagePair.value = "English to Korean";
+  if (profileLanguagePair) profileLanguagePair.value = "English to Korean";
   if (profilePieceEdition) profilePieceEdition.value = "cheoinseong";
   profileBio.value = "";
   badgeList.innerHTML = "";
@@ -3741,7 +3752,7 @@ async function saveProfile() {
       method: "PUT",
       body: {
         displayName: profileDisplayName.value,
-        languagePair: profileLanguagePair.value,
+        languagePair: profileLanguagePair?.value || currentUser?.languagePair || authLanguagePair?.value || "English to Korean",
         pieceEdition: profilePieceEdition?.value,
         bio: profileBio.value,
       },
@@ -4287,9 +4298,10 @@ interfaceLanguageObserver.observe(document.body, {
 
 document.querySelectorAll("[data-view-link]").forEach((link) => {
   link.addEventListener("click", (event) => {
-    const viewName = link.dataset.viewLink;
+    let viewName = link.dataset.viewLink;
     if (!viewName) return;
     event.preventDefault();
+    if (viewName === "home" && currentUser) viewName = "dashboard";
     setView(viewName);
   });
 });

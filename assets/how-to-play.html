@@ -18,21 +18,18 @@
   --mongol:#8E3B31;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
+html,body{width:100%;height:100%}
 body{
   font-family:'Gowun Dodum',sans-serif;
-  background:
-    radial-gradient(circle at 15% 20%, rgba(201,162,74,.12), transparent 42%),
-    radial-gradient(circle at 85% 80%, rgba(97,151,208,.12), transparent 42%),
-    var(--hanji);
+  background:#FFFCF5;
   color:var(--meok);
-  display:flex;align-items:center;justify-content:center;padding:12px;
+  display:flex;align-items:stretch;justify-content:stretch;padding:0;
 }
 #app{
-  width:100%;max-width:520px;background:#FFFCF5;
-  border:3px solid var(--meok);border-radius:26px;
-  box-shadow:0 10px 0 rgba(31,51,72,.18);
-  overflow:hidden;position:relative;display:flex;flex-direction:column;min-height:660px;
+  width:100%;max-width:none;height:100%;min-height:100%;background:#FFFCF5;
+  border:0;border-radius:0;
+  box-shadow:none;
+  overflow:auto;position:relative;display:flex;flex-direction:column;
 }
 .top-band{
   height:14px;
@@ -41,7 +38,7 @@ body{
     var(--noerok) 40px 68px, var(--geum) 68px 80px,
     var(--easyblue) 80px 108px, var(--geum) 108px 120px);
 }
-.scene{flex:1;display:none;flex-direction:column;padding:20px 22px 18px}
+.scene{flex:1;display:none;flex-direction:column;padding:clamp(18px,3vw,34px) clamp(22px,5vw,64px) clamp(18px,3vw,34px)}
 .scene.active{display:flex;animation:fadein .45s ease}
 @keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 h1,h2,.jua{font-family:'Jua',sans-serif;letter-spacing:.5px}
@@ -99,6 +96,13 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
 .sq.wrong{animation:shake .35s}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.path-layer{position:absolute;inset:0;z-index:4;pointer-events:none;transition:opacity .35s}
+.path-layer.fade{opacity:0}
+.path-layer .leg{fill:none;stroke:var(--easyblue);stroke-width:.09;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:.26 .2;opacity:.95}
+.path-layer .elbow{fill:var(--easyblue);opacity:.9}
+.path-layer .step-no{font-family:'Jua',sans-serif;font-size:.42px;fill:#fff}
+.path-layer .step-bg{fill:var(--meok);opacity:.92}
 .piece-token{
   position:absolute;width:20%;aspect-ratio:1;pointer-events:none;z-index:5;
   transition:left .45s cubic-bezier(.34,1.4,.64,1), top .45s cubic-bezier(.34,1.4,.64,1);
@@ -151,7 +155,18 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 .nav button{font-family:'Jua',sans-serif;font-size:17px;border:none;border-radius:999px;padding:11px 26px;cursor:pointer;transition:transform .1s}
 .nav button:active{transform:scale(.95)}
 .btn-next{background:var(--meok);color:#fff;box-shadow:0 4px 0 #0e1c2c}
-.btn-next:disabled{background:#b9c0cc;box-shadow:0 4px 0 #99a1ad;cursor:not-allowed}
+.btn-next:disabled{background:#b9c0cc;box-shadow:0 4px 0 #99a1ad;cursor:not-allowed;opacity:.5}
+.next-wrap{position:relative;display:inline-block}
+.nav.has-cd{padding-top:34px}
+.cd-bubble{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+  background:#FFFCF3;border:2.5px solid var(--meok);border-radius:999px;padding:3px 11px;white-space:nowrap;
+  font-family:'Jua',sans-serif;font-size:12.5px;color:var(--meok);box-shadow:0 3px 0 rgba(31,51,72,.15)}
+.cd-bubble::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:6px solid transparent;border-top-color:var(--meok)}
+.cd-bubble b{color:var(--jinsa);font-weight:400}
+.quiz-flag{display:inline-block;font-family:'Jua',sans-serif;font-size:12px;background:var(--jinsa);color:#fff;
+  border-radius:999px;padding:3px 11px;margin-bottom:6px}
+.mission.quiz{color:var(--jinsa)}
 .btn-prev{background:transparent;color:var(--meok);text-decoration:underline;padding:11px 10px}
 .dots{display:flex;gap:6px}
 .dot{width:9px;height:9px;border-radius:50%;background:#dbcfb3}
@@ -243,17 +258,45 @@ const rays = (dirs)=>{
   }
   return out;
 };
+const inB5=([r,c])=>r>=0&&r<5&&c>=0&&c<5;
+const rayFrom=([r,c],dirs)=>{
+  const out=[];
+  for(const [dr,dc] of dirs){
+    let rr=r+dr, cc=c+dc;
+    while(inB5([rr,cc])){ out.push([rr,cc]); rr+=dr; cc+=dc; }
+  }
+  return out;
+};
+const hop=([r,c],deltas)=>deltas.map(([dr,dc])=>[r+dr,c+dc]).filter(inB5);
+const ORTHO=[[1,0],[-1,0],[0,1],[0,-1]], DIAG=[[1,1],[1,-1],[-1,1],[-1,-1]];
+/* 현재 위치에서 갈 수 있는 칸 (5×5 연습 마당 기준) */
+const MOVE_GEN = {
+  g_pawn:  ([r,c])=>{ const out=[]; if(r-1>=0) out.push([r-1,c]); return out; },   /* 연습 마당에서는 언제나 한 칸 */
+  g_rook:  p=>rayFrom(p,ORTHO),
+  g_bishop:p=>rayFrom(p,DIAG),
+  g_queen: p=>rayFrom(p,ORTHO.concat(DIAG)),
+  g_knight:p=>hop(p,[[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]),
+  g_king:  p=>hop(p,ORTHO.concat(DIAG))
+};
+const QUIZ_HINT = {
+  g_pawn:'창병은 앞으로만 걸어요.',
+  g_rook:'돌탑은 앞·뒤·양옆으로 쭉 달려요.',
+  g_bishop:'승려님은 대각선으로만 미끄러져요.',
+  g_queen:'근위대장은 여덟 방향 모두 쭉 달려요.',
+  g_knight:'백마는 L자로 폴짝 뛰어요.',
+  g_king:'임금님은 어느 방향이든 딱 한 칸이에요.'
+};
 const PIECES = [
   {id:'g_pawn', name:'꼬마 창병', en:'폰 · Pawn',
-   intro:`안녕! 나는 고려의 <b>꼬마 창병</b>이야. 우리는 여덟 형제라서 고려군에서 제일 숫자가 많아! 나는 씩씩하게 <b>앞으로 한 칸씩</b>만 걸어가. 뒤로는 절대 안 돌아가! (맨 처음 출발할 때만 두 칸도 갈 수 있어.)`,
+   intro:`안녕! 나는 고려의 <b>꼬마 창병</b>이야. 우리는 여덟 형제라서 고려군에서 제일 숫자가 많아! 나는 씩씩하게 <b>앞으로 한 칸씩</b>만 걸어가. 뒤로는 절대 안 돌아가! (진짜 체스에서는 맨 처음 출발할 때만 두 칸도 갈 수 있지만, 여기 연습 마당에서는 한 칸씩 걸어보자!)`,
    mission:'파란 점을 눌러서 창병을 앞으로 보내줘!', moves:[[2,2]], start:[3,2]},
   {id:'g_rook', name:'돌탑 수문장', en:'룩 · Rook',
    intro:`나는 강화 성곽의 <b>돌탑 수문장</b>! 돌을 쌓아 만들어서 아주 튼튼하지. 나는 <b>앞·뒤·양옆으로 쭉-!</b> 미끄러지듯 달려갈 수 있어.`,
    mission:'파란 점 중 아무 곳이나 눌러서 돌탑을 움직여봐!',
    moves:rays([[1,0],[-1,0],[0,1],[0,-1]]), start:[2,2]},
   {id:'g_knight', name:'백마 기수', en:'나이트 · Knight',
-   intro:`히힝! 나는 <b>백마 기수</b>야. 나는 특별하게 <b>ㄱ자 모양</b>으로 폴짝 뛰어다녀. 다른 말이 길을 막고 있어도 <b>훌쩍 뛰어넘을</b> 수 있는 건 나뿐이야!`,
-   mission:'ㄱ자 모양 파란 점으로 백마를 점프시켜봐!',
+   intro:`히힝! 나는 <b>백마 기수</b>야. 나는 특별하게 <b>L자 모양</b>(곧게 두 칸 → 옆으로 한 칸)으로 폴짝 뛰어다녀. 다른 말이 길을 막고 있어도 <b>훌쩍 뛰어넘을</b> 수 있는 건 나뿐이야!`,
+   mission:'L자 모양 파란 점으로 백마를 점프시켜봐!',
    moves:[[0,1],[0,3],[1,0],[1,4],[3,0],[3,4],[4,1],[4,3]], start:[2,2]},
   {id:'g_bishop', name:'지혜 승려', en:'비숍 · Bishop',
    intro:`나무아미타불… 나는 팔만대장경을 지키는 <b>지혜 승려</b>라오. 나는 언제나 <b>대각선으로만</b> 조용히 미끄러져 다닌다오. 비스듬한 길이 나의 길!`,
@@ -271,7 +314,7 @@ const PIECES = [
 const CAPTURE_SCENES = [
   {id:'knightCapture', piece:'g_knight', enemy:'m_bishop', name:'백마 기수', en:'적을 잡는 방법',
    intro:`<b>몽골의 샤먼</b>이 북을 울리며 병사들을 부르고 있어! 잡는 방법은 모두 똑같아 — <b>내가 갈 수 있는 칸에 적이 있으면, 그 칸으로 들어가면서 잡아.</b> 잡힌 적은 판에서 빠져나가!`,
-   mission:'ㄱ자 점프로 샤먼이 있는 칸에 착지해 잡아보자!',
+   mission:'L자 점프로 샤먼이 있는 칸에 착지해 잡아보자!',
    note:'모든 용사는 “움직이는 길 = 잡는 길”이에요. 잡힌 기물은 판에서 사라져요.',
    start:[4,1], target:[2,2]},
   {id:'pawnCapture', piece:'g_pawn', enemy:'m_pawn', name:'꼬마 창병', en:'딱 하나의 예외',
@@ -290,6 +333,7 @@ const RECAP_SCENE = CHECKMATE_SCENE+1;      /* 장군 vs 외통수 정리 */
 const BADGE_SCENE = RECAP_SCENE+1;
 
 const state = {scene:0, earned:{}, captures:{}, checkEarned:false, checkmateEarned:false};
+let countdownTimer=null;
 const root = document.getElementById('scenes');
 
 function dots(idx){
@@ -304,6 +348,7 @@ function progressDots(n, idx){
 }
 
 function render(){
+  if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; }
   const s = state.scene;
   let html='';
   if(s===0) html = titleScene();
@@ -393,7 +438,10 @@ function pieceScene(p, idx){
     <div class="nav">
       <button class="btn-prev" id="prevBtn">← 이전</button>
       ${dots(idx)}
-      <button class="btn-next" id="nextBtn" disabled>다음 →</button>
+      <span class="next-wrap">
+        <span class="cd-bubble" id="cdBubble" style="display:none"></span>
+        <button class="btn-next" id="nextBtn" disabled>확인 문제 →</button>
+      </span>
     </div>`;
 }
 function captureScene(c, idx){
@@ -492,6 +540,68 @@ function addToken(board,art,at,extraClass=''){
   placeToken(token,at);
   return token;
 }
+/* ---------- 나이트 L자 경로 시각화 ---------- */
+function knightElbow([r0,c0],[r1,c1]){
+  const dr=r1-r0, dc=c1-c0;
+  return Math.abs(dr)===2 ? [r0+dr, c0] : [r0, c0+dc];   /* 곧게 두 칸 간 지점 */
+}
+function drawLPath(board, from, elbow, to){
+  const NS='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(NS,'svg');
+  svg.setAttribute('class','path-layer');
+  svg.setAttribute('viewBox','0 0 5 5');
+  svg.setAttribute('preserveAspectRatio','none');
+  const cx=([r,c])=>[c+0.5, r+0.5];
+  const [x0,y0]=cx(from), [xe,ye]=cx(elbow), [x1,y1]=cx(to);
+  const seg=(ax,ay,bx,by,delay)=>{
+    const line=document.createElementNS(NS,'line');
+    line.setAttribute('class','leg');
+    line.setAttribute('x1',ax); line.setAttribute('y1',ay);
+    line.setAttribute('x2',ax); line.setAttribute('y2',ay);
+    svg.appendChild(line);
+    setTimeout(()=>{
+      line.style.transition='all .34s cubic-bezier(.4,0,.2,1)';
+      line.setAttribute('x2',bx); line.setAttribute('y2',by);
+    },delay);
+    return line;
+  };
+  const badge=(bx,by,label,delay)=>{
+    const g=document.createElementNS(NS,'g');
+    g.setAttribute('opacity','0');
+    const circ=document.createElementNS(NS,'circle');
+    circ.setAttribute('class','step-bg'); circ.setAttribute('cx',bx); circ.setAttribute('cy',by); circ.setAttribute('r','.3');
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('class','step-no'); t.setAttribute('x',bx); t.setAttribute('y',by+0.15);
+    t.setAttribute('text-anchor','middle'); t.textContent=label;
+    g.appendChild(circ); g.appendChild(t); svg.appendChild(g);
+    setTimeout(()=>{ g.style.transition='opacity .25s'; g.setAttribute('opacity','1'); },delay);
+  };
+  seg(x0,y0,xe,ye,20);            /* ① 곧게 두 칸 */
+  badge((x0+xe)/2,(y0+ye)/2,'1',80);
+  seg(xe,ye,x1,y1,420);           /* ② 옆으로 한 칸 */
+  const perp = Math.abs(x1-xe)>Math.abs(y1-ye) ? [0,-0.3] : [-0.3,0];
+  badge((xe+x1)/2+perp[0], (ye+y1)/2+perp[1], '2', 480);
+  const dot=document.createElementNS(NS,'circle');
+  dot.setAttribute('class','elbow'); dot.setAttribute('cx',xe); dot.setAttribute('cy',ye); dot.setAttribute('r','.1');
+  svg.appendChild(dot);
+  board.appendChild(svg);
+  return svg;
+}
+/* 나이트: 곧게 두 칸 → 옆으로 한 칸, 경로를 그리며 두 번에 나눠 이동 */
+function animateKnight(board, token, from, to, msgEl, onDone){
+  const elbow=knightElbow(from,to);
+  const layer=drawLPath(board, from, elbow, to);
+  const say=(t)=>{ if(msgEl){ msgEl.classList.remove('quiz'); msgEl.innerHTML=t; } };
+  say('① <b>곧게 두 칸</b> 달려요…');
+  setTimeout(()=>{ placeToken(token,elbow); },380);
+  setTimeout(()=>{ say('② 그리고 <b>옆으로 한 칸</b>! 이게 L자 점프예요.'); },760);
+  setTimeout(()=>{ placeToken(token,to); },820);
+  setTimeout(()=>{
+    layer.classList.add('fade');
+    setTimeout(()=>layer.remove(),400);
+    if(onDone) onDone();
+  },1400);
+}
 function celebrate(sq){
   SFX.good();
   const board=document.getElementById('board');
@@ -513,31 +623,129 @@ function flashWrong(sq,message){
 }
 
 /* ---------- 기물 소개 씬 ---------- */
-function setupBoard(p){
+function setupBoard(p, goNext){
   const board=document.getElementById('board');
   makeGrid(board);
-  const targets=new Set(p.moves.map(([r,c])=>r+','+c));
-  targets.forEach(key=>{
-    const [r,c]=key.split(',').map(Number);
-    sqAt(board,r,c).classList.add('hint');
-  });
-  const token=addToken(board,ART[p.id],p.start);
-  let done=false;
+  const mission=document.getElementById('mission');
+  const nextBtn=document.getElementById('nextBtn');
+  const bubble=document.getElementById('cdBubble');
+  let pos=p.start.slice();
+  const token=addToken(board,ART[p.id],pos);
+  let mode='explore', moves=0, finished=false, animating=false;
+  const isKnight = p.id==='g_knight';
+
+  const legal=()=>MOVE_GEN[p.id](pos);
+  function clearHints(){ board.querySelectorAll('.sq.hint').forEach(el=>el.classList.remove('hint')); }
+  function showHints(){
+    clearHints();
+    legal().forEach(([r,c])=>{ const sq=sqAt(board,r,c); if(sq) sq.classList.add('hint'); });
+  }
+  showHints();
+
+  /* 갈 곳이 없어졌을 때(창병이 끝줄 도달) 출발 자리로 되돌리기 */
+  function backToStart(){
+    pos=p.start.slice();
+    placeToken(token,pos);
+    showHints();
+  }
+
+  /* ── 이미 배지를 받은 용사면 바로 통과 ── */
+  if(state.earned[p.id]){
+    nextBtn.disabled=false; nextBtn.textContent='다음 →';
+    nextBtn.onclick=()=>goNext();
+  }else{
+    /* ── 10초 카운트다운 ── */
+    let left=10;
+    nextBtn.disabled=true;
+    bubble.style.display='';
+    const navEl=bubble.closest('.nav'); if(navEl) navEl.classList.add('has-cd');
+    bubble.innerHTML='<b>'+left+'초</b> 뒤에 확인 문제!';
+    countdownTimer=setInterval(()=>{
+      left--;
+      if(left>0){ bubble.innerHTML='<b>'+left+'초</b> 뒤에 확인 문제!'; return; }
+      clearInterval(countdownTimer); countdownTimer=null;
+      bubble.innerHTML='이제 확인 문제를 풀어볼까?';
+      nextBtn.disabled=false;
+      SFX.good();
+    },1000);
+    nextBtn.onclick=()=>startQuiz();
+  }
+
+  function startQuiz(){
+    mode='quiz';
+    const navEl=bubble.closest('.nav'); if(navEl) navEl.classList.remove('has-cd');
+    let moved=false;
+    if(legal().length===0){ backToStart(); moved=true; }   /* 갈 곳이 없으면 출발 자리에서 출제 */
+    clearHints();
+    bubble.style.display='none';
+    nextBtn.disabled=true; nextBtn.textContent='다음 →';
+    mission.classList.remove('done'); mission.classList.add('quiz');
+    mission.innerHTML='<span class="quiz-flag">확인 문제</span><br>'
+      +(moved?'출발 자리로 돌아왔어! ':'')
+      +'파란 점 없이! 지금 자리에서 <b>'+p.name+'</b>가 갈 수 있는 칸을 하나 눌러봐.';
+  }
+
   board.addEventListener('click', e=>{
-    const sq=e.target.closest('.sq'); if(!sq||done) return;
-    const m=document.getElementById('mission');
-    if(sq.classList.contains('hint')){
-      done=true;
-      const [r,c]=sq.dataset.rc.split(',').map(Number);
-      placeToken(token,[r,c]);
-      board.querySelectorAll('.sq.hint').forEach(el=>el.classList.remove('hint'));
-      celebrate(sq);
-      m.textContent=`${p.name}, 임무 완수! 참 잘했어요!`;
-      m.classList.add('done');
-      state.earned[p.id]=true;
-      document.getElementById('nextBtn').disabled=false;
+    const sq=e.target.closest('.sq'); if(!sq||finished||animating) return;
+    const [r,c]=sq.dataset.rc.split(',').map(Number);
+    const ok=legal().some(([rr,cc])=>rr===r&&cc===c);
+
+    if(mode==='explore'){
+      if(!ok){ flashWrong(sq,'음, 거긴 갈 수 없어. 파란 점을 찾아봐!'); return; }
+      const from=pos.slice();
+      pos=[r,c]; moves++;
+      if(isKnight){
+        animating=true;
+        clearHints();
+        animateKnight(board, token, from, pos, mission, ()=>{
+          animating=false;
+          showHints();
+          mission.classList.remove('quiz');
+          mission.textContent = moves===1
+            ? 'L자 점프 성공! 자리를 옮기니 뛸 수 있는 칸도 달라졌지?'
+            : (moves<4 ? '좋아! 파란 점을 따라 마음껏 뛰어보자.'
+                       : '백마 기수의 L자 점프를 완전히 익혔구나!');
+        });
+        return;
+      }
+      placeToken(token,pos);
+      showHints();
+      mission.classList.remove('quiz');
+
+      /* 창병이 끝줄에 닿으면 더 갈 곳이 없어요 → 승격을 알려주고 출발 자리로 */
+      if(legal().length===0){
+        mission.innerHTML='끝줄에 닿았어! 창병은 앞으로만 걸으니 여기선 더 갈 곳이 없어. '
+          +'진짜 체스에서는 끝줄에 닿은 창병이 <b>근위대장(퀸)으로 변신</b>한단다! '
+          +'다시 출발 자리에서 연습해볼까?';
+        setTimeout(()=>{ if(!finished) backToStart(); },1800);
+        return;
+      }
+
+      mission.textContent = moves===1
+        ? '잘했어! 자리를 옮기니 갈 수 있는 칸도 달라졌지? 계속 움직여봐.'
+        : (moves<4 ? '좋아! 파란 점을 따라 마음껏 연습해보자.'
+                   : p.name+'의 움직임을 완전히 익혔구나!');
+      return;
+    }
+
+    /* 확인 문제 */
+    if(ok){
+      finished=true;
+      const from=pos.slice();
+      pos=[r,c];
+      const finish=()=>{
+        celebrate(sq);
+        state.earned[p.id]=true;
+        mission.classList.remove('quiz'); mission.classList.add('done');
+        mission.textContent='정답! '+p.name+' 배지를 받았어요! 🎖️';
+        nextBtn.disabled=false;
+        nextBtn.onclick=()=>goNext();
+        setTimeout(()=>{ if(state.scene!==BADGE_SCENE) goNext(); },1100);
+      };
+      if(isKnight){ animateKnight(board, token, from, pos, mission, finish); }
+      else { placeToken(token,pos); finish(); }
     }else{
-      flashWrong(sq,'음, 거긴 갈 수 없어. 파란 점을 찾아봐!');
+      flashWrong(sq,'다시 시도해보자! '+QUIZ_HINT[p.id]);
     }
   });
 }
@@ -556,15 +764,23 @@ function setupCapture(c){
     const m=document.getElementById('mission');
     if(sq===targetSq){
       done=true;
-      enemy.classList.add('poof'); SFX.capture();
-      setTimeout(()=>enemy.remove(),400);
-      placeToken(token,c.target);
       sq.classList.remove('hint','capture-target');
-      celebrate(sq);
-      m.textContent='몽골군을 잡았다! 고려군 만세!';
-      m.classList.add('done');
-      state.captures[c.id]=true;
-      document.getElementById('nextBtn').disabled=false;
+      const finish=()=>{
+        enemy.classList.add('poof'); SFX.capture();
+        setTimeout(()=>enemy.remove(),400);
+        celebrate(sq);
+        m.classList.remove('quiz');
+        m.textContent='몽골군을 잡았다! 고려군 만세!';
+        m.classList.add('done');
+        state.captures[c.id]=true;
+        document.getElementById('nextBtn').disabled=false;
+      };
+      if(c.piece==='g_knight'){
+        animateKnight(board, token, c.start, c.target, m, finish);
+      }else{
+        placeToken(token,c.target);
+        finish();
+      }
     }else{
       flashWrong(sq,'앗! 적이 있는 칸을 눌러야 잡을 수 있어!');
     }
@@ -614,7 +830,7 @@ function setupCheckmate(){
   addToken(board,ART.g_king,[2,3]);
   const rookTok=addToken(board,ART.g_rook,[3,0]);
   [[1,3],[1,4]].forEach(([r,c])=>sqAt(board,r,c).classList.add('sq-guard'));
-  const mateTargets=[[0,0],[0,1],[0,2]];
+  const mateTargets=[[0,0]];   /* 돌탑 [3,0] → 같은 줄 위로만 이동 가능 */
   mateTargets.forEach(([r,c])=>sqAt(board,r,c).classList.add('hint'));
   let done=false;
   board.addEventListener('click', e=>{
@@ -635,7 +851,7 @@ function setupCheckmate(){
       state.checkmateEarned=true;
       document.getElementById('nextBtn').disabled=false;
     }else{
-      flashWrong(sq,'맨 윗줄로 가야 몽골 칸을 가둘 수 있어!');
+      flashWrong(sq,'돌탑은 앞·뒤·양옆으로만 달려요. 위로 쭉 올라가 맨 윗줄을 막아보자!');
     }
   });
 }
@@ -652,10 +868,8 @@ function bindScene(){
   }
   if(s>=PIECE_START_SCENE && s<PIECE_START_SCENE+totalPieceScenes){
     const p=PIECES[s-PIECE_START_SCENE];
-    setupBoard(p);
-    if(state.earned[p.id]) document.getElementById('nextBtn').disabled=false;
+    setupBoard(p, ()=>go(s+1));
     document.getElementById('prevBtn').onclick=()=>go(s-1);
-    document.getElementById('nextBtn').onclick=()=>go(s+1);
     return;
   }
   if(s>=CAPTURE_START_SCENE && s<CAPTURE_START_SCENE+CAPTURE_SCENES.length){
