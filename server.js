@@ -839,6 +839,23 @@ function normalizedPieceEdition(value) {
   return pieceEditions.has(value) ? value : "cheoinseong";
 }
 
+function maskEmailMiddle(email) {
+  const normalized = String(email || "").trim().toLowerCase();
+  const [localPart, domain] = normalized.split("@");
+  if (!localPart || !domain) return "Player";
+  if (localPart.length <= 3) return `${"*".repeat(localPart.length)}@${domain}`;
+  const startLength = Math.ceil((localPart.length - 3) / 2);
+  const endLength = localPart.length - 3 - startLength;
+  return `${localPart.slice(0, startLength)}***${endLength ? localPart.slice(-endLength) : ""}@${domain}`;
+}
+
+function publicDisplayName(user, fallback = "Player") {
+  const displayName = String(user?.displayName || "").trim();
+  if (displayName && user?.displayNameSource !== "google") return displayName;
+  if (user?.authProvider === "google" && user?.email) return maskEmailMiddle(user.email);
+  return displayName || fallback;
+}
+
 function getSessionUser(req, db) {
   const token = getCookie(req, "lc_session") || (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
   if (!token) return null;
@@ -1021,7 +1038,7 @@ function leagueView(league, db, period = "weekly") {
     .filter((user) => user.leagueCode === league.code)
     .map((user) => ({
       id: user.id,
-      displayName: user.displayName,
+      displayName: publicDisplayName(user),
       avatarUrl: user.avatarUrl || "",
       streak: Number(user.streak || 0),
       easyElo: Number(period === "weekly" ? user.weeklyEasyElo ?? user.easyElo ?? 1000 : user.easyElo ?? 1000),
@@ -1042,7 +1059,7 @@ function defaultLeaderboard(db, period = "weekly") {
   const members = db.users
     .map((user) => ({
       id: user.id,
-      displayName: user.displayName,
+      displayName: publicDisplayName(user),
       avatarUrl: user.avatarUrl || "",
       streak: Number(user.streak || 0),
       easyElo: Number(period === "weekly" ? user.weeklyEasyElo ?? user.easyElo ?? 1000 : user.easyElo ?? 1000),
@@ -1443,7 +1460,10 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     const body = await readBody(req);
     const displayName = String(body.displayName || "").trim();
     const languagePair = String(body.languagePair || "").trim();
-    if (displayName) user.displayName = displayName.slice(0, 60);
+    if (displayName) {
+      user.displayName = displayName.slice(0, 60);
+      if (body.displayNameSource === "user") user.displayNameSource = "user";
+    }
     if (languagePair) user.languagePair = languagePair.slice(0, 80);
     user.pieceEdition = normalizedPieceEdition(body.pieceEdition);
     user.bio = String(body.bio || "").trim().slice(0, 280);
@@ -1689,6 +1709,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
         id: id("user"),
         email,
         displayName,
+        displayNameSource: "user",
         languagePair: body.languagePair || "English to Korean",
         pieceEdition: normalizedPieceEdition(body.pieceEdition),
         passwordHash: hashPassword(password),
@@ -1735,6 +1756,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
           id: id("user"),
           email: googleProfile.email,
           displayName: googleProfile.displayName,
+          displayNameSource: "google",
           languagePair: body.languagePair || "English to Korean",
           pieceEdition: normalizedPieceEdition(body.pieceEdition),
           passwordHash: "",
@@ -1754,7 +1776,11 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
         found.authProvider = found.authProvider || "google";
         found.googleSub = found.googleSub || googleProfile.googleSub;
         found.avatarUrl = googleProfile.picture || found.avatarUrl;
-        if (!found.displayName) found.displayName = googleProfile.displayName;
+        if (!found.displayName) {
+          found.displayName = googleProfile.displayName;
+          found.displayNameSource = "google";
+        }
+        if (!found.displayNameSource && !found.passwordHash) found.displayNameSource = "google";
         found.pieceEdition = normalizedPieceEdition(found.pieceEdition);
       }
       const token = createSession(db, found.id);

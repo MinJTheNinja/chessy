@@ -1,8 +1,7 @@
 const board = document.querySelector("#chessBoard");
 const menuToggle = document.querySelector("#menuToggle");
 const languageSelect = document.querySelector("#languageSelect");
-const headerPieceEditionToggle = document.querySelector("#headerPieceEditionToggle");
-const headerPieceEditionButtons = document.querySelectorAll("[data-piece-edition]");
+const pieceEditionControls = document.querySelectorAll("[data-piece-edition]");
 const sidebarMenu = document.querySelector("#sidebarMenu");
 const syncState = document.querySelector("#syncState");
 const queueTime = document.querySelector("#queueTime");
@@ -94,6 +93,7 @@ const headerProfileName = document.querySelector("#headerProfileName");
 const headerProfileAvatar = document.querySelector("#headerProfileAvatar");
 const headerSignOutButton = document.querySelector("#headerSignOut");
 const deleteAccountButton = document.querySelector("#deleteAccount");
+const deleteAccountConfirm = document.querySelector("#deleteAccountConfirm");
 const contrastModeButton = document.querySelector("#contrastModeButton");
 const textSizeSlider = document.querySelector("#textSizeSlider");
 const settingsAccountName = document.querySelector("#settingsAccountName");
@@ -173,9 +173,17 @@ const adminUserSearch = document.querySelector("#adminUserSearch");
 const refreshProfileButton = document.querySelector("#refreshProfile");
 const profileStatus = document.querySelector("#profileStatus");
 const profileAvatar = document.querySelector("#profileAvatar");
+const profileAvatarButton = document.querySelector("#profileAvatarButton");
+const profileImageFile = document.querySelector("#profileImageFile");
 const profileName = document.querySelector("#profileName");
 const profileEmail = document.querySelector("#profileEmail");
 const profileBioText = document.querySelector("#profileBioText");
+const editProfileNameButton = document.querySelector("#editProfileName");
+const profileNameEditor = document.querySelector("#profileNameEditor");
+const saveProfileNameButton = document.querySelector("#saveProfileName");
+const editProfileBioButton = document.querySelector("#editProfileBio");
+const profileBioEditor = document.querySelector("#profileBioEditor");
+const saveProfileBioButton = document.querySelector("#saveProfileBio");
 const profileLanguageText = document.querySelector("#profileLanguageText");
 const profileDisplayName = document.querySelector("#profileDisplayName");
 const profileLanguagePair = document.querySelector("#profileLanguagePair");
@@ -193,7 +201,6 @@ const profileEasyElo = document.querySelector("#profileEasyElo");
 const profileSideElo = document.querySelector("#profileSideElo");
 const profileUserId = document.querySelector("#profileUserId");
 const profileLessonsCount = document.querySelector("#profileLessonsCount");
-const profileWordsCount = document.querySelector("#profileWordsCount");
 const profileQuestionsCount = document.querySelector("#profileQuestionsCount");
 const profileTestsCount = document.querySelector("#profileTestsCount");
 const cultureGuideList = document.querySelector("#cultureGuideList");
@@ -1591,7 +1598,7 @@ function renderAuthState() {
     if (authSubmit.disabled) document.body.classList.remove("auth-entry-open");
   }
   if (headerSignOutButton) headerSignOutButton.disabled = !signedIn;
-  if (deleteAccountButton) deleteAccountButton.disabled = !signedIn;
+  updateDeleteAccountButtonState();
   if (forumPostList) renderForumPosts();
   continueToDashboardButton.hidden = !signedIn;
   loginButton.textContent = signedIn ? translateCopy("Play") : translateCopy("Login");
@@ -1619,10 +1626,10 @@ function updateHeaderPieceEditionToggle(edition = currentUser?.pieceEdition) {
   const activeEdition = normalizePieceEdition(edition);
   selectedPieceEdition = activeEdition;
   applyPieceEditionTheme(activeEdition);
-  headerPieceEditionButtons.forEach((button) => {
-    const active = button.dataset.pieceEdition === activeEdition;
-    button.classList.toggle("active", active);
-    button.setAttribute("aria-pressed", String(active));
+  pieceEditionControls.forEach((control) => {
+    const active = control.dataset.pieceEdition === activeEdition;
+    control.classList.toggle("active", active);
+    control.setAttribute("aria-pressed", String(active));
   });
 }
 
@@ -1648,6 +1655,7 @@ async function setPieceEdition(edition) {
         displayName: currentUser.displayName,
         languagePair: currentUser.languagePair,
         pieceEdition: nextEdition,
+        avatarUrl: currentUser.avatarUrl || "",
         bio: currentUser.bio || "",
       },
     });
@@ -2759,6 +2767,122 @@ function applyTextSize(value) {
   localStorage.setItem("easyMateTextSize", String(sliderValue));
 }
 
+function updateDeleteAccountButtonState() {
+  if (!deleteAccountButton) return;
+  deleteAccountButton.disabled = !currentUser || deleteAccountConfirm?.value.trim() !== "delete account";
+}
+
+async function deleteAccountWithTypedConfirmation() {
+  if (!currentUser) {
+    authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "계정을 삭제하려면 먼저 로그인하세요." : "Sign in before deleting an account.";
+    setView("home");
+    return;
+  }
+  if (deleteAccountConfirm?.value.trim() !== "delete account") {
+    if (profileStatus) profileStatus.textContent = "계정을 삭제하려면 delete account를 정확히 입력하세요.";
+    updateDeleteAccountButtonState();
+    return;
+  }
+  if (!backendOnline) {
+    currentUser = null;
+    clearProfile();
+    renderAuthState();
+    if (deleteAccountConfirm) deleteAccountConfirm.value = "";
+    updateDeleteAccountButtonState();
+    authStatus.textContent =
+      currentInterfaceLanguage() === "Korean"
+        ? "로컬 계정 상태를 지웠습니다. 저장된 계정 데이터 삭제는 서버가 필요합니다."
+        : "Local account state cleared. Start the server to delete saved account data.";
+    setView("home");
+    return;
+  }
+  deleteAccountButton.disabled = true;
+  deleteAccountButton.textContent = currentInterfaceLanguage() === "Korean" ? "삭제 중..." : "Deleting...";
+  try {
+    await api("/api/auth/delete", { method: "DELETE" });
+    currentUser = null;
+    clearProfile();
+    renderAuthState();
+    if (deleteAccountConfirm) deleteAccountConfirm.value = "";
+    updateDeleteAccountButtonState();
+    authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "계정이 삭제되었습니다." : "Account deleted.";
+    setView("home");
+  } catch (error) {
+    authStatus.textContent = error.message;
+  } finally {
+    updateDeleteAccountButtonState();
+    deleteAccountButton.textContent = translateCopy("Delete account");
+  }
+}
+
+async function saveProfilePatch(patch = {}) {
+  if (!currentUser) {
+    if (profileStatus) profileStatus.textContent = "프로필을 수정하려면 먼저 로그인하세요.";
+    return null;
+  }
+  if (profileStatus) profileStatus.textContent = "프로필을 저장하는 중...";
+  const profile = await api("/api/profile", {
+    method: "PUT",
+    body: {
+      displayName: profileDisplayName?.value || currentUser.displayName || "",
+      languagePair: profileLanguagePair?.value || currentUser.languagePair || authLanguagePair?.value || "English to Korean",
+      pieceEdition: profilePieceEdition?.value || currentUser.pieceEdition || selectedPieceEdition,
+      avatarUrl: profileImage?.value || currentUser.avatarUrl || "",
+      bio: profileBio?.value || currentUser.bio || "",
+      ...patch,
+    },
+  });
+  currentUser = profile.user;
+  renderProfile(profile);
+  renderAuthState();
+  if (profileStatus) profileStatus.textContent = "프로필이 저장되었습니다.";
+  return profile;
+}
+
+async function saveInlineProfileName() {
+  try {
+    await saveProfilePatch({ displayName: profileDisplayName?.value.trim() || currentUser?.displayName || "", displayNameSource: "user" });
+    if (profileNameEditor) profileNameEditor.hidden = true;
+  } catch (error) {
+    if (profileStatus) profileStatus.textContent = error.message;
+  }
+}
+
+async function saveInlineProfileBio() {
+  try {
+    await saveProfilePatch({ bio: profileBio?.value.trim() || "" });
+    if (profileBioEditor) profileBioEditor.hidden = true;
+  } catch (error) {
+    if (profileStatus) profileStatus.textContent = error.message;
+  }
+}
+
+function readImageFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(String(reader.result || "")));
+    reader.addEventListener("error", () => reject(new Error("이미지를 읽지 못했습니다.")));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadProfileImage(file) {
+  if (!file) return;
+  if (file.size > 700_000) {
+    if (profileStatus) profileStatus.textContent = "이미지는 700KB 이하로 업로드하세요.";
+    return;
+  }
+  try {
+    const dataUrl = await readImageFileAsDataUrl(file);
+    if (profileImage) profileImage.value = dataUrl;
+    await saveProfilePatch({ avatarUrl: dataUrl });
+  } catch (error) {
+    if (profileStatus) profileStatus.textContent = error.message;
+  } finally {
+    if (profileImageFile) profileImageFile.value = "";
+  }
+}
+
 function renderForumPosts() {
   forumPostList.replaceChildren();
   forumFilterButtons.forEach((button) => {
@@ -3063,6 +3187,7 @@ function setView(viewName) {
   if (viewName === "match") viewName = "dashboard";
   if (viewName === "review") viewName = "dashboard";
   if (viewName === "admin") viewName = "staff";
+  if (viewName === "settings") viewName = "profile";
   if (viewName === "home" && currentUser) viewName = "overview";
   if (viewName === "staff" && !isStaffUser()) viewName = "dashboard";
   updateTutorialGateState();
@@ -3839,7 +3964,6 @@ function renderProfile(profile) {
   if (profileSideElo) profileSideElo.textContent = String(Number(user.easyElo || 1000));
   if (profileUserId) profileUserId.textContent = user.id || "user";
   if (profileLessonsCount) profileLessonsCount.textContent = String(profile.stats?.matches || 0);
-  if (profileWordsCount) profileWordsCount.textContent = String((profile.stats?.reviews || 0) * 7);
   if (profileQuestionsCount) profileQuestionsCount.textContent = String(profile.badges?.length || 0);
   if (profileTestsCount) profileTestsCount.textContent = String(profile.stats?.completedMatches || 0);
   updateTemperature(Number(user.mannerTemperature ?? currentManner));
@@ -3902,7 +4026,6 @@ function clearProfile() {
   if (profileSideElo) profileSideElo.textContent = "1000";
   if (profileUserId) profileUserId.textContent = "user";
   if (profileLessonsCount) profileLessonsCount.textContent = "0";
-  if (profileWordsCount) profileWordsCount.textContent = "0";
   if (profileQuestionsCount) profileQuestionsCount.textContent = "0";
   if (profileTestsCount) profileTestsCount.textContent = "0";
   badgeList.innerHTML = "";
@@ -3939,6 +4062,7 @@ async function saveProfile() {
       method: "PUT",
       body: {
         displayName: profileDisplayName.value,
+        displayNameSource: "user",
         languagePair: profileLanguagePair?.value || currentUser?.languagePair || authLanguagePair?.value || "English to Korean",
         pieceEdition: profilePieceEdition?.value,
         avatarUrl: profileImage?.value || "",
@@ -4548,7 +4672,8 @@ headerProfileButton.addEventListener("click", (event) => {
   toggleProfileMenu();
 });
 headerSignOutButton.addEventListener("click", signOut);
-deleteAccountButton.addEventListener("click", deleteAccount);
+deleteAccountButton.addEventListener("click", deleteAccountWithTypedConfirmation);
+deleteAccountConfirm?.addEventListener("input", updateDeleteAccountButtonState);
 contrastModeButton.addEventListener("click", toggleContrastMode);
 textSizeSlider.addEventListener("input", (event) => applyTextSize(event.target.value));
 
@@ -4563,10 +4688,10 @@ languageSelect?.addEventListener("change", () => {
   setSttStatus(sttListening);
 });
 
-headerPieceEditionToggle?.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-piece-edition]");
-  if (!button) return;
-  setPieceEdition(button.dataset.pieceEdition);
+document.addEventListener("click", (event) => {
+  const control = event.target.closest("[data-piece-edition]");
+  if (!control) return;
+  setPieceEdition(control.dataset.pieceEdition);
 });
 
 profilePieceEdition?.addEventListener("change", (event) => {
@@ -4662,7 +4787,25 @@ adminUserSearch.addEventListener("input", () => {
   if (cachedAdminData) renderAdminOverview(cachedAdminData);
 });
 refreshProfileButton.addEventListener("click", refreshProfile);
-saveProfileButton.addEventListener("click", saveProfile);
+saveProfileButton?.addEventListener("click", saveProfile);
+editProfileNameButton?.addEventListener("click", () => {
+  if (profileNameEditor) profileNameEditor.hidden = !profileNameEditor.hidden;
+  profileDisplayName?.focus();
+});
+saveProfileNameButton?.addEventListener("click", saveInlineProfileName);
+profileDisplayName?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    saveInlineProfileName();
+  }
+});
+editProfileBioButton?.addEventListener("click", () => {
+  if (profileBioEditor) profileBioEditor.hidden = !profileBioEditor.hidden;
+  profileBio?.focus();
+});
+saveProfileBioButton?.addEventListener("click", saveInlineProfileBio);
+profileAvatarButton?.addEventListener("click", () => profileImageFile?.click());
+profileImageFile?.addEventListener("change", () => uploadProfileImage(profileImageFile.files?.[0]));
 submitPeerFeedbackButton?.addEventListener("click", submitPeerFeedback);
 saveCultureGuideButton?.addEventListener("click", saveCultureGuide);
 joinLeagueButton?.addEventListener("click", joinLeague);

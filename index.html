@@ -46,7 +46,6 @@
           </button>
           <div class="profile-menu" id="headerProfileMenu" hidden>
             <button type="button" data-view-link="profile">프로필</button>
-            <button type="button" data-view-link="settings">설정</button>
             <button id="headerSignOut" type="button">로그아웃</button>
           </div>
         </div>
@@ -106,13 +105,29 @@
 
       <section class="app-shell" id="dashboard" aria-label="앱 작업 공간">
         <aside class="sidebar" id="sidebarMenu" hidden>
-          <span class="sidebar-label">메뉴</span>
-          <button class="side-link active" data-view-link="overview">홈</button>
-          <button class="side-link" data-view-link="dashboard">플레이</button>
-          <button class="side-link" data-view-link="how-to-play">훈련장</button>
-          <button class="side-link" data-view-link="forum">게시판</button>
-          <button class="side-link" data-view-link="chessboards">상점</button>
-          <button class="side-link staff-only" data-view-link="staff" hidden>운영자</button>
+          <div class="sidebar-main">
+            <span class="sidebar-label">EasyMate 메뉴</span>
+            <button class="side-link active" data-view-link="overview">홈</button>
+            <button class="side-link" data-view-link="dashboard">플레이</button>
+            <button class="side-link" data-view-link="how-to-play">훈련장</button>
+            <button class="side-link" data-view-link="forum">게시판</button>
+            <button class="side-link" data-view-link="chessboards">상점</button>
+            <button class="side-link staff-only" data-view-link="staff" hidden>운영자</button>
+          </div>
+          <div class="sidebar-themes" aria-label="보드 테마 선택">
+            <button class="theme-tile cheoin-theme active" type="button" data-piece-edition="cheoinseong">
+              <span>처인성</span>
+            </button>
+            <button class="theme-tile beta-theme" type="button" data-piece-edition="beta">
+              <span>Beta</span>
+            </button>
+            <button class="theme-tile coming-soon" type="button" disabled>
+              <span>Coming soon</span>
+            </button>
+            <button class="theme-tile coming-soon" type="button" disabled>
+              <span>Coming soon</span>
+            </button>
+          </div>
         </aside>
 
         <div class="workspace">
@@ -120,14 +135,10 @@
             <div class="view-header">
               <div>
                 <span class="eyebrow">EasyMate 홈</span>
-                <h2 id="dashboardTitle">Welcome, <span id="welcomeName">Player</span>!</h2>
-              </div>
-              <div class="dashboard-hero-score" aria-label="현재 연속 기록과 Easy Elo">
-                <span class="hero-avatar" id="dashboardHeroAvatar">GP</span>
-                <div>
-                  <strong><span id="dashboardStreak">0</span>일 streak</strong>
-                  <p>Easy Elo <span id="dashboardEasyElo">1000</span></p>
-                </div>
+                <h2 id="dashboardTitle">
+                  Welcome, <span id="welcomeName">Player</span>!
+                  <span class="dashboard-streak-inline" aria-label="현재 연속 기록"><span id="dashboardStreak">0</span> 🔥</span>
+                </h2>
               </div>
             </div>
 
@@ -154,7 +165,6 @@
               <article class="wire-card league-card">
                 <span class="eyebrow">참가 코드</span>
                 <h3>같은 리그에 참여하기</h3>
-                <p>선생님이 만든 코드를 입력하면 같은 리그 리더보드에 들어갑니다.</p>
                 <div class="league-code-row">
                   <input id="leagueCodeInput" type="text" placeholder="예: KING64" maxlength="16" />
                   <button class="button primary small" id="joinLeagueButton" type="button">참여</button>
@@ -744,13 +754,28 @@
           </section>
 
           <section class="view profile-view" data-view="profile" aria-labelledby="profileTitle">
-            <h2 class="sr-only" id="profileTitle">내 기록과 배지</h2>
+            <div class="view-header profile-title-header">
+              <div>
+                <span class="eyebrow">프로필</span>
+                <h2 id="profileTitle">프로필</h2>
+              </div>
+            </div>
             <div class="profile-dashboard">
               <article class="profile-hero-card">
                 <div class="profile-hero-main">
-                  <span class="avatar profile-hero-avatar" id="profileAvatar">CL</span>
+                  <button class="avatar profile-hero-avatar" id="profileAvatarButton" type="button" aria-label="프로필 사진 업로드">
+                    <span id="profileAvatar">CL</span>
+                  </button>
+                  <input id="profileImageFile" type="file" accept="image/*" hidden />
                   <div class="profile-hero-identity">
-                    <strong><span id="profileName">ChessLearner</span><i aria-hidden="true"></i></strong>
+                    <div class="profile-name-row">
+                      <strong><span id="profileName">ChessLearner</span><i aria-hidden="true"></i></strong>
+                      <button class="inline-edit-button" id="editProfileName" type="button" aria-label="유저네임 수정">✎</button>
+                    </div>
+                    <div class="profile-inline-editor" id="profileNameEditor" hidden>
+                      <input id="profileDisplayName" type="text" placeholder="ChessLearner" />
+                      <button class="button primary small" id="saveProfileName" type="button">저장</button>
+                    </div>
                     <div class="profile-hero-scores">
                       <span class="profile-score xp-score">
                         <b aria-hidden="true">✦</b>
@@ -768,9 +793,16 @@
                 <div class="profile-hero-bio">
                   <div class="profile-hero-bio-head">
                     <strong>BIO</strong>
-                    <button class="icon-action" id="refreshProfile" type="button" title="프로필 새로고침" aria-label="프로필 새로고침">↻</button>
+                    <div class="profile-bio-actions">
+                      <button class="inline-edit-button" id="editProfileBio" type="button" aria-label="BIO 수정">✎</button>
+                      <button class="icon-action" id="refreshProfile" type="button" title="프로필 새로고침" aria-label="프로필 새로고침">↻</button>
+                    </div>
                   </div>
                   <p id="profileBioText">Easy Elo를 올리며 훈련 중입니다.</p>
+                  <div class="profile-inline-editor" id="profileBioEditor" hidden>
+                    <textarea id="profileBio" placeholder="예: 1600아 내가 간다~"></textarea>
+                    <button class="button primary small" id="saveProfileBio" type="button">저장</button>
+                  </div>
                   <small id="profileEmail">player@example.com</small>
                 </div>
               </article>
@@ -782,11 +814,6 @@
                       <span aria-hidden="true">♟</span>
                       <strong id="profileLessonsCount">0</strong>
                       <small>Games played</small>
-                    </article>
-                    <article>
-                      <span aria-hidden="true">▰</span>
-                      <strong id="profileWordsCount">0</strong>
-                      <small>Words learned</small>
                     </article>
                     <article>
                       <span aria-hidden="true">⚑</span>
@@ -801,7 +828,7 @@
                   </div>
 
                   <article class="profile-panel profile-history-panel">
-                    <h3><span aria-hidden="true">🏆</span> 배지 Library</h3>
+                    <h3><span aria-hidden="true">🏆</span> 프로필</h3>
                     <div class="badge-list" id="badgeList"></div>
                     <div class="profile-detail-list" id="badgeDetails"></div>
                   </article>
@@ -827,21 +854,39 @@
                     <h3><span aria-hidden="true">♚</span> 매너 상태</h3>
                     <div class="temperature badge-temperature"><span id="profileTemp">친절한 대화 상대</span></div>
                   </article>
+                </aside>
+              </div>
 
-                  <details class="profile-panel profile-edit-panel">
-                    <summary>프로필 편집</summary>
+              <section class="profile-panel profile-settings-panel" aria-labelledby="profileSettingsTitle">
+                <h3 id="profileSettingsTitle">설정</h3>
+                <div class="settings-grid profile-settings-grid">
+                  <article class="settings-card">
+                    <h4>접근성</h4>
+                    <p>읽기 편하도록 화면을 조정합니다.</p>
                     <label>
-                      표시 이름
-                      <input id="profileDisplayName" type="text" placeholder="ChessLearner" />
+                      화면 언어
+                      <select id="languageSelect" aria-label="화면 언어">
+                        <option value="Korean" selected>한국어</option>
+                        <option value="English">English</option>
+                      </select>
                     </label>
-                    <label>
-                      유저 이미지
-                      <input id="profileImage" type="url" placeholder="이미지 URL을 붙여넣기" />
-                    </label>
-                    <label>
-                      한 줄 소개
-                      <textarea id="profileBio" placeholder="예: 1600아 내가 간다~"></textarea>
-                    </label>
+                    <button class="mode-toggle settings-toggle" id="contrastModeButton" type="button" aria-pressed="false">
+                      <span class="toggle-track" aria-hidden="true"><span></span></span>
+                      <span>고대비</span>
+                    </button>
+                    <div class="text-size-panel">
+                      <p>앱 글자 크기를 조정합니다.</p>
+                      <div class="text-size-slider-row">
+                        <span class="text-size-a small" aria-hidden="true">A</span>
+                        <input id="textSizeSlider" type="range" min="0" max="6" step="1" value="2" aria-label="글자 크기" />
+                        <span class="text-size-a large" aria-hidden="true">A</span>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article class="settings-card">
+                    <h4>계정</h4>
+                    <p id="settingsAccountName">로그인됨</p>
                     <label>
                       말 디자인
                       <select id="profilePieceEdition">
@@ -849,58 +894,18 @@
                         <option value="beta">Beta 에디션</option>
                       </select>
                     </label>
-                    <button class="button secondary full" id="saveProfile">프로필 저장</button>
+                    <input id="profileImage" type="url" placeholder="이미지 URL을 붙여넣기" hidden />
                     <p class="profile-status" id="profileStatus">저장된 프로필을 불러오려면 로그인하세요.</p>
-                  </details>
-                </aside>
-              </div>
-            </div>
-          </section>
-
-          <section class="view" data-view="settings" aria-labelledby="settingsTitle">
-            <div class="view-header">
-              <div>
-                <span class="eyebrow">계정</span>
-                <h2 id="settingsTitle">설정</h2>
-              </div>
-            </div>
-
-            <div class="settings-grid">
-              <article class="wire-card settings-card">
-                <h3>접근성</h3>
-                <p>읽기 편하도록 화면을 조정합니다.</p>
-                <label>
-                  화면 언어
-                  <select id="languageSelect" aria-label="화면 언어">
-                    <option value="Korean" selected>한국어</option>
-                    <option value="English">English</option>
-                  </select>
-                </label>
-                <button class="mode-toggle settings-toggle" id="contrastModeButton" type="button" aria-pressed="false">
-                  <span class="toggle-track" aria-hidden="true"><span></span></span>
-                  <span>고대비</span>
-                </button>
-                <div class="text-size-panel">
-                  <button class="mode-toggle settings-toggle" id="largeTextButton" type="button" aria-pressed="false">
-                    <span class="toggle-track" aria-hidden="true"><span></span></span>
-                    <span>큰 글자</span>
-                  </button>
-                  <p>앱 글자 크기를 조정합니다.</p>
-                  <div class="text-size-slider-row">
-                    <span class="text-size-a small" aria-hidden="true">A</span>
-                    <input id="textSizeSlider" type="range" min="0" max="6" step="1" value="2" aria-label="글자 크기" />
-                    <span class="text-size-a large" aria-hidden="true">A</span>
-                  </div>
+                  </article>
                 </div>
-              </article>
 
-              <article class="wire-card settings-card">
-                <h3>계정</h3>
-                <p id="settingsAccountName">로그인됨</p>
-                <div class="account-actions">
-                  <button class="button danger full" id="deleteAccount" type="button">계정 삭제</button>
+                <div class="delete-account-zone">
+                  <h4>계정 삭제</h4>
+                  <p>삭제하려면 아래에 <strong>delete account</strong>를 입력하세요.</p>
+                  <input id="deleteAccountConfirm" type="text" placeholder="delete account" autocomplete="off" />
+                  <button class="button danger full" id="deleteAccount" type="button" disabled>계정 삭제</button>
                 </div>
-              </article>
+              </section>
             </div>
           </section>
 
