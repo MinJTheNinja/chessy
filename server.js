@@ -2447,6 +2447,7 @@ function serveStatic(req, res, pathname) {
     requested === "/index.html" ||
     requested === "/app.js" ||
     requested === "/styles.css" ||
+    requested === "/google0bf39d77e9bebab7.html" ||
     requested.startsWith("/assets/");
 
   if (!allowedStatic) {
