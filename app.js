@@ -1740,6 +1740,19 @@ function isTutorialRoute() {
   return /^\/tutorial\/?$/.test(location.pathname);
 }
 
+function requestedTrainingModuleId() {
+  if (!isTutorialRoute()) return null;
+  const moduleId = Number(new URLSearchParams(location.search).get("module"));
+  return Number.isInteger(moduleId) && moduleId >= 1 && moduleId <= 4 ? moduleId : null;
+}
+
+function clearRequestedTrainingModule() {
+  if (!isTutorialRoute() || !requestedTrainingModuleId()) return;
+  const url = new URL(location.href);
+  url.searchParams.delete("module");
+  history.replaceState({ viewName: "how-to-play" }, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
 function isStaffRoute() {
   return /^\/staff\/?$/.test(location.pathname);
 }
@@ -1826,17 +1839,17 @@ function renderTrainingModuleList() {
       </div>
       <h3>${module.title}</h3>
       <p>${trainingModuleDescriptions[moduleId] || "체스의 기본 규칙을 배워요."}</p>`;
-    const button = document.createElement("button");
-    button.className = `button ${current ? "primary" : "secondary"} full`;
-    button.type = "button";
-    button.disabled = !accessible;
-    button.textContent = completed ? "다시 학습하기" : current ? "시작하기" : "이전 모듈을 먼저 완료하세요";
-    button.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      openTrainingModule(moduleId);
-    });
-    card.append(button);
+    const control = document.createElement(accessible ? "a" : "button");
+    control.className = `button ${current ? "primary" : "secondary"} full`;
+    control.textContent = completed ? "다시 학습하기" : current ? "시작하기" : "이전 모듈을 먼저 완료하세요";
+    if (accessible) {
+      control.href = `/tutorial?module=${moduleId}`;
+      control.setAttribute("aria-label", `${module.title} ${control.textContent}`);
+    } else {
+      control.type = "button";
+      control.disabled = true;
+    }
+    card.append(control);
     trainingModuleList.append(card);
   });
 }
@@ -1908,6 +1921,11 @@ function openTrainingModule(moduleId) {
   showTutorialGuideButton?.classList.add("active");
   showPuzzleGuideButton?.classList.remove("active");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function openRequestedTrainingModule() {
+  const moduleId = requestedTrainingModuleId();
+  if (moduleId) openTrainingModule(moduleId);
 }
 
 function resetHowToPlayFrameSizing() {
@@ -2721,6 +2739,9 @@ async function checkBackend() {
     const routedToMatch = await loadMatchFromRoute();
     if (isStaffRoute()) {
       setView(isStaffUser() ? "staff" : "overview");
+    } else if (isTutorialRoute()) {
+      setView("how-to-play");
+      openRequestedTrainingModule();
     } else if (currentUser && !routedToMatch) {
       setView("overview");
     }
@@ -4951,15 +4972,22 @@ loginButton.addEventListener("click", () => {
 mainAccountButton?.addEventListener("click", () => openAccountEntry("signup"));
 
 mainTutorialButton?.addEventListener("click", () => {
+  clearRequestedTrainingModule();
   setView("how-to-play");
   showTrainingModuleHome();
 });
 
 tutorialLoginButton?.addEventListener("click", () => openAccountEntry("signup"));
 
-showTutorialGuideButton?.addEventListener("click", showTrainingModuleHome);
+showTutorialGuideButton?.addEventListener("click", () => {
+  clearRequestedTrainingModule();
+  showTrainingModuleHome();
+});
 
-backToTrainingModulesButton?.addEventListener("click", showTrainingModuleHome);
+backToTrainingModulesButton?.addEventListener("click", () => {
+  clearRequestedTrainingModule();
+  showTrainingModuleHome();
+});
 
 showPuzzleGuideButton?.addEventListener("click", async () => {
   await refreshTrainingState();
@@ -5252,6 +5280,7 @@ if (isStudentTutorialRequired()) {
   setView("how-to-play");
 } else if (isTutorialRoute()) {
   setView("how-to-play");
+  openRequestedTrainingModule();
 } else if (isStudentTutorialComplete() && !currentUser) {
   openAccountEntry("signup");
 }
