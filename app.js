@@ -223,6 +223,7 @@ let leaderboardScope = "mine";
 let cachedTrainingState = null;
 let trainingModuleOpen = false;
 let howToPlayResizeObserver = null;
+let howToPlayResizeFrame = 0;
 
 const koreanText = {
   "Notifications": "알림",
@@ -596,6 +597,9 @@ englishText["프로필과 문화"] = "Profile";
 const originalTextNodes = new WeakMap();
 const originalAttributes = new WeakMap();
 let applyingLanguage = false;
+let interfaceLanguageObserver = null;
+let languageApplyFrame = 0;
+const pendingLanguageRoots = new Set();
 
 function currentInterfaceLanguage() {
   return languageSelect?.value || "Korean";
@@ -737,8 +741,28 @@ function syncLocalizedControls() {
   renderTrainingControls();
 }
 
-function scheduleInterfaceLanguageApply() {
-  window.requestAnimationFrame(() => applyInterfaceLanguage());
+function observeInterfaceLanguage() {
+  interfaceLanguageObserver?.observe(document.body, {
+    childList: true,
+    characterData: true,
+    subtree: true,
+  });
+}
+
+function scheduleInterfaceLanguageApply(root = document.body) {
+  const element = root instanceof Element ? root : root?.parentElement;
+  if (element) pendingLanguageRoots.add(element);
+  if (languageApplyFrame) return;
+  languageApplyFrame = window.requestAnimationFrame(() => {
+    languageApplyFrame = 0;
+    interfaceLanguageObserver?.disconnect();
+    const roots = [...pendingLanguageRoots].filter(
+      (candidate, index, candidates) => !candidates.some((other, otherIndex) => otherIndex !== index && other.contains(candidate)),
+    );
+    pendingLanguageRoots.clear();
+    roots.forEach((candidate) => applyInterfaceLanguage(candidate));
+    observeInterfaceLanguage();
+  });
 }
 
 const pieceCodes = {
@@ -944,6 +968,10 @@ let authMode = "login";
 let googleClientId = "";
 let googleLoginReady = false;
 let googleScriptPromise = null;
+let boardInitialized = false;
+let reviewInitialized = false;
+let forumInitialized = false;
+let shopInitialized = false;
 let cachedSpeechVoices = [];
 let peerConnection = null;
 let localVoiceStream = null;
@@ -1570,7 +1598,6 @@ function renderStaffAccessState() {
   document.querySelectorAll(".staff-only").forEach((element) => {
     element.hidden = !canUseStaffTools;
   });
-  if (shopProductGrid) renderStaffShopProducts();
   if (forumNoticeOption) {
     forumNoticeOption.disabled = !canUseStaffTools;
     forumNoticeOption.hidden = !canUseStaffTools;
@@ -1610,7 +1637,6 @@ function renderAuthState() {
   }
   if (headerSignOutButton) headerSignOutButton.disabled = !signedIn;
   updateDeleteAccountButtonState();
-  if (forumPostList) renderForumPosts();
   continueToDashboardButton.hidden = !signedIn;
   loginButton.textContent = signedIn ? translateCopy("Play") : translateCopy("Login");
   signupButton.textContent = signedIn ? translateCopy("Sign out") : translateCopy("New account");
@@ -1657,7 +1683,7 @@ async function setPieceEdition(edition) {
       player.userId === currentUser?.id ? { ...player, pieceEdition: nextEdition } : player,
     );
   }
-  buildBoard();
+  if (boardInitialized) buildBoard();
   if (!currentUser || !backendOnline) return;
 
   try {
@@ -1685,7 +1711,7 @@ function setAuthMode(mode) {
   entryAuth.hidden = false;
   document.body.classList.add("auth-entry-open");
   renderAuthState();
-  if (googleLoginReady) initializeGoogleLogin();
+  if (!currentUser) initializeGoogleLogin();
   authStatus.textContent =
     mode === "login" ? translateCopy("Enter your existing email and password.") : translateCopy("Create an account to save matches and language review.");
   document.querySelector(".entry-auth")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1931,6 +1957,8 @@ function openRequestedTrainingModule() {
 function resetHowToPlayFrameSizing() {
   howToPlayResizeObserver?.disconnect();
   howToPlayResizeObserver = null;
+  if (howToPlayResizeFrame) window.cancelAnimationFrame(howToPlayResizeFrame);
+  howToPlayResizeFrame = 0;
   howToPlayFrame?.style.removeProperty("height");
 }
 
@@ -1948,14 +1976,22 @@ function syncPuzzleFrameHeight() {
   }
 }
 
+function schedulePuzzleFrameHeightSync() {
+  if (howToPlayResizeFrame) return;
+  howToPlayResizeFrame = window.requestAnimationFrame(() => {
+    howToPlayResizeFrame = 0;
+    syncPuzzleFrameHeight();
+  });
+}
+
 function watchPuzzleFrameHeight() {
   resetHowToPlayFrameSizing();
   if (!howToPlayShell?.classList.contains("puzzle-mode")) return;
-  syncPuzzleFrameHeight();
+  schedulePuzzleFrameHeightSync();
   try {
     const frameDocument = howToPlayFrame?.contentDocument;
     if (!frameDocument?.documentElement || typeof ResizeObserver === "undefined") return;
-    howToPlayResizeObserver = new ResizeObserver(syncPuzzleFrameHeight);
+    howToPlayResizeObserver = new ResizeObserver(schedulePuzzleFrameHeightSync);
     howToPlayResizeObserver.observe(frameDocument.documentElement);
   } catch {
     howToPlayResizeObserver = null;
@@ -2718,24 +2754,18 @@ async function refreshLobby() {
 
 async function checkBackend() {
   try {
-    const health = await api("/api/health");
+    const [health, session] = await Promise.all([api("/api/health"), api("/api/session")]);
     backendOnline = Boolean(health.ok);
     setServerStatus(currentInterfaceLanguage() === "Korean" ? "서버 연결됨" : "Backend online", true);
-    const session = await api("/api/session");
     currentUser = session.user;
+    cachedTrainingState = currentUser?.training || cachedTrainingState;
     if (currentUser) {
       authStatus.textContent =
         currentInterfaceLanguage() === "Korean" ? `${currentUser.displayName}님으로 로그인됨` : `Signed in as ${currentUser.displayName}`;
       updateTemperature(Number(currentUser.mannerTemperature ?? currentManner));
-      await refreshProfile();
-      await refreshTrainingState();
     }
     renderAuthState();
-    connectSocket(null);
-    await refreshStats();
-    await refreshLobby();
-    await refreshTrainingState();
-    await refreshLeaderboard();
+    if (currentUser) connectSocket(null);
     const routedToMatch = await loadMatchFromRoute();
     if (isStaffRoute()) {
       setView(isStaffUser() ? "staff" : "overview");
@@ -2843,11 +2873,8 @@ async function signInOrRegister() {
     authPassword.value = "";
     authConfirmPassword.value = "";
     renderAuthState();
+    connectSocket(null);
     setView("overview");
-    await refreshStats();
-    await refreshLobby();
-    await refreshTrainingState();
-    await refreshLeaderboard();
   } catch (error) {
     authStatus.textContent = error.message;
     renderAuthState();
@@ -2918,10 +2945,8 @@ async function finishGoogleLogin(credential) {
     authPassword.value = "";
     authConfirmPassword.value = "";
     renderAuthState();
+    connectSocket(null);
     setView("overview");
-    await refreshStats();
-    await refreshLobby();
-    await refreshLeaderboard();
   } catch (error) {
     authStatus.textContent = error.message;
     renderAuthState();
@@ -3476,6 +3501,21 @@ function setView(viewName) {
   document.querySelectorAll(".side-link").forEach((link) => {
     link.classList.toggle("active", link.dataset.viewLink === viewName);
   });
+  if (viewName === "dashboard") {
+    if (!boardInitialized) buildBoard();
+    if (!reviewInitialized) renderReview(defaultReview);
+    Promise.allSettled([refreshStats(), refreshLobby()]);
+  }
+  if (viewName === "how-to-play") refreshTrainingState();
+  if (viewName === "forum" && !forumInitialized) {
+    renderForumPosts();
+    forumInitialized = true;
+  }
+  if (viewName === "chessboards" && !shopInitialized) {
+    renderStaffShopProducts();
+    shopInitialized = true;
+  }
+  if (viewName === "stt" && !reviewInitialized) renderReview(defaultReview);
   if (viewName === "staff") refreshAdmin();
   if (viewName === "overview") {
     renderDashboardSummary();
@@ -3616,6 +3656,7 @@ function legalTargetsFor(square) {
 }
 
 function buildBoard() {
+  boardInitialized = true;
   board.innerHTML = "";
   board.dataset.orientation = boardOrientation;
   const files = boardOrientation === "black" ? ["h", "g", "f", "e", "d", "c", "b", "a"] : ["a", "b", "c", "d", "e", "f", "g", "h"];
@@ -4740,6 +4781,7 @@ function startBrowserStt() {
 function renderReview(review) {
   if (!reviewStatus || !pronunciationStatus || !vocabList || !culturalTitle || !culturalBody || !culturalPrompt) return;
   if (!review) return;
+  reviewInitialized = true;
   reviewStatus.textContent =
     currentInterfaceLanguage() === "Korean"
       ? `${review.vocabulary.length}개 표현 생성됨`
@@ -4812,7 +4854,6 @@ function playPronunciation(button) {
 }
 
 resetSubtitlePlaceholders();
-renderForumPosts();
 const savedTextSize = localStorage.getItem("easyMateTextSize");
 if (savedTextSize !== null) textSizeSlider.value = savedTextSize;
 applyTextSize(textSizeSlider.value);
@@ -4851,16 +4892,18 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-const interfaceLanguageObserver = new MutationObserver(() => {
+interfaceLanguageObserver = new MutationObserver((records) => {
   if (applyingLanguage || currentInterfaceLanguage() !== "Korean") return;
-  scheduleInterfaceLanguageApply();
+  records.forEach((record) => {
+    if (record.type === "characterData") {
+      scheduleInterfaceLanguageApply(record.target);
+      return;
+    }
+    record.addedNodes.forEach((node) => scheduleInterfaceLanguageApply(node));
+  });
 });
 
-interfaceLanguageObserver.observe(document.body, {
-  childList: true,
-  characterData: true,
-  subtree: true,
-});
+observeInterfaceLanguage();
 
 document.querySelectorAll("[data-view-link]").forEach((link) => {
   link.addEventListener("click", (event) => {
@@ -4936,9 +4979,10 @@ languageSelect?.addEventListener("change", () => {
   updateTemperature(currentUser?.mannerTemperature ?? currentManner);
   if (cachedLobbyData) renderLobby(cachedLobbyData);
   if (cachedAdminData && isStaffUser()) renderAdminOverview(cachedAdminData);
-  renderForumPosts();
-  refreshLeaderboard();
-  refreshTrainingState();
+  const activeView = document.querySelector(".view.active")?.dataset.view;
+  if (activeView === "forum" && forumInitialized) renderForumPosts();
+  if (activeView === "overview") refreshLeaderboard();
+  if (activeView === "how-to-play") refreshTrainingState();
   resetSubtitlePlaceholders();
   setSttStatus(sttListening);
 });
@@ -4995,7 +5039,7 @@ showPuzzleGuideButton?.addEventListener("click", async () => {
 });
 
 howToPlayFrame?.addEventListener("load", watchPuzzleFrameHeight);
-window.addEventListener("resize", syncPuzzleFrameHeight);
+window.addEventListener("resize", schedulePuzzleFrameHeightSync, { passive: true });
 
 window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin && event.origin !== "null") return;
@@ -5269,13 +5313,9 @@ document.querySelectorAll(".vocab-term").forEach((button) => {
 
 applyPieceEditionTheme(selectedPieceEdition);
 updateHeaderPieceEditionToggle(selectedPieceEdition);
-buildBoard();
-renderReview(defaultReview);
-renderStaffShopProducts();
 updateRoomLink(null);
 renderAuthState();
 applyInterfaceLanguage();
-initializeGoogleLogin();
 if (isStudentTutorialRequired()) {
   setView("how-to-play");
 } else if (isTutorialRoute()) {

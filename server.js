@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const zlib = require("zlib");
 const { URL } = require("url");
 const { Chess } = require("chess.js");
 const { Pool } = require("pg");
@@ -66,6 +67,7 @@ const contentTypes = {
   ".svg": "image/svg+xml",
   ".stl": "model/stl",
 };
+const compressibleExtensions = new Set([".html", ".css", ".js", ".json", ".svg"]);
 
 const sampleTranscript = [
   {
@@ -2673,20 +2675,55 @@ function serveStatic(req, res, pathname) {
     return;
   }
 
-  fs.readFile(filePath, (error, data) => {
-    if (error) {
+  fs.stat(filePath, (statError, stats) => {
+    if (statError || !stats.isFile()) {
       res.writeHead(404);
       res.end("Not found");
       return;
     }
+    const extension = path.extname(filePath).toLowerCase();
+    const etag = `W/"${stats.size.toString(16)}-${Math.floor(stats.mtimeMs).toString(16)}"`;
     const responseHeaders = {
-      "content-type": contentTypes[path.extname(filePath).toLowerCase()] || "application/octet-stream",
+      "content-type": contentTypes[extension] || "application/octet-stream",
+      etag,
     };
-    if (requested === "/index.html" || requested === "/app.js" || requested === "/styles.css" || path.extname(filePath).toLowerCase() === ".html") {
+    if (compressibleExtensions.has(extension)) responseHeaders.vary = "Accept-Encoding";
+    if (requested.startsWith("/assets/tutorial-pieces/")) {
+      responseHeaders["cache-control"] = "public, max-age=31536000, immutable";
+    } else if (requested === "/index.html" || requested === "/app.js" || requested === "/styles.css" || extension === ".html") {
       responseHeaders["cache-control"] = "no-cache, must-revalidate";
+    } else {
+      responseHeaders["cache-control"] = "public, max-age=3600, must-revalidate";
     }
-    res.writeHead(200, responseHeaders);
-    res.end(data);
+    if (req.headers["if-none-match"] === etag) {
+      res.writeHead(304, responseHeaders);
+      res.end();
+      return;
+    }
+
+    fs.readFile(filePath, (readError, data) => {
+      if (readError) {
+        res.writeHead(404);
+        res.end("Not found");
+        return;
+      }
+      const acceptsGzip = /\bgzip\b/i.test(String(req.headers["accept-encoding"] || ""));
+      if (!acceptsGzip || !compressibleExtensions.has(extension)) {
+        responseHeaders["content-length"] = data.length;
+        res.writeHead(200, responseHeaders);
+        res.end(req.method === "HEAD" ? undefined : data);
+        return;
+      }
+      zlib.gzip(data, { level: zlib.constants.Z_BEST_SPEED }, (gzipError, compressed) => {
+        const body = gzipError ? data : compressed;
+        if (!gzipError) {
+          responseHeaders["content-encoding"] = "gzip";
+        }
+        responseHeaders["content-length"] = body.length;
+        res.writeHead(200, responseHeaders);
+        res.end(req.method === "HEAD" ? undefined : body);
+      });
+    });
   });
 }
 

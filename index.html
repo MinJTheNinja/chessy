@@ -4,7 +4,27 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>EasyMate 체스 매칭</title>
-    <link rel="stylesheet" href="/styles.css?v=20260820-theme-puzzle" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+      media="print"
+      onload="this.media='all'"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&display=swap" />
+    </noscript>
+    <link rel="stylesheet" href="/styles.css?v=20260820-runtime-optimized" />
+    <script src="/app.js?v=20260820-runtime-optimized" defer></script>
   </head>
   <body>
     <header class="site-header">
@@ -586,9 +606,9 @@
               <iframe
                 class="how-to-play-frame"
                 id="howToPlayFrame"
-                src="/assets/how-to-play.html?v=20260820-module-flow"
+                src="about:blank"
                 title="EasyMate 훈련장"
-                loading="eager"
+                loading="lazy"
               ></iframe>
             </div>
           </section>
@@ -978,6 +998,5 @@
       </section>
     </main>
 
-    <script src="/app.js?v=20260820-native-module-links"></script>
   </body>
 </html>
