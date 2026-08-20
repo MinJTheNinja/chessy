@@ -83,9 +83,17 @@ const tutorialLoginButton = document.querySelector("#tutorialLoginButton");
 const mainAccountButton = document.querySelector("#mainAccountButton");
 const mainTutorialButton = document.querySelector("#mainTutorialButton");
 const howToPlayFrame = document.querySelector(".how-to-play-frame");
+const howToPlayShell = document.querySelector("#howToPlayShell");
 const showTutorialGuideButton = document.querySelector("#showTutorialGuide");
 const showPuzzleGuideButton = document.querySelector("#showPuzzleGuide");
 const tutorialPuzzleNote = document.querySelector("#tutorialPuzzleNote");
+const startDailySessionButton = document.querySelector("#startDailySession");
+const trainingModuleCards = document.querySelector("#trainingModuleCards");
+const trainingChapterDialog = document.querySelector("#trainingChapterDialog");
+const trainingChapterDialogTitle = document.querySelector("#trainingChapterDialogTitle");
+const trainingChapterDialogStatus = document.querySelector("#trainingChapterDialogStatus");
+const trainingChapterStart = document.querySelector("#trainingChapterStart");
+const trainingChapterReview = document.querySelector("#trainingChapterReview");
 const headerProfile = document.querySelector("#headerProfile");
 const headerProfileButton = document.querySelector("#headerProfileButton");
 const headerProfileMenu = document.querySelector("#headerProfileMenu");
@@ -112,6 +120,7 @@ const dashboardStreak = document.querySelector("#dashboardStreak");
 const dashboardEasyElo = document.querySelector("#dashboardEasyElo");
 const leaderboardList = document.querySelector("#leaderboardList");
 const leaderboardButtons = document.querySelectorAll("[data-leaderboard-period]");
+const leaderboardScopeButtons = document.querySelectorAll("[data-leaderboard-scope]");
 const leagueCodeInput = document.querySelector("#leagueCodeInput");
 const joinLeagueButton = document.querySelector("#joinLeagueButton");
 const createLeagueButton = document.querySelector("#createLeagueButton");
@@ -209,8 +218,13 @@ const saveCultureGuideButton = document.querySelector("#saveCultureGuide");
 const demoAuthAllowed = ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
 const studentTutorialRequiredKey = "easyMateStudentTutorialRequired";
 const studentTutorialCompleteKey = "easyMateStudentTutorialComplete";
+const completedTrainingModulesKey = "easyMateCompletedTrainingModules";
 const pieceEditionStorageKey = "easyMatePieceEdition";
 let leaderboardPeriod = "weekly";
+let leaderboardScope = "mine";
+let cachedTrainingState = null;
+let trainingScreenMode = "path";
+let selectedTrainingModule = null;
 
 const koreanText = {
   "Notifications": "알림",
@@ -365,7 +379,6 @@ Object.assign(koreanText, {
   "Piece edition": "말 디자인 선택",
   "Chess . Conversation . Connection": "체스 · 대화 · 연결",
   "Make chess easier!": "체스를 더 쉽게!",
-  "64 squares connect generations and languages": "64개의 칸이 여는 세대와 언어의 연결",
   "Start with account": "계정으로 시작",
   "View tutorial first": "연습마당으로 가기",
   "EasyMate Account": "EasyMate 계정",
@@ -559,7 +572,6 @@ Object.assign(koreanText, {
   "Account deleted": "계정 삭제됨",
 });
 Object.assign(koreanText, {
-  "64 squares connect generations and languages": "EasyMate",
   "View tutorial first": "훈련장으로 가기",
   "Start a conversation": "계정으로 입장하기",
   "Play": "플레이",
@@ -576,6 +588,8 @@ const englishText = Object.entries(koreanText).reduce((map, [english, korean]) =
   map[korean] = english;
   return map;
 }, {});
+englishText["프로필"] = "Profile";
+englishText["프로필과 문화"] = "Profile";
 const originalTextNodes = new WeakMap();
 const originalAttributes = new WeakMap();
 let applyingLanguage = false;
@@ -698,6 +712,26 @@ function applyInterfaceLanguage(root = document.body) {
     ["placeholder", "aria-label", "title"].forEach((attribute) => translateAttribute(element, attribute));
   });
   applyingLanguage = false;
+  syncLocalizedControls();
+}
+
+function syncLocalizedControls() {
+  const korean = currentInterfaceLanguage() === "Korean";
+  const setText = (element, text) => {
+    if (element && element.textContent !== text) element.textContent = text;
+  };
+  setText(document.querySelector('[data-leaderboard-scope="mine"]'), korean ? "내 리그" : "My league");
+  setText(document.querySelector('[data-leaderboard-scope="all"]'), korean ? "전체" : "All");
+  setText(document.querySelector('[data-leaderboard-period="weekly"]'), korean ? "주간" : "Weekly");
+  setText(document.querySelector('[data-leaderboard-period="alltime"]'), korean ? "전체 기간" : "All time");
+  setText(mainTutorialButton, korean ? "훈련장으로 가기" : "Go to training");
+  if (!currentUser) {
+    setText(loginButton, korean ? "로그인" : "Login");
+    setText(signupButton, korean ? "새 계정" : "New account");
+    setText(authSubmit, authMode === "login" ? (korean ? "로그인" : "Log in") : (korean ? "계정 만들기" : "Create account"));
+  }
+  setText(tutorialLoginButton, korean ? "로그인 화면으로 가기" : "Go to login");
+  renderTrainingControls();
 }
 
 function scheduleInterfaceLanguageApply() {
@@ -733,6 +767,7 @@ const pieceNames = {
 };
 
 const pieceEditionNames = {
+  original: "Original Edition",
   cheoinseong: "Cheoinseong Edition",
   beta: "Beta Edition",
 };
@@ -834,38 +869,12 @@ const initialPieces = {
   h1: "wr",
 };
 
-const plannedMoves = [
-  ["e2", "e4"],
-  ["e7", "e5"],
-  ["g1", "f3"],
-  ["b8", "c6"],
-  ["f1", "c4"],
-  ["g8", "f6"],
-  ["d2", "d3"],
-  ["f8", "c5"],
-];
-
 const missions = [
   "상대가 좋아하는 오프닝을 물어보세요.",
   "좋았던 수 하나를 칭찬하고 왜 그 수를 골랐는지 물어보세요.",
   "다음 수를 한 문장으로 짧게 설명해보세요.",
   "파트너의 언어로 '좋은 경기였어요'를 어떻게 말하는지 물어보세요.",
   "체스 표현 하나를 자막으로 말해 연습해보세요.",
-];
-
-const subtitleSamples = [
-  {
-    original: "Your knight fork was really strong.",
-    translated: "Korean: Your knight fork was really strong.",
-  },
-  {
-    original: "Can you explain why you moved the bishop there?",
-    translated: "Korean: Can you explain why you moved the bishop there?",
-  },
-  {
-    original: "I am trying to protect my king before attacking.",
-    translated: "Korean: I am trying to protect my king before attacking.",
-  },
 ];
 
 const defaultReview = {
@@ -914,7 +923,6 @@ const defaultReview = {
 };
 
 let pieces = { ...initialPieces };
-let moveIndex = 0;
 let queueInterval;
 let queuePollInterval;
 let missionIndex = 0;
@@ -1619,6 +1627,7 @@ function renderAuthState() {
   authConfirmPasswordField.hidden = authMode === "login" || !authPassword.value;
   authPassword.autocomplete = authMode === "login" ? "current-password" : "new-password";
   renderStaffAccessState();
+  renderTrainingControls();
   updateTutorialGateState();
 }
 
@@ -1708,6 +1717,7 @@ selectedPieceEdition = normalizePieceEdition(readLocalSetting(pieceEditionStorag
 
 function applyPieceEditionTheme(edition = selectedPieceEdition) {
   selectedPieceEdition = normalizePieceEdition(edition);
+  document.body.classList.toggle("piece-theme-original", selectedPieceEdition === "original");
   document.body.classList.toggle("piece-theme-cheoinseong", selectedPieceEdition === "cheoinseong");
   document.body.classList.toggle("piece-theme-beta", selectedPieceEdition === "beta");
   document.body.dataset.pieceEdition = selectedPieceEdition;
@@ -1721,36 +1731,7 @@ function isStudentTutorialRequired() {
   return readLocalSetting(studentTutorialRequiredKey) === "true" && !isStudentTutorialComplete();
 }
 
-function setHowToPlayMode(mode) {
-  const puzzleUnlocked = isStudentTutorialComplete();
-  if (mode === "puzzle" && !puzzleUnlocked && tutorialPuzzleNote) {
-    tutorialPuzzleNote.textContent = "훈련장을 완료해야 고려 vs 몽골 퍼즐을 열 수 있습니다.";
-  }
-  const nextMode = mode === "puzzle" && puzzleUnlocked ? "puzzle" : "tutorial";
-  if (howToPlayFrame) {
-    const nextSrc = nextMode === "puzzle" ? "/assets/goryeo-vs-mongol-puzzle.html" : "/assets/how-to-play.html";
-    if (!howToPlayFrame.src.endsWith(nextSrc)) howToPlayFrame.src = nextSrc;
-  }
-  showTutorialGuideButton?.classList.toggle("active", nextMode === "tutorial");
-  showPuzzleGuideButton?.classList.toggle("active", nextMode === "puzzle");
-  showPuzzleGuideButton?.classList.toggle("locked", !puzzleUnlocked);
-  showPuzzleGuideButton?.setAttribute("aria-disabled", puzzleUnlocked ? "false" : "true");
-  if (tutorialPuzzleNote) tutorialPuzzleNote.hidden = puzzleUnlocked;
-}
 
-function updateTutorialGateState() {
-  const required = isStudentTutorialRequired();
-  const complete = isStudentTutorialComplete();
-  document.body.classList.toggle("tutorial-required", required);
-  document.body.classList.toggle("tutorial-complete", complete);
-  if (tutorialGateNote) tutorialGateNote.hidden = !required;
-  setHowToPlayMode(showPuzzleGuideButton?.classList.contains("active") ? "puzzle" : "tutorial");
-  document.querySelectorAll("[data-view-link]").forEach((link) => {
-    const blocked = required && link.dataset.viewLink !== "how-to-play";
-    link.classList.toggle("tutorial-locked-link", blocked);
-    link.setAttribute("aria-disabled", blocked ? "true" : "false");
-  });
-}
 
 function isTutorialRoute() {
   return /^\/tutorial\/?$/.test(location.pathname);
@@ -1782,19 +1763,238 @@ function openAccountEntry(mode = "signup") {
   setAuthMode(mode);
 }
 
-function beginStudentTutorial() {
-  writeLocalSetting(studentTutorialRequiredKey, "true");
-  removeLocalSetting(studentTutorialCompleteKey);
-  updateTutorialGateState();
-  setView("how-to-play");
+
+
+function localTrainingState() {
+  let completedModules = [];
+  try {
+    completedModules = JSON.parse(readLocalSetting(completedTrainingModulesKey) || "[]");
+  } catch {
+    completedModules = [];
+  }
+  if (!Array.isArray(completedModules)) completedModules = [];
+  if (isStudentTutorialComplete() && !completedModules.includes(1)) completedModules.push(1);
+  completedModules = [...new Set(completedModules.map(Number).filter((module) => module >= 1 && module <= 4))].sort((a, b) => a - b);
+  const modules = [
+    { id: 1, title: "기물의 움직임" },
+    { id: 2, title: "기물 잡기" },
+    { id: 3, title: "체크에서 벗어나기" },
+    { id: 4, title: "체크메이트" },
+  ];
+  const nextModule = modules.find((module) => !completedModules.includes(module.id)) || null;
+  return {
+    hasTutorial: Boolean(nextModule),
+    nextModule,
+    tutorialSrc: nextModule ? `/assets/how-to-play.html?module=${nextModule.id}` : "",
+    puzzleUnlocked: !nextModule,
+    completedModules,
+    modules: modules.map((module) => ({ ...module, completed: completedModules.includes(module.id) })),
+    reviewOptions: modules.filter((module) => completedModules.includes(module.id)).map((module) => ({ module: module.id, title: module.title })),
+  };
 }
 
-function completeStudentTutorial() {
-  writeLocalSetting(studentTutorialCompleteKey, "true");
-  removeLocalSetting(studentTutorialRequiredKey);
+function activeTrainingState() {
+  return currentUser ? cachedTrainingState || currentUser.training || localTrainingState() : localTrainingState();
+}
+
+function renderTrainingControls() {
+  const state = activeTrainingState();
+  const puzzleUnlocked = Boolean(state.puzzleUnlocked);
+  if (startDailySessionButton) {
+    startDailySessionButton.textContent =
+      currentInterfaceLanguage() === "Korean" ? "다음 모듈 시작" : "Start next module";
+  }
+  if (showPuzzleGuideButton) {
+    showPuzzleGuideButton.textContent = currentInterfaceLanguage() === "Korean" ? "퍼즐" : "Puzzle";
+    showPuzzleGuideButton.classList.toggle("locked", !puzzleUnlocked);
+    showPuzzleGuideButton.setAttribute("aria-disabled", puzzleUnlocked ? "false" : "true");
+  }
+  if (tutorialLoginButton) tutorialLoginButton.hidden = Boolean(currentUser);
+  if (tutorialPuzzleNote) {
+    tutorialPuzzleNote.hidden = puzzleUnlocked;
+    tutorialPuzzleNote.textContent =
+      currentInterfaceLanguage() === "Korean"
+        ? "모든 훈련 모듈을 완료하면 퍼즐을 열 수 있습니다."
+        : "Finish every training module to unlock puzzles.";
+  }
+  renderTrainingModuleCards();
+}
+
+function openTrainingModule(moduleId, review = false) {
+  trainingScreenMode = "lesson";
+  trainingChapterDialog?.close();
+  setView("how-to-play");
+  setHowToPlayMode("tutorial");
+  setTrainingScreenMode("lesson");
+  if (howToPlayFrame) {
+    howToPlayFrame.src = `/assets/how-to-play.html?module=${moduleId}${review ? "&review=1" : ""}`;
+  }
+}
+
+function setTrainingScreenMode(mode) {
+  trainingScreenMode = mode;
+  const showPath = mode === "path";
+  trainingModuleCards?.toggleAttribute("hidden", !showPath);
+  howToPlayShell?.toggleAttribute("hidden", mode !== "lesson");
+  if (tutorialPuzzleNote && showPath) tutorialPuzzleNote.hidden = true;
+}
+
+function openTrainingChapter(module) {
+  selectedTrainingModule = module;
+  const completed = Boolean(module.completed);
+  if (trainingChapterDialogTitle) trainingChapterDialogTitle.textContent = `챕터 ${module.id}. ${module.title}`;
+  if (trainingChapterDialogStatus) {
+    trainingChapterDialogStatus.textContent = completed
+      ? "완료한 챕터입니다. 다시 배우거나 복습 퀴즈를 풀 수 있어요."
+      : "이 챕터를 시작해 볼까요?";
+  }
+  if (trainingChapterStart) trainingChapterStart.textContent = completed ? "튜토리얼 다시 하기" : "튜토리얼 시작";
+  if (trainingChapterReview) trainingChapterReview.hidden = !completed;
+  setTrainingScreenMode("dialog");
+  if (trainingChapterDialog?.showModal) trainingChapterDialog.showModal();
+}
+
+function renderTrainingModuleCards() {
+  if (!trainingModuleCards) return;
+  const state = activeTrainingState();
+  const nextModuleId = state.nextModule?.id;
+  trainingModuleCards.innerHTML = `
+    <svg class="training-journey-path" viewBox="0 0 900 560" aria-hidden="true" preserveAspectRatio="none">
+      <path d="M 122 98 C 380 42, 585 152, 746 174 S 726 304, 478 304 S 195 388, 174 466 S 454 512, 726 466" />
+      <path class="training-journey-dots" d="M 122 98 C 380 42, 585 152, 746 174 S 726 304, 478 304 S 195 388, 174 466 S 454 512, 726 466" />
+    </svg>`;
+  (state.modules || []).forEach((module) => {
+    const completed = Boolean(module.completed);
+    const current = module.id === nextModuleId;
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = `training-module-card${current ? " current" : ""}${completed ? " completed" : ""}`;
+    card.disabled = !completed && !current;
+    card.innerHTML = `<span class="training-module-number">${module.id}</span><span class="training-module-copy"><strong>${module.title}</strong><small>${completed ? "다시 하기 · 복습 가능" : current ? "지금 시작하기" : "이전 챕터 완료 후 열림"}</small></span>`;
+    card.addEventListener("click", () => {
+      if (completed) openTrainingChapter(module);
+      else if (current) openTrainingModule(module.id);
+    });
+    trainingModuleCards.append(card);
+  });
+}
+
+async function refreshTrainingState() {
+  if (!currentUser || !backendOnline) {
+    cachedTrainingState = localTrainingState();
+    renderTrainingControls();
+    return cachedTrainingState;
+  }
+  try {
+    const data = await api("/api/training/state");
+    cachedTrainingState = data.state;
+    currentUser = data.user || currentUser;
+  } catch {
+    cachedTrainingState = currentUser.training || localTrainingState();
+  }
+  renderTrainingControls();
+  return cachedTrainingState;
+}
+
+function setHowToPlayMode(mode) {
+  const state = activeTrainingState();
+  const puzzleUnlocked = Boolean(state.puzzleUnlocked);
+  const nextMode = mode === "puzzle" && puzzleUnlocked ? "puzzle" : "tutorial";
+  if (howToPlayFrame) {
+    const nextSrc = nextMode === "puzzle" ? "/assets/goryeo-vs-mongol-puzzle.html" : state.tutorialSrc || "/assets/how-to-play.html";
+    if (!howToPlayFrame.src.endsWith(nextSrc)) howToPlayFrame.src = nextSrc;
+  }
+  showTutorialGuideButton?.classList.toggle("active", nextMode === "tutorial");
+  showPuzzleGuideButton?.classList.toggle("active", nextMode === "puzzle");
+  if (nextMode === "puzzle") setTrainingScreenMode("lesson");
+  else if (trainingScreenMode !== "lesson") setTrainingScreenMode("path");
+  renderTrainingControls();
+}
+
+function updateTutorialGateState() {
+  const required = isStudentTutorialRequired();
+  const complete = isStudentTutorialComplete();
+  document.body.classList.toggle("tutorial-required", required);
+  document.body.classList.toggle("tutorial-complete", complete);
+  if (tutorialGateNote) tutorialGateNote.hidden = !required;
+  if (tutorialLoginButton) tutorialLoginButton.hidden = Boolean(currentUser);
+  setHowToPlayMode(showPuzzleGuideButton?.classList.contains("active") ? "puzzle" : "tutorial");
+  document.querySelectorAll("[data-view-link]").forEach((link) => {
+    const blocked = required && link.dataset.viewLink !== "how-to-play";
+    link.classList.toggle("tutorial-locked-link", blocked);
+    link.setAttribute("aria-disabled", blocked ? "true" : "false");
+  });
+}
+
+async function startDailySession() {
+  const state = await refreshTrainingState();
+  if (state?.nextModule?.id) openTrainingModule(state.nextModule.id);
+  else {
+    setView("how-to-play");
+    setHowToPlayMode("puzzle");
+  }
+}
+
+async function completeStudentTutorial(module) {
+  if (currentUser && backendOnline) {
+    try {
+      const data = await api("/api/training/tutorial-complete", {
+        method: "POST",
+        body: { module: Number(module) || activeTrainingState().nextModule?.id },
+      });
+      cachedTrainingState = data.state;
+      currentUser = data.user || currentUser;
+    } catch (error) {
+      if (tutorialPuzzleNote) tutorialPuzzleNote.textContent = error.message;
+      return;
+    }
+  } else {
+    const state = localTrainingState();
+    const nextModule = Number(module) || state.nextModule?.id;
+    if (state.nextModule && nextModule !== state.nextModule.id) {
+      if (tutorialPuzzleNote) tutorialPuzzleNote.textContent = "현재 모듈을 먼저 완료하세요.";
+      return;
+    }
+    const completed = [...(state.completedModules || []), nextModule].filter(Boolean);
+    writeLocalSetting(completedTrainingModulesKey, JSON.stringify([...new Set(completed)]));
+    if (nextModule === 1) writeLocalSetting(studentTutorialCompleteKey, "true");
+    if (nextModule === 4) removeLocalSetting(studentTutorialRequiredKey);
+    cachedTrainingState = localTrainingState();
+  }
   updateTutorialGateState();
-  authStatus.textContent = "훈련장 완료! 계정으로 입장하면 플레이와 퍼즐을 시작할 수 있습니다.";
-  openAccountEntry("signup");
+  await refreshTrainingState();
+  trainingScreenMode = "path";
+  setView("how-to-play");
+  setHowToPlayMode(activeTrainingState().hasTutorial ? "tutorial" : "puzzle");
+}
+
+async function completePuzzle(payload = {}) {
+  if (!currentUser || !backendOnline) {
+    if (tutorialPuzzleNote) {
+      tutorialPuzzleNote.hidden = false;
+      tutorialPuzzleNote.textContent =
+        currentInterfaceLanguage() === "Korean"
+          ? "퍼즐 완료가 기록되었습니다. 로그인하면 streak가 저장됩니다."
+          : "Puzzle completion recorded locally. Sign in to save streak.";
+    }
+    return;
+  }
+  try {
+    const data = await api("/api/training/puzzle-complete", {
+      method: "POST",
+      body: { puzzleId: payload.puzzleId || "goryeo-vs-mongol", stars: payload.stars || 0 },
+    });
+    cachedTrainingState = data.state;
+    currentUser = data.user || currentUser;
+    renderAuthState();
+    renderDashboardSummary();
+    await refreshLeaderboard();
+  } catch (error) {
+    if (tutorialPuzzleNote) {
+      tutorialPuzzleNote.hidden = false;
+      tutorialPuzzleNote.textContent = error.message;
+    }
+  }
 }
 
 async function api(path, options = {}) {
@@ -2206,170 +2406,6 @@ function adminUserSearchText(user) {
   );
 }
 
-function renderAdminOverview(data) {
-  cachedAdminData = data;
-  adminUsersCount.textContent = String(data.stats.users);
-  adminMatchesCount.textContent = String(data.stats.activeMatches);
-  adminReportsCount.textContent = String(data.stats.openReports);
-  if (shopInterestCount) shopInterestCount.textContent = String(data.shopInterests?.length || 0);
-  adminStatus.textContent =
-    currentInterfaceLanguage() === "Korean"
-      ? `운영자 데이터가 로드되었습니다. 전체 신고 ${data.stats.totalReports}건`
-      : `Staff data loaded. ${data.stats.totalReports} total report(s).`;
-  const matchQuery = adminSearchText(adminMatchSearch.value);
-  const userQuery = adminSearchText(adminUserSearch.value);
-  const matches = matchQuery ? data.matches.filter((match) => adminMatchSearchText(match).includes(matchQuery)) : data.matches;
-  const users = userQuery ? data.users.filter((user) => adminUserSearchText(user).includes(userQuery)) : data.users;
-
-  renderAdminList(
-    adminMatchesList,
-    matches,
-    (match) => {
-      const card = document.createElement("details");
-      card.className = "admin-item admin-disclosure";
-      const players =
-        (match.players || [])
-          .map((player) => `${player.displayName} (${player.color === "white" ? currentInterfaceLanguage() === "Korean" ? "백" : "white" : currentInterfaceLanguage() === "Korean" ? "흑" : "black"})`)
-          .join(" vs ") || (currentInterfaceLanguage() === "Korean" ? "플레이어 없음" : "No players");
-      const summary = document.createElement("summary");
-      const summaryText = document.createElement("span");
-      const label = document.createElement("strong");
-      label.textContent = `${match.timeControl || "10+0"} ${
-        match.rated ? currentInterfaceLanguage() === "Korean" ? "기록" : "Rated" : currentInterfaceLanguage() === "Korean" ? "친선" : "Casual"
-      }`;
-      const playerText = document.createElement("small");
-      playerText.textContent = players;
-      const status = document.createElement("b");
-      status.textContent = translateCopy(match.status || (currentInterfaceLanguage() === "Korean" ? "알 수 없음" : "unknown"));
-      summaryText.append(label, playerText);
-      summary.append(summaryText, status);
-      const detail = document.createElement("div");
-      detail.className = "admin-disclosure-body";
-      const result = document.createElement("p");
-      result.textContent = match.result ? translateCopy(match.result) : translateCopy("In progress");
-      const counts = document.createElement("p");
-      counts.textContent =
-        currentInterfaceLanguage() === "Korean"
-          ? `수 ${match.moveCount}개, 자막 기록 ${match.transcriptCount}개`
-          : `${match.moveCount} move(s), ${match.transcriptCount} transcript item(s)`;
-      detail.append(result, counts);
-      const button = document.createElement("button");
-      button.className = "button danger full small";
-      button.type = "button";
-      button.textContent = match.status === "ended"
-        ? currentInterfaceLanguage() === "Korean" ? "종료된 대국" : "Match Ended"
-        : currentInterfaceLanguage() === "Korean" ? "대국 종료" : "End Match";
-      button.disabled = match.status === "ended";
-      button.addEventListener("click", () => endAdminMatch(match.id));
-      detail.append(button);
-      card.append(summary, detail);
-      return card;
-    },
-    matchQuery
-      ? currentInterfaceLanguage() === "Korean" ? "검색 조건에 맞는 대국이 없습니다." : "No matches match your search."
-      : currentInterfaceLanguage() === "Korean" ? "아직 대국이 없습니다." : "No matches yet.",
-  );
-
-  renderAdminList(
-    adminUsersList,
-    users,
-    (user) => {
-      const card = document.createElement("details");
-      card.className = "admin-item admin-disclosure";
-      const warningCount = (user.warnings || []).length;
-      const summary = document.createElement("summary");
-      const summaryText = document.createElement("span");
-      const name = document.createElement("strong");
-      name.textContent = user.displayName || "Player";
-      const email = document.createElement("small");
-      email.textContent = user.email || "";
-      const warningLabel = document.createElement("b");
-      warningLabel.textContent =
-        currentInterfaceLanguage() === "Korean" ? `경고 ${warningCount}개` : `${warningCount} warning${warningCount === 1 ? "" : "s"}`;
-      summaryText.append(name, email);
-      summary.append(summaryText, warningLabel);
-      const detail = document.createElement("div");
-      detail.className = "admin-disclosure-body";
-      const score = document.createElement("p");
-      score.textContent =
-        currentInterfaceLanguage() === "Korean"
-          ? `${user.role || "player"} - ${mannerBadgeText(Number(user.mannerTemperature ?? 0))}`
-          : `${user.role || "player"} - ${mannerBadgeText(Number(user.mannerTemperature ?? 0))}`;
-      const warningText = document.createElement("p");
-      warningText.textContent = currentInterfaceLanguage() === "Korean" ? `경고 ${warningCount}개` : `${warningCount} warning(s)`;
-      detail.append(score, warningText);
-      const button = document.createElement("button");
-      button.className = "button danger full small";
-      button.type = "button";
-      button.textContent = isStaffUser(user)
-        ? currentInterfaceLanguage() === "Korean" ? "운영자 계정" : "Staff Account"
-        : currentInterfaceLanguage() === "Korean" ? "경고 주기" : "Issue Warning";
-      button.disabled = isStaffUser(user);
-      button.addEventListener("click", () => warnAdminUser(user.id));
-      detail.append(button);
-      card.append(summary, detail);
-      return card;
-    },
-    userQuery
-      ? currentInterfaceLanguage() === "Korean" ? "검색 조건에 맞는 사용자가 없습니다." : "No users match your search."
-      : currentInterfaceLanguage() === "Korean" ? "아직 사용자가 없습니다." : "No users yet.",
-  );
-
-  renderAdminList(
-    adminReportsList,
-    data.reports,
-    (report) => {
-      const card = document.createElement("article");
-      card.className = "admin-item";
-      const reason = document.createElement("strong");
-      reason.textContent = translateCopy(report.reason || "Safety report");
-      const status = document.createElement("span");
-      status.textContent = translateCopy(report.status || "open");
-      const reporter = document.createElement("p");
-      reporter.textContent =
-        currentInterfaceLanguage() === "Korean"
-          ? `신고자: ${report.reporterName || "게스트"}`
-          : `Reporter: ${report.reporterName || "Guest"}`;
-      const detail = document.createElement("p");
-      detail.textContent =
-        report.detail || (currentInterfaceLanguage() === "Korean" ? "상세 내용이 없습니다." : "No details provided.");
-      card.append(reason, status, reporter, detail);
-      const button = document.createElement("button");
-      button.className = "button secondary full small";
-      button.type = "button";
-      button.textContent = report.status === "resolved"
-        ? currentInterfaceLanguage() === "Korean" ? "해결됨" : "Resolved"
-        : currentInterfaceLanguage() === "Korean" ? "해결 처리" : "Mark Resolved";
-      button.disabled = report.status === "resolved";
-      button.addEventListener("click", () => resolveAdminReport(report.id));
-      card.append(button);
-      return card;
-    },
-    currentInterfaceLanguage() === "Korean" ? "아직 안전 신고가 없습니다." : "No safety reports yet.",
-  );
-
-  if (shopInterestList) {
-    renderAdminList(
-      shopInterestList,
-      data.shopInterests || [],
-      (interest) => {
-        const card = document.createElement("article");
-        card.className = "admin-item";
-        const title = document.createElement("strong");
-        title.textContent = interest.productName || "Product";
-        const user = document.createElement("span");
-        user.textContent = interest.displayName || "Guest Player";
-        const email = document.createElement("p");
-        email.textContent = interest.email || "No email";
-        const time = document.createElement("small");
-        time.textContent = interest.updatedAt || interest.createdAt || "";
-        card.append(title, user, email, time);
-        return card;
-      },
-      "No product interest yet.",
-    );
-  }
-}
 
 async function refreshAdmin() {
   if (!backendOnline) {
@@ -2390,9 +2426,157 @@ async function refreshAdmin() {
   }
 }
 
+function renderAdminOverview(data) {
+  cachedAdminData = data;
+  if (adminUsersCount) adminUsersCount.textContent = String(data.stats?.users || 0);
+  if (adminMatchesCount) adminMatchesCount.textContent = String(data.stats?.activeMatches || 0);
+  if (adminReportsCount) adminReportsCount.textContent = String(data.stats?.openReports || 0);
+  if (shopInterestCount) shopInterestCount.textContent = String(data.shopInterests?.length || 0);
+  if (adminStatus) {
+    adminStatus.textContent =
+      currentInterfaceLanguage() === "Korean"
+        ? `운영자 데이터가 로드되었습니다. 전체 신고 ${data.stats?.totalReports || 0}건`
+        : `Staff data loaded. ${data.stats?.totalReports || 0} total report(s).`;
+  }
+
+  const matchQuery = adminSearchText(adminMatchSearch?.value);
+  const matches = (data.matches || []).filter((match) => !matchQuery || adminMatchSearchText(match).includes(matchQuery));
+  renderAdminList(
+    adminMatchesList,
+    matches,
+    (match) => {
+      const card = document.createElement("article");
+      card.className = "admin-item";
+      const title = document.createElement("strong");
+      title.textContent = `${match.timeControl || "10+0"} · ${match.status || "unknown"}`;
+      const detail = document.createElement("p");
+      detail.textContent = `${match.result || "In progress"} · ${match.moveCount || 0} move(s)`;
+      const button = document.createElement("button");
+      button.className = "button danger full small";
+      button.type = "button";
+      button.textContent = currentInterfaceLanguage() === "Korean" ? "대국 종료" : "End match";
+      button.disabled = match.status === "ended";
+      button.addEventListener("click", () => endAdminMatch(match.id));
+      card.append(title, detail, button);
+      return card;
+    },
+    currentInterfaceLanguage() === "Korean" ? "아직 대국이 없습니다." : "No matches yet.",
+  );
+
+  const userQuery = adminSearchText(adminUserSearch?.value);
+  const users = (data.users || []).filter((adminItem) => !userQuery || adminUserSearchText(adminItem).includes(userQuery));
+  renderAdminList(
+    adminUsersList,
+    users,
+    (adminItem) => {
+      const card = document.createElement("details");
+      card.className = "admin-item admin-disclosure";
+      const warningCount = (adminItem.warnings || []).length;
+      const summary = document.createElement("summary");
+      const summaryText = document.createElement("span");
+      const name = document.createElement("strong");
+      name.textContent = adminItem.displayName || "Player";
+      const email = document.createElement("small");
+      email.textContent = adminItem.email || "";
+      const warningLabel = document.createElement("b");
+      warningLabel.textContent =
+        currentInterfaceLanguage() === "Korean" ? `경고 ${warningCount}개` : `${warningCount} warning${warningCount === 1 ? "" : "s"}`;
+      summaryText.append(name, email);
+      summary.append(summaryText, warningLabel);
+      const detail = document.createElement("div");
+      detail.className = "admin-disclosure-body";
+      const score = document.createElement("p");
+      score.textContent = `${adminItem.role || "player"} · ${mannerBadgeText(Number(adminItem.mannerTemperature ?? 0))}`;
+      const issueButton = document.createElement("button");
+      issueButton.className = "button danger full small";
+      issueButton.type = "button";
+      issueButton.textContent = isStaffUser(adminItem)
+        ? currentInterfaceLanguage() === "Korean" ? "운영자 계정" : "Staff account"
+        : currentInterfaceLanguage() === "Korean" ? "경고 주기" : "Issue warning";
+      issueButton.disabled = isStaffUser(adminItem);
+      issueButton.addEventListener("click", () => warnAdminUser(adminItem.id));
+      const reduceButton = document.createElement("button");
+      reduceButton.className = "button secondary full small";
+      reduceButton.type = "button";
+      reduceButton.textContent = currentInterfaceLanguage() === "Korean" ? "경고 1개 줄이기" : "Reduce one warning";
+      reduceButton.disabled = warningCount === 0 || isStaffUser(adminItem);
+      reduceButton.addEventListener("click", () => reduceAdminWarning(adminItem.id));
+      detail.append(score, issueButton, reduceButton);
+      card.append(summary, detail);
+      return card;
+    },
+    currentInterfaceLanguage() === "Korean" ? "아직 사용자가 없습니다." : "No users yet.",
+  );
+
+  renderAdminList(
+    adminReportsList,
+    data.reports || [],
+    (report) => {
+      const card = document.createElement("article");
+      card.className = "admin-item";
+      const reason = document.createElement("strong");
+      reason.textContent = report.reason || "Safety report";
+      const status = document.createElement("span");
+      status.textContent = report.status || "open";
+      const reporter = document.createElement("p");
+      reporter.textContent =
+        currentInterfaceLanguage() === "Korean" ? `신고자: ${report.reporterName || "Guest"}` : `Reporter: ${report.reporterName || "Guest"}`;
+      const detail = document.createElement("p");
+      detail.textContent =
+        report.detail || (currentInterfaceLanguage() === "Korean" ? "상세 내용이 없습니다." : "No details provided.");
+      const resolveButton = document.createElement("button");
+      resolveButton.className = "button secondary full small";
+      resolveButton.type = "button";
+      resolveButton.textContent =
+        report.status === "resolved"
+          ? currentInterfaceLanguage() === "Korean" ? "해결됨" : "Resolved"
+          : currentInterfaceLanguage() === "Korean" ? "해결 처리" : "Mark resolved";
+      resolveButton.disabled = report.status === "resolved";
+      resolveButton.addEventListener("click", () => resolveAdminReport(report.id));
+      const deleteButton = document.createElement("button");
+      deleteButton.className = "button danger full small";
+      deleteButton.type = "button";
+      deleteButton.textContent = currentInterfaceLanguage() === "Korean" ? "신고 삭제" : "Delete report";
+      deleteButton.addEventListener("click", () => deleteAdminReport(report.id));
+      card.append(reason, status, reporter, detail, resolveButton, deleteButton);
+      return card;
+    },
+    currentInterfaceLanguage() === "Korean" ? "아직 안전 신고가 없습니다." : "No safety reports yet.",
+  );
+
+  if (shopInterestList) {
+    renderAdminList(
+      shopInterestList,
+      data.shopInterests || [],
+      (interest) => {
+        const card = document.createElement("article");
+        card.className = "admin-item";
+        const title = document.createElement("strong");
+        title.textContent = interest.productName || "Product";
+        const displayName = document.createElement("span");
+        displayName.textContent = interest.displayName || "Guest Player";
+        const email = document.createElement("p");
+        email.textContent = interest.email || "No email";
+        card.append(title, displayName, email);
+        return card;
+      },
+      currentInterfaceLanguage() === "Korean" ? "아직 상품 관심 기록이 없습니다." : "No product interest yet.",
+    );
+  }
+}
+
 async function resolveAdminReport(reportId) {
   try {
     await api(`/api/admin/reports/${reportId}/resolve`, { method: "POST" });
+    await refreshAdmin();
+  } catch (error) {
+    adminStatus.textContent = error.message;
+  }
+}
+
+async function deleteAdminReport(reportId) {
+  try {
+    await api(`/api/admin/reports/${reportId}`, { method: "DELETE" });
     await refreshAdmin();
   } catch (error) {
     adminStatus.textContent = error.message;
@@ -2405,6 +2589,15 @@ async function warnAdminUser(userId) {
       method: "POST",
       body: { reason: "Staff safety warning" },
     });
+    await refreshAdmin();
+  } catch (error) {
+    adminStatus.textContent = error.message;
+  }
+}
+
+async function reduceAdminWarning(userId) {
+  try {
+    await api(`/api/admin/users/${userId}/warnings/reduce`, { method: "POST" });
     await refreshAdmin();
   } catch (error) {
     adminStatus.textContent = error.message;
@@ -2452,11 +2645,13 @@ async function checkBackend() {
         currentInterfaceLanguage() === "Korean" ? `${currentUser.displayName}님으로 로그인됨` : `Signed in as ${currentUser.displayName}`;
       updateTemperature(Number(currentUser.mannerTemperature ?? currentManner));
       await refreshProfile();
+      await refreshTrainingState();
     }
     renderAuthState();
     connectSocket(null);
     await refreshStats();
     await refreshLobby();
+    await refreshTrainingState();
     await refreshLeaderboard();
     const routedToMatch = await loadMatchFromRoute();
     if (isStaffRoute()) {
@@ -2565,6 +2760,7 @@ async function signInOrRegister() {
     setView("overview");
     await refreshStats();
     await refreshLobby();
+    await refreshTrainingState();
     await refreshLeaderboard();
   } catch (error) {
     authStatus.textContent = error.message;
@@ -2815,29 +3011,6 @@ async function deleteAccountWithTypedConfirmation() {
   }
 }
 
-async function saveProfilePatch(patch = {}) {
-  if (!currentUser) {
-    if (profileStatus) profileStatus.textContent = "프로필을 수정하려면 먼저 로그인하세요.";
-    return null;
-  }
-  if (profileStatus) profileStatus.textContent = "프로필을 저장하는 중...";
-  const profile = await api("/api/profile", {
-    method: "PUT",
-    body: {
-      displayName: profileDisplayName?.value || currentUser.displayName || "",
-      languagePair: profileLanguagePair?.value || currentUser.languagePair || authLanguagePair?.value || "English to Korean",
-      pieceEdition: profilePieceEdition?.value || currentUser.pieceEdition || selectedPieceEdition,
-      avatarUrl: profileImage?.value || currentUser.avatarUrl || "",
-      bio: profileBio?.value || currentUser.bio || "",
-      ...patch,
-    },
-  });
-  currentUser = profile.user;
-  renderProfile(profile);
-  renderAuthState();
-  if (profileStatus) profileStatus.textContent = "프로필이 저장되었습니다.";
-  return profile;
-}
 
 async function saveInlineProfileName() {
   try {
@@ -3509,12 +3682,6 @@ function handleSquareClick(square) {
   makeMove(selectedSquare, square);
 }
 
-async function applyPlannedMove() {
-  const [from, to] = plannedMoves[moveIndex % plannedMoves.length];
-  await makeMove(from, to);
-  moveIndex += 1;
-}
-
 async function finishMatch(result, options = {}) {
   const review = options.review ?? true;
   setMatchState("ended");
@@ -3833,69 +4000,7 @@ function renderAvatar(target, user, fallback = "GP") {
   }
 }
 
-function renderDashboardSummary() {
-  const user = currentUser || {};
-  if (welcomeName) welcomeName.textContent = user.displayName || "Player";
-  renderAvatar(dashboardHeroAvatar, user, "GP");
-  if (dashboardStreak) dashboardStreak.textContent = String(Number(user.streak || 0));
-  if (dashboardEasyElo) dashboardEasyElo.textContent = String(Number(user.easyElo || 1000));
-  if (leagueCodeInput && user.leagueCode) leagueCodeInput.value = user.leagueCode;
-  if (leagueStatus) {
-    leagueStatus.textContent = user.leagueCode
-      ? `참여 중인 리그 코드: ${user.leagueCode}`
-      : "아직 참여한 리그가 없습니다.";
-  }
-}
 
-function renderLeaderboard(data = {}) {
-  if (!leaderboardList) return;
-  leaderboardList.innerHTML = "";
-  const members = data.members || [];
-  if (!members.length) {
-    const empty = document.createElement("p");
-    empty.className = "admin-empty";
-    empty.textContent = "아직 리더보드에 표시할 플레이어가 없습니다.";
-    leaderboardList.append(empty);
-    return;
-  }
-  members.forEach((member) => {
-    const row = document.createElement("article");
-    row.className = "leaderboard-row";
-    const rank = document.createElement("strong");
-    rank.textContent = String(member.rank);
-    const avatar = document.createElement("span");
-    avatar.className = "leaderboard-avatar";
-    renderAvatar(avatar, member, "P");
-    const info = document.createElement("div");
-    const name = document.createElement("b");
-    name.textContent = member.displayName || "Player";
-    const meta = document.createElement("small");
-    meta.textContent = `${Number(member.streak || 0)}일 streak`;
-    info.append(name, meta);
-    const elo = document.createElement("span");
-    elo.className = "leaderboard-elo";
-    elo.textContent = `${Number(member.easyElo || 1000)} Elo`;
-    row.append(rank, avatar, info, elo);
-    leaderboardList.append(row);
-  });
-}
-
-async function refreshLeaderboard() {
-  if (!leaderboardList) return;
-  if (!backendOnline) {
-    renderLeaderboard({ members: [] });
-    return;
-  }
-  try {
-    const query = new URLSearchParams({ period: leaderboardPeriod });
-    if (currentUser?.leagueCode) query.set("code", currentUser.leagueCode);
-    const data = await api(`/api/leagues/leaderboard?${query.toString()}`);
-    renderLeaderboard(data);
-    if (leagueStatus && data.code) leagueStatus.textContent = `참여 중인 리그 코드: ${data.code}`;
-  } catch (error) {
-    if (leagueStatus) leagueStatus.textContent = error.message;
-  }
-}
 
 async function joinLeague() {
   if (!currentUser) {
@@ -3936,6 +4041,99 @@ async function createLeague() {
     renderLeaderboard(data.league);
     renderAuthState();
     if (leagueStatus) leagueStatus.textContent = `새 리그 코드: ${data.league.code}`;
+  } catch (error) {
+    if (leagueStatus) leagueStatus.textContent = error.message;
+  }
+}
+
+function renderDashboardSummary() {
+  const user = currentUser || {};
+  if (welcomeName) welcomeName.textContent = user.displayName || "Player";
+  renderAvatar(dashboardHeroAvatar, user, "GP");
+  if (dashboardStreak) dashboardStreak.textContent = String(Number(user.streak || 0));
+  if (dashboardEasyElo) dashboardEasyElo.textContent = String(Number(user.easyElo || 1000));
+  if (leagueCodeInput && user.leagueCode) leagueCodeInput.value = user.leagueCode;
+  if (leagueStatus) {
+    leagueStatus.textContent = user.leagueCode
+      ? currentInterfaceLanguage() === "Korean"
+        ? `참여 중인 리그 코드: ${user.leagueCode}`
+        : `Current league code: ${user.leagueCode}`
+      : currentInterfaceLanguage() === "Korean"
+        ? "아직 참여한 리그가 없습니다."
+        : "You have not joined a league yet.";
+  }
+  syncLocalizedControls();
+}
+
+function renderLeaderboard(data = {}) {
+  if (!leaderboardList) return;
+  leaderboardList.innerHTML = "";
+  const members = data.members || [];
+  if (!members.length) {
+    const empty = document.createElement("p");
+    empty.className = "admin-empty";
+    empty.textContent =
+      data.emptyReason === "no-league"
+        ? currentInterfaceLanguage() === "Korean"
+          ? "아직 내 리그가 없습니다. 참가 코드를 입력하거나 새 리그 코드를 생성하세요."
+          : "No league yet. Enter a code or create a new league."
+        : currentInterfaceLanguage() === "Korean"
+          ? "아직 리더보드에 표시할 플레이어가 없습니다."
+          : "No players to show on this leaderboard yet.";
+    leaderboardList.append(empty);
+    return;
+  }
+  members.forEach((member) => {
+    const row = document.createElement("article");
+    row.className = "leaderboard-row";
+    const rank = document.createElement("strong");
+    rank.textContent = String(member.rank);
+    const avatar = document.createElement("span");
+    avatar.className = "leaderboard-avatar";
+    renderAvatar(avatar, member, "P");
+    const info = document.createElement("div");
+    const name = document.createElement("b");
+    name.textContent = leaderboardScope === "all" ? maskLeaderboardName(member.displayName) : member.displayName || "Player";
+    const meta = document.createElement("small");
+    meta.textContent =
+      currentInterfaceLanguage() === "Korean"
+        ? `${Number(member.streak || 0)}일 streak`
+        : `${Number(member.streak || 0)} day streak`;
+    info.append(name, meta);
+    const elo = document.createElement("span");
+    elo.className = "leaderboard-elo";
+    elo.textContent = `${Number(member.easyElo || 1000)} Elo`;
+    row.append(rank, avatar, info, elo);
+    leaderboardList.append(row);
+  });
+}
+
+function maskLeaderboardName(value) {
+  const characters = Array.from(String(value || "Player").trim());
+  return `${characters.slice(0, 3).join("")}****`;
+}
+
+async function refreshLeaderboard() {
+  if (!leaderboardList) return;
+  syncLocalizedControls();
+  if (!backendOnline) {
+    renderLeaderboard({ members: [] });
+    return;
+  }
+  try {
+    const query = new URLSearchParams({ period: leaderboardPeriod, scope: leaderboardScope });
+    if (leaderboardScope === "mine" && currentUser?.leagueCode) query.set("code", currentUser.leagueCode);
+    const data = await api(`/api/leagues/leaderboard?${query.toString()}`);
+    renderLeaderboard(data);
+    if (leagueStatus) {
+      leagueStatus.textContent = data.code
+        ? currentInterfaceLanguage() === "Korean"
+          ? `참여 중인 리그 코드: ${data.code}`
+          : `Current league code: ${data.code}`
+        : currentInterfaceLanguage() === "Korean"
+          ? "아직 참여한 리그가 없습니다."
+          : "You have not joined a league yet.";
+    }
   } catch (error) {
     if (leagueStatus) leagueStatus.textContent = error.message;
   }
@@ -4123,39 +4321,6 @@ async function saveCultureGuide() {
     renderProfile(profile);
   } catch (error) {
     profileStatus.textContent = error.message;
-  }
-}
-
-async function appendSubtitle() {
-  const sample = subtitleSamples[Math.floor(Math.random() * subtitleSamples.length)];
-  const original = document.createElement("p");
-  const originalSpeaker = document.createElement("strong");
-  originalSpeaker.textContent = "Mina:";
-  original.append(originalSpeaker, document.createTextNode(` ${sample.original}`));
-  originalSpeech.append(original);
-
-  const translated = document.createElement("p");
-  const translatedSpeaker = document.createElement("strong");
-  translatedSpeaker.textContent = "Mina:";
-  translated.append(translatedSpeaker, document.createTextNode(` ${sample.translated}`));
-  translatedSpeech.append(translated);
-
-  wordsRecognized.textContent = String(Number(wordsRecognized.textContent) + sample.original.split(" ").length);
-
-  if (backendOnline && currentMatchId) {
-    try {
-      await api(`/api/matches/${currentMatchId}/transcript`, {
-        method: "POST",
-        body: {
-          speaker: "Mina",
-          text: sample.original,
-          translation: sample.translated,
-          kind: "speech",
-        },
-      });
-    } catch {
-      // Keep the subtitle UI responsive if persistence fails.
-    }
   }
 }
 
@@ -4680,10 +4845,13 @@ textSizeSlider.addEventListener("input", (event) => applyTextSize(event.target.v
 languageSelect?.addEventListener("change", () => {
   applyInterfaceLanguage();
   renderAuthState();
+  renderDashboardSummary();
   updateTemperature(currentUser?.mannerTemperature ?? currentManner);
   if (cachedLobbyData) renderLobby(cachedLobbyData);
   if (cachedAdminData && isStaffUser()) renderAdminOverview(cachedAdminData);
   renderForumPosts();
+  refreshLeaderboard();
+  refreshTrainingState();
   resetSubtitlePlaceholders();
   setSttStatus(sttListening);
 });
@@ -4716,18 +4884,50 @@ loginButton.addEventListener("click", () => {
 
 mainAccountButton?.addEventListener("click", () => openAccountEntry("signup"));
 
-mainTutorialButton?.addEventListener("click", () => setView("how-to-play"));
+mainTutorialButton?.addEventListener("click", () => {
+  trainingScreenMode = "path";
+  setView("how-to-play");
+  setHowToPlayMode("tutorial");
+});
 
 tutorialLoginButton?.addEventListener("click", () => openAccountEntry("signup"));
 
-showTutorialGuideButton?.addEventListener("click", () => setHowToPlayMode("tutorial"));
+startDailySessionButton?.addEventListener("click", startDailySession);
 
-showPuzzleGuideButton?.addEventListener("click", () => setHowToPlayMode("puzzle"));
+trainingChapterStart?.addEventListener("click", (event) => {
+  event.preventDefault();
+  if (selectedTrainingModule) openTrainingModule(selectedTrainingModule.id);
+});
+
+trainingChapterReview?.addEventListener("click", (event) => {
+  event.preventDefault();
+  if (selectedTrainingModule?.completed) openTrainingModule(selectedTrainingModule.id, true);
+});
+
+trainingChapterDialog?.addEventListener("close", () => {
+  if (trainingScreenMode === "dialog") setTrainingScreenMode("path");
+});
+
+showTutorialGuideButton?.addEventListener("click", () => {
+  trainingScreenMode = "path";
+  setHowToPlayMode("tutorial");
+});
+
+showPuzzleGuideButton?.addEventListener("click", async () => {
+  await refreshTrainingState();
+  setHowToPlayMode("puzzle");
+});
 
 window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin && event.origin !== "null") return;
   if (howToPlayFrame?.contentWindow && event.source !== howToPlayFrame.contentWindow) return;
-  if (event.data?.type === "easymate:tutorial-complete") completeStudentTutorial();
+  if (event.data?.type === "easymate:tutorial-complete") completeStudentTutorial(event.data.module);
+  if (event.data?.type === "easymate:return-training") {
+    trainingScreenMode = "path";
+    setView("how-to-play");
+    setHowToPlayMode("tutorial");
+  }
+  if (event.data?.type === "easymate:puzzle-complete") completePuzzle(event.data);
 });
 
 notificationButton.addEventListener("click", async (event) => {
@@ -4786,6 +4986,32 @@ adminMatchSearch.addEventListener("input", () => {
 adminUserSearch.addEventListener("input", () => {
   if (cachedAdminData) renderAdminOverview(cachedAdminData);
 });
+
+async function saveProfilePatch(patch = {}) {
+  if (!currentUser) {
+    if (profileStatus) {
+      profileStatus.textContent =
+        currentInterfaceLanguage() === "Korean" ? "프로필을 수정하려면 먼저 로그인하세요." : "Sign in before editing your profile.";
+    }
+    return null;
+  }
+  if (profileStatus) {
+    profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "프로필을 저장하는 중..." : "Saving profile...";
+  }
+  const profile = await api("/api/profile", {
+    method: "PUT",
+    body: { ...patch },
+  });
+  currentUser = profile.user;
+  cachedTrainingState = profile.user?.training || cachedTrainingState;
+  renderProfile(profile);
+  renderAuthState();
+  if (profileStatus) {
+    profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "프로필이 저장되었습니다." : "Profile saved.";
+  }
+  return profile;
+}
+
 refreshProfileButton.addEventListener("click", refreshProfile);
 saveProfileButton?.addEventListener("click", saveProfile);
 editProfileNameButton?.addEventListener("click", () => {
@@ -4823,6 +5049,13 @@ leaderboardButtons.forEach((button) => {
   button.addEventListener("click", () => {
     leaderboardPeriod = button.dataset.leaderboardPeriod || "weekly";
     leaderboardButtons.forEach((item) => item.classList.toggle("active", item === button));
+    refreshLeaderboard();
+  });
+});
+leaderboardScopeButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    leaderboardScope = button.dataset.leaderboardScope || "mine";
+    leaderboardScopeButtons.forEach((item) => item.classList.toggle("active", item === button));
     refreshLeaderboard();
   });
 });

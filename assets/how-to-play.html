@@ -49,9 +49,13 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
   font-family:'Jua',sans-serif;font-size:13px;color:#fff;
   background:var(--noerok);border-radius:999px;padding:4px 14px;align-self:center;margin-bottom:10px;
 }
-.title-art{margin:6px auto 0;width:190px;height:190px;display:flex}
-.title-art>div{width:50%;height:100%}
-.title-vs{position:absolute;left:50%;top:150px;transform:translateX(-50%);font-family:'Jua',sans-serif;font-size:20px;color:var(--jinsa);text-shadow:0 2px 0 #fff}
+.title-art{margin:6px auto 0;width:280px;display:grid;grid-template-columns:1fr 40px 1fr;align-items:end}
+.title-art>div{height:166px;display:flex;position:relative;flex-direction:column;align-items:center;justify-content:flex-end}
+.title-art>div>img{width:126px;height:138px;flex:0 0 138px}
+.title-art .title-vs{align-self:center;font-family:'Jua',sans-serif;font-size:25px;color:var(--jinsa);text-align:center;text-shadow:0 2px 0 #fff}
+.title-label{display:block;height:24px;flex:0 0 24px;text-align:center;font-family:'Jua',sans-serif;color:var(--meok);font-size:16px;line-height:24px;margin:0}
+.mongol-king-art{position:relative}
+.mongol-king-art::before,.mongol-king-art::after{display:none}
 .title-sub{text-align:center;font-size:15px;line-height:1.7;margin-top:8px;color:#4a5568}
 .start-btn{
   margin:18px auto 6px;display:block;font-family:'Jua',sans-serif;font-size:21px;color:#fff;
@@ -69,11 +73,16 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
   position:relative;background:#fff;border:2.5px solid var(--meok);border-radius:18px;
   padding:12px 14px;font-size:14.5px;line-height:1.6;
 }
-.speech::before{content:"";position:absolute;left:-12px;bottom:22px;border:8px solid transparent;border-right-color:var(--meok)}
-.speech::after{content:"";position:absolute;left:-8px;bottom:24px;border:6px solid transparent;border-right-color:#fff}
+.speech::before,.speech::after{display:none}
 .speech b{color:var(--jinsa)}
 .char-name{font-family:'Jua',sans-serif;font-size:18px;margin-bottom:4px}
 .char-name small{font-size:12px;color:var(--easyblue);margin-left:6px}
+.warrior-label{display:inline-block;margin-bottom:5px;padding:3px 8px;border-radius:999px;background:var(--goryeo);color:#fff;font-family:'Jua',sans-serif;font-size:12px}
+.enemy-row{display:flex;flex-direction:row-reverse;align-items:flex-end;gap:12px;margin:0 0 6px auto;max-width:92%}
+.enemy-row .char-text{text-align:right}.enemy-row .speech{border-color:var(--mongol)}
+.enemy-row .speech::before{left:auto;right:-12px;border-right-color:transparent;border-left-color:var(--mongol)}
+.enemy-row .speech::after{left:auto;right:-8px;border-right-color:transparent;border-left-color:#fff}
+.enemy-row .char-name small{color:var(--mongol)}
 
 .board-wrap{margin:10px auto 4px;position:relative}
 .board{
@@ -123,6 +132,16 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 @keyframes burst{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.8) translateY(-30px);opacity:0}}
 .enemy-token.poof{animation:poof .42s ease-out forwards}
 @keyframes poof{0%{transform:scale(1);opacity:1}55%{transform:scale(1.35) rotate(8deg);opacity:.72}100%{transform:scale(.15) translateY(-24px);opacity:0}}
+.checkmate-label{position:absolute;left:50%;top:-18px;transform:translateX(-50%);white-space:nowrap;padding:3px 6px;border-radius:7px;background:var(--jinsa);color:#fff;font-family:'Jua',sans-serif;font-size:11px;line-height:1;box-shadow:0 2px 0 #7e3229;z-index:8}
+.capture-shelf{display:flex;justify-content:flex-end;gap:3px;min-height:0;margin:4px auto 0;width:min(290px,74vw);padding:0;color:var(--mongol);align-items:center}
+.capture-shelf .captured-piece{width:26px;height:26px;animation:collect .55s cubic-bezier(.18,1.55,.5,1) both}
+@keyframes collect{from{transform:translate(-70px,-80px) rotate(-25deg);opacity:0}to{transform:none;opacity:1}}
+.scene.story-intro .char-row{align-self:center;align-items:center;margin:auto;max-width:min(430px,100%);transition:transform .38s ease}
+.scene.story-intro .char-art,.scene.story-intro .enemy-row,.scene.story-intro .board-wrap,.scene.story-intro .capture-shelf,.scene.story-intro .mission,.scene.story-intro .lesson-note,.scene.story-intro .legend,.scene.story-intro .nav{display:none}
+.scene.story-intro .char-text{padding:0;text-align:center}
+.scene.story-intro .speech{min-height:96px;display:flex;align-items:center;justify-content:center;text-align:center}
+.scene.story-ready .char-row{animation:story-settle .42s ease both}
+@keyframes story-settle{from{transform:translateY(26px);opacity:.72}to{transform:none;opacity:1}}
 .lesson-note{font-size:13px;line-height:1.55;text-align:center;color:#4a5568;margin-top:4px}
 .rule-list{display:flex;flex-direction:column;gap:10px;margin:16px 0 6px}
 .rule-item{display:flex;gap:12px;align-items:flex-start;background:#FFFCF3;border:2.5px solid var(--meok);
@@ -143,13 +162,13 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 .cmp.esc .cmp-t{color:var(--noerok)}
 .cmp.mate{border-color:var(--jinsa);color:#7e3229;background:rgba(180,72,60,.08)}
 .cmp.mate .cmp-t{color:var(--jinsa)}
-.sq.sq-guard::before{content:"";position:absolute;inset:0;background:rgba(62,92,148,.34);pointer-events:none}
-.sq.sq-danger.strong::before{background:rgba(180,72,60,.32)}
+.sq.sq-guard::before{content:"";position:absolute;inset:3px;border:4px solid var(--goryeo);pointer-events:none}
+.sq.sq-danger.strong::before{inset:3px;border:4px solid var(--jinsa);background:transparent}
 .legend{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;font-size:11.5px;color:#4a5568;margin-top:8px}
 .legend span{display:flex;align-items:center;gap:5px}
-.legend i{width:12px;height:12px;border-radius:4px;display:inline-block}
-.legend i.dgr{background:rgba(180,72,60,.45)}
-.legend i.grd{background:rgba(62,92,148,.45)}
+.legend i{width:12px;height:12px;border-radius:4px;display:inline-block;background:transparent}
+.legend i.dgr{border:3px solid var(--jinsa)}
+.legend i.grd{border:3px solid var(--goryeo)}
 
 .nav{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:14px}
 .nav button{font-family:'Jua',sans-serif;font-size:17px;border:none;border-radius:999px;padding:11px 26px;cursor:pointer;transition:transform .1s}
@@ -287,52 +306,69 @@ const QUIZ_HINT = {
   g_king:'임금님은 어느 방향이든 딱 한 칸이에요.'
 };
 const PIECES = [
-  {id:'g_pawn', name:'꼬마 창병', en:'폰 · Pawn',
-   intro:`안녕! 나는 고려의 <b>꼬마 창병</b>이야. 우리는 여덟 형제라서 고려군에서 제일 숫자가 많아! 나는 씩씩하게 <b>앞으로 한 칸씩</b>만 걸어가. 뒤로는 절대 안 돌아가! (진짜 체스에서는 맨 처음 출발할 때만 두 칸도 갈 수 있지만, 여기 연습 마당에서는 한 칸씩 걸어보자!)`,
+  {id:'g_pawn', enemy:'m_pawn', enemyName:'몽골 병졸', name:'꼬마 창병', en:'체스에선 폰',
+   intro:`안녕! 나는 고려의 <b>꼬마 창병</b>이야. 우리는 여덟 형제라서 고려군에서 제일 숫자가 많아! 나는 씩씩하게 <b>앞으로 한 칸씩</b>만 걸어가. 뒤로는 절대 안 돌아가!`,
    mission:'파란 점을 눌러서 창병을 앞으로 보내줘!', moves:[[2,2]], start:[3,2]},
-  {id:'g_rook', name:'돌탑 수문장', en:'룩 · Rook',
-   intro:`나는 강화 성곽의 <b>돌탑 수문장</b>! 돌을 쌓아 만들어서 아주 튼튼하지. 나는 <b>앞·뒤·양옆으로 쭉-!</b> 미끄러지듯 달려갈 수 있어.`,
+  {id:'g_rook', enemy:'m_rook', enemyName:'몽골 공성탑', name:'돌탑 수문장', en:'체스에선 룩',
+   intro:`나는 강화 성곽의 <b>돌탑 수문장</b>! 돌을 쌓아 만들어서 아주 튼튼하지. 나는 <b>앞·뒤·양옆으로, 칸의 개수에 상관없이</b> 달려갈 수 있어.`,
    mission:'파란 점 중 아무 곳이나 눌러서 돌탑을 움직여봐!',
    moves:rays([[1,0],[-1,0],[0,1],[0,-1]]), start:[2,2]},
-  {id:'g_knight', name:'백마 기수', en:'나이트 · Knight',
+  {id:'g_knight', enemy:'m_knight', enemyName:'몽골 기마병', name:'백마 기수', en:'체스에선 나이트',
    intro:`히힝! 나는 <b>백마 기수</b>야. 나는 특별하게 <b>L자 모양</b>(곧게 두 칸 → 옆으로 한 칸)으로 폴짝 뛰어다녀. 다른 말이 길을 막고 있어도 <b>훌쩍 뛰어넘을</b> 수 있는 건 나뿐이야!`,
    mission:'L자 모양 파란 점으로 백마를 점프시켜봐!',
    moves:[[0,1],[0,3],[1,0],[1,4],[3,0],[3,4],[4,1],[4,3]], start:[2,2]},
-  {id:'g_bishop', name:'지혜 승려', en:'비숍 · Bishop',
+  {id:'g_bishop', enemy:'m_bishop', enemyName:'몽골 샤먼', name:'지혜 승려', en:'체스에선 비숍',
    intro:`나무아미타불… 나는 팔만대장경을 지키는 <b>지혜 승려</b>라오. 나는 언제나 <b>대각선으로만</b> 조용히 미끄러져 다닌다오. 비스듬한 길이 나의 길!`,
    mission:'대각선 파란 점을 눌러서 승려님을 모셔가자!',
    moves:rays([[1,1],[1,-1],[-1,1],[-1,-1]]), start:[2,2]},
-  {id:'g_queen', name:'근위대장', en:'퀸 · Queen',
+  {id:'g_queen', enemy:'m_queen', enemyName:'살리타 칸', name:'근위대장', en:'체스에선 퀸',
    intro:`나는 임금님을 가장 가까이서 지키는 <b>근위대장</b>이다! 활과 지혜로 <b>앞뒤·양옆·대각선 어디든 쭉-!</b> 달려가지. 고려군에서 제일 힘이 센 건 바로 나야!`,
    mission:'어느 방향이든 좋아! 파란 점으로 근위대장을 보내자!',
    moves:rays([[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]), start:[2,2]},
-  {id:'g_king', name:'고려 임금', en:'킹 · King',
+  {id:'g_king', enemy:'m_king', enemyName:'몽골 칸', name:'고려 임금', en:'체스에선 킹',
    intro:`나는 <b>고려의 임금</b>이니라. 나는 조심조심 <b>어느 방향이든 딱 한 칸씩</b>만 걷는다. 하지만 기억하거라 — 내가 잡히면 전쟁이 끝난단다. 모두가 나를 지켜다오!`,
    mission:'한 칸 옆 파란 점을 눌러서 임금님을 옮겨드리자!',
    moves:[[1,1],[1,2],[1,3],[2,1],[2,3],[3,1],[3,2],[3,3]], start:[2,2]}
 ];
 const CAPTURE_SCENES = [
-  {id:'knightCapture', piece:'g_knight', enemy:'m_bishop', name:'백마 기수', en:'적을 잡는 방법',
-   intro:`<b>몽골의 샤먼</b>이 북을 울리며 병사들을 부르고 있어! 잡는 방법은 모두 똑같아 — <b>내가 갈 수 있는 칸에 적이 있으면, 그 칸으로 들어가면서 잡아.</b> 잡힌 적은 판에서 빠져나가!`,
-   mission:'L자 점프로 샤먼이 있는 칸에 착지해 잡아보자!',
-   note:'모든 용사는 “움직이는 길 = 잡는 길”이에요. 잡힌 기물은 판에서 사라져요.',
-   start:[4,1], target:[2,2]},
-  {id:'pawnCapture', piece:'g_pawn', enemy:'m_pawn', name:'꼬마 창병', en:'딱 하나의 예외',
-   intro:`그런데 나만 특별해! 나는 <b>앞으로 걷지만</b>, 적을 잡을 때만큼은 <b>대각선 앞 한 칸</b>을 콕! 찌른단다. 바로 앞에 적이 있으면 오히려 못 지나가!`,
-   mission:'대각선 앞의 몽골 병사를 눌러서 잡아보자!',
-   note:'창병(폰)은 여섯 용사 중 유일하게 “걷는 길”과 “잡는 길”이 달라요.',
-   start:[3,2], target:[2,3]}
+  {id:'pawnCapture', piece:'g_pawn', enemy:'m_pawn', name:'꼬마 창병', en:'체스에선 폰', intro:`나는 <b>앞으로 걷지만</b>, 적을 잡을 때는 <b>대각선 앞 한 칸</b>을 콕! 찌른단다. 바로 앞에 적이 있으면 오히려 못 지나가!`, mission:'대각선 앞의 몽골 병사를 눌러서 잡아보자!', note:'폰은 걷는 길과 잡는 길이 달라요.', start:[3,2], target:[2,3]},
+  {id:'rookCapture', piece:'g_rook', enemy:'m_rook', name:'돌탑 수문장', en:'체스에선 룩', intro:`나는 같은 줄에 있는 적을 향해 <b>칸의 개수에 상관없이</b> 달려가며 잡아!`, mission:'위쪽 몽골 공성탑이 있는 칸을 눌러 잡아보자!', note:'룩은 앞·뒤·양옆으로 잡아요.', start:[4,2], target:[1,2]},
+  {id:'knightCapture', piece:'g_knight', enemy:'m_bishop', name:'백마 기수', en:'체스에선 나이트', intro:`나는 다른 기물을 뛰어넘어 <b>L자</b>로 적을 잡을 수 있어!`, mission:'L자 점프로 샤먼이 있는 칸에 착지해 잡아보자!', note:'나이트는 중간의 기물을 뛰어넘어요.', start:[4,1], target:[2,2]},
+  {id:'bishopCapture', piece:'g_bishop', enemy:'m_bishop', name:'지혜 승려', en:'체스에선 비숍', intro:`나는 비스듬한 길을 따라 멀리 있는 적도 잡을 수 있어.`, mission:'대각선 끝의 몽골 샤먼을 눌러 잡아보자!', note:'비숍은 대각선으로만 잡아요.', start:[4,0], target:[2,2]},
+  {id:'queenCapture', piece:'g_queen', enemy:'m_queen', name:'근위대장', en:'체스에선 퀸', intro:`나는 직선과 대각선 어디든 갈 수 있어. 그래서 멀리 있는 적도 잡을 수 있지!`, mission:'대각선의 살리타 칸을 눌러 잡아보자!', note:'퀸은 룩과 비숍의 움직임을 모두 써요.', start:[4,0], target:[2,2]},
+  {id:'kingCapture', piece:'g_king', enemy:'m_pawn', name:'고려 임금', en:'체스에선 킹', intro:`나는 한 칸만 갈 수 있지만, 안전한 한 칸의 적은 직접 잡을 수 있단다.`, mission:'옆 칸의 몽골 병졸을 눌러 잡아보자!', note:'킹은 공격받는 칸으로 갈 수 없어요.', start:[3,2], target:[2,3]}
 ];
 const totalPieceScenes = PIECES.length;
 const GOAL_SCENE = 1;                       /* 게임의 목표·차례·판 크기 */
 const PIECE_START_SCENE = 2;
 const CAPTURE_START_SCENE = PIECE_START_SCENE + totalPieceScenes;
-const CHECK_SCENE = CAPTURE_START_SCENE + CAPTURE_SCENES.length;
-const CHECKMATE_SCENE = CHECK_SCENE+1;
-const RECAP_SCENE = CHECKMATE_SCENE+1;      /* 장군 vs 외통수 정리 */
-const BADGE_SCENE = RECAP_SCENE+1;
+const CHECK_START_SCENE = CAPTURE_START_SCENE + CAPTURE_SCENES.length;
+const CHECK_LESSONS = [
+  { id:'escape', title:'안전한 칸으로 피하기', text:'임금님을 공격받지 않는 파란 점으로 옮겨 체크를 피하자!', note:'공격받는 줄을 벗어나면 안전해요.' },
+  { id:'block', title:'다른 용사가 길 막기', text:'지혜 승려를 파란 점에 세워 공성탑의 공격 길을 막아보자!', note:'룩·비숍·퀸의 긴 공격 길은 다른 기물이 막을 수 있어요.' },
+  { id:'capture', title:'공격한 적 잡기', text:'백마 기수로 공성탑이 있는 칸을 눌러 잡아보자!', note:'공격한 기물을 잡을 수 있다면 체크는 끝나요.' },
+];
+const CHECKMATE_START_SCENE = CHECK_START_SCENE + CHECK_LESSONS.length;
+const CHECKMATE_LESSONS = [
+  { id:'back-rank', title:'뒷줄 체크메이트', text:'돌탑을 파란 점으로 보내 몽골 칸을 꼼짝 못 하게 하자!', note:'맨 윗줄은 돌탑이 노리고, 아래 칸은 우리 임금님이 지켜요.' },
+  { id:'defended', title:'보호받는 기물의 체크메이트', text:'체크를 거는 기물을 다른 용사가 지키면 잡아도 해결되지 않아요.', note:'공격한 기물을 잡을 수 없도록 지켜 주는 것도 체크메이트의 중요한 방법이에요.' },
+  { id:'smothered', title:'질식 체크메이트', text:'몽골 칸이 자기 편 기물에 둘러싸이면, 나이트 한 수로도 체크메이트가 될 수 있어요.', note:'도망길이 자기 기물로 막힌 체크메이트를 질식 체크메이트라고 해요.' },
+];
+const RECAP_SCENE = CHECKMATE_START_SCENE + CHECKMATE_LESSONS.length;
+const MODULE_DONE_SCENE = -1;
+const REVIEW_SCENE = -2;
+const requestedModule = Number(new URLSearchParams(window.location.search).get('module')) || 1;
+const moduleId = Math.min(4, Math.max(1, requestedModule));
+const isReview = new URLSearchParams(window.location.search).get('review') === '1';
+const moduleBounds = {
+  1: [0, PIECE_START_SCENE + totalPieceScenes - 1],
+  2: [CAPTURE_START_SCENE, CAPTURE_START_SCENE + CAPTURE_SCENES.length - 1],
+  3: [CHECK_START_SCENE, CHECKMATE_START_SCENE - 1],
+  4: [CHECKMATE_START_SCENE, RECAP_SCENE],
+};
+const [MODULE_START_SCENE, MODULE_END_SCENE] = moduleBounds[moduleId];
 
-const state = {scene:0, earned:{}, captures:{}, checkEarned:false, checkmateEarned:false};
+const state = {scene:isReview ? REVIEW_SCENE : MODULE_START_SCENE, earned:{}, captures:{}, checks:{}, checkmates:{}};
 let countdownTimer=null;
 const root = document.getElementById('scenes');
 
@@ -351,27 +387,49 @@ function render(){
   if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; }
   const s = state.scene;
   let html='';
-  if(s===0) html = titleScene();
+  if(s===REVIEW_SCENE) html = reviewScene();
+  else if(s===MODULE_DONE_SCENE) html = moduleDoneScene();
+  else if(s===0) html = titleScene();
   else if(s===GOAL_SCENE) html = goalScene();
   else if(s>=PIECE_START_SCENE && s<PIECE_START_SCENE+totalPieceScenes)
     html = pieceScene(PIECES[s-PIECE_START_SCENE], s-PIECE_START_SCENE);
   else if(s>=CAPTURE_START_SCENE && s<CAPTURE_START_SCENE+CAPTURE_SCENES.length) html = captureScene(CAPTURE_SCENES[s-CAPTURE_START_SCENE], s-CAPTURE_START_SCENE);
-  else if(s===CHECK_SCENE) html = checkScene();
-  else if(s===CHECKMATE_SCENE) html = checkmateScene();
+  else if(s>=CHECK_START_SCENE && s<CHECKMATE_START_SCENE) html = checkScene(CHECK_LESSONS[s-CHECK_START_SCENE], s-CHECK_START_SCENE);
+  else if(s>=CHECKMATE_START_SCENE && s<RECAP_SCENE) html = checkmateScene(CHECKMATE_LESSONS[s-CHECKMATE_START_SCENE], s-CHECKMATE_START_SCENE);
   else if(s===RECAP_SCENE) html = recapScene();
-  else html = badgeScene();
+  else html = moduleDoneScene();
   root.innerHTML = `<div class="scene active">${html}</div>`;
   bindScene();
+  beginStoryIntro();
+}
+
+function beginStoryIntro(){
+  const scene=root.querySelector('.scene');
+  const board=scene?.querySelector('.board-wrap');
+  const speech=scene?.querySelector('.speech');
+  if(!scene||!board||!speech||isReview) return;
+  const copy=speech.textContent.trim();
+  if(!copy) return;
+  scene.classList.add('story-intro');
+  speech.textContent='';
+  let index=0;
+  const type=()=>{
+    speech.textContent=copy.slice(0,index);
+    index+=1;
+    if(index<=copy.length){ setTimeout(type,18); return; }
+    setTimeout(()=>{ scene.classList.remove('story-intro'); scene.classList.add('story-ready'); },260);
+  };
+  setTimeout(type,180);
 }
 
 function titleScene(){
   return `
     <div class="eyebrow">EasyMate 체스 동화</div>
     <h1>고려 vs 몽골<br>여섯 용사 이야기</h1>
-    <div class="title-art"><div>${ART.g_king}</div><div>${ART.m_king}</div></div>
+    <div class="title-art"><div>${ART.g_king}<span class="title-label">고려</span></div><span class="title-vs">VS</span><div class="mongol-king-art">${ART.m_king}<span class="title-label">몽골</span></div></div>
     <p class="title-sub">아주 먼 옛날, 몽골의 대군이 고려로 쳐들어왔어요.<br>먼저 <b>이기는 방법</b>을 배우고,<br>고려를 지키는 여섯 용사를 만나볼까요?</p>
     <button class="start-btn" id="startBtn">모험 시작!</button>
-    <div class="brand">EasyMate · 세대를 잇는 64칸의 다리</div>`;
+    <div class="brand">EasyMate</div>`;
 }
 function goalScene(){
   return `
@@ -394,6 +452,10 @@ function goalScene(){
         <span class="ri-t">전장 — <em>가로 8칸 × 세로 8칸 = 64칸</em></span>
         진짜 체스판은 64칸이에요. 여기 연습 마당은 배우기 쉽도록 <b>5칸 × 5칸</b>으로 줄여 놓았어요.
       </div></div>
+      <div class="rule-item"><div class="ri-num">4</div><div class="ri-body">
+        <span class="ri-t">임금끼리 — <em>서로 붙을 수 없어요</em></span>
+        두 임금은 서로 공격하는 칸에 갈 수 없어요. 그래서 바로 옆 칸이나 서로 같은 칸에 설 수 없답니다.
+      </div></div>
     </div>
     <p class="lesson-note">이제 고려를 지킬 여섯 용사를 한 명씩 만나볼까요?</p>
     <div class="nav">
@@ -404,21 +466,20 @@ function goalScene(){
 function recapScene(){
   return `
     <div class="eyebrow">헷갈리기 쉬운 두 낱말</div>
-    <h2 style="text-align:center;font-size:24px;color:var(--meok)">장군과 외통수</h2>
+    <h2 style="text-align:center;font-size:24px;color:var(--meok)">체크와 체크메이트</h2>
     <div class="compare">
-      <div class="cmp esc"><span class="cmp-t">장군 (체크)</span>
+      <div class="cmp esc"><span class="cmp-t">체크</span>
         임금이 공격받았지만 <b>빠져나갈 방법이 아직 있어요.</b> 게임은 계속돼요.</div>
-      <div class="cmp mate"><span class="cmp-t">외통수 (체크메이트)</span>
+      <div class="cmp mate"><span class="cmp-t">체크메이트</span>
         공격받았는데 <b>세 가지 방법이 모두 막혔어요.</b> 그 순간 승부가 끝나요.</div>
     </div>
     <div class="rule-list">
       <div class="rule-item"><div class="ri-num">✓</div><div class="ri-body">
-        <span class="ri-t">장군을 당했을 때 할 수 있는 세 가지</span>
+        <span class="ri-t">체크를 당했을 때 할 수 있는 세 가지</span>
         ① 임금이 <b>안전한 칸으로 피하기</b> · ② 다른 용사로 <b>공격 길을 막기</b> · ③ <b>공격한 적을 잡기</b>.
         이 셋 중 하나라도 되면 아직 지지 않았어요!
       </div></div>
     </div>
-    <p class="lesson-note">어르신들은 체크메이트를 <b>“외통수”</b>라고 부르시기도 해요. 같은 말이랍니다.</p>
     <div class="nav">
       <button class="btn-prev" id="prevBtn">← 이전</button>
       <button class="btn-next" id="nextBtn">배지 받으러 가기 →</button>
@@ -429,10 +490,12 @@ function pieceScene(p, idx){
     <div class="char-row">
       <div class="char-art">${ART[p.id]}</div>
       <div class="char-text">
+        <div class="warrior-label">용사 ${idx+1}: ${p.name}</div>
         <div class="char-name">${p.name}<small>${p.en}</small></div>
         <div class="speech">${p.intro}</div>
       </div>
     </div>
+    <div class="enemy-row"><div class="char-art">${ART[p.enemy]}</div><div class="char-text"><div class="char-name">${p.enemyName}<small>몽골군</small></div><div class="speech">나는 몽골의 ${p.enemyName}이다. 고려 용사의 움직임을 잘 지켜보겠다!</div></div></div>
     <div class="board-wrap"><div class="board" id="board"></div></div>
     <div class="mission" id="mission">${p.mission}</div>
     <div class="nav">
@@ -446,14 +509,17 @@ function pieceScene(p, idx){
 }
 function captureScene(c, idx){
   return `
+    ${idx===0?'<h2 style="text-align:center">상대방의 기물을 잡아볼까요?</h2>':''}
     <div class="char-row">
       <div class="char-art">${ART[c.piece]}</div>
       <div class="char-text">
-        <div class="char-name">${c.name}<small>${c.en}</small></div>
+        <div class="warrior-label">용사 ${idx+1}: ${c.name}</div><div class="char-name">${c.name}<small>${c.en}</small></div>
         <div class="speech">${c.intro}</div>
       </div>
     </div>
+    <div class="enemy-row"><div class="char-art">${ART[c.enemy]}</div><div class="char-text"><div class="char-name">몽골 ${c.enemy==='m_rook'?'공성탑':c.enemy==='m_bishop'?'샤먼':c.enemy==='m_queen'?'칸':c.enemy==='m_king'?'칸':'병졸'}<small>몽골군</small></div><div class="speech">나는 이 칸을 지키고 있다. 고려 용사가 나를 잡을 수 있을까?</div></div></div>
     <div class="board-wrap"><div class="board" id="board"></div></div>
+    <div class="capture-shelf" id="captureShelf" aria-label="잡은 몽골 기물"></div>
     <div class="mission" id="mission">${c.mission}</div>
     <p class="lesson-note">${c.note}</p>
     <div class="nav">
@@ -462,60 +528,62 @@ function captureScene(c, idx){
       <button class="btn-next" id="nextBtn" disabled>다음 →</button>
     </div>`;
 }
-function checkScene(){
+function checkScene(lesson, idx){
   return `
     <div class="eyebrow">위험해요, 전하!</div>
     <div class="char-row">
       <div class="char-art">${ART.g_king}</div>
       <div class="char-text">
-        <div class="char-name">장군! (체크)<small>임금님이 공격받을 때</small></div>
-        <div class="speech">큰일이다! 몽골의 <b>공성탑</b>이 나를 노리고 있구나. 임금이 공격받는 걸 <b>"체크"</b>, 우리말로 <b>"장군!"</b>이라고 한단다. 장군을 당하면 ① 안전한 칸으로 <b>피하거나</b> ② 다른 용사가 <b>길을 막거나</b> ③ 공격한 적을 <b>잡으면</b> 돼. 이번엔 <b>피하는 방법</b>을 해보자꾸나!</div>
+        <div class="char-name">체크<small>${lesson.title}</small></div>
+        <div class="speech">상대 임금을 공격해도, 내 임금이 공격받아도 그 상태를 <b>체크</b>라고 해요. 체크를 당하면 안전한 칸으로 피하거나, 길을 막거나, 공격한 적을 잡아야 해요. 이번에는 <b>${lesson.title}</b>를 해보자!</div>
       </div>
     </div>
     <div class="board-wrap"><div class="board" id="board"></div></div>
-    <div class="mission" id="mission">빨간 줄을 벗어난 파란 점으로 임금님을 피신시키자!</div>
-    <p class="lesson-note">빨간 칸은 몽골 공성탑이 노리는 위험한 줄이에요. 이 줄을 벗어나야 안전해요.</p>
+    <div class="mission" id="mission">${lesson.text}</div>
+    <p class="lesson-note">${lesson.note}</p>
     <div class="nav">
       <button class="btn-prev" id="prevBtn">← 이전</button>
       <button class="btn-next" id="nextBtn" disabled>다음 →</button>
     </div>`;
 }
-function checkmateScene(){
+function checkmateScene(lesson, idx){
   return `
     <div class="eyebrow">이기는 끝장면</div>
     <div class="char-row">
       <div class="char-art">${ART.g_rook}</div>
       <div class="char-text">
-        <div class="char-name">체크메이트 (외통수)<small>도망갈 칸이 없어요</small></div>
-        <div class="speech"><b>체크메이트</b>는 왕이 공격받는데 <b>도망갈 칸도, 막을 방법도 없을 때</b>야. 우리 임금님이 몽골 칸의 도망길을 막고 있어. 이제 내가 마지막 한 수를 두면 끝!</div>
+        <div class="char-name">체크메이트<small>${lesson.title}</small></div>
+        <div class="speech"><b>체크메이트</b>는 왕이 공격받는데 <b>도망갈 칸도, 막을 방법도 없을 때</b>예요. ${lesson.note}</div>
       </div>
     </div>
     <div class="board-wrap"><div class="board" id="board"></div></div>
-    <div class="mission" id="mission">돌탑을 파란 점으로 보내 몽골 칸을 꼼짝 못 하게 하자!</div>
-    <p class="lesson-note" id="mateNote">파란 칸은 우리 임금님이 지키는 칸이라 몽골 칸이 갈 수 없어요.</p>
+    <div class="mission" id="mission">${lesson.text}</div>
+    <p class="lesson-note" id="mateNote">${lesson.note}</p>
     <div class="legend"><span><i class="grd"></i>임금님이 지키는 칸</span><span><i class="dgr"></i>돌탑이 노리는 칸</span></div>
     <div class="nav">
       <button class="btn-prev" id="prevBtn">← 이전</button>
       <button class="btn-next" id="nextBtn" disabled>다음 →</button>
     </div>`;
 }
-function badgeScene(){
-  const n = Object.keys(state.earned).length;
-  let b='';
-  for(const p of PIECES){
-    b += `<div class="badge ${state.earned[p.id]?'earned':'locked'}"><div class="art">${ART[p.id]}</div><p>${p.name}</p></div>`;
-  }
+function moduleDoneScene(){
+  const isLast = moduleId === 4;
   return `
-    <div class="eyebrow">모험 완료!</div>
-    <h2 style="text-align:center">나의 고려 용사 배지</h2>
-    <div class="badges">${b}</div>
-    <p class="final-msg">${n===totalPieceScenes
-      ? '와! <b>여섯 용사를 모두</b> 움직여 봤구나!<br>이제 <b>퍼즐 편</b>에서 진짜 몽골군과 겨뤄보자!'
-      : `지금까지 <b>${n}명</b>의 용사를 움직여 봤어.<br>다시 돌아가서 나머지 용사도 만나볼까?`}</p>
-    <button class="replay" id="replayBtn">처음부터 다시 보기</button>
-    <div class="brand">EasyMate · 세대를 잇는 64칸의 다리</div>`;
+    <div class="eyebrow">모듈 ${moduleId} 완료!</div>
+    <h2 style="text-align:center">${isLast ? '모든 훈련을 마쳤어요!' : '다음 훈련을 준비했어요!'}</h2>
+    <p class="final-msg">${isLast ? '이제 퍼즐에서 배운 규칙을 써 볼 수 있어요.' : `모듈 ${moduleId + 1}에서 다음 체스 규칙을 배워볼까요?`}</p>
+    <button class="replay" id="completeModuleBtn">${isLast ? '훈련장으로 돌아가기' : '다음 모듈로 넘어가기'}</button>
+    <div class="brand">EasyMate</div>`;
 }
-
+function reviewScene(){
+  const questions = {
+    1:{question:'두 임금은 어떻게 움직여야 할까요?', answers:['서로 바로 옆 칸에 설 수 없어요.','서로 같은 칸에 설 수 있어요.','임금은 두 칸씩 움직여요.'], correct:0},
+    2:{question:'폰이 적 기물을 잡는 방향은 어디일까요?', answers:['바로 앞 한 칸','대각선 앞 한 칸','뒤쪽 대각선 한 칸'], correct:1},
+    3:{question:'체크를 당했을 때 할 수 없는 행동은 무엇일까요?', answers:['안전한 칸으로 피하기','다른 용사로 길 막기','아무 움직임 없이 차례 넘기기'], correct:2},
+    4:{question:'체크메이트는 언제일까요?', answers:['왕이 공격받지만 피할 수 있을 때','왕이 공격받고 피하거나 막거나 잡을 방법이 없을 때','기물을 하나 잡았을 때'], correct:1},
+  };
+  const item=questions[moduleId];
+  return `<div class="eyebrow">모듈 ${moduleId} 복습 퀴즈</div><h2 style="text-align:center">${item.question}</h2><div class="rule-list">${item.answers.map((answer,index)=>`<button class="rule-item review-answer" data-answer="${index}">${answer}</button>`).join('')}</div><p class="lesson-note" id="reviewResult">정답을 골라 보세요.</p><div class="nav"><button class="btn-prev" id="reviewBack">← 연습마당</button></div>`;
+}
 /* ---------- 보드 유틸 ---------- */
 function makeGrid(board){
   board.innerHTML='';
@@ -654,8 +722,8 @@ function setupBoard(p, goNext){
     nextBtn.disabled=false; nextBtn.textContent='다음 →';
     nextBtn.onclick=()=>goNext();
   }else{
-    /* ── 10초 카운트다운 ── */
-    let left=10;
+    /* ── 5초 카운트다운 ── */
+    let left=5;
     nextBtn.disabled=true;
     bubble.style.display='';
     const navEl=bubble.closest('.nav'); if(navEl) navEl.classList.add('has-cd');
@@ -712,11 +780,9 @@ function setupBoard(p, goNext){
       showHints();
       mission.classList.remove('quiz');
 
-      /* 창병이 끝줄에 닿으면 더 갈 곳이 없어요 → 승격을 알려주고 출발 자리로 */
+      /* 창병이 끝줄에 닿으면 출발 자리로 돌려보내 연습을 이어갑니다. */
       if(legal().length===0){
-        mission.innerHTML='끝줄에 닿았어! 창병은 앞으로만 걸으니 여기선 더 갈 곳이 없어. '
-          +'진짜 체스에서는 끝줄에 닿은 창병이 <b>근위대장(퀸)으로 변신</b>한단다! '
-          +'다시 출발 자리에서 연습해볼까?';
+        mission.innerHTML='끝줄에 닿았어! 창병은 앞으로만 걸으니 여기선 더 갈 곳이 없어. 다시 출발 자리에서 연습해볼까?';
         setTimeout(()=>{ if(!finished) backToStart(); },1800);
         return;
       }
@@ -740,7 +806,6 @@ function setupBoard(p, goNext){
         mission.textContent='정답! '+p.name+' 배지를 받았어요! 🎖️';
         nextBtn.disabled=false;
         nextBtn.onclick=()=>goNext();
-        setTimeout(()=>{ if(state.scene!==BADGE_SCENE) goNext(); },1100);
       };
       if(isKnight){ animateKnight(board, token, from, pos, mission, finish); }
       else { placeToken(token,pos); finish(); }
@@ -767,6 +832,8 @@ function setupCapture(c){
       sq.classList.remove('hint','capture-target');
       const finish=()=>{
         enemy.classList.add('poof'); SFX.capture();
+        const shelf=document.getElementById('captureShelf');
+        if(shelf){ const collected=document.createElement('div'); collected.className='captured-piece'; collected.innerHTML=ART[c.enemy]; shelf.appendChild(collected); }
         setTimeout(()=>enemy.remove(),400);
         celebrate(sq);
         m.classList.remove('quiz');
@@ -787,127 +854,142 @@ function setupCapture(c){
   });
 }
 
-/* ---------- 체크(피신) 씬 ---------- */
-function setupCheck(){
+/* ---------- 체크 대응 씬 ---------- */
+function setupCheck(lesson){
   const board=document.getElementById('board');
   makeGrid(board);
+  const complete=(sq,message)=>{
+    celebrate(sq);
+    const mission=document.getElementById('mission');
+    mission.textContent=message;
+    mission.classList.add('done');
+    state.checks[lesson.id]=true;
+    document.getElementById('nextBtn').disabled=false;
+  };
+  if(lesson.id==='block'){
+    addToken(board,ART.m_rook,[0,2],'enemy-token');
+    addToken(board,ART.g_king,[3,2],'king-danger');
+    const bishop=addToken(board,ART.g_bishop,[4,0]);
+    const target=sqAt(board,2,2); target.classList.add('hint');
+    board.addEventListener('click',event=>{
+      const sq=event.target.closest('.sq'); if(!sq) return;
+      if(sq===target){ placeToken(bishop,[2,2]); target.classList.remove('hint'); complete(sq,'지혜 승려가 길을 막았어요! 체크에서 벗어났습니다.'); }
+      else flashWrong(sq,'공성탑과 임금님 사이의 파란 점에 용사를 세워 보세요.');
+    });
+    return;
+  }
+  if(lesson.id==='capture'){
+    const enemy=addToken(board,ART.m_rook,[2,2],'enemy-token');
+    addToken(board,ART.g_king,[3,2],'king-danger');
+    const knight=addToken(board,ART.g_knight,[4,1]);
+    const target=sqAt(board,2,2); target.classList.add('hint');
+    board.addEventListener('click',event=>{
+      const sq=event.target.closest('.sq'); if(!sq) return;
+      if(sq===target){ placeToken(knight,[2,2]); enemy.classList.add('poof'); target.classList.remove('hint'); setTimeout(()=>enemy.remove(),360); complete(sq,'공성탑을 잡았어요! 체크에서 벗어났습니다.'); }
+      else flashWrong(sq,'공격하고 있는 몽골 공성탑을 잡아 보세요.');
+    });
+    return;
+  }
   const dangerCol=2;
   board.querySelectorAll('.sq').forEach(sq=>{
     const [,c]=sq.dataset.rc.split(',').map(Number);
     if(c===dangerCol) sq.classList.add('sq-danger');
   });
   addToken(board,ART.m_rook,[0,2],'enemy-token');
-  const kingTok=addToken(board,ART.g_king,[3,2],'king-danger');
-  const safe=[[3,1],[3,3],[4,1],[4,3]];
-  safe.forEach(([r,c])=>sqAt(board,r,c).classList.add('hint'));
-  let done=false;
-  board.addEventListener('click', e=>{
-    const sq=e.target.closest('.sq'); if(!sq||done) return;
-    const m=document.getElementById('mission');
+  const king=addToken(board,ART.g_king,[3,2],'king-danger');
+  [[1,0],[1,4],[3,1],[3,3],[4,1],[4,3]].forEach(([r,c])=>sqAt(board,r,c).classList.add('hint'));
+  board.addEventListener('click',event=>{
+    const sq=event.target.closest('.sq'); if(!sq) return;
     const [r,c]=sq.dataset.rc.split(',').map(Number);
     if(sq.classList.contains('hint')){
-      done=true;
-      placeToken(kingTok,[r,c]);
-      kingTok.classList.remove('king-danger');
+      placeToken(king,[r,c]); king.classList.remove('king-danger');
       board.querySelectorAll('.sq.hint').forEach(el=>el.classList.remove('hint'));
-      celebrate(sq);
-      m.textContent='임금님이 안전한 곳으로 피신했어요!';
-      m.classList.add('done');
-      state.checkEarned=true;
-      document.getElementById('nextBtn').disabled=false;
-    }else{
-      flashWrong(sq, (c===dangerCol) ? '안돼! 그 줄은 아직 위험해!' : '음, 거긴 아니야. 파란 점을 찾아봐!');
-    }
+      complete(sq,'임금님이 안전한 곳으로 피신했어요!');
+    }else flashWrong(sq,c===dangerCol?'안돼! 그 줄은 아직 위험해!':'파란 점을 찾아보세요.');
   });
 }
 
 /* ---------- 체크메이트 씬 ---------- */
-function setupCheckmate(){
+function setupCheckmate(lesson){
   const board=document.getElementById('board');
   makeGrid(board);
-  /* 몽골 칸 [0,4] 구석, 고려 임금 [2,3]이 1행 도망길 차단, 돌탑 [3,0] → 0행으로 이동하면 메이트 */
   const enemyKing=addToken(board,ART.m_king,[0,4],'enemy-token');
   addToken(board,ART.g_king,[2,3]);
-  const rookTok=addToken(board,ART.g_rook,[3,0]);
+  const rook=addToken(board,ART.g_rook,[3,0]);
   [[1,3],[1,4]].forEach(([r,c])=>sqAt(board,r,c).classList.add('sq-guard'));
-  const mateTargets=[[0,0]];   /* 돌탑 [3,0] → 같은 줄 위로만 이동 가능 */
-  mateTargets.forEach(([r,c])=>sqAt(board,r,c).classList.add('hint'));
-  let done=false;
-  board.addEventListener('click', e=>{
-    const sq=e.target.closest('.sq'); if(!sq||done) return;
-    const m=document.getElementById('mission');
-    if(sq.classList.contains('hint')){
-      done=true;
-      const [r,c]=sq.dataset.rc.split(',').map(Number);
-      placeToken(rookTok,[r,c]);
-      board.querySelectorAll('.sq.hint').forEach(el=>el.classList.remove('hint'));
-      enemyKing.classList.add('king-danger');
-      for(let cc=0;cc<5;cc++){ const t=sqAt(board,0,cc); if(t) t.classList.add('sq-danger','strong'); }
-      const note=document.getElementById('mateNote');
-      if(note) note.innerHTML='보이나요? 맨 윗줄은 <b>돌탑</b>이 전부 노리고, 아래 두 칸은 <b>우리 임금님</b>이 막고 있어요. 몽골 칸은 갈 곳이 하나도 없어요!';
-      celebrate(sq);
-      m.textContent='체크메이트! 몽골 칸이 항복했어요! 🎉';
-      m.classList.add('done');
-      state.checkmateEarned=true;
-      document.getElementById('nextBtn').disabled=false;
-    }else{
-      flashWrong(sq,'돌탑은 앞·뒤·양옆으로만 달려요. 위로 쭉 올라가 맨 윗줄을 막아보자!');
-    }
+  const showCompletedPosition=()=>{
+    placeToken(rook,[0,0]);
+    enemyKing.classList.add('king-danger');
+    const label=document.createElement('span'); label.className='checkmate-label'; label.textContent='체크메이트'; rook.appendChild(label);
+    for(let c=0;c<5;c++) sqAt(board,0,c).classList.add('sq-danger','strong');
+    document.getElementById('mateNote').innerHTML='테두리로 표시된 칸을 보세요. <b>임금님이 지키는 칸</b>과 <b>돌탑이 노리는 칸</b> 때문에 몽골 칸은 갈 곳이 없어요.';
+  };
+  if(lesson.id!=='back-rank'){
+    showCompletedPosition();
+    document.getElementById('mission').textContent=`완성된 체크메이트 포지션입니다. ${lesson.note}`;
+    document.getElementById('nextBtn').disabled=false;
+    return;
+  }
+  const target=sqAt(board,0,0); target.classList.add('hint');
+  board.addEventListener('click',event=>{
+    const sq=event.target.closest('.sq'); if(!sq) return;
+    if(sq!==target){ flashWrong(sq,'돌탑이 맨 윗줄을 노리도록 파란 점을 눌러 보세요.'); return; }
+    target.classList.remove('hint'); showCompletedPosition();
+    celebrate(sq);
+    const mission=document.getElementById('mission'); mission.textContent=`체크메이트! ${lesson.title}를 만들었어요!`; mission.classList.add('done');
+    state.checkmates[lesson.id]=true;
+    document.getElementById('nextBtn').disabled=false;
   });
 }
 
 function bindScene(){
   const s=state.scene;
   const go=(n)=>{state.scene=n;render();};
-  if(s===0){ document.getElementById('startBtn').onclick=()=>go(1); return; }
-
-  if(s===GOAL_SCENE){
-    document.getElementById('prevBtn').onclick=()=>go(0);
-    document.getElementById('nextBtn').onclick=()=>go(s+1);
+  const goNext=()=>go(s===MODULE_END_SCENE ? MODULE_DONE_SCENE : s+1);
+  const goBack=()=>{
+    if(s===MODULE_START_SCENE){ window.parent?.postMessage({type:'easymate:return-training'}, '*'); return; }
+    go(s-1);
+  };
+  if(s===REVIEW_SCENE){
+    const correct=[0,1,2,1][moduleId-1];
+    document.querySelectorAll('.review-answer').forEach(button=>{
+      button.onclick=()=>{
+        const right=Number(button.dataset.answer)===correct;
+        document.getElementById('reviewResult').textContent=right?'정답이에요! 복습을 마쳤어요.':'다시 생각해 보세요. 배운 규칙을 떠올려 볼까요?';
+        if(right){ button.classList.add('done'); SFX.good(); }
+        else { button.classList.add('wrong'); SFX.wrong(); }
+      };
+    });
+    document.getElementById('reviewBack').onclick=()=>window.parent?.postMessage({type:'easymate:return-training'}, '*');
     return;
   }
-  if(s>=PIECE_START_SCENE && s<PIECE_START_SCENE+totalPieceScenes){
-    const p=PIECES[s-PIECE_START_SCENE];
-    setupBoard(p, ()=>go(s+1));
-    document.getElementById('prevBtn').onclick=()=>go(s-1);
+  if(s===MODULE_DONE_SCENE){
+    document.getElementById('completeModuleBtn').onclick=()=>{
+      window.parent?.postMessage({type:'easymate:tutorial-complete',module:moduleId}, '*');
+    };
     return;
   }
-  if(s>=CAPTURE_START_SCENE && s<CAPTURE_START_SCENE+CAPTURE_SCENES.length){
-    const capture=CAPTURE_SCENES[s-CAPTURE_START_SCENE];
-    setupCapture(capture);
+  if(s===0){ document.getElementById('startBtn').onclick=goNext; return; }
+  if(s===GOAL_SCENE){ document.getElementById('prevBtn').onclick=goBack; document.getElementById('nextBtn').onclick=goNext; return; }
+  if(s>=PIECE_START_SCENE&&s<PIECE_START_SCENE+totalPieceScenes){
+    setupBoard(PIECES[s-PIECE_START_SCENE],goNext); document.getElementById('prevBtn').onclick=goBack; return;
+  }
+  if(s>=CAPTURE_START_SCENE&&s<CHECK_START_SCENE){
+    const capture=CAPTURE_SCENES[s-CAPTURE_START_SCENE]; setupCapture(capture);
     if(state.captures[capture.id]) document.getElementById('nextBtn').disabled=false;
-    document.getElementById('prevBtn').onclick=()=>go(s-1);
-    document.getElementById('nextBtn').onclick=()=>go(s+1);
-    return;
+    document.getElementById('prevBtn').onclick=goBack; document.getElementById('nextBtn').onclick=goNext; return;
   }
-  if(s===CHECK_SCENE){
-    setupCheck();
-    if(state.checkEarned) document.getElementById('nextBtn').disabled=false;
-    document.getElementById('prevBtn').onclick=()=>go(s-1);
-    document.getElementById('nextBtn').onclick=()=>go(s+1);
-    return;
+  if(s>=CHECK_START_SCENE&&s<CHECKMATE_START_SCENE){
+    const lesson=CHECK_LESSONS[s-CHECK_START_SCENE]; setupCheck(lesson);
+    if(state.checks[lesson.id]) document.getElementById('nextBtn').disabled=false;
+    document.getElementById('prevBtn').onclick=goBack; document.getElementById('nextBtn').onclick=goNext; return;
   }
-  if(s===CHECKMATE_SCENE){
-    setupCheckmate();
-    if(state.checkmateEarned) document.getElementById('nextBtn').disabled=false;
-    document.getElementById('prevBtn').onclick=()=>go(s-1);
-    document.getElementById('nextBtn').onclick=()=>go(s+1);
-    return;
+  if(s>=CHECKMATE_START_SCENE&&s<RECAP_SCENE){
+    const lesson=CHECKMATE_LESSONS[s-CHECKMATE_START_SCENE]; setupCheckmate(lesson);
+    if(state.checkmates[lesson.id]) document.getElementById('nextBtn').disabled=false;
+    document.getElementById('prevBtn').onclick=goBack; document.getElementById('nextBtn').onclick=goNext; return;
   }
-  if(s===RECAP_SCENE){
-    document.getElementById('prevBtn').onclick=()=>go(s-1);
-    document.getElementById('nextBtn').onclick=()=>go(s+1);
-    return;
-  }
-  if(s===BADGE_SCENE){
-    if(Object.keys(state.earned).length===totalPieceScenes){
-      try{
-        window.parent?.postMessage({type:'easymate:tutorial-complete'}, '*');
-      }catch(error){}
-    }
-    document.getElementById('replayBtn').onclick=()=>go(0);
-    return;
-  }
+  if(s===RECAP_SCENE){ document.getElementById('prevBtn').onclick=goBack; document.getElementById('nextBtn').onclick=goNext; }
 }
 render();
 </script>

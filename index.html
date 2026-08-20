@@ -115,6 +115,9 @@
             <button class="side-link staff-only" data-view-link="staff" hidden>운영자</button>
           </div>
           <div class="sidebar-themes" aria-label="보드 테마 선택">
+            <button class="theme-tile original-theme" type="button" data-piece-edition="original">
+              <span>Original</span>
+            </button>
             <button class="theme-tile cheoin-theme active" type="button" data-piece-edition="cheoinseong">
               <span>처인성</span>
             </button>
@@ -124,14 +127,11 @@
             <button class="theme-tile coming-soon" type="button" disabled>
               <span>Coming soon</span>
             </button>
-            <button class="theme-tile coming-soon" type="button" disabled>
-              <span>Coming soon</span>
-            </button>
           </div>
         </aside>
 
         <div class="workspace">
-          <section class="view" data-view="overview" aria-labelledby="dashboardTitle">
+          <section class="view active" data-view="overview" aria-labelledby="dashboardTitle">
             <div class="view-header">
               <div>
                 <span class="eyebrow">EasyMate 홈</span>
@@ -147,6 +147,19 @@
               <button class="button primary" data-view-link="dashboard" type="button">플레이</button>
             </div>
 
+            <article class="home-theme-guide" aria-labelledby="homeThemeGuideTitle">
+              <div>
+                <span class="eyebrow">EasyMate 안내</span>
+                <h3 id="homeThemeGuideTitle">보드 테마란?</h3>
+                <p>같은 체스판이라도 내가 고른 말 디자인과 색으로 대국을 볼 수 있는 EasyMate만의 설정입니다.</p>
+              </div>
+              <div class="home-theme-guide-options" aria-label="보드 테마 안내">
+                <span><b>Original</b> 기본 체스판</span>
+                <span><b>처인성</b> 고려와 몽골 이야기</span>
+                <span><b>Beta</b> 간결한 연습용 디자인</span>
+              </div>
+            </article>
+
             <div class="league-layout">
               <article class="wire-card league-card">
                 <div class="league-card-head">
@@ -154,9 +167,15 @@
                     <span class="eyebrow">리그</span>
                     <h3>Easy Elo 리더보드</h3>
                   </div>
-                  <div class="leaderboard-tabs" role="group" aria-label="리더보드 기간">
-                    <button class="active" type="button" data-leaderboard-period="weekly">Weekly</button>
-                    <button type="button" data-leaderboard-period="alltime">All time</button>
+                  <div class="leaderboard-controls">
+                    <div class="leaderboard-tabs" role="group" aria-label="리더보드 범위">
+                      <button class="active" type="button" data-leaderboard-scope="mine">내 리그</button>
+                      <button type="button" data-leaderboard-scope="all">전체</button>
+                    </div>
+                    <div class="leaderboard-tabs" role="group" aria-label="리더보드 기간">
+                      <button class="active" type="button" data-leaderboard-period="weekly">주간</button>
+                      <button type="button" data-leaderboard-period="alltime">전체 기간</button>
+                    </div>
                   </div>
                 </div>
                 <div class="leaderboard-list" id="leaderboardList"></div>
@@ -175,7 +194,7 @@
             </div>
           </section>
 
-          <section class="view active" data-view="dashboard" aria-labelledby="matchTitle">
+          <section class="view" data-view="dashboard" aria-labelledby="matchTitle">
             <div class="view-header">
               <div>
                 <span class="eyebrow">플레이</span>
@@ -281,7 +300,7 @@
                       <option>30+0</option>
                     </select>
                   </label>
-                  <label>
+                  <label hidden>
                     파트너 언어
                     <select id="partnerLanguage">
                       <option value="English">영어</option>
@@ -545,12 +564,15 @@
               <button class="button primary" id="tutorialLoginButton" type="button">로그인 화면으로 가기</button>
             </div>
 
-            <div class="tutorial-tabs" aria-label="훈련장과 퍼즐">
-              <button class="active" id="showTutorialGuide" type="button">훈련장</button>
-              <button id="showPuzzleGuide" type="button">고려 vs 몽골 퍼즐</button>
+            <div class="training-mode-toggle" aria-label="훈련장 종류">
+              <button class="active" id="showTutorialGuide" type="button">튜토리얼</button>
+              <button id="showPuzzleGuide" type="button">퍼즐</button>
             </div>
 
-            <div class="how-to-play-shell">
+            <div class="training-module-cards" id="trainingModuleCards" aria-label="훈련 모듈"></div>
+            <button class="button primary" id="startDailySession" type="button" hidden>다음 모듈 시작</button>
+
+            <div class="how-to-play-shell" id="howToPlayShell" hidden>
               <div class="tutorial-gate-note" id="tutorialGateNote" hidden>
                 초등학생 모드입니다. 훈련장을 끝내면 모든 메뉴가 열립니다.
               </div>
@@ -565,6 +587,19 @@
                 loading="lazy"
               ></iframe>
             </div>
+            <dialog class="review-quiz-dialog chapter-dialog" id="trainingChapterDialog">
+              <form method="dialog">
+                <div class="review-quiz-head">
+                  <strong id="trainingChapterDialogTitle">챕터 선택</strong>
+                  <button class="icon-action" type="submit" aria-label="닫기">×</button>
+                </div>
+                <p class="profile-status" id="trainingChapterDialogStatus"></p>
+                <div class="review-quiz-options">
+                  <button class="button primary full" id="trainingChapterStart" type="button">튜토리얼 시작</button>
+                  <button class="button secondary full" id="trainingChapterReview" type="button" hidden>복습 퀴즈</button>
+                </div>
+              </form>
+            </dialog>
           </section>
 
           <section class="view" data-view="forum" aria-labelledby="forumTitle">
@@ -756,7 +791,6 @@
           <section class="view profile-view" data-view="profile" aria-labelledby="profileTitle">
             <div class="view-header profile-title-header">
               <div>
-                <span class="eyebrow">프로필</span>
                 <h2 id="profileTitle">프로필</h2>
               </div>
             </div>
@@ -884,19 +918,8 @@
                     </div>
                   </article>
 
-                  <article class="settings-card">
-                    <h4>계정</h4>
-                    <p id="settingsAccountName">로그인됨</p>
-                    <label>
-                      말 디자인
-                      <select id="profilePieceEdition">
-                        <option value="cheoinseong">처인성 에디션</option>
-                        <option value="beta">Beta 에디션</option>
-                      </select>
-                    </label>
-                    <input id="profileImage" type="url" placeholder="이미지 URL을 붙여넣기" hidden />
-                    <p class="profile-status" id="profileStatus">저장된 프로필을 불러오려면 로그인하세요.</p>
-                  </article>
+                  <input id="profileImage" type="url" placeholder="이미지 URL을 붙여넣기" hidden />
+                  <p class="profile-status" id="profileStatus">저장된 프로필을 불러오려면 로그인하세요.</p>
                 </div>
 
                 <div class="delete-account-zone">

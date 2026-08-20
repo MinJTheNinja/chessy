@@ -35,7 +35,14 @@ let cachedIceServers = null;
 let cachedIceServersAt = 0;
 let cachedGoogleKeys = null;
 let cachedGoogleKeysAt = 0;
-const pieceEditions = new Set(["cheoinseong", "beta"]);
+const pieceEditions = new Set(["original", "cheoinseong", "beta"]);
+const dayMs = 24 * 60 * 60 * 1000;
+const trainingModules = [
+  { id: 1, title: "기물의 움직임", src: "/assets/how-to-play.html?module=1" },
+  { id: 2, title: "기물 잡기", src: "/assets/how-to-play.html?module=2" },
+  { id: 3, title: "체크에서 벗어나기", src: "/assets/how-to-play.html?module=3" },
+  { id: 4, title: "체크메이트", src: "/assets/how-to-play.html?module=4" },
+];
 const pgPool = databaseUrl
   ? new Pool({
       connectionString: databaseUrl,
@@ -839,6 +846,82 @@ function normalizedPieceEdition(value) {
   return pieceEditions.has(value) ? value : "cheoinseong";
 }
 
+function hasOwn(object, key) {
+  return Object.prototype.hasOwnProperty.call(object || {}, key);
+}
+
+function defaultTraining() {
+  return {
+    completedModules: [],
+    completedPuzzles: [],
+    reviewQuizzes: [],
+  };
+}
+
+function normalizeTraining(training = {}) {
+  const legacyCompletion = Array.isArray(training.completedTutorialDays) && training.completedTutorialDays.includes(0);
+  const { completedTutorialDays, ...currentTraining } = training;
+  return {
+    ...defaultTraining(),
+    ...currentTraining,
+    completedModules: Array.isArray(training.completedModules)
+      ? [...new Set(training.completedModules.map((id) => Number(id)).filter((id) => trainingModules.some((module) => module.id === id)))].sort((a, b) => a - b)
+      : legacyCompletion
+        ? [1]
+        : [],
+    completedPuzzles: Array.isArray(training.completedPuzzles) ? training.completedPuzzles : [],
+    reviewQuizzes: Array.isArray(training.reviewQuizzes) ? training.reviewQuizzes : [],
+  };
+}
+
+function trainingState(user) {
+  const training = normalizeTraining(user?.training);
+  const nextModule = trainingModules.find((module) => !training.completedModules.includes(module.id)) || null;
+  return {
+    hasTutorial: Boolean(nextModule),
+    nextModule,
+    tutorialSrc: nextModule?.src || "",
+    puzzleUnlocked: !nextModule,
+    completedModules: training.completedModules,
+    modules: trainingModules.map((module) => ({ ...module, completed: training.completedModules.includes(module.id) })),
+    reviewOptions: trainingModules
+      .filter((module) => training.completedModules.includes(module.id))
+      .map((module) => ({ module: module.id, title: module.title })),
+  };
+}
+
+function markTutorialComplete(user, requestedModule) {
+  user.training = normalizeTraining(user.training);
+  const nextModule = trainingModules.find((module) => !user.training.completedModules.includes(module.id));
+  if (!nextModule) return trainingState(user);
+  const moduleId = Number(requestedModule);
+  if (moduleId && moduleId !== nextModule.id) {
+    throw new Error("Complete the current training module first.");
+  }
+  user.training.completedModules.push(nextModule.id);
+  user.training.completedModules.sort((first, second) => first - second);
+  return trainingState(user);
+}
+
+function applyDailyStreak(user, completedAt = new Date()) {
+  if (!user) return false;
+  const completedTime = completedAt.getTime();
+  const previousTime = Date.parse(user.lastStreakAt || "");
+  if (Number.isFinite(previousTime) && completedTime - previousTime < dayMs) return false;
+  const current = Math.max(0, Number(user.streak || 0));
+  user.streak = Number.isFinite(previousTime) && completedTime - previousTime < dayMs * 2 ? current + 1 : 1;
+  user.lastStreakAt = completedAt.toISOString();
+  return true;
+}
+
+function recordMatchCompletionStreak(match, db) {
+  const participantIds = new Set((match.players || []).map((player) => player.userId).filter(Boolean));
+  participantIds.forEach((userId) => {
+    const player = db.users.find((item) => item.id === userId);
+    applyDailyStreak(player);
+  });
+}
+
 function maskEmailMiddle(email) {
   const normalized = String(email || "").trim().toLowerCase();
   const [localPart, domain] = normalized.split("@");
@@ -876,8 +959,10 @@ function publicUser(user) {
     pieceEdition: normalizedPieceEdition(user.pieceEdition),
     avatarUrl: user.avatarUrl || "",
     streak: Number(user.streak || 0),
+    lastStreakAt: user.lastStreakAt || "",
     easyElo: Number(user.easyElo || 1000),
     leagueCode: user.leagueCode || "",
+    training: trainingState(user),
   };
 }
 
@@ -892,6 +977,7 @@ function playerUser(user) {
     pieceEdition: normalizedPieceEdition(user.pieceEdition),
     avatarUrl: user.avatarUrl || "",
     streak: Number(user.streak || 0),
+    lastStreakAt: user.lastStreakAt || "",
     easyElo: Number(user.easyElo || 1000),
     leagueCode: user.leagueCode || "",
   };
@@ -907,6 +993,7 @@ function adminUser(user) {
     role: normalizedRole(user),
     pieceEdition: normalizedPieceEdition(user.pieceEdition),
     warnings: user.warnings || [],
+    warningCount: (user.warnings || []).length,
     createdAt: user.createdAt,
   };
 }
@@ -1015,6 +1102,7 @@ function buildProfile(user, db) {
       bio: user.bio || "",
       nativeLanguage: user.nativeLanguage || "",
       learningLanguage: user.learningLanguage || "",
+      training: trainingState(user),
     },
     stats: {
       matches: userMatches.length,
@@ -1050,6 +1138,7 @@ function leagueView(league, db, period = "weekly") {
     code: league.code,
     name: league.name || `EasyMate League ${league.code}`,
     period,
+    scope: "mine",
     resetsAt: league.resetsAt,
     members,
   };
@@ -1072,6 +1161,7 @@ function defaultLeaderboard(db, period = "weekly") {
     code: "",
     name: period === "weekly" ? "Weekly Easy Elo" : "All-time Easy Elo",
     period,
+    scope: "all",
     members,
   };
 }
@@ -1413,9 +1503,27 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
 
   if (req.method === "GET" && pathname === "/api/leagues/leaderboard") {
     const period = searchParams.get("period") === "alltime" ? "alltime" : "weekly";
+    const scope = searchParams.get("scope") === "all" ? "all" : "mine";
+    if (scope === "all") {
+      sendJson(res, 200, defaultLeaderboard(db, period));
+      return true;
+    }
     const code = String(searchParams.get("code") || user?.leagueCode || "").trim().toUpperCase();
     const league = code ? db.leagues.find((item) => item.code === code) : null;
-    sendJson(res, 200, league ? leagueView(league, db, period) : defaultLeaderboard(db, period));
+    sendJson(
+      res,
+      200,
+      league
+        ? leagueView(league, db, period)
+        : {
+            code: "",
+            name: "내 리그",
+            period,
+            scope: "mine",
+            emptyReason: "no-league",
+            members: [],
+          },
+    );
     return true;
   }
 
@@ -1458,20 +1566,81 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
   if (req.method === "PUT" && pathname === "/api/profile") {
     if (!requireUser(user, res)) return true;
     const body = await readBody(req);
-    const displayName = String(body.displayName || "").trim();
-    const languagePair = String(body.languagePair || "").trim();
-    if (displayName) {
-      user.displayName = displayName.slice(0, 60);
-      if (body.displayNameSource === "user") user.displayNameSource = "user";
+    if (hasOwn(body, "displayName")) {
+      const displayName = String(body.displayName || "").trim();
+      if (displayName) {
+        user.displayName = displayName.slice(0, 60);
+        if (body.displayNameSource === "user") user.displayNameSource = "user";
+      }
     }
-    if (languagePair) user.languagePair = languagePair.slice(0, 80);
-    user.pieceEdition = normalizedPieceEdition(body.pieceEdition);
-    user.bio = String(body.bio || "").trim().slice(0, 280);
-    user.avatarUrl = String(body.avatarUrl || user.avatarUrl || "").trim().slice(0, 500);
-    user.nativeLanguage = String(body.nativeLanguage || "").trim().slice(0, 40);
-    user.learningLanguage = String(body.learningLanguage || "").trim().slice(0, 40);
+    if (hasOwn(body, "languagePair")) {
+      const languagePair = String(body.languagePair || "").trim();
+      if (languagePair) user.languagePair = languagePair.slice(0, 80);
+    }
+    if (hasOwn(body, "pieceEdition")) user.pieceEdition = normalizedPieceEdition(body.pieceEdition);
+    if (hasOwn(body, "bio")) user.bio = String(body.bio || "").trim().slice(0, 280);
+    if (hasOwn(body, "avatarUrl")) user.avatarUrl = String(body.avatarUrl || "").trim().slice(0, 500);
+    if (hasOwn(body, "nativeLanguage")) user.nativeLanguage = String(body.nativeLanguage || "").trim().slice(0, 40);
+    if (hasOwn(body, "learningLanguage")) user.learningLanguage = String(body.learningLanguage || "").trim().slice(0, 40);
     await writeDb(db);
     sendJson(res, 200, buildProfile(user, db));
+    return true;
+  }
+
+  if (req.method === "GET" && pathname === "/api/training/state") {
+    if (!requireUser(user, res)) return true;
+    user.training = normalizeTraining(user.training);
+    sendJson(res, 200, { state: trainingState(user), user: publicUser(user) });
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/training/tutorial-complete") {
+    if (!requireUser(user, res)) return true;
+    const body = await readBody(req);
+    let state;
+    try {
+      state = markTutorialComplete(user, body.module);
+    } catch (error) {
+      sendJson(res, 409, { error: error.message, state: trainingState(user) });
+      return true;
+    }
+    await writeDb(db);
+    sendJson(res, 200, { state, user: publicUser(user) });
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/training/puzzle-complete") {
+    if (!requireUser(user, res)) return true;
+    user.training = normalizeTraining(user.training);
+    const state = trainingState(user);
+    if (!state.puzzleUnlocked) {
+      sendJson(res, 409, { error: "Finish every training module before opening puzzles.", state });
+      return true;
+    }
+    const body = await readBody(req);
+    user.training.completedPuzzles.push({
+      id: String(body.puzzleId || "goryeo-vs-mongol").slice(0, 80),
+      stars: Math.max(0, Math.min(3, Number(body.stars || 0))),
+      module: state.nextModule?.id || trainingModules.at(-1).id,
+      completedAt: new Date().toISOString(),
+    });
+    applyDailyStreak(user);
+    await writeDb(db);
+    sendJson(res, 200, { state: trainingState(user), user: publicUser(user) });
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/training/review-quiz") {
+    if (!requireUser(user, res)) return true;
+    const body = await readBody(req);
+    user.training = normalizeTraining(user.training);
+    user.training.reviewQuizzes.push({
+      module: Math.min(trainingModules.length, Math.max(1, Number(body.module || 1))),
+      score: Math.max(0, Number(body.score || 0)),
+      completedAt: new Date().toISOString(),
+    });
+    await writeDb(db);
+    sendJson(res, 200, { state: trainingState(user), user: publicUser(user) });
     return true;
   }
 
@@ -1621,6 +1790,20 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     return true;
   }
 
+  const deleteReportParams = routePattern(pathname, "/api/admin/reports/:id");
+  if (req.method === "DELETE" && deleteReportParams) {
+    if (!requireStaff(user, res)) return true;
+    const beforeCount = db.reports.length;
+    db.reports = db.reports.filter((item) => item.id !== deleteReportParams.id);
+    if (db.reports.length === beforeCount) {
+      sendJson(res, 404, { error: "Report not found." });
+      return true;
+    }
+    await writeDb(db);
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+
   const warnUserParams = routePattern(pathname, "/api/admin/users/:id/warn");
   if (req.method === "POST" && warnUserParams) {
     if (!requireStaff(user, res)) return true;
@@ -1650,6 +1833,22 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     return true;
   }
 
+  const reduceWarningParams = routePattern(pathname, "/api/admin/users/:id/warnings/reduce");
+  if (req.method === "POST" && reduceWarningParams) {
+    if (!requireStaff(user, res)) return true;
+    const target = db.users.find((item) => item.id === reduceWarningParams.id);
+    if (!target) {
+      sendJson(res, 404, { error: "User not found." });
+      return true;
+    }
+    target.warnings = target.warnings || [];
+    if (target.warnings.length) target.warnings.pop();
+    target.mannerTemperature = Math.min(42.8, Number(target.mannerTemperature ?? 42.8) + 2);
+    await writeDb(db);
+    sendJson(res, 200, { user: adminUser(target) });
+    return true;
+  }
+
   const endAdminMatchParams = routePattern(pathname, "/api/admin/matches/:id/end");
   if (req.method === "POST" && endAdminMatchParams) {
     if (!requireStaff(user, res)) return true;
@@ -1659,9 +1858,11 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       sendJson(res, 404, { error: "Match not found." });
       return true;
     }
+    const wasEnded = match.status === "ended";
     match.status = "ended";
     match.result = body.result || "Ended by staff";
     match.endedAt = new Date().toISOString();
+    if (!wasEnded) recordMatchCompletionStreak(match, db);
     await writeDb(db);
     await syncRedisRoom(match);
     broadcast(match.id, { type: "match:ended", matchId: match.id, result: match.result, match: decorateMatch(match) });
@@ -1715,9 +1916,11 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
         passwordHash: hashPassword(password),
         mannerTemperature: 42.8,
         streak: 0,
+        lastStreakAt: "",
         easyElo: 1000,
         weeklyEasyElo: 1000,
         leagueBadges: [],
+        training: defaultTraining(),
         role: signupRole(email, db),
         createdAt: new Date().toISOString(),
       };
@@ -1765,9 +1968,11 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
           avatarUrl: googleProfile.picture,
           mannerTemperature: 42.8,
           streak: 0,
+          lastStreakAt: "",
           easyElo: 1000,
           weeklyEasyElo: 1000,
           leagueBadges: [],
+          training: defaultTraining(),
           role: signupRole(googleProfile.email, db),
           createdAt: new Date().toISOString(),
         };
@@ -2234,6 +2439,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     match.fen = game.fen();
     match.pgn = game.pgn();
     match.result = result;
+    const wasEndedBeforeMove = match.status === "ended";
     applyClockAfterMove(match, legalMove, game);
     if (game.isGameOver()) {
       match.status = "ended";
@@ -2243,6 +2449,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
         match.clocks.running = false;
       }
     }
+    if (!wasEndedBeforeMove && match.status === "ended") recordMatchCompletionStreak(match, db);
     match.moves.push(move);
     match.transcript.push({
       speaker: move.by,
@@ -2297,6 +2504,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       return true;
     }
     if (!requireMatchAccess(match, user, res)) return true;
+    const wasEnded = match.status === "ended";
     if (match.clocks) {
       match.clocks = liveClockState(match);
     }
@@ -2308,6 +2516,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       match.clocks.running = false;
       match.clocks.lastUpdatedAt = match.endedAt;
     }
+    if (!wasEnded) recordMatchCompletionStreak(match, db);
     await writeDb(db);
     await syncRedisRoom(match);
     broadcast(match.id, { type: "match:ended", matchId: match.id, result: match.result, match: decorateMatch(match) });

@@ -31,8 +31,8 @@ body{
 }
 body.home-mode{
   background:
-    radial-gradient(circle at 20% 10%, rgba(201,162,74,.10), transparent 45%),
-    linear-gradient(160deg,#2B1D13 0%, var(--wood-dark) 55%, var(--wood-deep) 100%);
+    radial-gradient(circle at 20% 10%, rgba(201,162,74,.12), transparent 45%),
+    linear-gradient(180deg,#FFFCF3 0%, #F6E3B4 52%, #E3DCC2 100%);
 }
 .scenery{position:fixed;inset:0;z-index:-1;pointer-events:none}
 .scenery .sun{position:absolute;left:10%;top:9%;width:110px;height:110px;border-radius:50%;
@@ -51,33 +51,41 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 .home{width:100%;color:#EFE4C8}
 .home-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;
   border-bottom:3px solid var(--geum);padding-bottom:10px;margin-bottom:16px;flex-wrap:wrap}
-.home-title h1{font-family:'Jua',sans-serif;font-size:30px;color:#F3E6C4;letter-spacing:1px}
-.home-title p{font-size:13px;color:#B9A67E;margin-top:4px}
-.star-total{font-family:'Jua',sans-serif;font-size:22px;color:var(--geum);display:flex;align-items:center;gap:8px}
+.home-title h1{font-family:'Jua',sans-serif;font-size:30px;color:var(--meok);letter-spacing:1px}
+.home-title p{font-size:13px;color:#596372;margin-top:4px}
+.star-total{font-family:'Jua',sans-serif;font-size:22px;color:#8a6b1c;display:flex;align-items:center;gap:8px}
 .star-total .mute-btn{font-size:17px;background:rgba(239,228,200,.1);border:2px solid rgba(239,228,200,.35);
-  color:#EFE4C8;border-radius:10px;padding:6px 10px;cursor:pointer}
+  color:var(--meok);border-radius:10px;padding:6px 10px;cursor:pointer}
 .home-body{display:flex;gap:16px;width:100%;align-items:flex-start}
 .lv-nav{display:flex;flex-direction:column;gap:8px;flex-shrink:0;width:132px}
 .lv-btn{font-family:'Jua',sans-serif;font-size:16px;text-align:left;
-  color:#CBB98E;background:rgba(239,228,200,.06);border:2px solid rgba(201,162,74,.35);
+  color:var(--meok);background:rgba(255,252,243,.82);border:2px solid rgba(201,162,74,.5);
   border-radius:12px;padding:12px 14px;cursor:pointer;transition:all .15s}
-.lv-btn small{display:block;font-size:10.5px;margin-top:3px;color:#9a8a66;font-family:'Gowun Dodum',sans-serif}
-.lv-btn:hover{background:rgba(239,228,200,.12)}
+.lv-btn small{display:block;font-size:10.5px;margin-top:3px;color:#596372;font-family:'Gowun Dodum',sans-serif}
+.lv-btn:hover{background:#FFF6DC}
 .lv-btn.on{background:var(--geum);color:#241811;border-color:var(--geum);box-shadow:0 4px 0 #8a6b1c}
 .lv-btn.on small{color:#4a3a12}
 .lv-main{flex:1;min-width:0}
-.lv-title{font-family:'Jua',sans-serif;font-size:20px;color:#F3E6C4;margin-bottom:12px;
+.lv-title{font-family:'Jua',sans-serif;font-size:20px;color:var(--meok);margin-bottom:12px;
   display:flex;align-items:center;gap:10px}
 .lv-title .rule{flex:1;height:2px;background:rgba(201,162,74,.35)}
-.pz-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
-.pz-card{background:#3A2A1D;border:2px solid rgba(201,162,74,.45);border-radius:14px;overflow:hidden;
+.pz-grid{display:grid;gap:28px}
+.puzzle-family{display:grid;gap:12px}
+.puzzle-family-head{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid rgba(201,162,74,.42);padding-bottom:7px}
+.puzzle-family-head h3{margin:0;font-family:'Jua',sans-serif;font-size:20px;color:var(--meok)}
+.puzzle-family-head p{margin:0;color:#596372;font-size:12px}
+.puzzle-family-main{max-width:620px}
+.puzzle-family-main .pz-card{display:grid;grid-template-columns:minmax(190px,250px) 1fr}
+.puzzle-family-main .thumb{height:154px}
+.puzzle-variants{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.pz-card{background:#FFFCF3;border:2px solid rgba(201,162,74,.55);border-radius:14px;overflow:hidden;
   cursor:pointer;transition:transform .13s, border-color .13s;text-align:left;color:inherit;font-family:inherit;
-  display:flex;flex-direction:column;box-shadow:0 6px 12px rgba(0,0,0,.35)}
+  display:flex;flex-direction:column;box-shadow:0 6px 12px rgba(31,51,72,.14)}
 .pz-card:hover{transform:translateY(-3px);border-color:var(--geum)}
 .pz-card:active{transform:translateY(0)}
 .thumb{position:relative;width:100%;height:122px;overflow:hidden;
   background:repeating-conic-gradient(#E7DCBF 0% 25%, #A9C3AC 0% 50%) 0 0/56px 56px;}
-.thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(36,24,17,0) 55%,rgba(36,24,17,.55) 100%)}
+.thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,252,243,0) 55%,rgba(255,252,243,.62) 100%)}
 .thumb .t-art{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:64%;height:88%;
   filter:drop-shadow(0 4px 4px rgba(0,0,0,.4))}
 .thumb .t-badge{position:absolute;top:7px;left:7px;z-index:2;font-family:'Jua',sans-serif;font-size:10.5px;
@@ -85,8 +93,8 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 .thumb .t-done{position:absolute;top:7px;right:7px;z-index:2;font-family:'Jua',sans-serif;font-size:11px;
   background:var(--noerok);color:#fff;border-radius:7px;padding:3px 8px}
 .pz-card-body{width:100%;padding:10px 12px 11px;border-top:2px solid rgba(201,162,74,.4)}
-.pz-card-title{font-family:'Jua',sans-serif;font-size:15.5px;color:#F3E6C4;line-height:1.3}
-.pz-card-sub{font-size:11px;color:#B9A67E;margin-top:3px;line-height:1.45;min-height:16px}
+.pz-card-title{font-family:'Jua',sans-serif;font-size:15.5px;color:var(--meok);line-height:1.3}
+.pz-card-sub{font-size:11px;color:#596372;margin-top:3px;line-height:1.45;min-height:16px}
 .stars-row{margin-top:7px;font-size:16px;letter-spacing:2px}
 .stars-row .on{color:var(--geum)}
 .stars-row .off{color:#57452C}
@@ -182,6 +190,9 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 .pz-hintline{font-size:13px;color:#54607a;margin-top:12px;text-align:center;min-height:20px;max-width:480px}
 .hint-btn{margin-top:8px;font-family:'Jua',sans-serif;font-size:13.5px;color:var(--meok);
   background:rgba(255,252,243,.9);border:2px solid var(--meok);border-radius:999px;padding:7px 18px;cursor:pointer}
+.capture-tray{display:flex;align-items:center;justify-content:flex-end;gap:5px;min-height:0;width:min(520px,100%);margin-top:9px;padding:0;color:#8e3b31}
+.capture-tray .capture-label{margin-right:auto}.capture-tray .captured-art{width:32px;height:32px;animation:capture-stack .52s cubic-bezier(.16,1.45,.45,1) both}
+@keyframes capture-stack{from{transform:translateY(-80px) translateX(55px) rotate(28deg) scale(.55);opacity:0}to{transform:none;opacity:1}}
 /* 승리 오버레이 */
 .overlay{position:fixed;inset:0;background:rgba(31,51,72,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
 .overlay.show{display:flex;animation:fadein .3s ease}
@@ -205,7 +216,12 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
   .lv-nav{flex-direction:row;width:100%}
   .lv-btn{flex:1;text-align:center;padding:10px 6px}
   .lv-btn small{display:none}
-  .pz-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .pz-grid{gap:22px}
+  .puzzle-family-head{display:block}
+  .puzzle-family-head p{margin-top:4px}
+  .puzzle-family-main .pz-card{grid-template-columns:1fr}
+  .puzzle-family-main .thumb{height:132px}
+  .puzzle-variants{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 }
 button:focus-visible{outline:3px solid var(--geum);outline-offset:2px}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
@@ -243,7 +259,6 @@ button:focus-visible{outline:3px solid var(--geum);outline-offset:2px}
         <div class="pz-grid" id="pzGrid"></div>
       </div>
     </div>
-    <div class="home-brand">EasyMate · 세대를 잇는 64칸의 다리</div>
   </div>
 
   <!-- ═══ 퍼즐 ═══ -->
@@ -267,6 +282,7 @@ button:focus-visible{outline:3px solid var(--geum);outline-offset:2px}
           <div class="coord ranks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></div>
         </div>
       </div>
+      <div class="capture-tray" id="captureTray" aria-label="잡은 몽골 기물"></div>
       <div class="pz-hintline" id="hintLine"></div>
       <button class="hint-btn" id="hintBtn">💡 힌트 보기</button>
     </div>
@@ -351,13 +367,37 @@ function empty(){return Array.from({length:8},()=>Array(8).fill(null));}
 
 /* row 0 = 8랭크(몽골, 위) / row 7 = 1랭크(고려, 아래). 고려=w */
 const LEVELS=[
- {id:'lv1', name:'레벨 1', tag:'메이트 인 원', sub:'한 수로 끝내는 결전',
+ {id:'lv1', name:'레벨 1', tag:'메이트 인 원', sub:'한 수로 체크메이트를 찾는 기초 전술',
   puzzles:[
    {id:'s1', title:'성문 뒤의 함정', sub:'몽골 칸이 병사들 뒤에 숨었어요. 뒷줄이 텅 비었네요?', art:'g_rook', depth:1,
     hint:'돌탑 수문장(룩)은 세로로 쭉 달릴 수 있어요. 몽골 칸이 있는 맨 윗줄을 노려보세요!', hintFrom:[7,4],
     setup(){const b=empty();
       b[0][6]=P('k','b'); b[1][5]=P('p','b'); b[1][6]=P('p','b'); b[1][7]=P('p','b'); b[2][1]=P('n','b');
       b[7][4]=P('r','w'); b[7][6]=P('k','w'); b[6][5]=P('p','w'); b[6][6]=P('p','w'); b[6][7]=P('p','w');
+      return b;}},
+   {id:'gate2', title:'성문 뒤의 함정 2', sub:'돌탑이 다른 세로줄에서 성문을 향합니다.', art:'g_rook', depth:1,
+    hint:'돌탑을 맨 윗줄까지 올리면 몽골 칸의 옆 칸까지 한 번에 노릴 수 있어요.', hintFrom:[7,3],
+    setup(){const b=empty();
+      b[0][6]=P('k','b'); [5,6,7].forEach(c=>b[1][c]=P('p','b'));
+      b[7][3]=P('r','w'); b[7][6]=P('k','w'); [5,6,7].forEach(c=>b[6][c]=P('p','w'));
+      return b;}},
+   {id:'gate3', title:'성문 뒤의 함정 3', sub:'왼쪽 성문도 뒷줄이 비어 있으면 위험해요.', art:'g_rook', depth:1,
+    hint:'오른쪽 돌탑을 맨 윗줄로 올려 왼쪽 성문까지 가로로 노려보세요.', hintFrom:[7,7],
+    setup(){const b=empty();
+      b[0][1]=P('k','b'); [0,1,2].forEach(c=>b[1][c]=P('p','b'));
+      b[7][7]=P('r','w'); b[7][1]=P('k','w'); [0,1,2].forEach(c=>b[6][c]=P('p','w'));
+      return b;}},
+   {id:'gate4', title:'성문 뒤의 함정 4', sub:'가운데 성문도 병사들이 막고 있어요.', art:'g_rook', depth:1,
+    hint:'돌탑이 맨 윗줄을 가로지르면 임금님 앞의 모든 탈출칸을 막아요.', hintFrom:[7,0],
+    setup(){const b=empty();
+      b[0][4]=P('k','b'); [3,4,5].forEach(c=>b[1][c]=P('p','b'));
+      b[7][0]=P('r','w'); b[7][4]=P('k','w'); [3,4,5].forEach(c=>b[6][c]=P('p','w'));
+      return b;}},
+   {id:'gate5', title:'성문 뒤의 함정 5', sub:'가장 긴 성벽도 돌탑 한 수면 무너집니다.', art:'g_rook', depth:1,
+    hint:'오른쪽 돌탑을 맨 윗줄로 옮겨 몽골 칸이 있는 줄을 장악하세요.', hintFrom:[7,7],
+    setup(){const b=empty();
+      b[0][2]=P('k','b'); [1,2,3].forEach(c=>b[1][c]=P('p','b'));
+      b[7][7]=P('r','w'); b[7][2]=P('k','w'); [1,2,3].forEach(c=>b[6][c]=P('p','w'));
       return b;}},
    {id:'s2', title:'질식하는 칸', sub:'몽골 칸이 자기 부하들에게 둘러싸여 숨을 곳이 없어요.', art:'g_knight', depth:1,
     hint:'백마 기수(나이트)만이 부하들을 뛰어넘어 칸의 코앞에 착지할 수 있어요!', hintFrom:[3,6],
@@ -379,19 +419,19 @@ const LEVELS=[
  {id:'lv2', name:'레벨 2', tag:'메이트 인 투', sub:'두 수 앞을 내다보는 지략',
   puzzles:[
    {id:'m1', title:'두 돌탑의 사다리', sub:'돌탑 두 개가 사다리처럼 몽골 칸을 끝줄로 밀어붙여요.', art:'g_rook', depth:2,
-    hint:'첫 수는 장군! 아래쪽 돌탑으로 일곱째 줄을 막으면, 칸은 끝줄로 도망칠 수밖에 없어요.', hintFrom:[7,1],
+    hint:'첫 수는 체크! 아래쪽 돌탑으로 일곱째 줄을 막으면, 칸은 끝줄로 도망칠 수밖에 없어요.', hintFrom:[7,1],
     setup(){const b=empty();
       b[1][4]=P('k','b'); b[1][6]=P('p','b'); b[1][7]=P('p','b');
       b[2][0]=P('r','w'); b[7][1]=P('r','w'); b[7][6]=P('k','w'); b[6][5]=P('p','w'); b[6][6]=P('p','w'); b[6][7]=P('p','w');
       return b;}},
-   {id:'m2', title:'임금님의 진군', sub:'장군을 부르지 않아도 이기는 조용한 한 수가 있어요.', art:'g_king', depth:2,
-    hint:'첫 수는 장군이 아니에요! 임금님이 한 칸 다가서서 몽골 칸의 도망길을 미리 막아보세요.', hintFrom:[3,6],
+   {id:'m2', title:'임금님의 진군', sub:'체크를 하지 않아도 이기는 조용한 한 수가 있어요.', art:'g_king', depth:2,
+    hint:'첫 수는 체크가 아니에요! 임금님이 한 칸 다가서서 몽골 칸의 도망길을 미리 막아보세요.', hintFrom:[3,6],
     setup(){const b=empty();
       b[0][7]=P('k','b'); b[3][7]=P('p','b');
       b[3][6]=P('k','w'); b[6][0]=P('q','w'); b[6][5]=P('p','w');
       return b;}},
    {id:'m3', title:'졸병의 꿈', sub:'끝줄에 닿은 꼬마 창병에게 놀라운 일이 일어나요.', art:'g_pawn', depth:2,
-    hint:'창병을 끝줄까지 밀어보세요 — 퀸으로 변신하면서 장군! 뒤에서 돌탑이 지켜주고 있어요.', hintFrom:[1,6],
+    hint:'창병을 끝줄까지 밀어보세요 — 퀸으로 변신하면서 체크! 뒤에서 돌탑이 지켜주고 있어요.', hintFrom:[1,6],
     setup(){const b=empty();
       b[1][7]=P('k','b'); b[1][0]=P('p','b');
       b[1][6]=P('p','w'); b[7][6]=P('r','w'); b[6][5]=P('k','w');
@@ -413,6 +453,39 @@ const LEVELS=[
       return b;}}
   ]}
 ];
+
+function cloneBoard(board){ return board.map(row=>row.map(piece=>piece?{...piece}:null)); }
+
+function makeVariants(base){
+  const extraPawnSquares=[[5,0],[5,7],[4,0],[4,7]];
+  return extraPawnSquares.map(([row,col],index)=>({
+    ...base,
+    id:`${base.id}-v${index+2}`,
+    title:`${base.title} ${index+2}`,
+    sub:`${base.sub} 비슷하지만 조금 다른 포지션입니다.`,
+    setup(){
+      const board=cloneBoard(base.setup());
+      if(!board[row][col]) board[row][col]=P('p','w');
+      return board;
+    }
+  }));
+}
+
+function organisePuzzleFamilies(level, baseIds){
+  const byId=new Map(level.puzzles.map(puzzle=>[puzzle.id,puzzle]));
+  level.families=baseIds.map(baseId=>{
+    const base=byId.get(baseId);
+    const puzzles=baseId==='s1'
+      ? ['s1','gate2','gate3','gate4','gate5'].map(id=>byId.get(id))
+      : [base,...makeVariants(base)];
+    return {id:`${level.id}-${baseId}`,title:base.title,sub:base.sub,puzzles};
+  });
+  level.puzzles=level.families.flatMap(family=>family.puzzles);
+}
+
+organisePuzzleFamilies(LEVELS[0],['s1','s2','s3']);
+organisePuzzleFamilies(LEVELS[1],['m1','m2','m3']);
+organisePuzzleFamilies(LEVELS[2],['h1','h2']);
 const ALL_PUZZLES = LEVELS.flatMap(l=>l.puzzles);
 const TOTAL_STARS = ALL_PUZZLES.length*3;
 
@@ -535,6 +608,7 @@ const boardEl=document.getElementById('board');
 const banner=document.getElementById('banner');
 const hintLine=document.getElementById('hintLine');
 const hintBtn=document.getElementById('hintBtn');
+const captureTray=document.getElementById('captureTray');
 const overlay=document.getElementById('overlay');
 
 function starSum(){ return ALL_PUZZLES.reduce((a,p)=>a+(stars[p.id]||0),0); }
@@ -561,24 +635,39 @@ function renderHome(){
     lv.name+' · '+lv.sub+'<div class="rule"></div><span style="font-size:13px;color:#B9A67E">'+lv.tag+'</span>';
   const grid=document.getElementById('pzGrid');
   grid.innerHTML='';
-  lv.puzzles.forEach((pz,i)=>{
-    const s=stars[pz.id]||0;
-    const card=document.createElement('button');
-    card.className='pz-card';
-    card.innerHTML=
-      '<div class="thumb">'+
-        '<div class="t-badge">'+lv.tag+'</div>'+
-        (s>0?'<div class="t-done">완료 ✓</div>':'')+
-        '<div class="t-art">'+ART[pz.art]+'</div>'+
-      '</div>'+
-      '<div class="pz-card-body">'+
-        '<div class="pz-card-title">'+(i+1)+'. '+pz.title+'</div>'+
-        '<div class="pz-card-sub">'+pz.sub+'</div>'+
-        '<div class="stars-row">'+starsHtml(s)+'</div>'+
-      '</div>';
-    card.onclick=()=>{ SFX.select(); openPuzzle(curLevel,i); };
-    grid.appendChild(card);
+  lv.families.forEach(family=>{
+    const section=document.createElement('section');
+    section.className='puzzle-family';
+    section.innerHTML='<header class="puzzle-family-head"><h3>'+family.title+'</h3><p>'+family.sub+'</p></header>';
+    const main=document.createElement('div');
+    main.className='puzzle-family-main';
+    main.appendChild(makePuzzleCard(lv,family.puzzles[0],true));
+    const variants=document.createElement('div');
+    variants.className='puzzle-variants';
+    family.puzzles.slice(1).forEach(puzzle=>variants.appendChild(makePuzzleCard(lv,puzzle,false)));
+    section.append(main,variants);
+    grid.appendChild(section);
   });
+}
+
+function makePuzzleCard(level,puzzle,isMain){
+  const starsForPuzzle=stars[puzzle.id]||0;
+  const card=document.createElement('button');
+  const puzzleIndex=level.puzzles.indexOf(puzzle);
+  card.className='pz-card'+(isMain?' main-puzzle-card':'');
+  card.innerHTML=
+    '<div class="thumb">'+
+      '<div class="t-badge">'+(isMain?'대표 퍼즐':'유사 포지션')+'</div>'+
+      (starsForPuzzle>0?'<div class="t-done">완료 ✓</div>':'')+
+      '<div class="t-art">'+ART[puzzle.art]+'</div>'+
+    '</div>'+
+    '<div class="pz-card-body">'+
+      '<div class="pz-card-title">'+puzzle.title+'</div>'+
+      '<div class="pz-card-sub">'+puzzle.sub+'</div>'+
+      '<div class="stars-row">'+starsHtml(starsForPuzzle)+'</div>'+
+    '</div>';
+  card.onclick=()=>{ SFX.select(); openPuzzle(curLevel,puzzleIndex); };
+  return card;
 }
 
 /* ───────── 퍼즐 진행 ───────── */
@@ -607,6 +696,8 @@ function resetPuzzle(){
   bd=cur.setup(); sel=null; locked=false; phase=1; wrongCount=0; hintLevel=0; history=[];
   hintLine.textContent='';
   hintBtn.textContent='💡 힌트 보기';
+  hintBtn.hidden=false;
+  captureTray.innerHTML='';
   setBanner(firstBannerText(),'');
   drawBoard();
 }
@@ -683,11 +774,12 @@ function escapeSquares(b1){
 }
 function tryMove(from,to){
   const before=bd;
-  const captured=!!bd[to[0]][to[1]];
+  const capturedPiece=bd[to[0]][to[1]];
+  const captured=!!capturedPiece;
   const after=applyMove(bd,from,to);
   bd=after; sel=null; locked=true;
   drawBoard({last:to});
-  if(captured) SFX.capture(); else SFX.move();
+  if(captured){ SFX.capture(); stackCapturedPiece(capturedPiece); } else SFX.move();
 
   /* 1) 즉시 체크메이트 → 승리 */
   if(isCheckmate(after,'b')){ winPuzzle(); return; }
@@ -713,7 +805,7 @@ function tryMove(from,to){
   wrongCount++;
   const wasCheck=inCheck(after,'b');
   const msg = wasCheck
-    ? '장군! 하지만 몽골이 빠져나가요 — 빨간 점선이 탈출로예요.'
+    ? '체크! 하지만 몽골이 빠져나가요 — 빨간 점선이 탈출로예요.'
     : '음… 그 수로는 몽골 칸을 잡을 수 없어요. 다시!';
   setBanner(msg,'alert');
   SFX.wrong();
@@ -726,6 +818,13 @@ function tryMove(from,to){
     setBanner(phase===2?'마무리 일격을 찾아라!':firstBannerText(),'');
   }, wasCheck?1700:1200);
 }
+function stackCapturedPiece(piece){
+  if(!piece||piece.c!=='b'||!captureTray) return;
+  const art=document.createElement('div');
+  art.className='captured-art';
+  art.innerHTML=ART[ART_KEY(piece.t,piece.c)];
+  captureTray.appendChild(art);
+}
 function calcStars(){
   if(wrongCount===0 && hintLevel===0) return 3;
   if(wrongCount<=2 && hintLevel<=1) return 2;
@@ -734,6 +833,7 @@ function calcStars(){
 function winPuzzle(){
   const earned=calcStars();
   stars[cur.id]=Math.max(stars[cur.id]||0, earned);
+  window.parent?.postMessage({type:'easymate:puzzle-complete', puzzleId:cur.id, stars:earned}, '*');
   setBanner('체크메이트! 고려의 승리!','win');
   SFX.win();
   setTimeout(()=>{
@@ -763,6 +863,7 @@ hintBtn.onclick=()=>{
     hintLevel=2;
     hintLine.textContent='💡 '+cur.hint+'  — 반짝이는 용사를 움직여보세요!';
     if(phase===1) drawBoard({glow:cur.hintFrom});
+    hintBtn.hidden=true;
   }
 };
 function bindMute(btn){
