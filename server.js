@@ -47,9 +47,13 @@ const pgPool = databaseUrl
   ? new Pool({
       connectionString: databaseUrl,
       ssl: /sslmode=require|ssl=true/i.test(databaseUrl) || process.env.PGSSLMODE === "require" ? { rejectUnauthorized: false } : false,
+      connectionTimeoutMillis: Number(process.env.PG_CONNECT_TIMEOUT_MS || 10000),
     })
   : null;
 let pgReady = null;
+let storageReady = !pgPool;
+let storageError = null;
+let storageRetryTimer = null;
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -250,7 +254,10 @@ async function ensurePostgresDb() {
         `,
         ["main", JSON.stringify(defaultDb())],
       );
-    })();
+    })().catch((error) => {
+      pgReady = null;
+      throw error;
+    });
   }
   await pgReady;
 }
@@ -261,6 +268,23 @@ async function ensureDb() {
     return;
   }
   ensureJsonDb();
+}
+
+function initializeStorage() {
+  ensureDb()
+    .then(() => {
+      storageReady = true;
+      storageError = null;
+      console.log(`Storage ready (${pgPool ? "postgres" : "local-json"}).`);
+    })
+    .catch((error) => {
+      storageReady = false;
+      storageError = error;
+      console.error("Storage initialization failed; retrying in 10 seconds:", error.message || error);
+      clearTimeout(storageRetryTimer);
+      storageRetryTimer = setTimeout(initializeStorage, 10000);
+      storageRetryTimer.unref?.();
+    });
 }
 
 async function readDb() {
@@ -1420,22 +1444,6 @@ function routePattern(pathname, pattern) {
 async function handleApi(req, res, pathname, searchParams = new URLSearchParams()) {
   const db = await readDb();
   const user = getSessionUser(req, db);
-
-  if (req.method === "GET" && pathname === "/api/health") {
-    sendJson(res, 200, {
-      ok: true,
-      app: "Live Chess",
-      storage: pgPool ? "postgres" : "local-json",
-      postgresProvider: databaseUrl?.includes("supabase") ? "supabase" : pgPool ? "postgres" : null,
-      redis: redisEnabled ? "upstash" : "disabled",
-      translator: nvidiaEnabled ? "nvidia" : "mymemory",
-      nvidia: nvidiaEnabled ? "configured" : "not-configured",
-      safetyModel: nvidiaEnabled ? nvidiaSafetyModel : "local-fallback",
-      translatorEmail: myMemoryEmail ? "configured" : "anonymous",
-      now: new Date().toISOString(),
-    });
-    return true;
-  }
 
   if (req.method === "GET" && pathname === "/api/config") {
     sendJson(res, 200, {
@@ -2861,6 +2869,23 @@ const server = http.createServer(async (req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host}`);
 
   try {
+    if (req.method === "GET" && requestUrl.pathname === "/api/health") {
+      sendJson(res, 200, {
+        ok: true,
+        app: "Live Chess",
+        storage: pgPool ? "postgres" : "local-json",
+        storageStatus: storageReady ? "ready" : "connecting",
+        storageError: storageError ? "temporarily unavailable" : null,
+        postgresProvider: databaseUrl?.includes("supabase") ? "supabase" : pgPool ? "postgres" : null,
+        redis: redisEnabled ? "upstash" : "disabled",
+        translator: nvidiaEnabled ? "nvidia" : "mymemory",
+        nvidia: nvidiaEnabled ? "configured" : "not-configured",
+        safetyModel: nvidiaEnabled ? nvidiaSafetyModel : "local-fallback",
+        translatorEmail: myMemoryEmail ? "configured" : "anonymous",
+        now: new Date().toISOString(),
+      });
+      return;
+    }
     if (requestUrl.pathname.startsWith("/api/")) {
       const handled = await handleApi(req, res, requestUrl.pathname, requestUrl.searchParams);
       if (!handled) sendJson(res, 404, { error: "API route not found." });
@@ -2884,13 +2909,7 @@ server.on("upgrade", (req, socket) => {
   });
 });
 
-ensureDb()
-  .then(() => {
-    server.listen(port, "0.0.0.0", () => {
-      console.log(`Live Chess app running at http://localhost:${port}`);
-    });
-  })
-  .catch((error) => {
-    console.error("Failed to initialize storage:", error);
-    process.exitCode = 1;
-  });
+server.listen(port, "0.0.0.0", () => {
+  console.log(`Live Chess app running at http://localhost:${port}`);
+  initializeStorage();
+});
