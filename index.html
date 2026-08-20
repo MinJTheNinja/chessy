@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>EasyMate 체스 매칭</title>
-    <link rel="stylesheet" href="/styles.css?v=20260812-ui-refresh" />
+    <link rel="stylesheet" href="/styles.css?v=20260820-theme-puzzle" />
   </head>
   <body>
     <header class="site-header">
@@ -116,7 +116,7 @@
           </div>
           <div class="sidebar-themes" aria-label="보드 테마 선택">
             <button class="theme-tile original-theme" type="button" data-piece-edition="original">
-              <span>Original</span>
+              <span>오리지널</span>
             </button>
             <button class="theme-tile cheoin-theme active" type="button" data-piece-edition="cheoinseong">
               <span>처인성</span>
@@ -151,12 +151,12 @@
               <div>
                 <span class="eyebrow">EasyMate 안내</span>
                 <h3 id="homeThemeGuideTitle">보드 테마란?</h3>
-                <p>같은 체스판이라도 내가 고른 말 디자인과 색으로 대국을 볼 수 있는 EasyMate만의 설정입니다.</p>
+                <p>내가 고른 테마로 퍼즐과 대국을 둘 수 있는 EasyMate만의 설정입니다.</p>
               </div>
               <div class="home-theme-guide-options" aria-label="보드 테마 안내">
-                <span><b>Original</b> 기본 체스판</span>
-                <span><b>처인성</b> 고려와 몽골 이야기</span>
-                <span><b>Beta</b> 간결한 연습용 디자인</span>
+                <span><b>오리지널</b> 기본 체스판</span>
+                <span><b>처인성</b> EasyMate &amp; 용인문화원</span>
+                <span><b>Beta</b> 한국 테마 체스</span>
               </div>
             </article>
 
@@ -569,37 +569,28 @@
               <button id="showPuzzleGuide" type="button">퍼즐</button>
             </div>
 
-            <div class="training-module-cards" id="trainingModuleCards" aria-label="훈련 모듈"></div>
-            <button class="button primary" id="startDailySession" type="button" hidden>다음 모듈 시작</button>
+            <div class="tutorial-gate-note" id="tutorialGateNote" hidden>
+              초등학생 모드입니다. 훈련장을 끝내면 모든 메뉴가 열립니다.
+            </div>
+            <div class="tutorial-puzzle-note" id="tutorialPuzzleNote">
+              훈련장을 완료하면 고려 vs 몽골 퍼즐을 열 수 있습니다.
+            </div>
+
+            <section class="training-module-list" id="trainingModuleList" aria-label="튜토리얼 모듈"></section>
 
             <div class="how-to-play-shell" id="howToPlayShell" hidden>
-              <div class="tutorial-gate-note" id="tutorialGateNote" hidden>
-                초등학생 모드입니다. 훈련장을 끝내면 모든 메뉴가 열립니다.
-              </div>
-              <div class="tutorial-puzzle-note" id="tutorialPuzzleNote">
-                훈련장을 완료하면 고려 vs 몽골 퍼즐을 열 수 있습니다.
+              <div class="training-module-toolbar" id="trainingModuleToolbar">
+                <button class="button secondary" id="backToTrainingModules" type="button">모듈 목록</button>
+                <strong id="activeTrainingModuleTitle">튜토리얼</strong>
               </div>
               <iframe
                 class="how-to-play-frame"
                 id="howToPlayFrame"
-                src="/assets/how-to-play.html"
+                src="/assets/how-to-play.html?v=20260820-module-flow"
                 title="EasyMate 훈련장"
-                loading="lazy"
+                loading="eager"
               ></iframe>
             </div>
-            <dialog class="review-quiz-dialog chapter-dialog" id="trainingChapterDialog">
-              <form method="dialog">
-                <div class="review-quiz-head">
-                  <strong id="trainingChapterDialogTitle">챕터 선택</strong>
-                  <button class="icon-action" type="submit" aria-label="닫기">×</button>
-                </div>
-                <p class="profile-status" id="trainingChapterDialogStatus"></p>
-                <div class="review-quiz-options">
-                  <button class="button primary full" id="trainingChapterStart" type="button">튜토리얼 시작</button>
-                  <button class="button secondary full" id="trainingChapterReview" type="button" hidden>복습 퀴즈</button>
-                </div>
-              </form>
-            </dialog>
           </section>
 
           <section class="view" data-view="forum" aria-labelledby="forumTitle">
@@ -987,6 +978,6 @@
       </section>
     </main>
 
-    <script src="/app.js?v=20260812-ui-refresh"></script>
+    <script src="/app.js?v=20260820-module-button-fix"></script>
   </body>
 </html>

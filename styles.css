@@ -1660,6 +1660,11 @@ body.auth-entry-open:not(.is-signed-in) .entry-auth {
   margin-left: auto;
 }
 
+.how-to-play-view.puzzle-mode {
+  width: 100%;
+  max-width: none;
+}
+
 .tutorial-tabs,
 .training-actions,
 .training-mode-toggle {
@@ -1717,130 +1722,6 @@ body.auth-entry-open:not(.is-signed-in) .entry-auth {
   opacity: 0.48;
 }
 
-.training-module-cards {
-  position: relative;
-  min-height: 560px;
-  margin: 0 0 14px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background:
-    linear-gradient(rgba(255, 252, 245, 0.83), rgba(255, 252, 245, 0.9)),
-    repeating-linear-gradient(90deg, transparent 0 38px, rgba(47, 107, 98, 0.05) 38px 39px),
-    #f5ead0;
-  box-shadow: var(--shadow);
-}
-
-.training-journey-path {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.training-journey-path path:first-child {
-  fill: none;
-  stroke: #d7b76a;
-  stroke-width: 15;
-  stroke-linecap: round;
-  opacity: 0.45;
-}
-
-.training-journey-path .training-journey-dots {
-  fill: none;
-  stroke: var(--green);
-  stroke-width: 4;
-  stroke-linecap: round;
-  stroke-dasharray: 2 12;
-  opacity: 0.9;
-}
-
-.training-module-card {
-  position: absolute;
-  display: flex;
-  width: min(290px, 39%);
-  min-height: 96px;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: #fffdf8;
-  color: var(--dark);
-  text-align: left;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(29, 56, 70, 0.06);
-}
-
-.training-module-card:nth-of-type(1) {
-  top: 50px;
-  left: 8%;
-}
-
-.training-module-card:nth-of-type(2) {
-  top: 160px;
-  right: 8%;
-}
-
-.training-module-card:nth-of-type(3) {
-  top: 292px;
-  left: 12%;
-}
-
-.training-module-card:nth-of-type(4) {
-  top: 420px;
-  right: 9%;
-}
-
-.training-module-card:hover:not(:disabled) {
-  border-color: var(--green);
-  transform: translateY(-1px);
-}
-
-.training-module-card:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.training-module-card.current {
-  border: 2px solid var(--green);
-  background: #eef8f4;
-}
-
-.training-module-card.completed {
-  background: #f6f9f6;
-}
-
-.training-module-number {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--green);
-  color: #ffffff;
-  font-weight: 900;
-}
-
-.training-module-card.completed .training-module-number {
-  background: var(--amber);
-}
-
-.training-module-copy {
-  display: grid;
-  gap: 5px;
-}
-
-.training-module-copy strong {
-  font-size: 15px;
-}
-
-.training-module-copy small {
-  color: var(--muted);
-  line-height: 1.4;
-}
-
 .how-to-play-shell {
   overflow: hidden;
   border: 1px solid var(--line);
@@ -1863,6 +1744,88 @@ body.auth-entry-open:not(.is-signed-in) .entry-auth {
   background: #eef8f4;
   color: var(--dark);
   font-weight: 800;
+}
+
+.training-module-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.training-module-tile {
+  display: flex;
+  min-height: 220px;
+  flex-direction: column;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--green);
+  border-radius: 8px;
+  background: #fffcf5;
+  box-shadow: var(--shadow);
+}
+
+.how-to-play-shell.puzzle-mode {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.training-module-tile.current {
+  border-top-color: var(--red);
+}
+
+.training-module-tile.locked {
+  opacity: 0.58;
+}
+
+.training-module-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.training-module-heading span {
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.training-module-heading strong {
+  color: var(--red);
+  font-size: 12px;
+}
+
+.training-module-tile h3 {
+  margin: 18px 0 8px;
+  font-size: 22px;
+}
+
+.training-module-tile p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.training-module-tile .button {
+  margin-top: auto;
+}
+
+.training-module-toolbar {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: #f5ead0;
+}
+
+.training-module-toolbar strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .review-quiz-dialog {
@@ -1909,40 +1872,25 @@ body.auth-entry-open:not(.is-signed-in) .entry-auth {
   background: #fffcf5;
 }
 
+.how-to-play-shell.puzzle-mode .how-to-play-frame {
+  min-height: 0;
+  background: transparent;
+}
+
 @media (max-width: 760px) {
   .training-mode-toggle {
     display: grid;
     width: 100%;
   }
 
-  .training-module-cards {
-    min-height: 620px;
+  .training-module-list {
+    grid-template-columns: 1fr;
   }
 
-  .training-module-card {
-    width: min(252px, 66%);
-    min-height: 88px;
+  .training-module-tile {
+    min-height: 190px;
   }
 
-  .training-module-card:nth-of-type(1) {
-    top: 42px;
-    left: 7%;
-  }
-
-  .training-module-card:nth-of-type(2) {
-    top: 175px;
-    right: 7%;
-  }
-
-  .training-module-card:nth-of-type(3) {
-    top: 324px;
-    left: 7%;
-  }
-
-  .training-module-card:nth-of-type(4) {
-    top: 466px;
-    right: 7%;
-  }
 }
 
 .button-row {

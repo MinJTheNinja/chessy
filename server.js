@@ -2671,7 +2671,13 @@ function serveStatic(req, res, pathname) {
       res.end("Not found");
       return;
     }
-    res.writeHead(200, { "content-type": contentTypes[path.extname(filePath).toLowerCase()] || "application/octet-stream" });
+    const responseHeaders = {
+      "content-type": contentTypes[path.extname(filePath).toLowerCase()] || "application/octet-stream",
+    };
+    if (requested === "/index.html" || requested === "/app.js" || requested === "/styles.css" || path.extname(filePath).toLowerCase() === ".html") {
+      responseHeaders["cache-control"] = "no-cache, must-revalidate";
+    }
+    res.writeHead(200, responseHeaders);
     res.end(data);
   });
 }

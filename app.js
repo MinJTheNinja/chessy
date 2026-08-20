@@ -84,16 +84,14 @@ const mainAccountButton = document.querySelector("#mainAccountButton");
 const mainTutorialButton = document.querySelector("#mainTutorialButton");
 const howToPlayFrame = document.querySelector(".how-to-play-frame");
 const howToPlayShell = document.querySelector("#howToPlayShell");
+const howToPlayView = document.querySelector(".how-to-play-view");
 const showTutorialGuideButton = document.querySelector("#showTutorialGuide");
 const showPuzzleGuideButton = document.querySelector("#showPuzzleGuide");
 const tutorialPuzzleNote = document.querySelector("#tutorialPuzzleNote");
-const startDailySessionButton = document.querySelector("#startDailySession");
-const trainingModuleCards = document.querySelector("#trainingModuleCards");
-const trainingChapterDialog = document.querySelector("#trainingChapterDialog");
-const trainingChapterDialogTitle = document.querySelector("#trainingChapterDialogTitle");
-const trainingChapterDialogStatus = document.querySelector("#trainingChapterDialogStatus");
-const trainingChapterStart = document.querySelector("#trainingChapterStart");
-const trainingChapterReview = document.querySelector("#trainingChapterReview");
+const trainingModuleList = document.querySelector("#trainingModuleList");
+const trainingModuleToolbar = document.querySelector("#trainingModuleToolbar");
+const activeTrainingModuleTitle = document.querySelector("#activeTrainingModuleTitle");
+const backToTrainingModulesButton = document.querySelector("#backToTrainingModules");
 const headerProfile = document.querySelector("#headerProfile");
 const headerProfileButton = document.querySelector("#headerProfileButton");
 const headerProfileMenu = document.querySelector("#headerProfileMenu");
@@ -223,8 +221,8 @@ const pieceEditionStorageKey = "easyMatePieceEdition";
 let leaderboardPeriod = "weekly";
 let leaderboardScope = "mine";
 let cachedTrainingState = null;
-let trainingScreenMode = "path";
-let selectedTrainingModule = null;
+let trainingModuleOpen = false;
+let howToPlayResizeObserver = null;
 
 const koreanText = {
   "Notifications": "알림",
@@ -469,6 +467,11 @@ Object.assign(koreanText, {
   "Words": "단어",
   "No words yet": "아직 없음",
   "Original": "원문",
+  "Original theme": "오리지널",
+  "EasyMate & Yongin Cultural Center": "EasyMate & 용인문화원",
+  "Korean-themed chess": "한국 테마 체스",
+  "EasyMate lets you play puzzles and matches with the theme you choose.":
+    "내가 고른 테마로 퍼즐과 대국을 둘 수 있는 EasyMate만의 설정입니다.",
   "Translation": "번역",
   "Offer draw": "무승부 제안",
   "Resign": "기권",
@@ -1797,13 +1800,50 @@ function activeTrainingState() {
   return currentUser ? cachedTrainingState || currentUser.training || localTrainingState() : localTrainingState();
 }
 
+const trainingModuleDescriptions = {
+  1: "기물의 움직임과 왕끼리 붙을 수 없는 규칙을 배워요.",
+  2: "각 기물이 상대 기물을 잡는 방법을 연습해요.",
+  3: "체크를 피하고, 막고, 공격한 기물을 잡아봐요.",
+  4: "여러 체크메이트 모양과 승리 조건을 배워요.",
+};
+
+function renderTrainingModuleList() {
+  if (!trainingModuleList) return;
+  const state = activeTrainingState();
+  const nextModuleId = Number(state.nextModule?.id || 0);
+  trainingModuleList.innerHTML = "";
+  (state.modules || []).forEach((module) => {
+    const moduleId = Number(module.id);
+    const completed = Boolean(module.completed);
+    const current = moduleId === nextModuleId;
+    const accessible = completed || current;
+    const card = document.createElement("article");
+    card.className = `training-module-tile${completed ? " completed" : ""}${current ? " current" : ""}${accessible ? "" : " locked"}`;
+    card.innerHTML = `
+      <div class="training-module-heading">
+        <span>MODULE ${moduleId}</span>
+        <strong>${completed ? "완료" : current ? "학습 가능" : "잠김"}</strong>
+      </div>
+      <h3>${module.title}</h3>
+      <p>${trainingModuleDescriptions[moduleId] || "체스의 기본 규칙을 배워요."}</p>`;
+    const button = document.createElement("button");
+    button.className = `button ${current ? "primary" : "secondary"} full`;
+    button.type = "button";
+    button.disabled = !accessible;
+    button.textContent = completed ? "다시 학습하기" : current ? "시작하기" : "이전 모듈을 먼저 완료하세요";
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openTrainingModule(moduleId);
+    });
+    card.append(button);
+    trainingModuleList.append(card);
+  });
+}
+
 function renderTrainingControls() {
   const state = activeTrainingState();
   const puzzleUnlocked = Boolean(state.puzzleUnlocked);
-  if (startDailySessionButton) {
-    startDailySessionButton.textContent =
-      currentInterfaceLanguage() === "Korean" ? "다음 모듈 시작" : "Start next module";
-  }
   if (showPuzzleGuideButton) {
     showPuzzleGuideButton.textContent = currentInterfaceLanguage() === "Korean" ? "퍼즐" : "Puzzle";
     showPuzzleGuideButton.classList.toggle("locked", !puzzleUnlocked);
@@ -1817,66 +1857,7 @@ function renderTrainingControls() {
         ? "모든 훈련 모듈을 완료하면 퍼즐을 열 수 있습니다."
         : "Finish every training module to unlock puzzles.";
   }
-  renderTrainingModuleCards();
-}
-
-function openTrainingModule(moduleId, review = false) {
-  trainingScreenMode = "lesson";
-  trainingChapterDialog?.close();
-  setView("how-to-play");
-  setHowToPlayMode("tutorial");
-  setTrainingScreenMode("lesson");
-  if (howToPlayFrame) {
-    howToPlayFrame.src = `/assets/how-to-play.html?module=${moduleId}${review ? "&review=1" : ""}`;
-  }
-}
-
-function setTrainingScreenMode(mode) {
-  trainingScreenMode = mode;
-  const showPath = mode === "path";
-  trainingModuleCards?.toggleAttribute("hidden", !showPath);
-  howToPlayShell?.toggleAttribute("hidden", mode !== "lesson");
-  if (tutorialPuzzleNote && showPath) tutorialPuzzleNote.hidden = true;
-}
-
-function openTrainingChapter(module) {
-  selectedTrainingModule = module;
-  const completed = Boolean(module.completed);
-  if (trainingChapterDialogTitle) trainingChapterDialogTitle.textContent = `챕터 ${module.id}. ${module.title}`;
-  if (trainingChapterDialogStatus) {
-    trainingChapterDialogStatus.textContent = completed
-      ? "완료한 챕터입니다. 다시 배우거나 복습 퀴즈를 풀 수 있어요."
-      : "이 챕터를 시작해 볼까요?";
-  }
-  if (trainingChapterStart) trainingChapterStart.textContent = completed ? "튜토리얼 다시 하기" : "튜토리얼 시작";
-  if (trainingChapterReview) trainingChapterReview.hidden = !completed;
-  setTrainingScreenMode("dialog");
-  if (trainingChapterDialog?.showModal) trainingChapterDialog.showModal();
-}
-
-function renderTrainingModuleCards() {
-  if (!trainingModuleCards) return;
-  const state = activeTrainingState();
-  const nextModuleId = state.nextModule?.id;
-  trainingModuleCards.innerHTML = `
-    <svg class="training-journey-path" viewBox="0 0 900 560" aria-hidden="true" preserveAspectRatio="none">
-      <path d="M 122 98 C 380 42, 585 152, 746 174 S 726 304, 478 304 S 195 388, 174 466 S 454 512, 726 466" />
-      <path class="training-journey-dots" d="M 122 98 C 380 42, 585 152, 746 174 S 726 304, 478 304 S 195 388, 174 466 S 454 512, 726 466" />
-    </svg>`;
-  (state.modules || []).forEach((module) => {
-    const completed = Boolean(module.completed);
-    const current = module.id === nextModuleId;
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = `training-module-card${current ? " current" : ""}${completed ? " completed" : ""}`;
-    card.disabled = !completed && !current;
-    card.innerHTML = `<span class="training-module-number">${module.id}</span><span class="training-module-copy"><strong>${module.title}</strong><small>${completed ? "다시 하기 · 복습 가능" : current ? "지금 시작하기" : "이전 챕터 완료 후 열림"}</small></span>`;
-    card.addEventListener("click", () => {
-      if (completed) openTrainingChapter(module);
-      else if (current) openTrainingModule(module.id);
-    });
-    trainingModuleCards.append(card);
-  });
+  renderTrainingModuleList();
 }
 
 async function refreshTrainingState() {
@@ -1896,18 +1877,102 @@ async function refreshTrainingState() {
   return cachedTrainingState;
 }
 
+function showTrainingModuleHome() {
+  trainingModuleOpen = false;
+  howToPlayShell?.classList.remove("puzzle-mode");
+  howToPlayView?.classList.remove("puzzle-mode");
+  resetHowToPlayFrameSizing();
+  trainingModuleList?.removeAttribute("hidden");
+  howToPlayShell?.setAttribute("hidden", "");
+  showTutorialGuideButton?.classList.add("active");
+  showPuzzleGuideButton?.classList.remove("active");
+  renderTrainingControls();
+}
+
+function openTrainingModule(moduleId) {
+  const normalizedModuleId = Math.min(4, Math.max(1, Number(moduleId) || 1));
+  const state = activeTrainingState();
+  const module = (state.modules || []).find((item) => Number(item.id) === normalizedModuleId);
+  const completed = Boolean(module?.completed) || (state.completedModules || []).map(Number).includes(normalizedModuleId);
+  const current = Number(state.nextModule?.id) === normalizedModuleId;
+  if (!module || (!completed && !current)) return;
+  trainingModuleOpen = true;
+  howToPlayShell?.classList.remove("puzzle-mode");
+  howToPlayView?.classList.remove("puzzle-mode");
+  resetHowToPlayFrameSizing();
+  trainingModuleList?.setAttribute("hidden", "");
+  howToPlayShell?.removeAttribute("hidden");
+  trainingModuleToolbar?.removeAttribute("hidden");
+  if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `모듈 ${normalizedModuleId} · ${module.title}`;
+  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&v=20260820-module-flow`;
+  showTutorialGuideButton?.classList.add("active");
+  showPuzzleGuideButton?.classList.remove("active");
+  howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function resetHowToPlayFrameSizing() {
+  howToPlayResizeObserver?.disconnect();
+  howToPlayResizeObserver = null;
+  howToPlayFrame?.style.removeProperty("height");
+}
+
+function syncPuzzleFrameHeight() {
+  if (!howToPlayFrame || !howToPlayShell?.classList.contains("puzzle-mode")) return;
+  try {
+    const frameDocument = howToPlayFrame.contentDocument;
+    if (!frameDocument?.documentElement || !frameDocument.body) return;
+    frameDocument.documentElement.style.overflowY = "hidden";
+    frameDocument.body.style.overflowY = "hidden";
+    const contentHeight = Math.max(frameDocument.documentElement.scrollHeight, frameDocument.body.scrollHeight);
+    if (contentHeight > 0) howToPlayFrame.style.height = `${contentHeight + 2}px`;
+  } catch {
+    howToPlayFrame.style.removeProperty("height");
+  }
+}
+
+function watchPuzzleFrameHeight() {
+  resetHowToPlayFrameSizing();
+  if (!howToPlayShell?.classList.contains("puzzle-mode")) return;
+  syncPuzzleFrameHeight();
+  try {
+    const frameDocument = howToPlayFrame?.contentDocument;
+    if (!frameDocument?.documentElement || typeof ResizeObserver === "undefined") return;
+    howToPlayResizeObserver = new ResizeObserver(syncPuzzleFrameHeight);
+    howToPlayResizeObserver.observe(frameDocument.documentElement);
+  } catch {
+    howToPlayResizeObserver = null;
+  }
+}
+
 function setHowToPlayMode(mode) {
   const state = activeTrainingState();
   const puzzleUnlocked = Boolean(state.puzzleUnlocked);
   const nextMode = mode === "puzzle" && puzzleUnlocked ? "puzzle" : "tutorial";
-  if (howToPlayFrame) {
-    const nextSrc = nextMode === "puzzle" ? "/assets/goryeo-vs-mongol-puzzle.html" : state.tutorialSrc || "/assets/how-to-play.html";
-    if (!howToPlayFrame.src.endsWith(nextSrc)) howToPlayFrame.src = nextSrc;
+  howToPlayShell?.classList.toggle("puzzle-mode", nextMode === "puzzle");
+  howToPlayView?.classList.toggle("puzzle-mode", nextMode === "puzzle");
+  if (nextMode === "puzzle") {
+    trainingModuleOpen = false;
+    trainingModuleList?.setAttribute("hidden", "");
+    howToPlayShell?.removeAttribute("hidden");
+    trainingModuleToolbar?.setAttribute("hidden", "");
+    const currentFramePath = howToPlayFrame ? new URL(howToPlayFrame.src, window.location.href).pathname : "";
+    if (howToPlayFrame && currentFramePath !== "/assets/goryeo-vs-mongol-puzzle.html") {
+      howToPlayFrame.src = "/assets/goryeo-vs-mongol-puzzle.html";
+    } else {
+      watchPuzzleFrameHeight();
+    }
+  } else if (trainingModuleOpen) {
+    resetHowToPlayFrameSizing();
+    trainingModuleList?.setAttribute("hidden", "");
+    howToPlayShell?.removeAttribute("hidden");
+    trainingModuleToolbar?.removeAttribute("hidden");
+  } else {
+    resetHowToPlayFrameSizing();
+    trainingModuleList?.removeAttribute("hidden");
+    howToPlayShell?.setAttribute("hidden", "");
   }
   showTutorialGuideButton?.classList.toggle("active", nextMode === "tutorial");
   showPuzzleGuideButton?.classList.toggle("active", nextMode === "puzzle");
-  if (nextMode === "puzzle") setTrainingScreenMode("lesson");
-  else if (trainingScreenMode !== "lesson") setTrainingScreenMode("path");
   renderTrainingControls();
 }
 
@@ -1926,21 +1991,20 @@ function updateTutorialGateState() {
   });
 }
 
-async function startDailySession() {
-  const state = await refreshTrainingState();
-  if (state?.nextModule?.id) openTrainingModule(state.nextModule.id);
-  else {
-    setView("how-to-play");
-    setHowToPlayMode("puzzle");
-  }
-}
-
 async function completeStudentTutorial(module) {
+  const moduleId = Number(module) || activeTrainingState().nextModule?.id;
+  const wasAlreadyCompleted = activeTrainingState().completedModules?.includes(moduleId);
+  if (wasAlreadyCompleted) {
+    setView("how-to-play");
+    if (moduleId < 4) openTrainingModule(moduleId + 1);
+    else showTrainingModuleHome();
+    return;
+  }
   if (currentUser && backendOnline) {
     try {
       const data = await api("/api/training/tutorial-complete", {
         method: "POST",
-        body: { module: Number(module) || activeTrainingState().nextModule?.id },
+        body: { module: moduleId },
       });
       cachedTrainingState = data.state;
       currentUser = data.user || currentUser;
@@ -1950,7 +2014,7 @@ async function completeStudentTutorial(module) {
     }
   } else {
     const state = localTrainingState();
-    const nextModule = Number(module) || state.nextModule?.id;
+    const nextModule = moduleId;
     if (state.nextModule && nextModule !== state.nextModule.id) {
       if (tutorialPuzzleNote) tutorialPuzzleNote.textContent = "현재 모듈을 먼저 완료하세요.";
       return;
@@ -1961,11 +2025,12 @@ async function completeStudentTutorial(module) {
     if (nextModule === 4) removeLocalSetting(studentTutorialRequiredKey);
     cachedTrainingState = localTrainingState();
   }
+  trainingModuleOpen = false;
   updateTutorialGateState();
   await refreshTrainingState();
-  trainingScreenMode = "path";
   setView("how-to-play");
-  setHowToPlayMode(activeTrainingState().hasTutorial ? "tutorial" : "puzzle");
+  if (moduleId < 4) openTrainingModule(moduleId + 1);
+  else showTrainingModuleHome();
 }
 
 async function completePuzzle(payload = {}) {
@@ -3367,6 +3432,7 @@ function setView(viewName) {
   if (isStudentTutorialRequired() && viewName !== "how-to-play") {
     viewName = "how-to-play";
   }
+  if (viewName === "how-to-play") showTrainingModuleHome();
   if (viewName === "home") {
     updateRouteForView(viewName);
     document.body.classList.add("show-landing");
@@ -4885,47 +4951,31 @@ loginButton.addEventListener("click", () => {
 mainAccountButton?.addEventListener("click", () => openAccountEntry("signup"));
 
 mainTutorialButton?.addEventListener("click", () => {
-  trainingScreenMode = "path";
   setView("how-to-play");
-  setHowToPlayMode("tutorial");
+  showTrainingModuleHome();
 });
 
 tutorialLoginButton?.addEventListener("click", () => openAccountEntry("signup"));
 
-startDailySessionButton?.addEventListener("click", startDailySession);
+showTutorialGuideButton?.addEventListener("click", showTrainingModuleHome);
 
-trainingChapterStart?.addEventListener("click", (event) => {
-  event.preventDefault();
-  if (selectedTrainingModule) openTrainingModule(selectedTrainingModule.id);
-});
-
-trainingChapterReview?.addEventListener("click", (event) => {
-  event.preventDefault();
-  if (selectedTrainingModule?.completed) openTrainingModule(selectedTrainingModule.id, true);
-});
-
-trainingChapterDialog?.addEventListener("close", () => {
-  if (trainingScreenMode === "dialog") setTrainingScreenMode("path");
-});
-
-showTutorialGuideButton?.addEventListener("click", () => {
-  trainingScreenMode = "path";
-  setHowToPlayMode("tutorial");
-});
+backToTrainingModulesButton?.addEventListener("click", showTrainingModuleHome);
 
 showPuzzleGuideButton?.addEventListener("click", async () => {
   await refreshTrainingState();
   setHowToPlayMode("puzzle");
 });
 
+howToPlayFrame?.addEventListener("load", watchPuzzleFrameHeight);
+window.addEventListener("resize", syncPuzzleFrameHeight);
+
 window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin && event.origin !== "null") return;
   if (howToPlayFrame?.contentWindow && event.source !== howToPlayFrame.contentWindow) return;
   if (event.data?.type === "easymate:tutorial-complete") completeStudentTutorial(event.data.module);
   if (event.data?.type === "easymate:return-training") {
-    trainingScreenMode = "path";
     setView("how-to-play");
-    setHowToPlayMode("tutorial");
+    showTrainingModuleHome();
   }
   if (event.data?.type === "easymate:puzzle-complete") completePuzzle(event.data);
 });

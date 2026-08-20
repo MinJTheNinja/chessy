@@ -66,8 +66,7 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 .brand{text-align:center;font-size:12px;color:var(--easyblue);margin-top:auto;padding-top:10px;font-family:'Jua',sans-serif}
 
 .char-row{display:flex;align-items:flex-end;gap:12px;margin-bottom:6px}
-.char-art{width:112px;height:112px;flex-shrink:0;animation:bounce 3s ease-in-out infinite}
-@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.char-art{width:112px;height:112px;flex-shrink:0}
 .char-text{flex:1;padding-bottom:6px}
 .speech{
   position:relative;background:#fff;border:2.5px solid var(--meok);border-radius:18px;
@@ -136,8 +135,8 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 .capture-shelf{display:flex;justify-content:flex-end;gap:3px;min-height:0;margin:4px auto 0;width:min(290px,74vw);padding:0;color:var(--mongol);align-items:center}
 .capture-shelf .captured-piece{width:26px;height:26px;animation:collect .55s cubic-bezier(.18,1.55,.5,1) both}
 @keyframes collect{from{transform:translate(-70px,-80px) rotate(-25deg);opacity:0}to{transform:none;opacity:1}}
-.scene.story-intro .char-row{align-self:center;align-items:center;margin:auto;max-width:min(430px,100%);transition:transform .38s ease}
-.scene.story-intro .char-art,.scene.story-intro .enemy-row,.scene.story-intro .board-wrap,.scene.story-intro .capture-shelf,.scene.story-intro .mission,.scene.story-intro .lesson-note,.scene.story-intro .legend,.scene.story-intro .nav{display:none}
+.scene.story-intro .char-row{width:min(560px,100%);align-self:center;align-items:center;margin:auto;max-width:100%;transform:translateY(38px);transition:transform .38s ease}
+.scene.story-intro .enemy-row,.scene.story-intro .board-wrap,.scene.story-intro .capture-shelf,.scene.story-intro .mission,.scene.story-intro .lesson-note,.scene.story-intro .legend,.scene.story-intro .nav{display:none}
 .scene.story-intro .char-text{padding:0;text-align:center}
 .scene.story-intro .speech{min-height:96px;display:flex;align-items:center;justify-content:center;text-align:center}
 .scene.story-ready .char-row{animation:story-settle .42s ease both}
@@ -208,6 +207,7 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 
 button:focus-visible{outline:3px solid var(--geum);outline-offset:2px}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:560px){.scene.story-intro .char-row{transform:translateY(24px)}.scene.story-intro .char-art{width:88px;height:88px}}
 </style>
 </head>
 <body>
