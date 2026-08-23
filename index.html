@@ -15,15 +15,15 @@
     />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700;800&display=swap"
       media="print"
       onload="this.media='all'"
     />
     <noscript>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&display=swap" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700;800&display=swap" />
     </noscript>
-    <link rel="stylesheet" href="/styles.css?v=20260820-runtime-optimized" />
+    <link rel="stylesheet" href="/styles.css?v=20260823-ios-mockup" />
     <script src="/app.js?v=20260820-runtime-optimized" defer></script>
   </head>
   <body>
@@ -34,6 +34,14 @@
       <a class="brand" href="#home" data-view-link="home" aria-label="EasyMate 홈">
         <span>Easy<strong>Mate</strong></span>
       </a>
+      <nav class="desktop-header-nav" aria-label="주요 메뉴">
+        <button class="active" type="button" data-view-link="overview">홈</button>
+        <button type="button" data-view-link="dashboard">플레이</button>
+        <button type="button" data-view-link="how-to-play">훈련장</button>
+        <button type="button" data-view-link="forum">게시판</button>
+        <button type="button" data-view-link="chessboards">상점</button>
+        <button type="button" data-view-link="profile">나</button>
+      </nav>
       <div class="header-actions">
         <div class="piece-edition-toggle" id="headerPieceEditionToggle" role="group" aria-label="말 디자인 선택">
           <button class="active" type="button" data-piece-edition="cheoinseong">처인성</button>
@@ -152,65 +160,82 @@
 
         <div class="workspace">
           <section class="view active" data-view="overview" aria-labelledby="dashboardTitle">
-            <div class="view-header">
-              <div>
-                <span class="eyebrow">EasyMate 홈</span>
-                <h2 id="dashboardTitle">
-                  Welcome, <span id="welcomeName">Player</span>!
-                  <span class="dashboard-streak-inline" aria-label="현재 연속 기록"><span id="dashboardStreak">0</span> 🔥</span>
-                </h2>
-              </div>
-            </div>
+            <div class="home-dashboard">
+              <div class="home-main-column">
+                <section class="home-match-intro" aria-labelledby="dashboardTitle">
+                  <h2 id="dashboardTitle">환영합니다, <span id="welcomeName">Player</span>님!</h2>
+                </section>
 
-            <div class="dashboard-actions">
-              <button class="button secondary" data-view-link="how-to-play" type="button">훈련장으로</button>
-              <button class="button primary" data-view-link="dashboard" type="button">플레이</button>
-            </div>
-
-            <article class="home-theme-guide" aria-labelledby="homeThemeGuideTitle">
-              <div>
-                <span class="eyebrow">EasyMate 안내</span>
-                <h3 id="homeThemeGuideTitle">보드 테마란?</h3>
-                <p>내가 고른 테마로 퍼즐과 대국을 둘 수 있는 EasyMate만의 설정입니다.</p>
-              </div>
-              <div class="home-theme-guide-options" aria-label="보드 테마 안내">
-                <span><b>오리지널</b> 기본 체스판</span>
-                <span><b>처인성</b> EasyMate &amp; 용인문화원</span>
-                <span><b>Beta</b> 한국 테마 체스</span>
-              </div>
-            </article>
-
-            <div class="league-layout">
-              <article class="wire-card league-card">
-                <div class="league-card-head">
+                <article class="home-daily-puzzle" aria-labelledby="dailyPuzzleTitle">
+                  <img src="/assets/tutorial-pieces/g_rook.png" alt="처인성 성벽 룩" />
                   <div>
-                    <span class="eyebrow">리그</span>
-                    <h3>Easy Elo 리더보드</h3>
+                    <span class="eyebrow">오늘의 퍼즐 · 고려 대 몽골</span>
+                    <h3 id="dailyPuzzleTitle">성문 뒤의 함정</h3>
+                    <p>몽골 칸이 병사들 뒤에 숨었어요. 뒷줄이 텅 비었네요?</p>
+                    <button class="button secondary" data-view-link="how-to-play" type="button">한 수로 끝내기</button>
                   </div>
-                  <div class="leaderboard-controls">
-                    <div class="leaderboard-tabs" role="group" aria-label="리더보드 범위">
-                      <button class="active" type="button" data-leaderboard-scope="mine">내 리그</button>
-                      <button type="button" data-leaderboard-scope="all">전체</button>
-                    </div>
-                    <div class="leaderboard-tabs" role="group" aria-label="리더보드 기간">
-                      <button class="active" type="button" data-leaderboard-period="weekly">주간</button>
-                      <button type="button" data-leaderboard-period="alltime">전체 기간</button>
-                    </div>
-                  </div>
-                </div>
-                <div class="leaderboard-list" id="leaderboardList"></div>
-              </article>
+                </article>
 
-              <article class="wire-card league-card">
-                <span class="eyebrow">참가 코드</span>
-                <h3>같은 리그에 참여하기</h3>
-                <div class="league-code-row">
-                  <input id="leagueCodeInput" type="text" placeholder="예: KING64" maxlength="16" />
-                  <button class="button primary small" id="joinLeagueButton" type="button">참여</button>
+                <div class="home-lower-grid">
+                  <article class="home-leaderboard">
+                    <div class="home-section-head">
+                      <span class="eyebrow">Easy Elo 리더보드 · 주간</span>
+                      <div class="home-leaderboard-scope" role="group" aria-label="리더보드 범위">
+                        <button class="active" type="button" data-leaderboard-scope="mine">내 리그</button>
+                        <button type="button" data-leaderboard-scope="all">전체</button>
+                      </div>
+                    </div>
+                    <div class="leaderboard-list home-leaderboard-list" id="leaderboardList"></div>
+                  </article>
+                  <article class="home-forum-preview">
+                    <span class="eyebrow">게시판</span>
+                    <ul id="homeForumList" aria-label="최근 게시글"></ul>
+                    <button class="home-text-action" data-view-link="forum" type="button">게시판</button>
+                  </article>
                 </div>
-                <button class="button secondary full" id="createLeagueButton" type="button">새 리그 코드 생성</button>
-                <p class="profile-status" id="leagueStatus">아직 참여한 리그가 없습니다.</p>
-              </article>
+              </div>
+
+              <aside class="home-status-column" aria-label="내 학습 기록">
+                <div class="home-elo">
+                  <span>Easy Elo</span>
+                  <strong id="dashboardEasyElo">1000</strong>
+                </div>
+                <div class="home-stat-grid">
+                  <span><b id="dashboardStreak">0</b>연속 학습일</span>
+                  <span><b>0</b>둔 대국</span>
+                  <span><b>0</b>푼 퍼즐</span>
+                  <span><b>0</b>받은 배지</span>
+                </div>
+
+                <section class="home-theme-summary" aria-labelledby="homeThemeGuideTitle">
+                  <h3 id="homeThemeGuideTitle">보드 테마란?</h3>
+                  <p>내가 고른 테마로 퍼즐과 대국을 둘 수 있는 EasyMate만의 설정입니다.</p>
+                  <div class="home-theme-list" role="group" aria-label="보드 테마 선택">
+                    <button type="button" data-piece-edition="original"><b>오리지널</b><small>기본 체스판</small></button>
+                    <button type="button" data-piece-edition="cheoinseong"><b>처인성</b><small>EasyMate &amp; 용인문화원</small></button>
+                    <button type="button" data-piece-edition="beta"><b>Beta</b><small>한국 테마 체스</small></button>
+                  </div>
+                </section>
+
+                <section class="home-training-summary" aria-label="훈련장 진행">
+                  <span class="eyebrow">훈련장 진행</span>
+                  <div class="home-training-row" data-home-training-module="1"><span>체스 기물 움직임</span><b>0/1</b><i></i></div>
+                  <div class="home-training-row" data-home-training-module="2"><span>기물 잡기</span><b>0/1</b><i></i></div>
+                  <div class="home-training-row" data-home-training-module="3"><span>체크에서 벗어나는 법</span><b>0/1</b><i></i></div>
+                  <div class="home-training-row" data-home-training-module="4"><span>체크메이트</span><b>0/1</b><i></i></div>
+                  <button class="home-text-action" data-view-link="how-to-play" type="button">훈련장으로 →</button>
+                </section>
+
+                <section class="home-league-join" aria-label="리그 참가">
+                  <span class="eyebrow">참가 코드</span>
+                  <div class="league-code-row">
+                    <input id="leagueCodeInput" type="text" placeholder="예: KING64" maxlength="16" />
+                    <button class="button primary small" id="joinLeagueButton" type="button">참여</button>
+                  </div>
+                  <button class="button secondary full" id="createLeagueButton" type="button">새 리그 코드 생성</button>
+                  <p class="profile-status" id="leagueStatus">아직 참여한 리그가 없습니다.</p>
+                </section>
+              </aside>
             </div>
           </section>
 
@@ -225,31 +250,15 @@
             <div class="match-layout" id="matchLayout" data-state="idle">
               <aside class="panel lobby-panel">
                 <div class="lobby-main-panel">
-                  <div class="play-choice-grid" aria-label="대국 방식 선택">
-                    <button class="play-choice-card" id="findMatch" type="button">
-                      <span class="label">가장 빠름</span>
-                      <strong>퀵 매칭</strong>
-                      <small>기본 설정으로 바로 상대를 찾습니다.</small>
-                    </button>
-                    <button class="play-choice-card" id="showCreateSeek" type="button">
-                      <span class="label">맞춤</span>
-                      <strong>게임 만들기</strong>
-                      <small>시간, 언어, 대화 목표를 고릅니다.</small>
-                    </button>
-                    <button class="play-choice-card" id="showFriendRoom" type="button">
-                      <span class="label">비공개</span>
-                      <strong>친구와 플레이</strong>
-                      <small>방을 만들거나 코드로 참여합니다.</small>
-                    </button>
-                  </div>
+                  <section class="quick-match-intro" aria-labelledby="quickMatchTitle">
+                    <span class="label">가장 빠름</span>
+                    <h3 id="quickMatchTitle">퀵 매칭</h3>
+                    <p>기본 설정으로 바로 상대를 찾습니다. 보통 20초 안에 연결됩니다.</p>
+                    <button class="play-find-button" id="findMatch" type="button">상대 찾기</button>
+                  </section>
 
-                  <div class="quick-pair-composer" hidden>
-                    <div class="panel-heading">
-                      <div>
-                      <span class="label">퀵 매칭</span>
-                      <h3>기본 검색</h3>
-                      </div>
-                    </div>
+                  <div class="quick-pair-composer">
+                    <span class="label">시간 제한</span>
                     <div class="quick-pair-grid" id="quickPairGrid" aria-label="빠른 매칭 풀">
                       <button class="pool-button" data-pool-id="bullet-1-0" data-time-control="1+0" data-rated="false">
                         <span>1+0</span>
@@ -274,6 +283,18 @@
                     </div>
                   </div>
 
+                  <section class="play-waiting-list" aria-labelledby="waitingGamesTitle">
+                    <div class="panel-heading compact">
+                      <div>
+                        <span class="label">열린 방</span>
+                        <h3 id="waitingGamesTitle">대기 중인 대국</h3>
+                      </div>
+                      <button class="text-link" id="refreshLobby" type="button">새로고침</button>
+                    </div>
+                    <span class="pool-live-pill" id="lobbySummary">대기 풀 준비됨</span>
+                    <div class="open-seek-list" id="openSeeksList" aria-live="polite"></div>
+                  </section>
+
                   <div class="queue-box">
                     <div class="queue-status-head">
                       <span class="label">매칭 상태</span>
@@ -285,60 +306,68 @@
                   </div>
                 </div>
 
-                <aside class="language-pool-panel">
-                  <span class="label">언어 풀</span>
-                  <h3>대화 목표로 매칭</h3>
-                  <p>체스를 두며 같은 언어 연습을 원하는 플레이어를 찾습니다.</p>
-                  <div class="language-pool-list">
-                    <span>English ↔ Korean</span>
-                    <span>English ↔ Japanese</span>
-                    <span>English ↔ Thai</span>
-                  </div>
-                  <span class="pool-live-pill" id="lobbySummary">대기 풀 준비됨</span>
-                </aside>
+                <aside class="match-options-panel" aria-label="대국 설정">
+                  <section class="match-option-section">
+                    <div class="panel-heading compact">
+                      <div>
+                        <span class="label">맞춤</span>
+                        <h3>게임 만들기</h3>
+                      </div>
+                    </div>
+                    <p>시간과 대국 설정을 직접 고릅니다.</p>
+                    <button class="text-action-button" id="showCreateSeek" type="button">방 만들기</button>
+                  </section>
 
-                <div class="seek-composer" id="seekComposer" hidden>
-                  <div class="panel-heading compact">
+                  <div class="seek-composer" id="seekComposer" hidden>
+                    <div class="panel-heading compact">
                     <div>
-                      <span class="label">게임 만들기</span>
-                      <h3>같은 설정으로 매칭</h3>
+                        <span class="label">게임 설정</span>
+                        <h3>새 대국 만들기</h3>
+                      </div>
                     </div>
+                    <label>
+                      게임 유형
+                      <div class="segmented" role="group" aria-label="게임 유형">
+                        <button class="segment active" data-mode="Casual">친선</button>
+                        <button class="segment" data-mode="Rated">기록</button>
+                      </div>
+                    </label>
+                    <label>
+                      시간 제한
+                      <select id="seekTimeControl">
+                        <option>3+2</option>
+                        <option selected>10+0</option>
+                        <option>15+10</option>
+                        <option>30+0</option>
+                      </select>
+                    </label>
+                    <label hidden>
+                      파트너 언어
+                      <select id="partnerLanguage">
+                        <option value="English">영어</option>
+                        <option value="Korean">한국어</option>
+                        <option value="Thai">태국어</option>
+                        <option value="Japanese">일본어</option>
+                      </select>
+                    </label>
+                    <label>
+                      대화 목표
+                      <select id="conversationGoal">
+                        <option>Explain chess moves</option>
+                        <option>Practice daily conversation</option>
+                        <option>Learn sports phrases</option>
+                      </select>
+                    </label>
+                    <button class="button secondary full" id="createSeek">게임 만들기</button>
                   </div>
-                  <label>
-                    게임 유형
-                    <div class="segmented" role="group" aria-label="게임 유형">
-                      <button class="segment active" data-mode="Casual">친선</button>
-                      <button class="segment" data-mode="Rated">기록</button>
-                    </div>
-                  </label>
-                  <label>
-                    시간 제한
-                    <select id="seekTimeControl">
-                      <option>3+2</option>
-                      <option selected>10+0</option>
-                      <option>15+10</option>
-                      <option>30+0</option>
-                    </select>
-                  </label>
-                  <label hidden>
-                    파트너 언어
-                    <select id="partnerLanguage">
-                      <option value="English">영어</option>
-                      <option value="Korean">한국어</option>
-                      <option value="Thai">태국어</option>
-                      <option value="Japanese">일본어</option>
-                    </select>
-                  </label>
-                  <label>
-                    대화 목표
-                    <select id="conversationGoal">
-                      <option>Explain chess moves</option>
-                      <option>Practice daily conversation</option>
-                      <option>Learn sports phrases</option>
-                    </select>
-                  </label>
-                  <button class="button secondary full" id="createSeek">게임 만들기</button>
-                </div>
+
+                  <section class="match-option-section friend-option-section">
+                    <span class="label">비공개</span>
+                    <h3>친구와 플레이</h3>
+                    <p>방을 만들거나 초대 코드를 입력하세요.</p>
+                    <button class="text-action-button" id="showFriendRoom" type="button">코드로 참여</button>
+                  </section>
+                </aside>
               </aside>
 
               <section class="board-panel" aria-label="실시간 체스 보드">
@@ -450,14 +479,6 @@
               </section>
 
               <aside class="panel match-side-panel">
-                <div class="panel-heading">
-                  <div>
-                    <span class="label">열린 게임</span>
-                    <h3>대기 중인 플레이어</h3>
-                  </div>
-                  <button class="text-link" id="refreshLobby" type="button">새로고침</button>
-                </div>
-                <div class="open-seek-list" id="openSeeksList" aria-live="polite"></div>
                 <h3>파트너</h3>
                 <div class="partner-card">
                   <div class="avatar speaking" id="voiceRing">MK</div>
@@ -807,120 +828,109 @@
             </div>
             <div class="profile-dashboard">
               <article class="profile-hero-card">
-                <div class="profile-hero-main">
+                <div class="profile-avatar-column">
                   <button class="avatar profile-hero-avatar" id="profileAvatarButton" type="button" aria-label="프로필 사진 업로드">
                     <span id="profileAvatar">CL</span>
                   </button>
                   <input id="profileImageFile" type="file" accept="image/*" hidden />
-                  <div class="profile-hero-identity">
-                    <div class="profile-name-row">
-                      <strong><span id="profileName">ChessLearner</span><i aria-hidden="true"></i></strong>
-                      <button class="inline-edit-button" id="editProfileName" type="button" aria-label="유저네임 수정">✎</button>
+                </div>
+
+                <div class="profile-hero-identity">
+                  <div class="profile-name-row">
+                    <strong><span id="profileName">ChessLearner</span></strong>
+                    <button class="inline-edit-button" id="editProfileName" type="button" aria-label="유저네임 수정">✎</button>
+                  </div>
+                  <div class="profile-inline-editor" id="profileNameEditor" hidden>
+                    <input id="profileDisplayName" type="text" placeholder="ChessLearner" />
+                    <button class="button primary small" id="saveProfileName" type="button">저장</button>
+                  </div>
+                  <div class="profile-hero-bio">
+                    <div class="profile-hero-bio-head">
+                      <strong>BIO</strong>
+                      <div class="profile-bio-actions">
+                        <button class="inline-edit-button" id="editProfileBio" type="button" aria-label="BIO 수정">✎</button>
+                      </div>
                     </div>
-                    <div class="profile-inline-editor" id="profileNameEditor" hidden>
-                      <input id="profileDisplayName" type="text" placeholder="ChessLearner" />
-                      <button class="button primary small" id="saveProfileName" type="button">저장</button>
+                    <p id="profileBioText">Easy Elo를 올리며 훈련 중입니다.</p>
+                    <div class="profile-inline-editor" id="profileBioEditor" hidden>
+                      <textarea id="profileBio" placeholder="예: 1600아 내가 간다~"></textarea>
+                      <button class="button primary small" id="saveProfileBio" type="button">저장</button>
                     </div>
-                    <div class="profile-hero-scores">
-                      <span class="profile-score xp-score">
-                        <b aria-hidden="true">✦</b>
-                        <strong id="profileEasyElo">1000</strong>
-                        <small>Easy Elo</small>
-                      </span>
-                      <span class="profile-score streak-score">
-                        <b aria-hidden="true">🔥</b>
-                        <strong id="profileStreak">0</strong>
-                        <small>Streak</small>
-                      </span>
-                    </div>
+                    <small id="profileEmail">player@example.com</small>
                   </div>
                 </div>
-                <div class="profile-hero-bio">
-                  <div class="profile-hero-bio-head">
-                    <strong>BIO</strong>
-                    <div class="profile-bio-actions">
-                      <button class="inline-edit-button" id="editProfileBio" type="button" aria-label="BIO 수정">✎</button>
-                      <button class="icon-action" id="refreshProfile" type="button" title="프로필 새로고침" aria-label="프로필 새로고침">↻</button>
-                    </div>
+
+                <aside class="profile-performance">
+                  <div class="profile-elo-display">
+                    <span>Easy Elo</span>
+                    <strong id="profileEasyElo">1000</strong>
                   </div>
-                  <p id="profileBioText">Easy Elo를 올리며 훈련 중입니다.</p>
-                  <div class="profile-inline-editor" id="profileBioEditor" hidden>
-                    <textarea id="profileBio" placeholder="예: 1600아 내가 간다~"></textarea>
-                    <button class="button primary small" id="saveProfileBio" type="button">저장</button>
+                  <div class="profile-stat-grid">
+                    <article>
+                      <strong id="profileStreak">0</strong>
+                      <small>연속 학습일</small>
+                    </article>
+                    <article>
+                      <strong id="profileLessonsCount">0</strong>
+                      <small>둔 대국</small>
+                    </article>
+                    <article>
+                      <strong id="profileTestsCount">0</strong>
+                      <small>푼 퍼즐</small>
+                    </article>
+                    <article>
+                      <strong id="profileQuestionsCount">0</strong>
+                      <small>받은 배지</small>
+                    </article>
                   </div>
-                  <small id="profileEmail">player@example.com</small>
-                </div>
+                  <span id="profileSideElo" hidden>1000</span>
+                </aside>
               </article>
 
               <div class="profile-content-grid">
                 <main class="profile-main-column">
-                  <div class="profile-stat-grid">
-                    <article>
-                      <span aria-hidden="true">♟</span>
-                      <strong id="profileLessonsCount">0</strong>
-                      <small>Games played</small>
-                    </article>
-                    <article>
-                      <span aria-hidden="true">⚑</span>
-                      <strong id="profileQuestionsCount">0</strong>
-                      <small>Badges earned</small>
-                    </article>
-                    <article>
-                      <span aria-hidden="true">▤</span>
-                      <strong id="profileTestsCount">0</strong>
-                      <small>Puzzles solved</small>
-                    </article>
-                  </div>
-
                   <article class="profile-panel profile-history-panel">
-                    <h3><span aria-hidden="true">🏆</span> 프로필</h3>
+                    <h3><span aria-hidden="true">🏆</span> 받은 배지</h3>
                     <div class="badge-list" id="badgeList"></div>
                     <div class="profile-detail-list" id="badgeDetails"></div>
                   </article>
                 </main>
-
-                <aside class="profile-side-column">
-                  <article class="profile-panel profile-xp-panel">
-                    <h3><span aria-hidden="true">✦</span> XP</h3>
-                    <p>TOP-3 FINISHES</p>
-                    <div class="profile-medal-row" aria-label="리그 상위 입상 현황">
-                      <span class="gold">0</span>
-                      <span class="silver">0</span>
-                      <span class="bronze">0</span>
-                    </div>
-                    <div class="profile-xp-row">
-                      <span aria-hidden="true">📖</span>
-                      <strong>EasyMate League</strong>
-                      <b id="profileSideElo">1000</b>
-                    </div>
-                  </article>
-
-                  <article class="profile-panel">
-                    <h3><span aria-hidden="true">♚</span> 매너 상태</h3>
-                    <div class="temperature badge-temperature"><span id="profileTemp">친절한 대화 상대</span></div>
-                  </article>
-                </aside>
               </div>
 
               <section class="profile-panel profile-settings-panel" aria-labelledby="profileSettingsTitle">
                 <h3 id="profileSettingsTitle">설정</h3>
                 <div class="settings-grid profile-settings-grid">
-                  <article class="settings-card">
-                    <h4>접근성</h4>
-                    <p>읽기 편하도록 화면을 조정합니다.</p>
-                    <label>
-                      화면 언어
-                      <select id="languageSelect" aria-label="화면 언어">
-                        <option value="Korean" selected>한국어</option>
-                        <option value="English">English</option>
-                      </select>
-                    </label>
-                    <button class="mode-toggle settings-toggle" id="contrastModeButton" type="button" aria-pressed="false">
-                      <span class="toggle-track" aria-hidden="true"><span></span></span>
+                  <article class="settings-card profile-language-settings">
+                    <span class="profile-settings-label">화면 언어</span>
+                    <select id="languageSelect" aria-label="화면 언어" hidden>
+                      <option value="Korean" selected>한국어</option>
+                      <option value="English">English</option>
+                    </select>
+                    <div class="profile-language-options" role="radiogroup" aria-label="화면 언어 선택">
+                      <label><input type="radio" name="profileLanguage" value="Korean" data-profile-language checked /> 한국어</label>
+                      <label><input type="radio" name="profileLanguage" value="English" data-profile-language /> English</label>
+                    </div>
+                    <div class="profile-theme-settings">
+                      <span class="profile-settings-label">보드 테마</span>
+                      <div class="profile-theme-list" role="group" aria-label="보드 테마 선택">
+                        <button type="button" data-piece-edition="original"><b>오리지널</b><small>기본 체스판</small></button>
+                        <button type="button" data-piece-edition="cheoinseong"><b>처인성</b><small>EasyMate &amp; 용인문화원</small></button>
+                        <button type="button" data-piece-edition="beta"><b>Beta</b><small>한국 테마 체스</small></button>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article class="settings-card profile-readability-settings">
+                    <span class="profile-settings-label">읽기 편하게</span>
+                    <div class="profile-setting-line">
                       <span>고대비</span>
-                    </button>
+                      <button class="mode-toggle settings-toggle" id="contrastModeButton" type="button" aria-pressed="false">
+                        <span class="toggle-track" aria-hidden="true"><span></span></span>
+                        <span class="visually-hidden">고대비</span>
+                      </button>
+                    </div>
                     <div class="text-size-panel">
-                      <p>앱 글자 크기를 조정합니다.</p>
+                      <span>앱 글자 크기</span>
                       <div class="text-size-slider-row">
                         <span class="text-size-a small" aria-hidden="true">A</span>
                         <input id="textSizeSlider" type="range" min="0" max="6" step="1" value="2" aria-label="글자 크기" />
@@ -930,15 +940,15 @@
                   </article>
 
                   <input id="profileImage" type="url" placeholder="이미지 URL을 붙여넣기" hidden />
-                  <p class="profile-status" id="profileStatus">저장된 프로필을 불러오려면 로그인하세요.</p>
+                  <article class="settings-card delete-account-zone">
+                    <span class="profile-settings-label">계정</span>
+                    <h4>계정 삭제</h4>
+                    <p>삭제하려면 아래에 <strong>delete account</strong>를 입력하세요.</p>
+                    <input id="deleteAccountConfirm" type="text" placeholder="delete account" autocomplete="off" />
+                    <button class="button danger full" id="deleteAccount" type="button" disabled>계정 삭제</button>
+                  </article>
                 </div>
-
-                <div class="delete-account-zone">
-                  <h4>계정 삭제</h4>
-                  <p>삭제하려면 아래에 <strong>delete account</strong>를 입력하세요.</p>
-                  <input id="deleteAccountConfirm" type="text" placeholder="delete account" autocomplete="off" />
-                  <button class="button danger full" id="deleteAccount" type="button" disabled>계정 삭제</button>
-                </div>
+                <p class="profile-status" id="profileStatus" hidden>저장된 프로필을 불러오려면 로그인하세요.</p>
               </section>
             </div>
           </section>
@@ -996,6 +1006,13 @@
           </section>
         </div>
       </section>
+      <nav class="mobile-tabbar" aria-label="모바일 주요 메뉴">
+        <button class="active" data-view-link="overview" type="button">홈</button>
+        <button data-view-link="dashboard" type="button">대국</button>
+        <button data-view-link="how-to-play" type="button">훈련장</button>
+        <button data-view-link="overview" type="button">리그</button>
+        <button data-view-link="profile" type="button">나</button>
+      </nav>
     </main>
 
   </body>
