@@ -105,11 +105,6 @@ const textSizeSlider = document.querySelector("#textSizeSlider");
 const settingsAccountName = document.querySelector("#settingsAccountName");
 const signupButton = document.querySelector("#signupButton");
 const loginButton = document.querySelector("#loginButton");
-const notificationButton = document.querySelector("#notificationButton");
-const notificationCount = document.querySelector("#notificationCount");
-const notificationPanel = document.querySelector("#notificationPanel");
-const notificationList = document.querySelector("#notificationList");
-const clearNotificationsButton = document.querySelector("#clearNotifications");
 const activeMatchesCount = document.querySelector("#activeMatchesCount");
 const subtitleSessionsCount = document.querySelector("#subtitleSessionsCount");
 const welcomeName = document.querySelector("#welcomeName");
@@ -224,12 +219,11 @@ let leaderboardPage = 0;
 const leaderboardPageSize = 10;
 let cachedTrainingState = null;
 let trainingModuleOpen = false;
+let trainingModuleTransition = null;
 let howToPlayResizeObserver = null;
 let howToPlayResizeFrame = 0;
 
 const koreanText = {
-  "Notifications": "알림",
-  "Clear": "지우기",
   "English": "영어",
   "Korean": "한국어",
   "Thai": "태국어",
@@ -519,7 +513,6 @@ Object.assign(koreanText, {
   "EasyMate tutorial": "EasyMate 튜토리얼",
   "Back to dashboard": "대국으로 돌아가기",
   "No posts yet.": "아직 게시글이 없어요. 첫 질문이나 공지를 남겨보세요.",
-  "No notifications yet.": "아직 알림이 없어요. 매칭이 시작되면 이곳에 알려드릴게요.",
   "Live Chess Hardware": "실물 체스 키트",
   "Boards made for chess and language practice.": "체스와 언어 연습을 위한 보드입니다.",
   "Reserve interest": "관심 예약",
@@ -596,6 +589,103 @@ const englishText = Object.entries(koreanText).reduce((map, [english, korean]) =
 }, {});
 englishText["프로필"] = "Profile";
 englishText["프로필과 문화"] = "Profile";
+Object.assign(englishText, {
+  "홈": "Home",
+  "플레이": "Play",
+  "훈련장": "Training",
+  "게시판": "Forum",
+  "상점": "Shop",
+  "나": "Profile",
+  "환영합니다,": "Welcome,",
+  "님!": "!",
+  "오늘의 퍼즐: 성문 뒤의 함정": "Today's puzzle: Trap Behind the Gate",
+  "성문 뒤의 함정": "Trap Behind the Gate",
+  "몽골 칸이 병사들 뒤에 숨었어요. 뒷줄이 텅 비었네요?": "The Mongol Khan is hidden behind soldiers. The back rank is empty.",
+  "한 수로 끝내기": "Finish in one move",
+  "Easy Elo 리더보드 · 주간": "Easy Elo Leaderboard · Weekly",
+  "내 리그": "My League",
+  "전체": "All",
+  "연속 학습일": "Learning Streak",
+  "둔 대국": "Games Played",
+  "푼 퍼즐": "Puzzles Solved",
+  "받은 배지": "Badges Earned",
+  "보드 테마": "Board Theme",
+  "보드 테마란?": "What is a board theme?",
+  "내가 고른 테마로 퍼즐과 대국을 둘 수 있는 EasyMate만의 설정입니다.": "An EasyMate setting that applies your chosen theme to puzzles and games.",
+  "오리지널": "Original",
+  "기본 체스판": "Standard chessboard",
+  "처인성": "Cheoinseong",
+  "한국 테마 체스": "Korean themed chess",
+  "훈련장 진행": "Training Progress",
+  "체스 기물 움직임": "Chess Piece Movement",
+  "기물 잡기": "Capturing Pieces",
+  "체크에서 벗어나는 법": "Escaping Check",
+  "훈련장으로 →": "Go to Training →",
+  "참가 코드": "Join Code",
+  "새 리그 코드 생성": "Create League Code",
+  "아직 참여한 리그가 없습니다.": "You have not joined a league yet.",
+  "퀵 매칭": "Quick Match",
+  "게임 만들기": "Create Game",
+  "친구와 플레이": "Play with a Friend",
+  "상대 찾기": "Find an Opponent",
+  "시간 제한": "Time Control",
+  "열린 방": "Open Rooms",
+  "대기 중인 대국": "Waiting Games",
+  "새로고침": "Refresh",
+  "맞춤": "Custom",
+  "방 만들기": "Create Room",
+  "코드로 참여": "Join with Code",
+  "대국 설정": "Game Settings",
+  "친선": "Casual",
+  "기록": "Rated",
+  "비공개": "Private",
+  "방 링크": "Room Link",
+  "방 링크 복사": "Copy Room Link",
+  "대국 복습": "Game Review",
+  "단어 상자": "Vocabulary Chest",
+  "문화 교류 메모": "Cultural Exchange Notes",
+  "문화 노트에 저장": "Save to Culture Notes",
+  "공지": "Notice",
+  "질문": "Question",
+  "자유": "Free",
+  "새 글": "New Post",
+  "제목": "Title",
+  "분류": "Category",
+  "내용": "Content",
+  "게시": "Publish",
+  "설정": "Settings",
+  "화면 언어": "Display Language",
+  "영어": "English",
+  "한국어": "Korean",
+  "읽기 편하게": "Reading Comfort",
+  "고대비": "High Contrast",
+  "앱 글자 크기": "App Text Size",
+  "계정": "Account",
+  "계정 삭제": "Delete Account",
+  "로그아웃": "Log Out",
+  "비밀번호 바꾸기": "Change Password",
+  "삭제하려면 아래에": "To delete, type",
+  "를 입력하세요.": "below.",
+  "저장된 프로필을 불러오려면 로그인하세요.": "Sign in to load your saved profile.",
+  "프로필을 불러오는 중...": "Loading profile...",
+  "프로필을 저장하는 중...": "Saving profile...",
+  "프로필이 저장되었습니다.": "Profile saved.",
+  "Easy Elo를 올리며 훈련 중입니다.": "Training to raise my Easy Elo.",
+  "연속 학습일": "Learning Streak",
+  "받은 배지": "Badges Earned",
+  "첫 출석": "First Check-in",
+  "첫 플레이": "First Game",
+  "대화 리스너": "Conversation Listener",
+  "매너 플레이어": "Manner Player",
+  "복습 퀴즈": "Review Quiz",
+  "다시 학습": "Study Again",
+  "학습 가능": "Available",
+  "잠김": "Locked",
+  "이전 모듈을 먼저 완료하세요": "Complete the previous module first.",
+  "시작하기": "Start",
+  "모든 훈련 모듈을 완료하면 퍼즐을 열 수 있습니다.": "Complete all training modules to unlock puzzles.",
+  "퍼즐": "Puzzles",
+});
 const originalTextNodes = new WeakMap();
 const originalAttributes = new WeakMap();
 let applyingLanguage = false;
@@ -998,8 +1088,6 @@ let sttShouldRestart = false;
 let sttInterimLines = [];
 let sttSessionStart = null;
 let sttSessionTimer = null;
-let notifications = [];
-let unreadNotifications = 0;
 let cachedAdminData = null;
 let cachedLobbyData = null;
 let adminCommandBuffer = "";
@@ -1894,21 +1982,31 @@ function renderTrainingModuleList() {
   });
 
   const completedModules = (state.completedModules || []).map(Number);
-  const reviewModule = completedModules.at(-1);
+  const reviewModules = (state.modules || []).filter((module) => completedModules.includes(Number(module.id)));
   const review = document.createElement("footer");
   review.className = "training-review-row";
   review.innerHTML = `
     <div>
       <span class="training-module-index">복습 퀴즈</span>
-      <p>${reviewModule ? "배운 규칙을 한 문제로 확인해 볼까요?" : "모듈을 완료하면 복습 퀴즈를 시작할 수 있어요."}</p>
+      <p>${reviewModules.length ? "복습할 모듈을 골라 한 문제로 확인해 볼까요?" : "모듈을 완료하면 복습 퀴즈를 시작할 수 있어요."}</p>
     </div>`;
+  const reviewSelect = document.createElement("select");
+  reviewSelect.className = "training-review-select";
+  reviewSelect.setAttribute("aria-label", "복습할 모듈 선택");
+  reviewModules.forEach((module) => {
+    const option = document.createElement("option");
+    option.value = String(module.id);
+    option.textContent = `모듈 ${module.id} · ${module.title}`;
+    reviewSelect.append(option);
+  });
   const reviewControl = document.createElement("button");
   reviewControl.type = "button";
   reviewControl.className = "training-review-open";
   reviewControl.textContent = "복습 퀴즈 시작";
-  reviewControl.disabled = !reviewModule;
-  if (reviewModule) reviewControl.addEventListener("click", () => openTrainingReview(reviewModule));
-  review.append(reviewControl);
+  reviewControl.disabled = reviewModules.length === 0;
+  reviewSelect.disabled = reviewModules.length === 0;
+  if (reviewModules.length) reviewControl.addEventListener("click", () => openTrainingReview(Number(reviewSelect.value)));
+  review.append(reviewSelect, reviewControl);
   trainingModuleList.append(review);
 }
 
@@ -2112,45 +2210,52 @@ function updateTutorialGateState() {
 }
 
 async function completeStudentTutorial(module) {
+  if (trainingModuleTransition) return trainingModuleTransition;
   const moduleId = Number(module) || activeTrainingState().nextModule?.id;
-  const wasAlreadyCompleted = activeTrainingState().completedModules?.includes(moduleId);
-  if (wasAlreadyCompleted) {
-    setView("how-to-play");
+  trainingModuleTransition = (async () => {
+    const wasAlreadyCompleted = activeTrainingState().completedModules?.includes(moduleId);
+    if (wasAlreadyCompleted) {
+      if (moduleId < 4) openTrainingModule(moduleId + 1);
+      else showTrainingModuleHome();
+      return;
+    }
+    if (currentUser && backendOnline) {
+      try {
+        const data = await api("/api/training/tutorial-complete", {
+          method: "POST",
+          body: { module: moduleId },
+        });
+        cachedTrainingState = data.state;
+        currentUser = data.user || currentUser;
+      } catch (error) {
+        if (tutorialPuzzleNote) tutorialPuzzleNote.textContent = error.message;
+        return;
+      }
+    } else {
+      const state = localTrainingState();
+      const nextModule = moduleId;
+      if (state.nextModule && nextModule !== state.nextModule.id) {
+        if (tutorialPuzzleNote) tutorialPuzzleNote.textContent = "현재 모듈을 먼저 완료하세요.";
+        return;
+      }
+      const completed = [...(state.completedModules || []), nextModule].filter(Boolean);
+      writeLocalSetting(completedTrainingModulesKey, JSON.stringify([...new Set(completed)]));
+      if (nextModule === 1) writeLocalSetting(studentTutorialCompleteKey, "true");
+      if (nextModule === 4) removeLocalSetting(studentTutorialRequiredKey);
+      cachedTrainingState = localTrainingState();
+    }
+
+    // Keep the tutorial shell mounted. Calling setView("how-to-play") here closes
+    // the iframe first, which can briefly show the puzzle home before the next module loads.
+    trainingModuleOpen = true;
+    updateTutorialGateState();
     if (moduleId < 4) openTrainingModule(moduleId + 1);
     else showTrainingModuleHome();
-    return;
-  }
-  if (currentUser && backendOnline) {
-    try {
-      const data = await api("/api/training/tutorial-complete", {
-        method: "POST",
-        body: { module: moduleId },
-      });
-      cachedTrainingState = data.state;
-      currentUser = data.user || currentUser;
-    } catch (error) {
-      if (tutorialPuzzleNote) tutorialPuzzleNote.textContent = error.message;
-      return;
-    }
-  } else {
-    const state = localTrainingState();
-    const nextModule = moduleId;
-    if (state.nextModule && nextModule !== state.nextModule.id) {
-      if (tutorialPuzzleNote) tutorialPuzzleNote.textContent = "현재 모듈을 먼저 완료하세요.";
-      return;
-    }
-    const completed = [...(state.completedModules || []), nextModule].filter(Boolean);
-    writeLocalSetting(completedTrainingModulesKey, JSON.stringify([...new Set(completed)]));
-    if (nextModule === 1) writeLocalSetting(studentTutorialCompleteKey, "true");
-    if (nextModule === 4) removeLocalSetting(studentTutorialRequiredKey);
-    cachedTrainingState = localTrainingState();
-  }
-  trainingModuleOpen = false;
-  updateTutorialGateState();
-  await refreshTrainingState();
-  setView("how-to-play");
-  if (moduleId < 4) openTrainingModule(moduleId + 1);
-  else showTrainingModuleHome();
+    renderTrainingControls();
+  })().finally(() => {
+    trainingModuleTransition = null;
+  });
+  return trainingModuleTransition;
 }
 
 async function completePuzzle(payload = {}) {
@@ -2361,90 +2466,9 @@ async function notifyClockTimeout(color) {
   matchResult.textContent = translateCopy(result);
   syncState.textContent = currentInterfaceLanguage() === "Korean" ? "시간이 끝났습니다" : "Time expired";
   window.clearInterval(clockInterval);
-  if ("Notification" in window && Notification.permission === "granted") {
-    new Notification(currentInterfaceLanguage() === "Korean" ? "체스 시계 종료" : "Chess clock expired", {
-      body: translateCopy(result),
-    });
-  }
   if (backendOnline) {
     await finishMatch(result, { review: false, statusText: currentInterfaceLanguage() === "Korean" ? "시간이 끝났습니다" : "Time expired" });
   }
-}
-
-async function requestNotificationPermission() {
-  if (!("Notification" in window) || Notification.permission !== "default") return;
-  try {
-    await Notification.requestPermission();
-  } catch {
-    // Browser notification permission is optional.
-  }
-}
-
-function renderNotifications() {
-  notificationCount.textContent = String(unreadNotifications);
-  notificationCount.hidden = unreadNotifications === 0;
-
-  notificationList.innerHTML = "";
-  if (!notifications.length) {
-    const empty = document.createElement("p");
-    empty.className = "notification-empty";
-    empty.textContent = translateCopy("No notifications yet.");
-    notificationList.append(empty);
-    return;
-  }
-
-  notifications.slice(0, 12).forEach((item) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    const categoryClass = String(item.category || "info").replace(/[^a-z0-9_-]/gi, "");
-    button.className = `notification-item ${categoryClass || "info"}`;
-    const title = document.createElement("span");
-    title.textContent = translateCopy(item.title || "New notification");
-    const body = document.createElement("small");
-    body.textContent = translateCopy(item.body || "");
-    button.append(title, body);
-    button.addEventListener("click", () => {
-      notificationPanel.hidden = true;
-      notificationButton.setAttribute("aria-expanded", "false");
-      if (item.view) setView(item.view);
-    });
-    notificationList.append(button);
-  });
-}
-
-function addNotification({ category = "info", title = "New notification", body = "", view = null }) {
-  const notification = {
-    id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
-    category,
-    title,
-    body,
-    view,
-  };
-  notifications.unshift(notification);
-  notifications = notifications.slice(0, 30);
-  unreadNotifications += 1;
-  renderNotifications();
-
-  if ("Notification" in window && Notification.permission === "granted") {
-    new Notification(title, { body });
-  }
-}
-
-function handleNotificationMessage(message) {
-  if (message.category === "warning" && message.userId !== currentUser?.id) return;
-  if (message.fromUserId && message.fromUserId === currentUser?.id) return;
-
-  const views = {
-    "game-request": "match",
-    warning: "profile",
-  };
-
-  addNotification({
-    category: message.category,
-    title: translateCopy(message.title || "New notification"),
-    body: message.body || "",
-    view: views[message.category] || null,
-  });
 }
 
 function matchSourceLabel(match) {
@@ -2876,7 +2900,6 @@ function connectSocket(matchId) {
     if (message.type?.startsWith("voice:")) handleVoiceSignal(message);
     if (message.type === "stt:subtitle") handleSubtitleSignal(message);
     if (message.type === "draw:offer") handleDrawOffer(message);
-    if (message.type === "notification") handleNotificationMessage(message);
     if (message.type === "queue:waiting") {
       queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "다른 플레이어가 들어오기를 기다리는 중입니다." : "Waiting for another player to join.";
     }
@@ -3636,8 +3659,6 @@ function toggleProfileMenu() {
   headerProfileButton.setAttribute("aria-expanded", String(willOpen));
   if (willOpen) {
     closeMenu();
-    notificationPanel.hidden = true;
-    notificationButton.setAttribute("aria-expanded", "false");
   }
 }
 
@@ -3946,7 +3967,6 @@ function handleDrawOffer(message) {
 async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안전하게 대화할 수 있는 파트너를 찾는 중입니다." : "Searching for a safe partner with matching goals.", liveQueue = false, overrides = {}) {
   clearInterval(queueInterval);
   clearInterval(queuePollInterval);
-  requestNotificationPermission();
   currentMatchId = null;
   setMatchState("searching");
   let seconds = 25;
@@ -4306,27 +4326,32 @@ function renderLeaderboard(data = {}) {
   const startIndex = leaderboardPage * leaderboardPageSize;
   const pageMembers = members.slice(startIndex, startIndex + leaderboardPageSize);
 
+  const tableHeader = document.createElement("div");
+  tableHeader.className = "leaderboard-table-header";
+  tableHeader.setAttribute("aria-hidden", "true");
+  tableHeader.innerHTML = `
+    <span>${currentInterfaceLanguage() === "Korean" ? "순위" : "Rank"}</span>
+    <span>${currentInterfaceLanguage() === "Korean" ? "이름" : "Name"}</span>
+    <span>Easy Elo</span>
+    <span>${currentInterfaceLanguage() === "Korean" ? "스트릭" : "Streak"}</span>`;
+  leaderboardList.append(tableHeader);
+
   pageMembers.forEach((member) => {
     const row = document.createElement("article");
-    row.className = "leaderboard-row";
+    const isCurrentUser = Boolean(currentUser && member.id === currentUser.id);
+    row.className = `leaderboard-row${isCurrentUser ? " is-current" : ""}`;
     const rank = document.createElement("strong");
     rank.textContent = String(member.rank);
-    const avatar = document.createElement("span");
-    avatar.className = "leaderboard-avatar";
-    renderAvatar(avatar, member, "P");
-    const info = document.createElement("div");
     const name = document.createElement("b");
-    name.textContent = leaderboardScope === "all" ? maskLeaderboardName(member.displayName) : member.displayName || "Player";
-    const meta = document.createElement("small");
-    meta.textContent =
-      currentInterfaceLanguage() === "Korean"
-        ? `${Number(member.streak || 0)}일 streak`
-        : `${Number(member.streak || 0)} day streak`;
-    info.append(name, meta);
+    const displayName = leaderboardScope === "all" ? maskLeaderboardName(member.displayName) : member.displayName || "Player";
+    name.textContent = isCurrentUser && currentInterfaceLanguage() === "Korean" ? `${displayName} (나)` : displayName;
     const elo = document.createElement("span");
     elo.className = "leaderboard-elo";
-    elo.textContent = `${Number(member.easyElo || 1000)} Elo`;
-    row.append(rank, avatar, info, elo);
+    elo.textContent = Number(member.easyElo || 1000).toLocaleString();
+    const streak = document.createElement("span");
+    streak.className = "leaderboard-streak";
+    streak.textContent = String(Number(member.streak || 0));
+    row.append(rank, name, elo, streak);
     leaderboardList.append(row);
   });
 
@@ -4996,14 +5021,6 @@ menuToggle.addEventListener("click", (event) => {
 document.addEventListener("click", (event) => {
   if (!sidebarMenu.hidden && !sidebarMenu.contains(event.target) && !menuToggle.contains(event.target)) closeMenu();
   if (!headerProfileMenu.hidden && !headerProfile.contains(event.target)) closeProfileMenu();
-  if (
-    !notificationPanel.hidden &&
-    !notificationPanel.contains(event.target) &&
-    !notificationButton.contains(event.target)
-  ) {
-    notificationPanel.hidden = true;
-    notificationButton.setAttribute("aria-expanded", "false");
-  }
 });
 
 document.addEventListener("keydown", (event) => {
@@ -5195,25 +5212,6 @@ window.addEventListener("message", (event) => {
     showTrainingModuleHome();
   }
   if (event.data?.type === "easymate:puzzle-complete") completePuzzle(event.data);
-});
-
-notificationButton.addEventListener("click", async (event) => {
-  event.stopPropagation();
-  const willOpen = notificationPanel.hidden;
-  notificationPanel.hidden = !willOpen;
-  notificationButton.setAttribute("aria-expanded", String(willOpen));
-  if (willOpen) closeProfileMenu();
-  if (willOpen) {
-    unreadNotifications = 0;
-    renderNotifications();
-    await requestNotificationPermission();
-  }
-});
-
-clearNotificationsButton.addEventListener("click", () => {
-  notifications = [];
-  unreadNotifications = 0;
-  renderNotifications();
 });
 
 continueToDashboardButton.addEventListener("click", () => {

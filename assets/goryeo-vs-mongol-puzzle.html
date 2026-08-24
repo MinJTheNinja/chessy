@@ -645,7 +645,6 @@ function makePuzzleCard(level,puzzle,isMain){
     '</div>'+
     '<div class="pz-card-body">'+
       '<div class="pz-card-title">'+puzzle.title+'</div>'+
-      '<div class="pz-card-sub">'+puzzle.sub+'</div>'+
       '<div class="stars-row">'+starsHtml(starsForPuzzle)+'</div>'+
     '</div>';
   card.onclick=()=>{ SFX.select(); openPuzzle(curLevel,puzzleIndex); };

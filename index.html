@@ -40,25 +40,11 @@
         <button type="button" data-view-link="how-to-play">훈련장</button>
         <button type="button" data-view-link="forum">게시판</button>
         <button type="button" data-view-link="chessboards">상점</button>
-        <button type="button" data-view-link="profile">나</button>
       </nav>
       <div class="header-actions">
         <div class="piece-edition-toggle" id="headerPieceEditionToggle" role="group" aria-label="말 디자인 선택">
           <button class="active" type="button" data-piece-edition="cheoinseong">처인성</button>
           <button type="button" data-piece-edition="beta">Beta</button>
-        </div>
-        <button class="notification-button" id="notificationButton" type="button" aria-expanded="false" aria-label="알림">
-          <span aria-hidden="true">🔔</span>
-          <strong id="notificationCount" hidden>0</strong>
-        </button>
-        <div class="notification-panel" id="notificationPanel" hidden>
-          <div class="notification-panel-head">
-            <strong>알림</strong>
-            <button class="text-link" id="clearNotifications" type="button">지우기</button>
-          </div>
-          <div class="notification-list" id="notificationList">
-            <p class="notification-empty">아직 알림이 없어요. 매칭이 시작되면 이곳에 알려드릴게요.</p>
-          </div>
         </div>
         <div class="header-profile" id="headerProfile" hidden>
           <button
@@ -169,8 +155,7 @@
                 <article class="home-daily-puzzle" aria-labelledby="dailyPuzzleTitle">
                   <img src="/assets/tutorial-pieces/g_rook.png" alt="처인성 성벽 룩" />
                   <div>
-                    <span class="eyebrow">오늘의 퍼즐 · 고려 대 몽골</span>
-                    <h3 id="dailyPuzzleTitle">성문 뒤의 함정</h3>
+                    <h3 id="dailyPuzzleTitle">오늘의 퍼즐: 성문 뒤의 함정</h3>
                     <p>몽골 칸이 병사들 뒤에 숨었어요. 뒷줄이 텅 비었네요?</p>
                     <button class="button secondary" data-view-link="how-to-play" type="button">한 수로 끝내기</button>
                   </div>
@@ -187,11 +172,15 @@
                     </div>
                     <div class="leaderboard-list home-leaderboard-list" id="leaderboardList"></div>
                   </article>
-                  <article class="home-forum-preview">
-                    <span class="eyebrow">게시판</span>
-                    <ul id="homeForumList" aria-label="최근 게시글"></ul>
-                    <button class="home-text-action" data-view-link="forum" type="button">게시판</button>
-                  </article>
+                  <section class="home-league-join" aria-label="리그 참가">
+                    <span class="eyebrow">참가 코드</span>
+                    <div class="league-code-row">
+                      <input id="leagueCodeInput" type="text" placeholder="예: KING64" maxlength="16" />
+                      <button class="button primary small" id="joinLeagueButton" type="button">참여</button>
+                    </div>
+                    <button class="button secondary full" id="createLeagueButton" type="button">새 리그 코드 생성</button>
+                    <p class="profile-status" id="leagueStatus">아직 참여한 리그가 없습니다.</p>
+                  </section>
                 </div>
               </div>
 
@@ -217,24 +206,6 @@
                   </div>
                 </section>
 
-                <section class="home-training-summary" aria-label="훈련장 진행">
-                  <span class="eyebrow">훈련장 진행</span>
-                  <div class="home-training-row" data-home-training-module="1"><span>체스 기물 움직임</span><b>0/1</b><i></i></div>
-                  <div class="home-training-row" data-home-training-module="2"><span>기물 잡기</span><b>0/1</b><i></i></div>
-                  <div class="home-training-row" data-home-training-module="3"><span>체크에서 벗어나는 법</span><b>0/1</b><i></i></div>
-                  <div class="home-training-row" data-home-training-module="4"><span>체크메이트</span><b>0/1</b><i></i></div>
-                  <button class="home-text-action" data-view-link="how-to-play" type="button">훈련장으로 →</button>
-                </section>
-
-                <section class="home-league-join" aria-label="리그 참가">
-                  <span class="eyebrow">참가 코드</span>
-                  <div class="league-code-row">
-                    <input id="leagueCodeInput" type="text" placeholder="예: KING64" maxlength="16" />
-                    <button class="button primary small" id="joinLeagueButton" type="button">참여</button>
-                  </div>
-                  <button class="button secondary full" id="createLeagueButton" type="button">새 리그 코드 생성</button>
-                  <p class="profile-status" id="leagueStatus">아직 참여한 리그가 없습니다.</p>
-                </section>
               </aside>
             </div>
           </section>
@@ -314,7 +285,6 @@
                         <h3>게임 만들기</h3>
                       </div>
                     </div>
-                    <p>시간과 대국 설정을 직접 고릅니다.</p>
                     <button class="text-action-button" id="showCreateSeek" type="button">방 만들기</button>
                   </section>
 
@@ -364,7 +334,6 @@
                   <section class="match-option-section friend-option-section">
                     <span class="label">비공개</span>
                     <h3>친구와 플레이</h3>
-                    <p>방을 만들거나 초대 코드를 입력하세요.</p>
                     <button class="text-action-button" id="showFriendRoom" type="button">코드로 참여</button>
                   </section>
                 </aside>
@@ -621,7 +590,6 @@
 
             <div class="how-to-play-shell" id="howToPlayShell" hidden>
               <div class="training-module-toolbar" id="trainingModuleToolbar">
-                <button class="button secondary" id="backToTrainingModules" type="button">모듈 목록</button>
                 <strong id="activeTrainingModuleTitle">튜토리얼</strong>
               </div>
               <iframe

@@ -37,13 +37,6 @@ body{
   box-shadow:none;
   overflow:auto;position:relative;display:flex;flex-direction:column;
 }
-.top-band{
-  height:14px;
-  background:repeating-linear-gradient(90deg,
-    var(--jinsa) 0 28px, var(--geum) 28px 40px,
-    var(--noerok) 40px 68px, var(--geum) 68px 80px,
-    var(--easyblue) 80px 108px, var(--geum) 108px 120px);
-}
 .scene{flex:1;display:none;flex-direction:column;padding:clamp(18px,3vw,34px) clamp(22px,5vw,64px) clamp(18px,3vw,34px)}
 .scene.active{display:flex;animation:fadein .45s ease}
 @keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -88,6 +81,34 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 .enemy-row .speech::before{left:auto;right:-12px;border-right-color:transparent;border-left-color:var(--mongol)}
 .enemy-row .speech::after{left:auto;right:-8px;border-right-color:transparent;border-left-color:#fff}
 .enemy-row .char-name small{color:var(--mongol)}
+
+/* Lesson cards: each faction speaks directly beside its own piece. */
+.lesson-layout{display:grid;grid-template-columns:minmax(250px,340px) minmax(0,1fr);gap:clamp(26px,5vw,68px);align-items:start;width:min(980px,100%);margin:auto}
+.lesson-board-panel{min-width:0;padding-top:4px}
+.lesson-board-label{min-height:30px;margin:0 auto 8px;width:min(340px,36vw);font-family:var(--font-ui);font-size:16px;font-weight:900;color:var(--goryeo);letter-spacing:.01em}
+.lesson-board-panel .board-wrap{margin:0 auto 10px}
+.lesson-board-panel .board{width:min(340px,36vw)}
+.lesson-board-panel .mission{margin:0 auto;text-align:left;width:min(340px,36vw);font-size:16px;font-weight:700;line-height:1.55}
+.lesson-board-panel .capture-shelf{width:min(340px,36vw);margin:5px auto 0}
+.lesson-copy-panel{display:grid;gap:12px;min-height:0;align-content:start;padding-top:38px}
+.lesson-piece-brief{display:grid;grid-template-columns:82px minmax(0,1fr);gap:14px;align-items:start;min-width:0}
+.lesson-piece-brief .char-art{width:78px;height:78px}
+.lesson-piece-brief.enemy-brief .char-art{opacity:.96;filter:drop-shadow(0 2px 2px rgba(142,59,49,.18))}
+.lesson-copy-content{min-width:0}
+.lesson-piece-brief .speech{margin-top:15px;border:0;border-radius:0;background:rgba(31,51,72,.045);padding:13px 15px;font-size:14px;line-height:1.7;min-height:78px}
+.lesson-piece-brief.enemy-brief .speech{background:rgba(142,59,49,.055);color:#5b403b}
+.lesson-copy-content .lesson-note{margin:0;text-align:left;font-size:12.5px}
+.lesson-copy-panel .legend{justify-content:flex-start;margin:2px 0 0}
+.lesson-nav{width:100%;justify-content:center;gap:18px;margin-top:30px;padding-top:0}
+.lesson-nav .dots{margin:0;align-self:flex-end}
+.lesson-nav .btn-prev,.lesson-nav .btn-next{border-radius:0;box-shadow:none;background:transparent;padding:7px 0;font-size:14px}
+.lesson-nav .btn-prev{color:#7a8087;text-decoration:none}
+.lesson-nav .btn-next{color:var(--meok);border-bottom:2px solid var(--easyblue)}
+.lesson-nav .btn-next:disabled{background:transparent;box-shadow:none;color:#9ca4ad;border-bottom-color:#cbd4dc}
+.lesson-nav .next-wrap{position:static;display:inline-flex;flex-direction:column;align-items:center;gap:7px;width:min(190px,calc(100vw - 48px));max-width:190px}
+.lesson-nav.has-cd{padding-top:0}
+.lesson-nav .cd-bubble{position:relative;transform:none;white-space:normal;width:min(190px,100%);padding:6px 10px;border-radius:10px;text-align:center;line-height:1.35;box-shadow:none}
+.lesson-nav .cd-bubble::after{content:"";display:block;position:absolute;top:100%;right:22px;left:auto;transform:none;border:7px solid transparent;border-top-color:var(--meok)}
 
 .board-wrap{margin:10px auto 4px;position:relative}
 .board{
@@ -188,6 +209,12 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 .cd-bubble::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
   border:6px solid transparent;border-top-color:var(--meok)}
 .cd-bubble b{color:var(--jinsa);font-weight:400}
+.nav.lesson-nav{display:flex;justify-content:center;align-items:flex-end;gap:18px;flex-wrap:wrap;width:100%;margin-top:30px;padding-top:0}
+.nav.lesson-nav .dots{margin:0;align-self:flex-end}
+.nav.lesson-nav .next-wrap{position:static;display:inline-flex;flex-direction:column;align-items:center;gap:7px;width:min(190px,calc(100vw - 48px));max-width:190px}
+.nav.lesson-nav .cd-bubble{position:relative;box-sizing:border-box;transform:none;white-space:normal;overflow-wrap:anywhere;width:100%;max-width:190px;padding:6px 10px;border-radius:10px;text-align:center;line-height:1.35;box-shadow:none}
+.nav.lesson-nav .cd-bubble::after{content:"";display:block;position:absolute;top:100%;right:22px;left:auto;transform:none;border:7px solid transparent;border-top-color:var(--meok)}
+.nav.lesson-nav.has-cd{padding-top:0}
 .quiz-flag{display:inline-block;font-family:var(--font-korean);font-size:12px;background:var(--jinsa);color:#fff;
   border-radius:999px;padding:3px 11px;margin-bottom:6px}
 .mission.quiz{color:var(--jinsa)}
@@ -213,31 +240,34 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 
 button:focus-visible{outline:3px solid var(--geum);outline-offset:2px}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
-@media (max-width:560px){.scene.story-intro .char-row{transform:translateY(24px)}.scene.story-intro .char-art{width:88px;height:88px}}
+@media (max-width:720px){
+  .lesson-layout{grid-template-columns:1fr;gap:22px}
+  .lesson-board-panel .board,.lesson-board-panel .mission,.lesson-board-panel .capture-shelf,.lesson-board-label{width:min(340px,82vw)}
+  .lesson-copy-panel{min-height:0}
+  .lesson-piece-brief{grid-template-columns:66px minmax(0,1fr);gap:11px}
+  .lesson-piece-brief .char-art{width:62px;height:62px}
+}
+@media (max-width:560px){.scene.story-intro .char-row{transform:translateY(24px)}.scene.story-intro .char-art{width:88px;height:88px}.lesson-copy-content .char-name{font-size:22px}.lesson-nav{margin-top:8px}}
 h1,h2,h3,h4,.jua{font-weight:700}
 button{font-family:var(--font-ui)!important;font-weight:800}
 </style>
 </head>
 <body>
 <div id="app">
-  <div class="top-band"></div>
   <div id="scenes"></div>
 </div>
 <script>
 /* 고려 vs 몽골 — 치비 기물 원화 (전 기물 원화) */
+const pieceArt=(name)=>`<img alt="" src="/assets/tutorial-pieces/${name}.png" loading="eager" decoding="async">`;
 const ART = {
-g_pawn: `<img alt="" src="/assets/tutorial-pieces/g_pawn.png" loading="lazy" decoding="async">`,
-g_rook: `<img alt="" src="/assets/tutorial-pieces/g_rook.png" loading="lazy" decoding="async">`,
-g_knight: `<img alt="" src="/assets/tutorial-pieces/g_knight.png" loading="lazy" decoding="async">`,
-g_bishop: `<img alt="" src="/assets/tutorial-pieces/g_bishop.png" loading="lazy" decoding="async">`,
-g_queen: `<img alt="" src="/assets/tutorial-pieces/g_queen.png" loading="lazy" decoding="async">`,
-g_king: `<img alt="" src="/assets/tutorial-pieces/g_king.png" loading="lazy" decoding="async">`,
-m_pawn: `<img alt="" src="/assets/tutorial-pieces/m_pawn.png" loading="lazy" decoding="async">`,
-m_rook: `<img alt="" src="/assets/tutorial-pieces/m_rook.png" loading="lazy" decoding="async">`,
-m_knight: `<img alt="" src="/assets/tutorial-pieces/m_knight.png" loading="lazy" decoding="async">`,
-m_bishop: `<img alt="" src="/assets/tutorial-pieces/m_bishop.png" loading="lazy" decoding="async">`,
-m_queen: `<img alt="" src="/assets/tutorial-pieces/m_queen.png" loading="lazy" decoding="async">`,
-m_king: `<img alt="" src="/assets/tutorial-pieces/m_king.png" loading="lazy" decoding="async">`
+g_pawn:pieceArt('g_pawn'), g_rook:pieceArt('g_rook'), g_knight:pieceArt('g_knight'),
+g_bishop:pieceArt('g_bishop'), g_queen:pieceArt('g_queen'), g_king:pieceArt('g_king'),
+m_pawn:pieceArt('m_pawn'), m_rook:pieceArt('m_rook'), m_knight:pieceArt('m_knight'),
+m_bishop:pieceArt('m_bishop'), m_queen:pieceArt('m_queen'), m_king:pieceArt('m_king')
+};
+const MONGOL_COUNTERPART = {
+  g_pawn:'m_pawn', g_rook:'m_rook', g_knight:'m_knight',
+  g_bishop:'m_bishop', g_queen:'m_queen', g_king:'m_king'
 };
 
 
@@ -359,7 +389,7 @@ const CHECK_LESSONS = [
 const CHECKMATE_START_SCENE = CHECK_START_SCENE + CHECK_LESSONS.length;
 const CHECKMATE_LESSONS = [
   { id:'back-rank', title:'뒷줄 체크메이트', attacker:'g_rook', text:'돌탑을 파란 점으로 보내 몽골 칸을 꼼짝 못 하게 하자!', note:'맨 윗줄은 돌탑이 노리고, 아래 칸은 우리 임금님이 지켜요.', guardLabel:'임금님이 지키는 칸', dangerLabel:'돌탑이 노리는 칸' },
-  { id:'defended', title:'보호받는 기물의 체크메이트', attacker:'g_queen', text:'근위대장이 체크를 걸고, 임금님이 바로 뒤에서 지키는 완성 포지션을 살펴보자!', note:'공격한 근위대장을 잡으려 해도 임금님이 지키고 있어서 해결되지 않아요.', guardLabel:'임금님이 지키는 기물', dangerLabel:'근위대장이 노리는 칸' },
+  { id:'defended', title:'보호받는 기물의 체크메이트', attacker:'g_queen', text:'우리 근위대장이 상대 왕을 공격하고 있어요! 하지만 근위대장은 우리 왕이 보호하고 있는 칸에 있어서 상대 왕이 우리 근위대장을 잡을 수 없어요!', speech:'우리 근위대장이 상대 왕을 공격하고 있어요! 하지만 근위대장은 우리 왕이 보호하고 있는 칸에 있어서 상대 왕이 우리 근위대장을 잡을 수 없어요!', note:'공격한 근위대장을 잡으려 해도 임금님이 지키고 있어서 해결되지 않아요.', guardLabel:'임금님이 지키는 기물', dangerLabel:'근위대장이 노리는 칸' },
   { id:'smothered', title:'질식 체크메이트', attacker:'g_knight', text:'몽골 칸이 자기 편에 둘러싸인 완성 포지션을 살펴보자!', note:'도망길이 자기 기물로 막힌 체크메이트를 질식 체크메이트라고 해요.', guardLabel:'몽골 기물이 막은 칸', dangerLabel:'백마 기수가 노리는 칸' },
 ];
 const RECAP_SCENE = CHECKMATE_START_SCENE + CHECKMATE_LESSONS.length;
@@ -414,20 +444,34 @@ function render(){
 function beginStoryIntro(){
   const scene=root.querySelector('.scene');
   const board=scene?.querySelector('.board-wrap');
-  const speech=scene?.querySelector('.speech');
-  if(!scene||!board||!speech||isReview) return;
-  const copy=speech.textContent.trim();
-  if(!copy) return;
-  scene.classList.add('story-intro');
-  speech.textContent='';
-  let index=0;
-  const type=()=>{
-    speech.textContent=copy.slice(0,index);
-    index+=1;
-    if(index<=copy.length){ setTimeout(type,18); return; }
-    setTimeout(()=>{ scene.classList.remove('story-intro'); scene.classList.add('story-ready'); },260);
+  if(!scene||!board||isReview) return;
+  const speeches=[...scene.querySelectorAll('.lesson-piece-brief .speech')];
+  if(!speeches.length) speeches.push(scene.querySelector('.speech'));
+  const entries=speeches
+    .filter(Boolean)
+    .map((speech)=>({speech,copy:speech.textContent.trim()}))
+    .filter(({copy})=>copy);
+  if(!entries.length) return;
+  const fixedLessonLayout=Boolean(scene.querySelector('.lesson-layout'));
+  if(!fixedLessonLayout) scene.classList.add('story-intro');
+  entries.forEach(({speech})=>{speech.textContent='';});
+  let entryIndex=0;
+  const typeEntry=()=>{
+    const {speech,copy}=entries[entryIndex];
+    let charIndex=0;
+    const typeCharacter=()=>{
+      speech.textContent=copy.slice(0,charIndex);
+      charIndex+=1;
+      if(charIndex<=copy.length){ setTimeout(typeCharacter,18); return; }
+      entryIndex+=1;
+      if(entryIndex<entries.length){ setTimeout(typeEntry,190); return; }
+      setTimeout(()=>{
+        if(!fixedLessonLayout){ scene.classList.remove('story-intro'); scene.classList.add('story-ready'); }
+      },260);
+    };
+    typeCharacter();
   };
-  setTimeout(type,180);
+  setTimeout(typeEntry,180);
 }
 
 function titleScene(){
@@ -487,86 +531,67 @@ function recapScene(){
       <button class="btn-next" id="nextBtn">배지 받으러 가기 →</button>
     </div>`;
 }
-function pieceScene(p, idx){
+
+function lessonLayout({goryeo, mongol, label='', speech, enemySpeech='', mission='', note='', noteId='', nav, capture=false, legend=''}){
   return `
-    <div class="char-row">
-      <div class="char-art">${ART[p.id]}</div>
-      <div class="char-text">
-        <div class="warrior-label">용사 ${idx+1}: ${p.name}</div>
-        <div class="char-name">${p.name}<small>${p.en}</small></div>
-        <div class="speech">${p.intro}</div>
-      </div>
-    </div>
-    <div class="enemy-row"><div class="char-art">${ART[p.enemy]}</div><div class="char-text"><div class="char-name">${p.enemyName}<small>몽골군</small></div><div class="speech">나는 몽골의 ${p.enemyName}이다. 고려 용사의 움직임을 잘 지켜보겠다!</div></div></div>
-    <div class="board-wrap"><div class="board" id="board"></div></div>
-    <div class="mission" id="mission">${p.mission}</div>
-    <div class="nav">
-      <button class="btn-prev" id="prevBtn">← 이전</button>
-      ${dots(idx)}
-      <span class="next-wrap">
-        <span class="cd-bubble" id="cdBubble" style="display:none"></span>
-        <button class="btn-next" id="nextBtn" disabled>확인 문제 →</button>
-      </span>
+    <div class="lesson-layout">
+      <section class="lesson-board-panel">
+        ${label?`<div class="lesson-board-label">${label}</div>`:''}
+        <div class="board-wrap"><div class="board" id="board"></div></div>
+        ${capture?'<div class="capture-shelf" id="captureShelf" aria-label="잡은 몽골 기물"></div>':''}
+        <div class="mission" id="mission">${mission}</div>
+      </section>
+      <section class="lesson-copy-panel">
+        <div class="lesson-piece-brief">
+          <div class="char-art">${ART[goryeo]}</div>
+          <div class="speech">${speech}</div>
+        </div>
+        ${enemySpeech?`<div class="lesson-piece-brief enemy-brief">
+          <div class="char-art">${ART[mongol || MONGOL_COUNTERPART[goryeo] || 'm_pawn']}</div>
+          <div class="speech">${enemySpeech}</div>
+        </div>`:''}
+        ${note?`<div class="lesson-copy-content"><p class="lesson-note"${noteId?` id="${noteId}"`:''}>${note}</p></div>`:''}
+        ${legend}
+        <div class="nav lesson-nav">${nav}</div>
+      </section>
     </div>`;
+}
+
+function pieceScene(p, idx){
+  return lessonLayout({
+    goryeo:p.id, mongol:p.enemy, label:`용사 ${idx+1}: ${p.name}`,
+    speech:p.intro,
+    enemySpeech:`나는 몽골의 ${p.enemyName}이다. 고려 용사의 움직임을 잘 지켜보겠다!`, mission:p.mission,
+    nav:`<button class="btn-prev" id="prevBtn">← 이전</button>${dots(idx)}<span class="next-wrap"><span class="cd-bubble" id="cdBubble" style="display:none"></span><button class="btn-next" id="nextBtn" disabled>확인 문제 →</button></span>`
+  });
 }
 function captureScene(c, idx){
-  return `
-    ${idx===0?'<h2 style="text-align:center">상대방의 기물을 잡아볼까요?</h2>':''}
-    <div class="char-row">
-      <div class="char-art">${ART[c.piece]}</div>
-      <div class="char-text">
-        <div class="warrior-label">용사 ${idx+1}: ${c.name}</div><div class="char-name">${c.name}<small>${c.en}</small></div>
-        <div class="speech">${c.intro}</div>
-      </div>
-    </div>
-    <div class="enemy-row"><div class="char-art">${ART[c.enemy]}</div><div class="char-text"><div class="char-name">몽골 ${c.enemy==='m_rook'?'공성탑':c.enemy==='m_bishop'?'샤먼':c.enemy==='m_queen'?'칸':c.enemy==='m_king'?'칸':'병졸'}<small>몽골군</small></div><div class="speech">나는 이 칸을 지키고 있다. 고려 용사가 나를 잡을 수 있을까?</div></div></div>
-    <div class="board-wrap"><div class="board" id="board"></div></div>
-    <div class="capture-shelf" id="captureShelf" aria-label="잡은 몽골 기물"></div>
-    <div class="mission" id="mission">${c.mission}</div>
-    <p class="lesson-note">${c.note}</p>
-    <div class="nav">
-      <button class="btn-prev" id="prevBtn">← 이전</button>
-      ${progressDots(CAPTURE_SCENES.length, idx)}
-      <button class="btn-next" id="nextBtn" disabled>다음 →</button>
-    </div>`;
+  const enemyName = c.enemy==='m_rook'?'공성탑':c.enemy==='m_bishop'?'샤먼':c.enemy==='m_queen'?'칸':c.enemy==='m_king'?'칸':'병졸';
+  return lessonLayout({
+    goryeo:c.piece, mongol:c.enemy, label:`용사 ${idx+1}: ${c.name}`,
+    speech:c.intro,
+    enemySpeech:`나는 몽골 ${enemyName}이다. 이 칸을 지키고 있다. 고려 용사가 나를 잡을 수 있을까?`, mission:c.mission, note:c.note, capture:true,
+    nav:`<button class="btn-prev" id="prevBtn">← 이전</button>${progressDots(CAPTURE_SCENES.length, idx)}<button class="btn-next" id="nextBtn" disabled>다음 →</button>`
+  });
 }
 function checkScene(lesson, idx){
-  return `
-    <div class="eyebrow">위험해요, 전하!</div>
-    <div class="char-row">
-      <div class="char-art">${ART.g_king}</div>
-      <div class="char-text">
-        <div class="char-name">체크<small>${lesson.title}</small></div>
-        <div class="speech">${lesson.speech}</div>
-      </div>
-    </div>
-    <div class="board-wrap"><div class="board" id="board"></div></div>
-    <div class="mission" id="mission">${lesson.text}</div>
-    <p class="lesson-note">${lesson.note}</p>
-    <div class="nav">
-      <button class="btn-prev" id="prevBtn">← 이전</button>
-      <button class="btn-next" id="nextBtn" disabled>다음 →</button>
-    </div>`;
+  return lessonLayout({
+    goryeo:'g_king', mongol:'m_king', label:`체크 · ${lesson.title}`,
+    speech:lesson.speech,
+    mission:lesson.text, note:lesson.note, noteId:'mateNote',
+    nav:'<button class="btn-prev" id="prevBtn">← 이전</button><button class="btn-next" id="nextBtn" disabled>다음 →</button>'
+  });
 }
 function checkmateScene(lesson, idx){
-  return `
-    <div class="eyebrow">이기는 끝장면</div>
-    <div class="char-row">
-      <div class="char-art">${ART[lesson.attacker]}</div>
-      <div class="char-text">
-        <div class="char-name">체크메이트<small>${lesson.title}</small></div>
-        <div class="speech"><b>체크메이트</b>는 왕이 공격받는데 <b>도망갈 칸도, 막을 방법도 없을 때</b>예요. ${lesson.note}</div>
-      </div>
-    </div>
-    <div class="board-wrap"><div class="board" id="board"></div></div>
-    <div class="mission" id="mission">${lesson.text}</div>
-    <p class="lesson-note" id="mateNote">${lesson.note}</p>
-    <div class="legend"><span><i class="grd"></i>${lesson.guardLabel}</span><span><i class="dgr"></i>${lesson.dangerLabel}</span></div>
-    <div class="nav">
-      <button class="btn-prev" id="prevBtn">← 이전</button>
-      <button class="btn-next" id="nextBtn" disabled>다음 →</button>
-    </div>`;
+  return lessonLayout({
+    goryeo:lesson.attacker, mongol:MONGOL_COUNTERPART[lesson.attacker], label:`체크메이트 · ${lesson.title}`,
+    speech:lesson.speech || `<b>체크메이트</b>는 왕이 공격받는데 <b>도망갈 칸도, 막을 방법도 없을 때</b>예요. ${lesson.note}`,
+    mission:lesson.text, note:lesson.note,
+    legend:`<div class="legend"><span><i class="grd"></i>${lesson.guardLabel}</span><span><i class="dgr"></i>${lesson.dangerLabel}</span></div>`,
+    nav:'<button class="btn-prev" id="prevBtn">← 이전</button><button class="btn-next" id="nextBtn" disabled>다음 →</button>'
+  });
 }
+
 function moduleDoneScene(){
   const isLast = moduleId === 4;
   return `
@@ -887,7 +912,14 @@ function setupCheck(lesson){
     const target=sqAt(board,2,2); target.classList.add('hint');
     board.addEventListener('click',event=>{
       const sq=event.target.closest('.sq'); if(!sq) return;
-      if(sq===target){ placeToken(knight,[2,2]); enemy.classList.add('poof'); target.classList.remove('hint'); setTimeout(()=>enemy.remove(),360); complete(sq,'공성탑을 잡았어요! 체크에서 벗어났습니다.'); }
+      if(sq===target){
+        target.classList.remove('hint');
+        animateKnight(board,knight,[4,1],[2,2],document.getElementById('mission'),()=>{
+          enemy.classList.add('poof');
+          setTimeout(()=>enemy.remove(),360);
+          complete(sq,'공성탑을 잡았어요! 체크에서 벗어났습니다.');
+        });
+      }
       else flashWrong(sq,'공격하고 있는 몽골 공성탑을 잡아 보세요.');
     });
     return;
@@ -898,8 +930,10 @@ function setupCheck(lesson){
     if(c===dangerCol) sq.classList.add('sq-danger');
   });
   addToken(board,ART.m_rook,[0,2],'enemy-token');
-  const king=addToken(board,ART.g_king,[3,2],'king-danger');
-  [[1,0],[1,4],[3,1],[3,3],[4,1],[4,3]].forEach(([r,c])=>sqAt(board,r,c).classList.add('hint'));
+  const kingStart=[3,2];
+  const king=addToken(board,ART.g_king,kingStart,'king-danger');
+  const safeMoves=MOVE_GEN.g_king(kingStart).filter(([,c])=>c!==dangerCol);
+  safeMoves.forEach(([r,c])=>sqAt(board,r,c).classList.add('hint'));
   board.addEventListener('click',event=>{
     const sq=event.target.closest('.sq'); if(!sq) return;
     const [r,c]=sq.dataset.rc.split(',').map(Number);
@@ -942,12 +976,13 @@ function setupCheckmate(lesson){
   }
 
   if(lesson.id==='smothered'){
-    const enemyKing=addToken(board,ART.m_king,[1,2],'enemy-token');
-    const knight=addToken(board,ART.g_knight,[3,1]);
-    [[0,1],[0,2],[0,3],[1,1],[1,3],[2,1],[2,2],[2,3]].forEach((position)=>addToken(board,ART.m_pawn,position,'enemy-token'));
+    const enemyKing=addToken(board,ART.m_king,[0,4],'enemy-token');
+    const knight=addToken(board,ART.g_knight,[2,3]);
+    const blockedSquares=[[0,3],[1,3],[1,4]];
+    blockedSquares.forEach((position)=>addToken(board,ART.m_pawn,position,'enemy-token'));
     enemyKing.classList.add('king-danger');
     addLabel(knight);
-    mark([[0,1],[0,2],[0,3],[1,1],[1,3],[2,1],[2,2],[2,3]], [[1,2]]);
+    mark(blockedSquares, [[0,4]]);
     mission.textContent='완성된 질식 체크메이트 포지션입니다. 몽골 칸의 도망길은 자기 편이 모두 막고 있어요.';
     note.innerHTML='파란 테두리는 <b>몽골 기물이 막은 칸</b>, 빨간 테두리는 <b>백마 기수가 체크하는 칸</b>이에요.';
     document.getElementById('nextBtn').disabled=false;
