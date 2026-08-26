@@ -4,10 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>강화도의 결전 · 체크메이트 퍼즐 · EasyMate</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
 :root{
@@ -23,7 +20,7 @@
   --easyblue:#6197D0;
   --goryeo:#3E5C94;
   --mongol:#8E3B31;
-  --font-korean:'Noto Serif KR','AppleMyungjo',serif;
+  --font-korean:var(--font-ui);
   --font-ui:'Pretendard','Noto Sans KR',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -221,6 +218,50 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 }
 button:focus-visible{outline:3px solid var(--geum);outline-offset:2px}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+/* Hallmark redesign: flat editorial puzzle library with existing chess assets intact. */
+:root{--font-korean:var(--font-ui)}
+html,body{overflow-x:clip}
+body,body.home-mode{background:#fffdf7;background-image:none;font-family:var(--font-ui)}
+.scenery{display:none!important}
+.screen.active{animation:none}
+h1,h2,h3,h4,.jua,.lv-btn,.pz-card-title,.pz-title,.turn-banner,.win-card h2{font-family:var(--font-ui);font-style:normal}
+.home{color:var(--meok);padding-top:0}
+.home-body{gap:clamp(18px,3vw,32px)}
+.lv-nav{gap:0;width:150px;border-top:1px solid rgba(31,51,72,.18)}
+.lv-btn{border:0;border-bottom:1px solid rgba(31,51,72,.18);border-radius:0;background:transparent;padding:13px 10px;transition:background .12s,border-color .12s}
+.lv-btn:hover{background:rgba(62,92,148,.05)}
+.lv-btn.on{box-shadow:none;background:#fffdf7;color:var(--meok);border-left:3px solid var(--easyblue);border-color:rgba(31,51,72,.18)}
+.lv-btn.on small{color:#596372}
+.puzzle-family-head{border-bottom:1px solid rgba(31,51,72,.25);padding-bottom:8px}
+.puzzle-family-head h3{font-family:var(--font-ui)}
+.pz-grid{gap:22px}
+.pz-card{border:1px solid rgba(31,51,72,.24);border-radius:0;background:#fffdf7;box-shadow:none;transition:border-color .12s,background .12s}
+.pz-card:hover{transform:none;border-color:var(--easyblue);background:#f6f8f6}
+.pz-card:active{transform:none}
+.thumb::after{display:none}
+.thumb .t-badge,.thumb .t-done{border-radius:0;box-shadow:none}
+.pz-card-body{border-top:1px solid rgba(31,51,72,.18)}
+.frame{background:#fffdf7;border:2px solid var(--meok);border-radius:0;padding:clamp(16px,4vw,30px);box-shadow:none}
+.frame::before,.frame::after{display:none}
+.board{border-radius:0;outline:1px solid rgba(31,51,72,.35)}
+.pz-top .back,.pz-top .reset,.pz-top .mute2,.hint-btn{border:1px solid var(--meok);border-radius:0;box-shadow:none;background:transparent;color:var(--meok)}
+.pz-top .back:hover,.pz-top .reset:hover,.pz-top .mute2:hover,.hint-btn:hover{background:var(--meok);color:#fffdf7}
+.pz-top .reset:active,.pz-top .mute2:active{transform:none;box-shadow:none}
+.turn-banner{border-radius:0;background:#fffdf7;border-width:1px}
+.banner-tag{border-radius:0;box-shadow:none}
+.win-card{border-radius:0;box-shadow:0 18px 50px rgba(31,51,72,.22)}
+.win-btns button{border-radius:0;box-shadow:none}
+.win-btns .list{box-shadow:none}
+.win-btns .list:active{transform:none;box-shadow:none}
+.pz-card,.lv-btn,.pz-top button,.hint-btn{font-family:var(--font-ui)}
+/* Prevent legacy board/frame details from producing horizontal scrollbars. */
+#app,.screen,.home,.home-body,.lv-main,.pz-wrap,.frame-outer{min-width:0;max-width:100%}
+.home-body{overflow-x:clip}
+@media (max-width:620px){
+  .lv-nav{width:100%;border-top:1px solid rgba(31,51,72,.18)}
+  .lv-btn{padding:10px 6px}
+}
 </style>
 </head>
 <body class="home-mode">
@@ -585,7 +626,7 @@ function bestReply(b1){
 /* ───────── 상태 & 홈 UI ───────── */
 const stars={};            /* puzzleId -> 0~3 */
 let curLevel=0, cur=null, curLvIdx=0, curPzIdx=0;
-let bd=null, sel=null, locked=false, phase=1, wrongCount=0, hintLevel=0;
+let bd=null, sel=null, locked=false, phase=1, wrongCount=0, hintLevel=0, puzzleStartedAt=Date.now();
 let history=[];
 
 const homeScreen=document.getElementById('homeScreen');
@@ -674,7 +715,7 @@ function firstBannerText(){
     : '고려의 차례 — 한 수로 체크메이트를 찾아라!';
 }
 function resetPuzzle(){
-  bd=cur.setup(); sel=null; locked=false; phase=1; wrongCount=0; hintLevel=0; history=[];
+  bd=cur.setup(); sel=null; locked=false; phase=1; wrongCount=0; hintLevel=0; history=[]; puzzleStartedAt=Date.now();
   hintLine.textContent='';
   hintBtn.textContent='💡 힌트 보기';
   hintBtn.hidden=false;
@@ -814,7 +855,22 @@ function calcStars(){
 function winPuzzle(){
   const earned=calcStars();
   stars[cur.id]=Math.max(stars[cur.id]||0, earned);
-  window.parent?.postMessage({type:'easymate:puzzle-complete', puzzleId:cur.id, stars:earned}, '*');
+  const level=LEVELS[curLvIdx];
+  const familyTitle=String(cur.title||'').replace(/\s+\d+$/, '').trim();
+  const familyPuzzles=level.puzzles.filter((puzzle)=>String(puzzle.title||'').replace(/\s+\d+$/, '').trim()===familyTitle);
+  window.parent?.postMessage({
+    type:'easymate:puzzle-complete',
+    puzzleId:cur.id,
+    stars:earned,
+    title:cur.title,
+    theme:'고려 vs 몽골',
+    family:familyTitle,
+    level:curLvIdx+1,
+    hintsUsed:hintLevel,
+    durationMs:Date.now()-puzzleStartedAt,
+    familyTotal:familyPuzzles.length,
+    levelTotal:level.puzzles.length
+  }, '*');
   setBanner('체크메이트! 고려의 승리!','win');
   SFX.win();
   setTimeout(()=>{

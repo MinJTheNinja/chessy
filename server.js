@@ -39,10 +39,10 @@ let cachedGoogleKeysAt = 0;
 const pieceEditions = new Set(["original", "cheoinseong", "beta"]);
 const dayMs = 24 * 60 * 60 * 1000;
 const trainingModules = [
-  { id: 1, title: "기물의 움직임", src: "/assets/how-to-play.html?module=1" },
-  { id: 2, title: "기물 잡기", src: "/assets/how-to-play.html?module=2" },
-  { id: 3, title: "체크에서 벗어나기", src: "/assets/how-to-play.html?module=3" },
-  { id: 4, title: "체크메이트", src: "/assets/how-to-play.html?module=4" },
+  { id: 1, title: "기물의 움직임", src: "/assets/how-to-play.html?module=1&v=20260824-cleanup" },
+  { id: 2, title: "기물 잡기", src: "/assets/how-to-play.html?module=2&v=20260824-cleanup" },
+  { id: 3, title: "체크에서 벗어나기", src: "/assets/how-to-play.html?module=3&v=20260824-cleanup" },
+  { id: 4, title: "체크메이트", src: "/assets/how-to-play.html?module=4&v=20260824-cleanup" },
 ];
 const pgPool = databaseUrl
   ? new Pool({
@@ -884,6 +884,81 @@ function defaultTraining() {
   };
 }
 
+const achievementCatalog = [
+  { id: "first-step", name: "첫걸음", category: "훈련장", detail: "첫 튜토리얼을 완료했습니다." },
+  { id: "piece-commander", name: "기물 지휘관", category: "훈련장", detail: "기물 움직임 모듈을 완료했습니다." },
+  { id: "capture-specialist", name: "포획 전문가", category: "훈련장", detail: "기물 잡기 모듈을 완료했습니다." },
+  { id: "crisis-escape", name: "위기 탈출", category: "훈련장", detail: "체크 피하기 모듈을 완료했습니다." },
+  { id: "mate-solver", name: "외통수 해결사", category: "훈련장", detail: "체크메이트 모듈을 완료했습니다." },
+  { id: "review-craftsperson", name: "복습 장인", category: "훈련장", detail: "복습 퀴즈를 다섯 번 완료했습니다." },
+  { id: "gate-guardian", name: "성문 수호자", category: "퍼즐", detail: "성문 뒤의 함정을 처음 해결했습니다." },
+  { id: "flawless-solver", name: "무결점 풀이", category: "퍼즐", detail: "힌트 없이 퍼즐을 해결했습니다." },
+  { id: "lightning-move", name: "번개 수", category: "퍼즐", detail: "제한 시간 안에 퍼즐을 해결했습니다." },
+  { id: "five-routes", name: "다섯 갈래 길", category: "퍼즐", detail: "같은 테마의 유사 퍼즐 다섯 개를 모두 해결했습니다." },
+  { id: "puzzle-explorer", name: "퍼즐 탐험가", category: "퍼즐", detail: "서로 다른 퍼즐 테마 세 개를 완료했습니다." },
+  { id: "perfect-march", name: "완벽한 행군", category: "퍼즐", detail: "한 레벨의 모든 퍼즐을 해결했습니다." },
+  { id: "first-match", name: "첫 대국", category: "대국", detail: "첫 실제 대국을 완료했습니다." },
+  { id: "first-victory", name: "첫 승리", category: "대국", detail: "첫 승리를 거뒀습니다." },
+  { id: "finish-the-game", name: "끝까지 한 판", category: "대국", detail: "기권하지 않고 대국을 마쳤습니다." },
+  { id: "comeback-master", name: "역전의 명수", category: "대국", detail: "불리한 상황에서 승리했습니다." },
+  { id: "first-checkmate", name: "체크메이트", category: "대국", detail: "체크메이트로 첫 승리를 거뒀습니다." },
+  { id: "solid-defense", name: "단단한 수비", category: "대국", detail: "체크를 세 번 이상 적절히 피했습니다." },
+  { id: "conversation-listener", name: "대화 리스너", category: "커뮤니티와 매너", detail: "대국 중 대화를 충분히 활용했습니다." },
+  { id: "respectful-move", name: "존중의 한 수", category: "커뮤니티와 매너", detail: "신고 없이 여러 대국을 완료했습니다." },
+  { id: "first-greeting", name: "첫 인사", category: "커뮤니티와 매너", detail: "아이스브레이커 미션을 완료했습니다." },
+  { id: "league-together", name: "함께하는 리그", category: "커뮤니티와 매너", detail: "리그에 처음 참가했습니다." },
+  { id: "league-founder", name: "리그 개설자", category: "커뮤니티와 매너", detail: "첫 리그 코드를 만들었습니다." },
+  { id: "friend-match", name: "친구와 한 판", category: "커뮤니티와 매너", detail: "초대 코드로 친구와 대국을 마쳤습니다." },
+  { id: "march-3", name: "3일 행군", category: "꾸준함", detail: "3일 연속 학습하거나 대국을 완료했습니다." },
+  { id: "march-7", name: "7일 행군", category: "꾸준함", detail: "7일 연속 학습하거나 대국을 완료했습니다." },
+  { id: "march-30", name: "30일 행군", category: "꾸준함", detail: "30일 연속 학습하거나 대국을 완료했습니다." },
+  { id: "morning-strategist", name: "아침의 전략가", category: "꾸준함", detail: "아침에 첫 학습을 마쳤습니다." },
+  { id: "night-strategist", name: "밤의 전략가", category: "꾸준함", detail: "밤에 첫 학습을 마쳤습니다." },
+  { id: "returning-warrior", name: "돌아온 용사", category: "꾸준함", detail: "7일 이상 쉬었다가 다시 학습을 완료했습니다." },
+];
+
+const achievementById = new Map(achievementCatalog.map((achievement) => [achievement.id, achievement]));
+
+function normalizeAchievementEntries(entries) {
+  const seen = new Set();
+  return (Array.isArray(entries) ? entries : [])
+    .map((entry) => (typeof entry === "string" ? { id: entry } : entry || {}))
+    .filter((entry) => achievementById.has(entry.id) && !seen.has(entry.id) && seen.add(entry.id))
+    .map((entry) => ({ id: entry.id, earnedAt: entry.earnedAt || "" }));
+}
+
+function achievementView(entry) {
+  const definition = achievementById.get(entry?.id);
+  return definition ? { ...definition, earnedAt: entry.earnedAt || "" } : null;
+}
+
+function userAchievementEntries(user) {
+  if (!user) return [];
+  user.achievements = normalizeAchievementEntries(user.achievements);
+  user.badgeNotifications = normalizeAchievementEntries(user.badgeNotifications);
+  return user.achievements;
+}
+
+function awardAchievements(user, ids, earnedAt = new Date().toISOString()) {
+  if (!user) return [];
+  const earned = userAchievementEntries(user);
+  const known = new Set(earned.map((entry) => entry.id));
+  const pending = new Set(user.badgeNotifications.map((entry) => entry.id));
+  const unlocked = [];
+  ids.forEach((id) => {
+    if (!achievementById.has(id) || known.has(id)) return;
+    const entry = { id, earnedAt };
+    earned.push(entry);
+    known.add(id);
+    if (!pending.has(id)) {
+      user.badgeNotifications.push(entry);
+      pending.add(id);
+    }
+    unlocked.push(achievementView(entry));
+  });
+  return unlocked;
+}
+
 function normalizeTraining(training = {}) {
   const legacyCompletion = Array.isArray(training.completedTutorialDays) && training.completedTutorialDays.includes(0);
   const { completedTutorialDays, ...currentTraining } = training;
@@ -929,10 +1004,19 @@ function markTutorialComplete(user, requestedModule) {
   return trainingState(user);
 }
 
-function applyDailyStreak(user, completedAt = new Date()) {
+function applyDailyStreak(user, completedAt = new Date(), activityType = "match") {
   if (!user) return false;
   const completedTime = completedAt.getTime();
   const previousTime = Date.parse(user.lastStreakAt || "");
+  const previousLearningTime = Date.parse(user.lastLearningAt || "");
+  if (activityType === "learning") {
+    const hour = completedAt.getHours();
+    user.learningActivityHours = [...(Array.isArray(user.learningActivityHours) ? user.learningActivityHours : []), hour].slice(-120);
+    if (Number.isFinite(previousLearningTime) && completedTime - previousLearningTime >= dayMs * 7) {
+      user.returnedAfterBreak = true;
+    }
+    user.lastLearningAt = completedAt.toISOString();
+  }
   if (Number.isFinite(previousTime) && completedTime - previousTime < dayMs) return false;
   const current = Math.max(0, Number(user.streak || 0));
   user.streak = Number.isFinite(previousTime) && completedTime - previousTime < dayMs * 2 ? current + 1 : 1;
@@ -942,10 +1026,13 @@ function applyDailyStreak(user, completedAt = new Date()) {
 
 function recordMatchCompletionStreak(match, db) {
   const participantIds = new Set((match.players || []).map((player) => player.userId).filter(Boolean));
+  const unlocked = [];
   participantIds.forEach((userId) => {
     const player = db.users.find((item) => item.id === userId);
     applyDailyStreak(player);
+    unlocked.push(...syncAchievements(player, db));
   });
+  return unlocked;
 }
 
 function maskEmailMiddle(email) {
@@ -975,6 +1062,7 @@ function getSessionUser(req, db) {
 
 function publicUser(user) {
   if (!user) return null;
+  const achievements = userAchievementEntries(user).map(achievementView).filter(Boolean);
   return {
     id: user.id,
     email: user.email,
@@ -989,6 +1077,8 @@ function publicUser(user) {
     easyElo: Number(user.easyElo || 1000),
     leagueCode: user.leagueCode || "",
     training: trainingState(user),
+    achievements,
+    badgeNotifications: (user.badgeNotifications || []).map(achievementView).filter(Boolean),
   };
 }
 
@@ -1097,22 +1187,104 @@ function endedMatchBetween(match, userId, targetUserId) {
   return match?.status === "ended" && matchHasUser(match, userId) && matchHasUser(match, targetUserId);
 }
 
-function profileBadges(user, db) {
-  const userMatches = db.matches.filter((match) => (match.players || []).some((player) => player.userId === user.id));
-  const matchIds = new Set(userMatches.map((match) => match.id));
-  const reviews = db.reviews.filter((review) => matchIds.has(review.matchId));
-  const wonBadges = user.leagueBadges || [];
-  const badges = [];
+function matchWinnerIs(match, user) {
+  const player = (match.players || []).find((item) => item.userId === user.id) || {};
+  const result = match.result && typeof match.result === "object" ? match.result : {};
+  const winner = match.winnerId || match.winnerUserId || result.winnerId || result.winnerUserId || match.winner || result.winner;
+  return winner === user.id || (player.color && String(winner || "").toLowerCase() === String(player.color).toLowerCase());
+}
 
-  if (Number(user.easyElo || 1000) >= 1000) badges.push({ name: "Easy Elo 입문", detail: "Easy Elo 랭킹에 참여했습니다." });
-  if (Number(user.streak || 0) >= 1) badges.push({ name: "첫 출석", detail: "훈련장 또는 플레이 기록을 이어가기 시작했습니다." });
-  if (Number(user.streak || 0) >= 7) badges.push({ name: "7일 Streak", detail: "일주일 연속으로 EasyMate를 방문했습니다." });
-  if (userMatches.length > 0) badges.push({ name: "첫 플레이", detail: "체스 대국을 시작했습니다." });
-  if (userMatches.some((match) => (match.transcript || []).length > 0)) {
-    badges.push({ name: "대화 리스너", detail: "대국 중 자막이나 대화를 사용했습니다." });
+function matchText(match) {
+  return JSON.stringify({
+    result: match.result || "",
+    status: match.status || "",
+    termination: match.termination || "",
+    reason: match.reason || "",
+  }).toLowerCase();
+}
+
+function matchUserStats(match, userId) {
+  return match.playerStats?.[userId]
+    || match.stats?.[userId]
+    || match.result?.playerStats?.[userId]
+    || match.result?.stats?.[userId]
+    || {};
+}
+
+function syncAchievements(user, db) {
+  if (!user) return [];
+  user.training = normalizeTraining(user.training);
+  const training = user.training;
+  const completedModules = new Set(training.completedModules);
+  const puzzles = training.completedPuzzles.filter((puzzle) => puzzle && puzzle.id);
+  const matches = Array.isArray(db.matches) ? db.matches : [];
+  const reports = Array.isArray(db.reports) ? db.reports : [];
+  const finishedMatches = matches.filter((match) => match.status === "ended" && matchHasUser(match, user.id));
+  const wonMatches = finishedMatches.filter((match) => matchWinnerIs(match, user));
+  const hasReport = reports.some((report) => [report.reportedUserId, report.targetUserId, report.userId].includes(user.id));
+  const puzzleThemes = new Set(puzzles.map((puzzle) => puzzle.theme).filter(Boolean));
+  const familyGroups = new Map();
+  const levelGroups = new Map();
+  puzzles.forEach((puzzle) => {
+    if (puzzle.family && Number(puzzle.familyTotal) > 0) {
+      const family = familyGroups.get(puzzle.family) || { ids: new Set(), total: Number(puzzle.familyTotal) };
+      family.ids.add(String(puzzle.id));
+      family.total = Math.max(family.total, Number(puzzle.familyTotal));
+      familyGroups.set(puzzle.family, family);
+    }
+    if (Number(puzzle.level) > 0 && Number(puzzle.levelTotal) > 0) {
+      const level = levelGroups.get(Number(puzzle.level)) || { ids: new Set(), total: Number(puzzle.levelTotal) };
+      level.ids.add(String(puzzle.id));
+      level.total = Math.max(level.total, Number(puzzle.levelTotal));
+      levelGroups.set(Number(puzzle.level), level);
+    }
+  });
+
+  const candidateIds = [];
+  if (completedModules.size >= 1) candidateIds.push("first-step", "piece-commander");
+  if (completedModules.has(2)) candidateIds.push("capture-specialist");
+  if (completedModules.has(3)) candidateIds.push("crisis-escape");
+  if (completedModules.has(4)) candidateIds.push("mate-solver");
+  if (training.reviewQuizzes.length >= 5) candidateIds.push("review-craftsperson");
+
+  if (puzzles.some((puzzle) => String(puzzle.title || "").includes("성문 뒤의 함정") || /(^|[-_:])s1($|[-_:])/.test(String(puzzle.id)))) {
+    candidateIds.push("gate-guardian");
   }
-  if (Number(user.mannerTemperature ?? 42.8) >= 42) badges.push({ name: "매너 플레이어", detail: "친절한 대화 상태를 유지하고 있습니다." });
-  if (reviews.length > 0) badges.push({ name: "복습 완료", detail: "대국 뒤 AI 언어 복습을 만들었습니다." });
+  if (puzzles.some((puzzle) => Number.isFinite(Number(puzzle.hintsUsed)) && Number(puzzle.hintsUsed) === 0)) candidateIds.push("flawless-solver");
+  if (puzzles.some((puzzle) => Number(puzzle.durationMs) > 0 && Number(puzzle.durationMs) <= 60000)) candidateIds.push("lightning-move");
+  if ([...familyGroups.values()].some((family) => family.total >= 5 && family.ids.size >= family.total)) candidateIds.push("five-routes");
+  if (puzzleThemes.size >= 3) candidateIds.push("puzzle-explorer");
+  if ([...levelGroups.values()].some((level) => level.ids.size >= level.total)) candidateIds.push("perfect-march");
+
+  if (finishedMatches.length >= 1) candidateIds.push("first-match");
+  if (wonMatches.length >= 1) candidateIds.push("first-victory");
+  if (finishedMatches.some((match) => !/resign|forfeit|기권/.test(matchText(match)))) candidateIds.push("finish-the-game");
+  if (wonMatches.some((match) => [match.comebackWinnerId, match.result?.comebackWinnerId].includes(user.id) || match.result?.comeback === true)) candidateIds.push("comeback-master");
+  if (wonMatches.some((match) => /checkmate|체크메이트/.test(matchText(match)))) candidateIds.push("first-checkmate");
+  if (finishedMatches.some((match) => Number(matchUserStats(match, user.id).checksEscaped || matchUserStats(match, user.id).escapedChecks || 0) >= 3)) candidateIds.push("solid-defense");
+  if (finishedMatches.some((match) => (match.transcript || []).filter((entry) => [entry.userId, entry.authorId, entry.senderId].includes(user.id)).length >= 5)) candidateIds.push("conversation-listener");
+  if (finishedMatches.length >= 5 && !hasReport) candidateIds.push("respectful-move");
+  if (finishedMatches.some((match) => match.icebreakerCompletedBy === user.id || match.icebreaker?.completedBy === user.id || match.icebreaker?.completed === true)) candidateIds.push("first-greeting");
+  if (user.leagueJoined || user.leagueCode) candidateIds.push("league-together");
+  if (user.leagueCreated) candidateIds.push("league-founder");
+  if (finishedMatches.some((match) => ["friend", "private", "invite"].includes(match.pairingType) || match.inviteCode || match.roomCode)) candidateIds.push("friend-match");
+
+  const streak = Number(user.streak || 0);
+  if (streak >= 3) candidateIds.push("march-3");
+  if (streak >= 7) candidateIds.push("march-7");
+  if (streak >= 30) candidateIds.push("march-30");
+  const learningHours = Array.isArray(user.learningActivityHours) ? user.learningActivityHours : [];
+  if (learningHours.some((hour) => Number(hour) >= 5 && Number(hour) < 12)) candidateIds.push("morning-strategist");
+  if (learningHours.some((hour) => Number(hour) >= 20 || Number(hour) < 5)) candidateIds.push("night-strategist");
+  if (user.returnedAfterBreak) candidateIds.push("returning-warrior");
+
+  return awardAchievements(user, candidateIds);
+}
+
+function profileBadges(user, db) {
+  syncAchievements(user, db);
+  const wonBadges = user.leagueBadges || [];
+  const badges = userAchievementEntries(user).map(achievementView).filter(Boolean);
   wonBadges.forEach((badge) => badges.push({ name: badge.name, detail: badge.detail || "리그 순위 보상 배지입니다." }));
 
   if (!badges.length) badges.push({ name: "새 플레이어", detail: "훈련장이나 플레이로 배지를 모아보세요." });
@@ -1305,6 +1477,7 @@ function applyClockAfterMove(match, move, game) {
     clocks.running = false;
     match.status = "ended";
     match.result = `${movedColor === "white" ? "White" : "Black"} lost on time`;
+    match.winnerId = winnerUserIdForColor(match, movedColor === "white" ? "black" : "white");
     match.endedAt = now.toISOString();
     return;
   }
@@ -1343,6 +1516,10 @@ function describeGameResult(game, move) {
   if (game.isDraw()) return "Draw";
   if (game.inCheck()) return "Check";
   return "In progress";
+}
+
+function winnerUserIdForColor(match, color) {
+  return (match.players || []).find((player) => player.color === color)?.userId || null;
 }
 
 function createMatch(db, user, body = {}, opponent = null) {
@@ -1490,7 +1667,9 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
   }
 
   if (req.method === "GET" && pathname === "/api/session") {
-    sendJson(res, 200, { user: publicUser(user) });
+    const unlocked = user ? syncAchievements(user, db) : [];
+    if (unlocked.length) await writeDb(db);
+    sendJson(res, 200, { user: publicUser(user), unlocked });
     return true;
   }
 
@@ -1507,6 +1686,8 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
 
   if (req.method === "GET" && pathname === "/api/profile") {
     if (!requireUser(user, res)) return true;
+    const unlocked = syncAchievements(user, db);
+    if (unlocked.length) await writeDb(db);
     sendJson(res, 200, buildProfile(user, db));
     return true;
   }
@@ -1552,8 +1733,10 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     };
     db.leagues.push(league);
     user.leagueCode = code;
+    user.leagueCreated = true;
+    const unlocked = syncAchievements(user, db);
     await writeDb(db);
-    sendJson(res, 201, { league: leagueView(league, db, "weekly"), user: publicUser(user) });
+    sendJson(res, 201, { league: leagueView(league, db, "weekly"), user: publicUser(user), unlocked });
     return true;
   }
 
@@ -1568,8 +1751,10 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     }
     user.leagueCode = code;
     user.weeklyEasyElo = Number(user.weeklyEasyElo ?? user.easyElo ?? 1000);
+    user.leagueJoined = true;
+    const unlocked = syncAchievements(user, db);
     await writeDb(db);
-    sendJson(res, 200, { league: leagueView(league, db, "weekly"), user: publicUser(user) });
+    sendJson(res, 200, { league: leagueView(league, db, "weekly"), user: publicUser(user), unlocked });
     return true;
   }
 
@@ -1614,8 +1799,10 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       sendJson(res, 409, { error: error.message, state: trainingState(user) });
       return true;
     }
+    applyDailyStreak(user, new Date(), "learning");
+    const unlocked = syncAchievements(user, db);
     await writeDb(db);
-    sendJson(res, 200, { state, user: publicUser(user) });
+    sendJson(res, 200, { state, user: publicUser(user), unlocked });
     return true;
   }
 
@@ -1628,15 +1815,26 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       return true;
     }
     const body = await readBody(req);
-    user.training.completedPuzzles.push({
-      id: String(body.puzzleId || "goryeo-vs-mongol").slice(0, 80),
+    const puzzleId = String(body.puzzleId || "goryeo-vs-mongol").slice(0, 80);
+    const puzzle = {
+      id: puzzleId,
       stars: Math.max(0, Math.min(3, Number(body.stars || 0))),
       module: state.nextModule?.id || trainingModules.at(-1).id,
       completedAt: new Date().toISOString(),
+    };
+    ["title", "theme", "family", "level"].forEach((key) => {
+      if (body[key] !== undefined && body[key] !== null) puzzle[key] = String(body[key]).slice(0, 100);
     });
-    applyDailyStreak(user);
+    ["hintsUsed", "durationMs", "familyTotal", "levelTotal"].forEach((key) => {
+      if (Number.isFinite(Number(body[key]))) puzzle[key] = Math.max(0, Number(body[key]));
+    });
+    const existingIndex = user.training.completedPuzzles.findIndex((item) => item.id === puzzleId);
+    if (existingIndex >= 0) user.training.completedPuzzles[existingIndex] = { ...user.training.completedPuzzles[existingIndex], ...puzzle };
+    else user.training.completedPuzzles.push(puzzle);
+    applyDailyStreak(user, new Date(), "learning");
+    const unlocked = syncAchievements(user, db);
     await writeDb(db);
-    sendJson(res, 200, { state: trainingState(user), user: publicUser(user) });
+    sendJson(res, 200, { state: trainingState(user), user: publicUser(user), unlocked });
     return true;
   }
 
@@ -1649,8 +1847,21 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       score: Math.max(0, Number(body.score || 0)),
       completedAt: new Date().toISOString(),
     });
+    applyDailyStreak(user, new Date(), "learning");
+    const unlocked = syncAchievements(user, db);
     await writeDb(db);
-    sendJson(res, 200, { state: trainingState(user), user: publicUser(user) });
+    sendJson(res, 200, { state: trainingState(user), user: publicUser(user), unlocked });
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/achievements/acknowledge") {
+    if (!requireUser(user, res)) return true;
+    const body = await readBody(req);
+    const ids = new Set(Array.isArray(body.ids) ? body.ids.map(String) : []);
+    userAchievementEntries(user);
+    user.badgeNotifications = user.badgeNotifications.filter((badgeId) => !ids.has(badgeId));
+    await writeDb(db);
+    sendJson(res, 200, { user: publicUser(user) });
     return true;
   }
 
@@ -2454,24 +2665,28 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     if (game.isGameOver()) {
       match.status = "ended";
       match.endedAt = new Date().toISOString();
+      if (game.isCheckmate()) {
+        match.winnerId = winnerUserIdForColor(match, legalMove.color === "w" ? "white" : "black");
+      }
       if (match.clocks) {
         match.clocks.activeColor = null;
         match.clocks.running = false;
       }
     }
-    if (!wasEndedBeforeMove && match.status === "ended") recordMatchCompletionStreak(match, db);
+    const unlocked = !wasEndedBeforeMove && match.status === "ended" ? recordMatchCompletionStreak(match, db) : [];
     match.moves.push(move);
     match.transcript.push({
       speaker: move.by,
       text: `I played ${move.san}.`,
       translation: `Move notation: ${move.san}.`,
       kind: "move",
+      userId: user?.id || null,
       at: move.at,
     });
     await writeDb(db);
     syncRedisRoom(match).catch((error) => console.warn(`Redis room sync failed: ${error.message}`));
     broadcast(match.id, { type: "match:move", matchId: match.id, move, match: decorateMatch(match) });
-    sendJson(res, 200, { match: decorateMatch(match), move });
+    sendJson(res, 200, { match: decorateMatch(match), move, unlocked });
     return true;
   }
 
@@ -2494,6 +2709,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       text: String(body.text || ""),
       translation: body.translation || "",
       kind: body.kind || "speech",
+      userId: user?.id || null,
       at: new Date().toISOString(),
     };
     match.transcript.push(item);
@@ -2520,17 +2736,24 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     }
     match.status = "ended";
     match.result = body.result || match.result || "Completed";
+    const requestedWinnerId = String(body.winnerId || "").trim();
+    const requestedWinnerColor = String(body.winnerColor || "").toLowerCase();
+    if (requestedWinnerId && matchHasUser(match, requestedWinnerId)) {
+      match.winnerId = requestedWinnerId;
+    } else if (["white", "black"].includes(requestedWinnerColor)) {
+      match.winnerId = winnerUserIdForColor(match, requestedWinnerColor);
+    }
     match.endedAt = new Date().toISOString();
     if (match.clocks) {
       match.clocks.activeColor = null;
       match.clocks.running = false;
       match.clocks.lastUpdatedAt = match.endedAt;
     }
-    if (!wasEnded) recordMatchCompletionStreak(match, db);
+    const unlocked = !wasEnded ? recordMatchCompletionStreak(match, db) : [];
     await writeDb(db);
     await syncRedisRoom(match);
     broadcast(match.id, { type: "match:ended", matchId: match.id, result: match.result, match: decorateMatch(match) });
-    sendJson(res, 200, { match: decorateMatch(match) });
+    sendJson(res, 200, { match: decorateMatch(match), unlocked });
     return true;
   }
 
@@ -2666,6 +2889,9 @@ function serveStatic(req, res, pathname) {
     requested === "/index.html" ||
     requested === "/app.js" ||
     requested === "/styles.css" ||
+    requested === "/hallmark-demo.html" ||
+    requested === "/hallmark-demo.css" ||
+    requested === "/tokens.css" ||
     requested === "/google0bf39d77e9bebab7.html" ||
     requested.startsWith("/assets/");
 

@@ -601,7 +601,7 @@ Object.assign(englishText, {
   "오늘의 퍼즐: 성문 뒤의 함정": "Today's puzzle: Trap Behind the Gate",
   "성문 뒤의 함정": "Trap Behind the Gate",
   "몽골 칸이 병사들 뒤에 숨었어요. 뒷줄이 텅 비었네요?": "The Mongol Khan is hidden behind soldiers. The back rank is empty.",
-  "한 수로 끝내기": "Finish in one move",
+  "풀기": "Solve",
   "Easy Elo 리더보드 · 주간": "Easy Elo Leaderboard · Weekly",
   "내 리그": "My League",
   "전체": "All",
@@ -2085,7 +2085,7 @@ function openTrainingModule(moduleId) {
   howToPlayShell?.removeAttribute("hidden");
   trainingModuleToolbar?.removeAttribute("hidden");
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `모듈 ${normalizedModuleId} · ${module.title}`;
-  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&v=20260820-module-flow`;
+  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&v=20260824-cleanup`;
   showTutorialGuideButton?.classList.add("active");
   showPuzzleGuideButton?.classList.remove("active");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2103,7 +2103,7 @@ function openTrainingReview(moduleId) {
   howToPlayShell?.removeAttribute("hidden");
   trainingModuleToolbar?.removeAttribute("hidden");
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `모듈 ${normalizedModuleId} · 복습 퀴즈`;
-  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&review=1`;
+  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&review=1&v=20260824-cleanup`;
   showTutorialGuideButton?.classList.add("active");
   showPuzzleGuideButton?.classList.remove("active");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2175,7 +2175,7 @@ function setHowToPlayMode(mode) {
     trainingModuleToolbar?.setAttribute("hidden", "");
     const currentFramePath = howToPlayFrame ? new URL(howToPlayFrame.src, window.location.href).pathname : "";
     if (howToPlayFrame && currentFramePath !== "/assets/goryeo-vs-mongol-puzzle.html") {
-      howToPlayFrame.src = "/assets/goryeo-vs-mongol-puzzle.html";
+      howToPlayFrame.src = "/assets/goryeo-vs-mongol-puzzle.html?v=20260824-cleanup";
     } else {
       watchPuzzleFrameHeight();
     }
@@ -2227,6 +2227,7 @@ async function completeStudentTutorial(module) {
         });
         cachedTrainingState = data.state;
         currentUser = data.user || currentUser;
+        showAchievementUnlocks(data.unlocked);
       } catch (error) {
         if (tutorialPuzzleNote) tutorialPuzzleNote.textContent = error.message;
         return;
@@ -2272,10 +2273,22 @@ async function completePuzzle(payload = {}) {
   try {
     const data = await api("/api/training/puzzle-complete", {
       method: "POST",
-      body: { puzzleId: payload.puzzleId || "goryeo-vs-mongol", stars: payload.stars || 0 },
+      body: {
+        puzzleId: payload.puzzleId || "goryeo-vs-mongol",
+        stars: payload.stars || 0,
+        title: payload.title,
+        theme: payload.theme,
+        family: payload.family,
+        level: payload.level,
+        hintsUsed: payload.hintsUsed,
+        durationMs: payload.durationMs,
+        familyTotal: payload.familyTotal,
+        levelTotal: payload.levelTotal,
+      },
     });
     cachedTrainingState = data.state;
     currentUser = data.user || currentUser;
+    showAchievementUnlocks(data.unlocked);
     renderAuthState();
     renderDashboardSummary();
     await refreshLeaderboard();
@@ -2855,6 +2868,7 @@ async function checkBackend() {
       updateTemperature(Number(currentUser.mannerTemperature ?? currentManner));
     }
     renderAuthState();
+    showAchievementUnlocks(session.unlocked);
     if (currentUser) connectSocket(null);
     const routedToMatch = await loadMatchFromRoute();
     if (isStaffRoute()) {
@@ -3321,6 +3335,79 @@ function renderForumPosts() {
     item.append(pin, main, side);
     forumPostList.append(item);
   });
+}
+
+async function completeReviewQuiz(payload = {}) {
+  if (!currentUser || !backendOnline) return;
+  try {
+    const data = await api("/api/training/review-quiz", {
+      method: "POST",
+      body: { module: Number(payload.module) || 1, score: Number(payload.score) || 0 },
+    });
+    cachedTrainingState = data.state;
+    currentUser = data.user || currentUser;
+    showAchievementUnlocks(data.unlocked);
+    renderAuthState();
+    renderDashboardSummary();
+  } catch (error) {
+    if (tutorialPuzzleNote) {
+      tutorialPuzzleNote.hidden = false;
+      tutorialPuzzleNote.textContent = error.message;
+    }
+  }
+}
+
+function showAchievementUnlocks(unlocked = []) {
+  const badges = Array.isArray(unlocked)
+    ? unlocked.filter((badge) => badge?.id && badge?.name)
+    : [];
+  if (!badges.length) return;
+
+  let stack = document.getElementById("achievementToastStack");
+  if (!stack) {
+    stack = document.createElement("div");
+    stack.id = "achievementToastStack";
+    stack.className = "achievement-toast-stack";
+    document.body.appendChild(stack);
+  }
+
+  const acknowledged = [];
+  badges.forEach((badge) => {
+    if (stack.querySelector(`[data-achievement-id="${badge.id}"]`)) return;
+    acknowledged.push(badge.id);
+    const toast = document.createElement("section");
+    toast.className = "achievement-toast";
+    toast.dataset.achievementId = badge.id;
+    toast.setAttribute("role", "status");
+
+    const copy = document.createElement("div");
+    const kicker = document.createElement("span");
+    kicker.className = "achievement-toast-kicker";
+    kicker.textContent = currentInterfaceLanguage() === "Korean" ? "새 배지 획득" : "New badge unlocked";
+    const name = document.createElement("strong");
+    name.textContent = badge.name;
+    const detail = document.createElement("p");
+    detail.textContent = badge.detail || "프로필에서 획득 배지를 확인하세요.";
+    copy.append(kicker, name, detail);
+
+    const dismiss = document.createElement("button");
+    dismiss.type = "button";
+    dismiss.className = "achievement-toast-close";
+    dismiss.setAttribute("aria-label", currentInterfaceLanguage() === "Korean" ? "닫기" : "Close");
+    dismiss.textContent = "×";
+    dismiss.addEventListener("click", () => toast.remove());
+    toast.append(copy, dismiss);
+    stack.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add("is-visible"));
+    window.setTimeout(() => toast.remove(), 9000);
+  });
+
+  if (!acknowledged.length || !backendOnline) return;
+  api("/api/achievements/acknowledge", { method: "POST", body: { ids: acknowledged } })
+    .then((data) => {
+      if (data?.user) currentUser = { ...currentUser, ...data.user };
+    })
+    .catch(() => {});
 }
 
 function renderHomeForumPreview() {
@@ -3885,6 +3972,7 @@ async function makeMove(from, to) {
       body: { from, to, promotion: "q" },
     });
     renderMatch(data.match);
+    showAchievementUnlocks(data.unlocked);
     syncState.textContent =
       currentInterfaceLanguage() === "Korean" ? `${data.move.san} 수가 반영되었습니다` : `${data.move.san} accepted`;
     refreshStats();
@@ -4253,6 +4341,7 @@ async function joinLeague() {
     if (leagueStatus) leagueStatus.textContent = "리그에 참여하는 중...";
     const data = await api("/api/leagues/join", { method: "POST", body: { code } });
     currentUser = data.user;
+    showAchievementUnlocks(data.unlocked);
     renderDashboardSummary();
     renderLeaderboard(data.league);
     renderAuthState();
@@ -4272,6 +4361,7 @@ async function createLeague() {
     if (leagueStatus) leagueStatus.textContent = "리그 코드를 생성하는 중...";
     const data = await api("/api/leagues/create", { method: "POST", body: { name: "EasyMate Class League" } });
     currentUser = data.user;
+    showAchievementUnlocks(data.unlocked);
     if (leagueCodeInput) leagueCodeInput.value = data.league.code;
     renderDashboardSummary();
     renderLeaderboard(data.league);
@@ -4309,7 +4399,7 @@ function renderLeaderboard(data = {}) {
   const members = data.members || [];
   if (!members.length) {
     const empty = document.createElement("p");
-    empty.className = "admin-empty";
+    empty.className = "leaderboard-empty";
     empty.textContent =
       data.emptyReason === "no-league"
         ? currentInterfaceLanguage() === "Korean"
@@ -5207,6 +5297,7 @@ window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin && event.origin !== "null") return;
   if (howToPlayFrame?.contentWindow && event.source !== howToPlayFrame.contentWindow) return;
   if (event.data?.type === "easymate:tutorial-complete") completeStudentTutorial(event.data.module);
+  if (event.data?.type === "easymate:review-quiz-complete") completeReviewQuiz(event.data);
   if (event.data?.type === "easymate:return-training") {
     setView("how-to-play");
     showTrainingModuleHome();

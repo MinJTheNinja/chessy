@@ -4,10 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>고려 vs 몽골 · 여섯 용사 이야기 · EasyMate</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
 :root{
@@ -19,7 +16,7 @@
   --easyblue:#6197D0;
   --goryeo:#3E5C94;
   --mongol:#8E3B31;
-  --font-korean:'Noto Serif KR','AppleMyungjo',serif;
+  --font-korean:var(--font-ui);
   --font-ui:'Pretendard','Noto Sans KR',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -35,7 +32,7 @@ body{
   width:100%;max-width:none;height:100%;min-height:100%;background:#FFFCF5;
   border:0;border-radius:0;
   box-shadow:none;
-  overflow:auto;position:relative;display:flex;flex-direction:column;
+  overflow-y:auto;overflow-x:clip;position:relative;display:flex;flex-direction:column;
 }
 .scene{flex:1;display:none;flex-direction:column;padding:clamp(18px,3vw,34px) clamp(22px,5vw,64px) clamp(18px,3vw,34px)}
 .scene.active{display:flex;animation:fadein .45s ease}
@@ -250,6 +247,50 @@ button:focus-visible{outline:3px solid var(--geum);outline-offset:2px}
 @media (max-width:560px){.scene.story-intro .char-row{transform:translateY(24px)}.scene.story-intro .char-art{width:88px;height:88px}.lesson-copy-content .char-name{font-size:22px}.lesson-nav{margin-top:8px}}
 h1,h2,h3,h4,.jua{font-weight:700}
 button{font-family:var(--font-ui)!important;font-weight:800}
+
+/* Hallmark redesign: focused learning split-plane, original piece assets retained. */
+:root{--font-korean:var(--font-ui)}
+html,body{overflow-x:clip}
+body,#app{background:#fffdf7;font-family:var(--font-ui)}
+.scene.active{animation:none}
+.scene{padding:clamp(18px,3vw,34px) clamp(18px,4vw,48px)}
+h1,h2,h3,h4,.jua,.title-label,.warrior-label,.lesson-board-label,.mission,.lesson-note,.speech,.nav button,.badge p{font-family:var(--font-ui);font-style:normal}
+.eyebrow,.warrior-label,.quiz-flag{border-radius:0;background:transparent;color:var(--goryeo);padding:0;font-weight:850}
+.start-btn,.replay,.nav button,.btn-next{border:1px solid var(--meok);border-radius:0;box-shadow:none;background:transparent;color:var(--meok)}
+.start-btn:hover,.replay:hover,.nav button:hover,.btn-next:hover{background:var(--meok);color:#fffdf7;transform:none}
+.start-btn:active,.replay:active,.nav button:active{transform:none;box-shadow:none}
+.lesson-layout{width:min(1040px,100%);grid-template-columns:minmax(250px,360px) minmax(0,1fr);gap:clamp(28px,5vw,72px)}
+.lesson-board-panel{padding-top:10px}
+.lesson-board-label{width:min(360px,100%);margin-bottom:12px;font-size:18px;font-weight:850}
+.lesson-board-panel .board,.lesson-board-panel .mission,.lesson-board-panel .capture-shelf{width:min(360px,100%)}
+.board{border-radius:0;border-width:2px}
+.lesson-board-panel .mission{margin-top:14px;font-size:17px;font-weight:750}
+.lesson-copy-panel{align-content:center;gap:16px;padding-top:40px;min-height:430px}
+.lesson-piece-brief{grid-template-columns:88px minmax(0,1fr);gap:18px;align-items:center}
+.lesson-piece-brief .char-art{width:84px;height:84px}
+.lesson-piece-brief .speech{margin:0;min-height:0;border:0;border-left:2px solid var(--goryeo);border-radius:0;background:#f6f4ef;padding:16px 18px;font-size:15px;line-height:1.75}
+.lesson-piece-brief.enemy-brief .speech{border-left-color:var(--mongol);background:rgba(142,59,49,.045)}
+.lesson-piece-brief.enemy-brief .speech,.lesson-piece-brief .speech{animation:none}
+.lesson-nav{align-self:center;justify-content:center;gap:16px;margin-top:16px;padding-top:12px}
+.lesson-nav .next-wrap{width:auto;max-width:min(240px,100%)}
+.lesson-nav .cd-bubble{max-width:min(240px,100%);width:auto;border-radius:0;box-shadow:none}
+.lesson-nav .cd-bubble::after{right:18px}
+.lesson-nav .btn-prev,.lesson-nav .btn-next{min-height:38px;padding:7px 0}
+.lesson-nav .dots{align-self:center}
+.piece-token,.enemy-token,.path-layer,.star-burst,.king-danger::before{animation:none!important;transition:none}
+.rule-item,.cmp,.badge{border-radius:0;box-shadow:none}
+.rule-item{border-width:1px;background:transparent}
+.scene.story-intro .char-row,.scene.story-ready .char-row{transform:none;animation:none}
+/* Avoid horizontal spill from lesson panels and their prompt bubble. */
+.scene,.lesson-layout,.lesson-board-panel,.lesson-copy-panel,.lesson-copy-content,.lesson-nav,.lesson-nav .next-wrap{min-width:0;max-width:100%}
+.lesson-nav .cd-bubble{overflow:hidden;text-overflow:ellipsis}
+@media (max-width:720px){
+  .lesson-layout{grid-template-columns:1fr;gap:22px}
+  .lesson-copy-panel{padding-top:0;min-height:0}
+  .lesson-piece-brief{grid-template-columns:64px minmax(0,1fr);gap:12px}
+  .lesson-piece-brief .char-art{width:60px;height:60px}
+  .lesson-piece-brief .speech{padding:13px 14px;font-size:14px}
+}
 </style>
 </head>
 <body>
@@ -408,6 +449,7 @@ const [MODULE_START_SCENE, MODULE_END_SCENE] = moduleBounds[moduleId];
 
 const state = {scene:isReview ? REVIEW_SCENE : MODULE_START_SCENE, earned:{}, captures:{}, checks:{}, checkmates:{}};
 let countdownTimer=null;
+let reviewQuizReported=false;
 const root = document.getElementById('scenes');
 
 function dots(idx){
@@ -1026,7 +1068,14 @@ function bindScene(){
       button.onclick=()=>{
         const right=Number(button.dataset.answer)===correct;
         document.getElementById('reviewResult').textContent=right?'정답이에요! 복습을 마쳤어요.':'다시 생각해 보세요. 배운 규칙을 떠올려 볼까요?';
-        if(right){ button.classList.add('done'); SFX.good(); }
+        if(right){
+          button.classList.add('done');
+          SFX.good();
+          if(!reviewQuizReported){
+            reviewQuizReported=true;
+            window.parent?.postMessage({type:'easymate:review-quiz-complete',module:moduleId,score:1}, '*');
+          }
+        }
         else { button.classList.add('wrong'); SFX.wrong(); }
       };
     });
