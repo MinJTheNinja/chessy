@@ -82,6 +82,8 @@ const tutorialGateNote = document.querySelector("#tutorialGateNote");
 const tutorialLoginButton = document.querySelector("#tutorialLoginButton");
 const mainAccountButton = document.querySelector("#mainAccountButton");
 const mainTutorialButton = document.querySelector("#mainTutorialButton");
+const entryTypewriter = document.querySelector("#entryTypewriter");
+const entryTypewriterText = document.querySelector(".entry-typewriter-text");
 const howToPlayFrame = document.querySelector(".how-to-play-frame");
 const howToPlayShell = document.querySelector("#howToPlayShell");
 const howToPlayView = document.querySelector(".how-to-play-view");
@@ -89,6 +91,7 @@ const showTutorialGuideButton = document.querySelector("#showTutorialGuide");
 const showPuzzleGuideButton = document.querySelector("#showPuzzleGuide");
 const tutorialPuzzleNote = document.querySelector("#tutorialPuzzleNote");
 const trainingModuleList = document.querySelector("#trainingModuleList");
+const puzzlePathList = document.querySelector("#puzzlePathList");
 const trainingModuleToolbar = document.querySelector("#trainingModuleToolbar");
 const activeTrainingModuleTitle = document.querySelector("#activeTrainingModuleTitle");
 const backToTrainingModulesButton = document.querySelector("#backToTrainingModules");
@@ -118,6 +121,12 @@ const leagueCodeInput = document.querySelector("#leagueCodeInput");
 const joinLeagueButton = document.querySelector("#joinLeagueButton");
 const createLeagueButton = document.querySelector("#createLeagueButton");
 const leagueStatus = document.querySelector("#leagueStatus");
+const leagueActionButtons = document.querySelectorAll("[data-league-action]");
+const leagueActionPanels = document.querySelectorAll("[data-league-panel]");
+const leagueActionPopover = document.querySelector("#leagueActionPopover");
+const closeLeagueActionPopoverButton = document.querySelector("#closeLeagueActionPopover");
+const createdLeagueCode = document.querySelector("#createdLeagueCode");
+const todayQuestList = document.querySelector("#todayQuestList");
 const conversationGoal = document.querySelector("#conversationGoal");
 const forumPostTitle = document.querySelector("#forumPostTitle");
 const forumPostCategory = document.querySelector("#forumPostCategory");
@@ -212,11 +221,14 @@ const demoAuthAllowed = ["localhost", "127.0.0.1", ""].includes(window.location.
 const studentTutorialRequiredKey = "easyMateStudentTutorialRequired";
 const studentTutorialCompleteKey = "easyMateStudentTutorialComplete";
 const completedTrainingModulesKey = "easyMateCompletedTrainingModules";
+const completedPuzzleStagesKey = "easyMateCompletedPuzzleStages";
+const dailyQuestStorageKey = "easyMateDailyQuestProgress";
 const pieceEditionStorageKey = "easyMatePieceEdition";
 let leaderboardPeriod = "weekly";
 let leaderboardScope = "mine";
 let leaderboardPage = 0;
 const leaderboardPageSize = 10;
+let leagueActionMode = null;
 let cachedTrainingState = null;
 let trainingModuleOpen = false;
 let trainingModuleTransition = null;
@@ -574,6 +586,10 @@ Object.assign(koreanText, {
   "View tutorial first": "훈련장으로 가기",
   "Start a conversation": "계정으로 입장하기",
   "Play": "플레이",
+  "Today's quests": "오늘의 퀘스트",
+  "Solve 5 puzzles": "퍼즐 5개 풀기",
+  "Play 2 games": "대국 2판 두기",
+  "Meet a new player": "새 플레이어 만나기",
   "Tutorial": "훈련장",
   "Start playing": "플레이를 시작하세요",
   "Profile and Culture": "프로필",
@@ -622,6 +638,11 @@ Object.assign(englishText, {
   "체크에서 벗어나는 법": "Escaping Check",
   "훈련장으로 →": "Go to Training →",
   "참가 코드": "Join Code",
+  "참여하기": "Join",
+  "리그 만들기": "Create League",
+  "참여": "Join",
+  "코드 생성": "Generate Code",
+  "코드 생성 전": "No code yet",
   "새 리그 코드 생성": "Create League Code",
   "아직 참여한 리그가 없습니다.": "You have not joined a league yet.",
   "퀵 매칭": "Quick Match",
@@ -826,6 +847,12 @@ function syncLocalizedControls() {
   setText(document.querySelector('[data-leaderboard-scope="all"]'), korean ? "전체" : "All");
   setText(document.querySelector('[data-leaderboard-period="weekly"]'), korean ? "주간" : "Weekly");
   setText(document.querySelector('[data-leaderboard-period="alltime"]'), korean ? "전체 기간" : "All time");
+  setText(document.querySelector('[data-league-action="join"]'), korean ? "참여하기" : "Join");
+  setText(document.querySelector('[data-league-action="create"]'), korean ? "리그 만들기" : "Create league");
+  setText(joinLeagueButton, korean ? "참여" : "Join");
+  setText(createLeagueButton, korean ? "코드 생성" : "Generate code");
+  setText(backToTrainingModulesButton, korean ? "경로로 돌아가기" : "Back to path");
+  closeLeagueActionPopoverButton?.setAttribute("aria-label", korean ? "리그 코드 창 닫기" : "Close league code dialog");
   setText(mainTutorialButton, korean ? "훈련장으로 가기" : "Go to training");
   if (!currentUser) {
     setText(loginButton, korean ? "로그인" : "Login");
@@ -833,6 +860,8 @@ function syncLocalizedControls() {
     setText(authSubmit, authMode === "login" ? (korean ? "로그인" : "Log in") : (korean ? "계정 만들기" : "Create account"));
   }
   setText(tutorialLoginButton, korean ? "로그인 화면으로 가기" : "Go to login");
+  renderLeagueAction();
+  renderTodayQuests();
   renderTrainingControls();
 }
 
@@ -1805,8 +1834,7 @@ function setAuthMode(mode) {
   document.body.classList.add("auth-entry-open");
   renderAuthState();
   if (!currentUser) initializeGoogleLogin();
-  authStatus.textContent =
-    mode === "login" ? translateCopy("Enter your existing email and password.") : translateCopy("Create an account to save matches and language review.");
+  authStatus.textContent = "";
   document.querySelector(".entry-auth")?.scrollIntoView({ behavior: "smooth", block: "start" });
   window.setTimeout(() => (mode === "login" ? authEmail : authDisplayName).focus(), 260);
 }
@@ -1923,6 +1951,8 @@ function localTrainingState() {
     tutorialSrc: nextModule ? `/assets/how-to-play.html?module=${nextModule.id}` : "",
     puzzleUnlocked: !nextModule,
     completedModules,
+    completedPuzzles: [],
+    reviewQuizzes: [],
     modules: modules.map((module) => ({ ...module, completed: completedModules.includes(module.id) })),
     reviewOptions: modules.filter((module) => completedModules.includes(module.id)).map((module) => ({ module: module.id, title: module.title })),
   };
@@ -1946,6 +1976,222 @@ const trainingModuleArt = {
   4: { src: "/assets/tutorial-pieces/g_knight.png", alt: "고려 백마 기수" },
 };
 
+const trainingStageIconNames = {
+  1: "movement",
+  2: "capture",
+  3: "defense",
+  4: "mate",
+  puzzle: "puzzle",
+  review: "review",
+};
+
+const puzzlePathStages = [
+  {
+    id: "s1",
+    ko: "성문 뒤의 함정",
+    en: "The gate behind the king",
+    koDescription: "룩으로 비어 있는 뒷줄을 단숨에 장악합니다.",
+    enDescription: "Use a rook to take over an exposed back rank in one move.",
+  },
+  {
+    id: "s2",
+    ko: "질식하는 칸",
+    en: "Smothered king",
+    koDescription: "나이트가 병사들에 갇힌 왕의 마지막 칸을 막습니다.",
+    enDescription: "A knight closes the final square around a boxed-in king.",
+  },
+  {
+    id: "s3",
+    ko: "네 수 만의 기습",
+    en: "Early queen attack",
+    koDescription: "퀸과 비숍의 대각선 협공으로 약한 칸을 찾습니다.",
+    enDescription: "Coordinate queen and bishop against an early weak square.",
+  },
+  {
+    id: "m1",
+    ko: "두 돌탑의 사다리",
+    en: "Rook ladder",
+    koDescription: "두 룩을 번갈아 전진시켜 왕의 공간을 줄입니다.",
+    enDescription: "Advance two rooks in sequence to shrink the king's space.",
+  },
+  {
+    id: "m2",
+    ko: "임금님의 진군",
+    en: "The king steps in",
+    koDescription: "체크보다 먼저 왕을 전진시켜 도망길을 막습니다.",
+    enDescription: "Step the king forward first to remove the escape route.",
+  },
+  {
+    id: "m3",
+    ko: "졸병의 꿈",
+    en: "The pawn's dream",
+    koDescription: "승격을 계산해 폰을 결정적인 퀸으로 바꿉니다.",
+    enDescription: "Calculate a promotion that turns the pawn into the winning queen.",
+  },
+  {
+    id: "h1",
+    ko: "칸의 질식",
+    en: "Sacrifice and smother",
+    koDescription: "퀸을 희생해 나이트의 마지막 체크메이트를 만듭니다.",
+    enDescription: "Sacrifice the queen to prepare the knight's final mate.",
+  },
+  {
+    id: "h2",
+    ko: "겹쳐진 돌탑",
+    en: "Stacked rooks",
+    koDescription: "앞 룩을 내어주고 뒤 룩으로 성문을 돌파합니다.",
+    enDescription: "Offer the front rook so the rook behind can break through.",
+  },
+];
+
+let entryTypewriterTimer = 0;
+let trainingReviewPickerOpen = false;
+let selectedTrainingReviewModuleId = 0;
+
+function landingTypewriterPhrase() {
+  return currentInterfaceLanguage() === "Korean" ? "체스? 엄청 쉽죠…" : "chess? it’s easy…";
+}
+
+function fitLandingTypewriter(phrase = landingTypewriterPhrase()) {
+  if (!entryTypewriter || !entryTypewriterText) return;
+  const previousText = entryTypewriterText.textContent;
+  const styles = window.getComputedStyle(entryTypewriter);
+  const maxSize = Number.parseFloat(styles.getPropertyValue("--entry-typewriter-max-size")) || 82;
+  const minSize = Number.parseFloat(styles.getPropertyValue("--entry-typewriter-min-size")) || 28;
+  entryTypewriter.style.fontSize = `${maxSize}px`;
+  entryTypewriterText.textContent = phrase;
+  const availableWidth = Math.max(1, entryTypewriter.clientWidth - 20);
+  const requiredWidth = Math.max(1, entryTypewriterText.scrollWidth);
+  const fittedSize = Math.max(minSize, Math.min(maxSize, Math.floor((maxSize * availableWidth) / requiredWidth)));
+  entryTypewriter.style.fontSize = `${fittedSize}px`;
+  entryTypewriterText.textContent = previousText;
+}
+
+function renderLandingTypewriter({ animate = true } = {}) {
+  if (!entryTypewriter || !entryTypewriterText) return;
+  window.clearTimeout(entryTypewriterTimer);
+  const phrase = landingTypewriterPhrase();
+  const characters = Array.from(phrase);
+  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  entryTypewriter.setAttribute("aria-label", phrase);
+  entryTypewriter.classList.remove("typing", "complete");
+  fitLandingTypewriter(phrase);
+
+  if (!animate || reduceMotion) {
+    entryTypewriterText.textContent = phrase;
+    entryTypewriter.classList.add("complete");
+    return;
+  }
+
+  entryTypewriterText.textContent = "";
+  entryTypewriter.classList.add("typing");
+  let characterIndex = 0;
+  const typeNextCharacter = () => {
+    characterIndex += 1;
+    entryTypewriterText.textContent = characters.slice(0, characterIndex).join("");
+    if (characterIndex < characters.length) {
+      entryTypewriterTimer = window.setTimeout(typeNextCharacter, currentInterfaceLanguage() === "Korean" ? 105 : 78);
+      return;
+    }
+    entryTypewriter.classList.remove("typing");
+    entryTypewriter.classList.add("complete");
+  };
+  entryTypewriterTimer = window.setTimeout(typeNextCharacter, 260);
+}
+
+const todayQuestDefinitions = [
+  { key: "puzzles", total: 5, ko: "퍼즐 5개 풀기", en: "Solve 5 puzzles" },
+  { key: "games", total: 2, ko: "대국 2판 두기", en: "Play 2 games" },
+  { key: "partners", total: 1, ko: "새 플레이어 만나기", en: "Meet a new player" },
+];
+
+function localDateKey(date = new Date()) {
+  const value = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(value.getTime())) return localDateKey();
+  const offsetMs = value.getTimezoneOffset() * 60_000;
+  return new Date(value.getTime() - offsetMs).toISOString().slice(0, 10);
+}
+
+function blankDailyQuestProgress() {
+  return {
+    date: localDateKey(),
+    puzzles: 0,
+    games: 0,
+    partners: 0,
+  };
+}
+
+function readDailyQuestProgress() {
+  try {
+    const parsed = JSON.parse(readLocalSetting(dailyQuestStorageKey) || "{}");
+    if (parsed?.date === localDateKey()) {
+      return {
+        ...blankDailyQuestProgress(),
+        ...parsed,
+        puzzles: Math.max(0, Number(parsed.puzzles || 0)),
+        games: Math.max(0, Number(parsed.games || 0)),
+        partners: Math.max(0, Number(parsed.partners || 0)),
+      };
+    }
+  } catch {}
+  return blankDailyQuestProgress();
+}
+
+function writeDailyQuestProgress(progress) {
+  writeLocalSetting(dailyQuestStorageKey, JSON.stringify({ ...blankDailyQuestProgress(), ...progress, date: localDateKey() }));
+}
+
+function bumpDailyQuest(key, amount = 1) {
+  const progress = readDailyQuestProgress();
+  progress[key] = Math.max(0, Number(progress[key] || 0) + amount);
+  writeDailyQuestProgress(progress);
+  renderTodayQuests();
+}
+
+function trainingPuzzlesCompletedToday() {
+  const puzzles = activeTrainingState().completedPuzzles || currentUser?.training?.completedPuzzles || [];
+  return (Array.isArray(puzzles) ? puzzles : []).filter((puzzle) => puzzle?.completedAt && localDateKey(puzzle.completedAt) === localDateKey()).length;
+}
+
+function questProgressSnapshot() {
+  const progress = readDailyQuestProgress();
+  const achievementIds = new Set((currentUser?.achievements || []).map((achievement) => achievement.id));
+  return {
+    puzzles: Math.max(progress.puzzles, trainingPuzzlesCompletedToday()),
+    games: Math.max(progress.games, achievementIds.has("first-match") ? 1 : 0),
+    partners: Math.max(progress.partners, achievementIds.has("first-greeting") ? 1 : 0),
+  };
+}
+
+function renderTodayQuests() {
+  if (!todayQuestList) return;
+  const progress = questProgressSnapshot();
+  const korean = currentInterfaceLanguage() === "Korean";
+  todayQuestList.replaceChildren();
+  todayQuestDefinitions.forEach((quest) => {
+    const value = Math.min(quest.total, Math.max(0, Number(progress[quest.key] || 0)));
+    const item = document.createElement("li");
+    item.className = "today-quest-row";
+    const meters = document.createElement("span");
+    meters.className = "today-quest-meter";
+    meters.setAttribute("aria-hidden", "true");
+    const meterCount = Math.max(quest.total, 5);
+    const filledCount = Math.round((value / quest.total) * meterCount);
+    for (let index = 0; index < meterCount; index += 1) {
+      const tick = document.createElement("i");
+      tick.className = index < filledCount ? "filled" : "";
+      meters.append(tick);
+    }
+    const label = document.createElement("span");
+    label.className = "today-quest-label";
+    label.textContent = korean ? quest.ko : quest.en;
+    const count = document.createElement("strong");
+    count.textContent = `${value}/${quest.total}`;
+    item.append(meters, label, count);
+    todayQuestList.append(item);
+  });
+}
+
 function renderTrainingModuleList() {
   if (!trainingModuleList) return;
   const state = activeTrainingState();
@@ -1957,57 +2203,201 @@ function renderTrainingModuleList() {
     const current = moduleId === nextModuleId;
     const accessible = completed || current;
     const card = document.createElement("article");
-    card.className = `training-module-row${completed ? " completed" : ""}${current ? " current" : ""}${accessible ? "" : " locked"}`;
-    const art = trainingModuleArt[moduleId] || trainingModuleArt[1];
+    card.className = `training-module-row ${moduleId % 2 ? "path-left" : "path-right"}${completed ? " completed" : ""}${current ? " current" : ""}${accessible ? "" : " locked"}`;
+    card.dataset.pathStep = String(moduleId);
+    const tooltipId = `trainingStageTooltip${moduleId}`;
+    const status = completed ? "완료" : current ? "학습 가능" : "잠김";
     card.innerHTML = `
-      <div class="training-module-art"><img src="${art.src}" alt="${art.alt}" /></div>
-      <div class="training-module-copy">
-        <span class="training-module-index">모듈 ${moduleId}</span>
-        <h3>${module.title}</h3>
-        <p>${trainingModuleDescriptions[moduleId] || "체스의 기본 규칙을 배워요."}</p>
-      </div>
-      <div class="training-module-action"><span>${completed ? "완료" : current ? "학습 가능" : "잠김"}</span></div>`;
-    const control = document.createElement("button");
-    control.type = "button";
-    control.className = "training-module-open";
-    control.textContent = completed ? "다시 학습하기" : current ? "시작하기" : "이전 모듈을 먼저 완료하세요";
+      <div class="training-path-anchor">
+        <button class="training-path-node" type="button" aria-describedby="${tooltipId}"${accessible ? "" : ' aria-disabled="true"'}>
+          <span class="training-stage-icon icon-${trainingStageIconNames[moduleId]}" aria-hidden="true"></span>
+          <span class="visually-hidden">모듈 ${moduleId} · ${module.title} · ${status}</span>
+        </button>
+        <div class="training-path-tooltip" id="${tooltipId}" role="tooltip">
+          <span class="training-module-index">모듈 ${moduleId} · ${status}</span>
+          <h3>${module.title}</h3>
+          <p>${trainingModuleDescriptions[moduleId] || "체스의 기본 규칙을 배워요."}</p>
+          <strong>${accessible ? completed ? "눌러서 다시 학습" : "눌러서 시작" : "이전 모듈을 먼저 완료하세요"}</strong>
+        </div>
+      </div>`;
+    const control = card.querySelector(".training-path-node");
     if (accessible) {
-      control.setAttribute("aria-label", `${module.title} ${control.textContent}`);
       control.addEventListener("click", () => openTrainingModule(moduleId));
-    } else {
-      control.disabled = true;
     }
-    card.querySelector(".training-module-action")?.append(control);
     trainingModuleList.append(card);
   });
+
+  const puzzleUnlocked = Boolean(state.puzzleUnlocked);
+  const completedPuzzles = activeTrainingState().completedPuzzles || [];
+  const puzzleCompleted = readDailyQuestProgress().puzzles > 0 || (Array.isArray(completedPuzzles) && completedPuzzles.length > 0);
+  const puzzleCard = document.createElement("article");
+  puzzleCard.className = `training-module-row training-puzzle-row path-left${puzzleCompleted ? " completed" : ""}${puzzleUnlocked ? " current" : " locked"}`;
+  puzzleCard.dataset.pathStep = "5";
+  puzzleCard.innerHTML = `
+    <div class="training-path-anchor">
+      <button class="training-path-node" type="button" aria-describedby="trainingPuzzleTooltip"${puzzleUnlocked ? "" : ' aria-disabled="true"'}>
+        <span class="training-stage-icon icon-${trainingStageIconNames.puzzle}" aria-hidden="true"></span>
+        <span class="visually-hidden">퍼즐 · 성문 뒤의 함정 · ${puzzleCompleted ? "완료" : puzzleUnlocked ? "학습 가능" : "잠김"}</span>
+      </button>
+      <div class="training-path-tooltip" id="trainingPuzzleTooltip" role="tooltip">
+        <span class="training-module-index">퍼즐 · ${puzzleCompleted ? "완료" : puzzleUnlocked ? "학습 가능" : "잠김"}</span>
+        <h3>성문 뒤의 함정</h3>
+        <p>${puzzleUnlocked ? "튜토리얼을 마쳤습니다. 오늘의 퍼즐로 다음 실력을 열어보세요." : "모든 튜토리얼 모듈을 완료하면 열립니다."}</p>
+        <strong>${puzzleUnlocked ? "눌러서 퍼즐 풀기" : "튜토리얼을 먼저 완료하세요"}</strong>
+      </div>
+    </div>`;
+  const puzzleControl = puzzleCard.querySelector(".training-path-node");
+  if (puzzleUnlocked) {
+    puzzleControl.addEventListener("click", () => setHowToPlayMode("puzzle"));
+  }
+  trainingModuleList.append(puzzleCard);
 
   const completedModules = (state.completedModules || []).map(Number);
   const reviewModules = (state.modules || []).filter((module) => completedModules.includes(Number(module.id)));
   const review = document.createElement("footer");
   review.className = "training-review-row";
   review.innerHTML = `
-    <div>
+    <div class="training-review-intro">
       <span class="training-module-index">복습 퀴즈</span>
       <p>${reviewModules.length ? "복습할 모듈을 골라 한 문제로 확인해 볼까요?" : "모듈을 완료하면 복습 퀴즈를 시작할 수 있어요."}</p>
     </div>`;
-  const reviewSelect = document.createElement("select");
-  reviewSelect.className = "training-review-select";
-  reviewSelect.setAttribute("aria-label", "복습할 모듈 선택");
-  reviewModules.forEach((module) => {
-    const option = document.createElement("option");
-    option.value = String(module.id);
-    option.textContent = `모듈 ${module.id} · ${module.title}`;
-    reviewSelect.append(option);
+  const reviewChooser = document.createElement("div");
+  reviewChooser.className = "training-review-chooser";
+  const reviewPicker = document.createElement("button");
+  reviewPicker.type = "button";
+  reviewPicker.className = "training-review-picker";
+  reviewPicker.setAttribute("aria-expanded", String(trainingReviewPickerOpen));
+  reviewPicker.setAttribute("aria-controls", "trainingReviewPopover");
+  reviewPicker.disabled = reviewModules.length === 0;
+  const selectedLabel = document.createElement("span");
+  const selectedReviewModule =
+    reviewModules.find((module) => Number(module.id) === selectedTrainingReviewModuleId) || reviewModules[0] || null;
+  selectedTrainingReviewModuleId = Number(selectedReviewModule?.id || 0);
+  selectedLabel.textContent = selectedReviewModule
+    ? `모듈 ${selectedReviewModule.id} · ${selectedReviewModule.title}`
+    : "완료한 모듈이 없습니다";
+  const reviewPickerIcon = document.createElement("span");
+  reviewPickerIcon.className = `training-stage-icon icon-${trainingStageIconNames.review}`;
+  reviewPickerIcon.setAttribute("aria-hidden", "true");
+  reviewPicker.append(reviewPickerIcon, selectedLabel);
+
+  const reviewPopover = document.createElement("div");
+  reviewPopover.className = "training-review-popover";
+  reviewPopover.id = "trainingReviewPopover";
+  reviewPopover.hidden = !trainingReviewPickerOpen;
+  const reviewPath = document.createElement("div");
+  reviewPath.className = "training-review-path";
+  reviewPopover.append(reviewPath);
+  reviewChooser.classList.toggle("open", trainingReviewPickerOpen);
+
+  const updateReviewSelection = (module) => {
+    selectedTrainingReviewModuleId = Number(module.id);
+    selectedLabel.textContent = `모듈 ${module.id} · ${module.title}`;
+    reviewPath.querySelectorAll("button").forEach((button) => {
+      button.setAttribute("aria-pressed", String(Number(button.dataset.reviewModule) === selectedTrainingReviewModuleId));
+    });
+  };
+
+  reviewModules.forEach((module, index) => {
+    const pathItem = document.createElement("div");
+    pathItem.className = `training-review-path-item ${index % 2 ? "path-right" : "path-left"}`;
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "training-review-path-node";
+    option.dataset.reviewModule = String(module.id);
+    option.setAttribute("aria-pressed", String(Number(module.id) === selectedTrainingReviewModuleId));
+    option.setAttribute("aria-label", `모듈 ${module.id} ${module.title} 복습 퀴즈 선택`);
+    option.innerHTML = `<span class="training-stage-icon icon-${trainingStageIconNames[Number(module.id)]}" aria-hidden="true"></span>`;
+    const label = document.createElement("span");
+    label.className = "training-review-node-label";
+    label.textContent = module.title;
+    option.addEventListener("click", () => updateReviewSelection(module));
+    pathItem.append(option, label);
+    reviewPath.append(pathItem);
   });
+
+  reviewPicker.addEventListener("click", () => {
+    trainingReviewPickerOpen = !trainingReviewPickerOpen;
+    reviewPopover.hidden = !trainingReviewPickerOpen;
+    reviewPicker.setAttribute("aria-expanded", String(trainingReviewPickerOpen));
+    reviewChooser.classList.toggle("open", trainingReviewPickerOpen);
+    if (trainingReviewPickerOpen) reviewPopover.querySelector("button")?.focus();
+  });
+  reviewPopover.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    trainingReviewPickerOpen = false;
+    reviewPopover.hidden = true;
+    reviewPicker.setAttribute("aria-expanded", "false");
+    reviewChooser.classList.remove("open");
+    reviewPicker.focus();
+  });
+
   const reviewControl = document.createElement("button");
   reviewControl.type = "button";
   reviewControl.className = "training-review-open";
   reviewControl.textContent = "복습 퀴즈 시작";
   reviewControl.disabled = reviewModules.length === 0;
-  reviewSelect.disabled = reviewModules.length === 0;
-  if (reviewModules.length) reviewControl.addEventListener("click", () => openTrainingReview(Number(reviewSelect.value)));
-  review.append(reviewSelect, reviewControl);
+  if (reviewModules.length) reviewControl.addEventListener("click", () => openTrainingReview(selectedTrainingReviewModuleId));
+  reviewChooser.append(reviewPicker, reviewPopover, reviewControl);
+  review.append(reviewChooser);
   trainingModuleList.append(review);
+}
+
+function completedPuzzleIds() {
+  const completed = activeTrainingState().completedPuzzles || [];
+  const ids = new Set(
+    completed
+      .map((puzzle) => (typeof puzzle === "string" ? puzzle : puzzle?.id))
+      .filter(Boolean)
+      .map(String),
+  );
+  try {
+    const localIds = JSON.parse(readLocalSetting(completedPuzzleStagesKey) || "[]");
+    if (Array.isArray(localIds)) localIds.filter(Boolean).forEach((id) => ids.add(String(id)));
+  } catch {
+    // Ignore malformed local progress and keep server-backed progress intact.
+  }
+  return ids;
+}
+
+function renderPuzzlePath() {
+  if (!puzzlePathList) return;
+  const korean = currentInterfaceLanguage() === "Korean";
+  const completed = completedPuzzleIds();
+  const nextStageIndex = puzzlePathStages.findIndex((stage) => !completed.has(stage.id));
+  const currentStageIndex = nextStageIndex === -1 ? puzzlePathStages.length - 1 : nextStageIndex;
+  puzzlePathList.replaceChildren();
+
+  puzzlePathStages.forEach((stage, index) => {
+    const isComplete = completed.has(stage.id);
+    const isCurrent = index === currentStageIndex;
+    const accessible = isComplete || index <= currentStageIndex;
+    const status = isComplete
+      ? korean ? "완료" : "Complete"
+      : isCurrent
+        ? korean ? "도전 가능" : "Ready"
+        : korean ? "잠김" : "Locked";
+    const row = document.createElement("article");
+    row.className = `training-module-row puzzle-stage-row ${index % 2 ? "path-right" : "path-left"}${isComplete ? " completed" : ""}${isCurrent ? " current" : ""}${accessible ? "" : " locked"}${index === puzzlePathStages.length - 1 ? " path-last" : ""}`;
+    const tooltipId = `puzzleStageTooltip${index + 1}`;
+    const title = korean ? stage.ko : stage.en;
+    const description = korean ? stage.koDescription : stage.enDescription;
+    row.innerHTML = `
+      <div class="training-path-anchor">
+        <button class="training-path-node" type="button" aria-describedby="${tooltipId}"${accessible ? "" : ' aria-disabled="true"'}>
+          <span class="puzzle-stage-icon puzzle-stage-icon-${index + 1}" aria-hidden="true"></span>
+          <span class="visually-hidden">${index + 1}. ${title} · ${status}</span>
+        </button>
+        <div class="training-path-tooltip" id="${tooltipId}" role="tooltip">
+          <span class="training-module-index">${korean ? "퍼즐" : "Puzzle"} ${index + 1} · ${status}</span>
+          <h3>${title}</h3>
+          <p>${description}</p>
+          <strong>${accessible ? korean ? "눌러서 퍼즐 풀기" : "Open puzzle" : korean ? "이전 퍼즐을 먼저 완료하세요" : "Complete the previous puzzle first"}</strong>
+        </div>
+      </div>`;
+    if (accessible) row.querySelector(".training-path-node")?.addEventListener("click", () => openPuzzleStage(stage, index));
+    puzzlePathList.append(row);
+  });
 }
 
 function renderTrainingControls() {
@@ -2027,6 +2417,7 @@ function renderTrainingControls() {
         : "Finish every training module to unlock puzzles.";
   }
   renderTrainingModuleList();
+  renderPuzzlePath();
   renderHomeTrainingProgress();
 }
 
@@ -2064,9 +2455,28 @@ function showTrainingModuleHome() {
   howToPlayView?.classList.remove("puzzle-mode");
   resetHowToPlayFrameSizing();
   trainingModuleList?.removeAttribute("hidden");
+  puzzlePathList?.setAttribute("hidden", "");
   howToPlayShell?.setAttribute("hidden", "");
   showTutorialGuideButton?.classList.add("active");
   showPuzzleGuideButton?.classList.remove("active");
+  renderTrainingControls();
+}
+
+function showPuzzlePath() {
+  const state = activeTrainingState();
+  if (!state.puzzleUnlocked) {
+    showTrainingModuleHome();
+    return;
+  }
+  trainingModuleOpen = false;
+  howToPlayShell?.classList.add("puzzle-mode");
+  howToPlayView?.classList.add("puzzle-mode");
+  resetHowToPlayFrameSizing();
+  trainingModuleList?.setAttribute("hidden", "");
+  puzzlePathList?.removeAttribute("hidden");
+  howToPlayShell?.setAttribute("hidden", "");
+  showTutorialGuideButton?.classList.remove("active");
+  showPuzzleGuideButton?.classList.add("active");
   renderTrainingControls();
 }
 
@@ -2082,10 +2492,11 @@ function openTrainingModule(moduleId) {
   howToPlayView?.classList.remove("puzzle-mode");
   resetHowToPlayFrameSizing();
   trainingModuleList?.setAttribute("hidden", "");
+  puzzlePathList?.setAttribute("hidden", "");
   howToPlayShell?.removeAttribute("hidden");
   trainingModuleToolbar?.removeAttribute("hidden");
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `모듈 ${normalizedModuleId} · ${module.title}`;
-  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&v=20260824-cleanup`;
+  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&v=20260828-training-path`;
   showTutorialGuideButton?.classList.add("active");
   showPuzzleGuideButton?.classList.remove("active");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2100,12 +2511,31 @@ function openTrainingReview(moduleId) {
   howToPlayView?.classList.remove("puzzle-mode");
   resetHowToPlayFrameSizing();
   trainingModuleList?.setAttribute("hidden", "");
+  puzzlePathList?.setAttribute("hidden", "");
   howToPlayShell?.removeAttribute("hidden");
   trainingModuleToolbar?.removeAttribute("hidden");
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `모듈 ${normalizedModuleId} · 복습 퀴즈`;
-  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&review=1&v=20260824-cleanup`;
+  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&review=1&v=20260828-training-path`;
   showTutorialGuideButton?.classList.add("active");
   showPuzzleGuideButton?.classList.remove("active");
+  howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function openPuzzleStage(stage, index = 0) {
+  if (!stage || !activeTrainingState().puzzleUnlocked) return;
+  trainingModuleOpen = true;
+  howToPlayShell?.classList.add("puzzle-mode");
+  howToPlayView?.classList.add("puzzle-mode");
+  resetHowToPlayFrameSizing();
+  trainingModuleList?.setAttribute("hidden", "");
+  puzzlePathList?.setAttribute("hidden", "");
+  howToPlayShell?.removeAttribute("hidden");
+  trainingModuleToolbar?.removeAttribute("hidden");
+  const title = currentInterfaceLanguage() === "Korean" ? stage.ko : stage.en;
+  if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${currentInterfaceLanguage() === "Korean" ? "퍼즐" : "Puzzle"} ${index + 1} · ${title}`;
+  if (howToPlayFrame) howToPlayFrame.src = `/assets/goryeo-vs-mongol-puzzle.html?puzzle=${encodeURIComponent(stage.id)}&v=20260828-puzzle-path`;
+  showTutorialGuideButton?.classList.remove("active");
+  showPuzzleGuideButton?.classList.add("active");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -2166,27 +2596,23 @@ function setHowToPlayMode(mode) {
   const state = activeTrainingState();
   const puzzleUnlocked = Boolean(state.puzzleUnlocked);
   const nextMode = mode === "puzzle" && puzzleUnlocked ? "puzzle" : "tutorial";
-  howToPlayShell?.classList.toggle("puzzle-mode", nextMode === "puzzle");
-  howToPlayView?.classList.toggle("puzzle-mode", nextMode === "puzzle");
   if (nextMode === "puzzle") {
-    trainingModuleOpen = false;
-    trainingModuleList?.setAttribute("hidden", "");
-    howToPlayShell?.removeAttribute("hidden");
-    trainingModuleToolbar?.setAttribute("hidden", "");
-    const currentFramePath = howToPlayFrame ? new URL(howToPlayFrame.src, window.location.href).pathname : "";
-    if (howToPlayFrame && currentFramePath !== "/assets/goryeo-vs-mongol-puzzle.html") {
-      howToPlayFrame.src = "/assets/goryeo-vs-mongol-puzzle.html?v=20260824-cleanup";
-    } else {
-      watchPuzzleFrameHeight();
-    }
+    showPuzzlePath();
+    return;
   } else if (trainingModuleOpen) {
+    howToPlayShell?.classList.remove("puzzle-mode");
+    howToPlayView?.classList.remove("puzzle-mode");
     resetHowToPlayFrameSizing();
     trainingModuleList?.setAttribute("hidden", "");
+    puzzlePathList?.setAttribute("hidden", "");
     howToPlayShell?.removeAttribute("hidden");
     trainingModuleToolbar?.removeAttribute("hidden");
   } else {
+    howToPlayShell?.classList.remove("puzzle-mode");
+    howToPlayView?.classList.remove("puzzle-mode");
     resetHowToPlayFrameSizing();
     trainingModuleList?.removeAttribute("hidden");
+    puzzlePathList?.setAttribute("hidden", "");
     howToPlayShell?.setAttribute("hidden", "");
   }
   showTutorialGuideButton?.classList.toggle("active", nextMode === "tutorial");
@@ -2261,6 +2687,10 @@ async function completeStudentTutorial(module) {
 
 async function completePuzzle(payload = {}) {
   if (!currentUser || !backendOnline) {
+    const completed = completedPuzzleIds();
+    if (payload.puzzleId) completed.add(String(payload.puzzleId));
+    writeLocalSetting(completedPuzzleStagesKey, JSON.stringify(Array.from(completed)));
+    bumpDailyQuest("puzzles", 1);
     if (tutorialPuzzleNote) {
       tutorialPuzzleNote.hidden = false;
       tutorialPuzzleNote.textContent =
@@ -2289,6 +2719,7 @@ async function completePuzzle(payload = {}) {
     cachedTrainingState = data.state;
     currentUser = data.user || currentUser;
     showAchievementUnlocks(data.unlocked);
+    bumpDailyQuest("puzzles", 1);
     renderAuthState();
     renderDashboardSummary();
     await refreshLeaderboard();
@@ -3305,6 +3736,14 @@ function renderForumPosts() {
     const title = document.createElement("h4");
     title.textContent = post.title;
 
+    const titleLine = document.createElement("div");
+    titleLine.className = "forum-post-titleline";
+    titleLine.append(category, title);
+
+    const body = document.createElement("p");
+    body.className = "forum-post-body";
+    body.textContent = post.body || "";
+
     const side = document.createElement("div");
     side.className = "forum-post-side";
 
@@ -3329,7 +3768,8 @@ function renderForumPosts() {
       pinButton.addEventListener("click", () => toggleForumPin(post.id));
     }
 
-    main.append(category, title);
+    main.append(titleLine);
+    if (body.textContent.trim()) main.append(body);
     side.append(author, time, comments);
     if (pinButton) side.append(pinButton);
     item.append(pin, main, side);
@@ -3380,7 +3820,14 @@ function showAchievementUnlocks(unlocked = []) {
     toast.dataset.achievementId = badge.id;
     toast.setAttribute("role", "status");
 
+    const artwork = document.createElement("img");
+    artwork.className = "achievement-toast-artwork";
+    artwork.src = badge.imageUrl || "/assets/badges/canva-first-step.png";
+    artwork.alt = `${badge.name} 배지`;
+    artwork.addEventListener("error", () => artwork.remove(), { once: true });
+
     const copy = document.createElement("div");
+    copy.className = "achievement-toast-copy";
     const kicker = document.createElement("span");
     kicker.className = "achievement-toast-kicker";
     kicker.textContent = currentInterfaceLanguage() === "Korean" ? "새 배지 획득" : "New badge unlocked";
@@ -3396,7 +3843,7 @@ function showAchievementUnlocks(unlocked = []) {
     dismiss.setAttribute("aria-label", currentInterfaceLanguage() === "Korean" ? "닫기" : "Close");
     dismiss.textContent = "×";
     dismiss.addEventListener("click", () => toast.remove());
-    toast.append(copy, dismiss);
+    toast.append(artwork, copy, dismiss);
     stack.appendChild(toast);
     requestAnimationFrame(() => toast.classList.add("is-visible"));
     window.setTimeout(() => toast.remove(), 9000);
@@ -4027,6 +4474,8 @@ async function finishMatch(result, options = {}) {
       return;
     }
   }
+  bumpDailyQuest("games", 1);
+  bumpDailyQuest("partners", 1);
   if (review) await requestReview(currentInterfaceLanguage() === "Korean" ? "완료된 대국" : "the completed match");
 }
 
@@ -4324,6 +4773,42 @@ function renderAvatar(target, user, fallback = "GP") {
   }
 }
 
+function currentLeagueCode() {
+  return String(currentUser?.leagueCode || "").trim().toUpperCase();
+}
+
+function renderLeagueAction() {
+  const korean = currentInterfaceLanguage() === "Korean";
+  const popoverOpen = leagueActionMode === "join" || leagueActionMode === "create";
+  if (leagueActionPopover) leagueActionPopover.hidden = !popoverOpen;
+  leagueActionButtons.forEach((button) => {
+    button.classList.remove("active");
+    button.setAttribute("aria-expanded", String(button.dataset.leagueAction === leagueActionMode));
+  });
+  leagueActionPanels.forEach((panel) => {
+    const active = panel.dataset.leaguePanel === leagueActionMode;
+    panel.hidden = !active;
+    const title = panel.querySelector(".league-action-title");
+    if (title) {
+      title.textContent = panel.dataset.leaguePanel === "join"
+        ? korean ? "리그 참여" : "Join a league"
+        : korean ? "리그 만들기" : "Create a league";
+    }
+  });
+  if (createdLeagueCode) {
+    const code = currentLeagueCode();
+    createdLeagueCode.textContent = code || (korean ? "코드 생성 전" : "No code yet");
+  }
+}
+
+function setLeagueActionMode(mode) {
+  const nextMode = mode === "join" || mode === "create" ? mode : null;
+  leagueActionMode = nextMode === leagueActionMode ? null : nextMode;
+  renderLeagueAction();
+  if (leagueActionMode === "join") window.requestAnimationFrame(() => leagueCodeInput?.focus());
+  if (leagueActionMode === "create") window.requestAnimationFrame(() => createLeagueButton?.focus());
+}
+
 
 
 async function joinLeague() {
@@ -4345,6 +4830,7 @@ async function joinLeague() {
     renderDashboardSummary();
     renderLeaderboard(data.league);
     renderAuthState();
+    setLeagueActionMode(null);
     if (leagueStatus) leagueStatus.textContent = `참여 완료: ${data.league.code}`;
   } catch (error) {
     if (leagueStatus) leagueStatus.textContent = error.message;
@@ -4366,6 +4852,8 @@ async function createLeague() {
     renderDashboardSummary();
     renderLeaderboard(data.league);
     renderAuthState();
+    leagueActionMode = "create";
+    renderLeagueAction();
     if (leagueStatus) leagueStatus.textContent = `새 리그 코드: ${data.league.code}`;
   } catch (error) {
     if (leagueStatus) leagueStatus.textContent = error.message;
@@ -4388,6 +4876,8 @@ function renderDashboardSummary() {
         ? "아직 참여한 리그가 없습니다."
         : "You have not joined a league yet.";
   }
+  renderLeagueAction();
+  renderTodayQuests();
   renderHomeForumPreview();
   renderHomeTrainingProgress();
   syncLocalizedControls();
@@ -4506,6 +4996,7 @@ async function refreshLeaderboard() {
           ? "아직 참여한 리그가 없습니다."
           : "You have not joined a league yet.";
     }
+    renderLeagueAction();
   } catch (error) {
     if (leagueStatus) leagueStatus.textContent = error.message;
   }
@@ -4534,24 +5025,68 @@ function renderProfile(profile) {
   if (profileSideElo) profileSideElo.textContent = String(Number(user.easyElo || 1000));
   if (profileUserId) profileUserId.textContent = user.id || "user";
   if (profileLessonsCount) profileLessonsCount.textContent = String(profile.stats?.matches || 0);
-  if (profileQuestionsCount) profileQuestionsCount.textContent = String(profile.badges?.length || 0);
+  const earnedBadges = Array.isArray(profile.badges) ? profile.badges : [];
+  if (profileQuestionsCount) profileQuestionsCount.textContent = String(earnedBadges.length);
   if (profileTestsCount) profileTestsCount.textContent = String(profile.stats?.completedMatches || 0);
   updateTemperature(Number(user.mannerTemperature ?? currentManner));
   renderDashboardSummary();
 
-  badgeList.innerHTML = "";
-  profile.badges.forEach((badge) => {
+  badgeList.replaceChildren();
+  if (earnedBadges.length) {
     const item = document.createElement("span");
-    item.textContent = badge.name;
+    const categories = new Set(earnedBadges.map((badge) => badge.category).filter(Boolean));
+    item.textContent = currentInterfaceLanguage() === "Korean"
+      ? `${earnedBadges.length}개 획득 · ${categories.size}개 분야`
+      : `${earnedBadges.length} earned · ${categories.size} categories`;
     badgeList.append(item);
-  });
+  }
 
-  badgeDetails.innerHTML = "";
-  profile.badges.forEach((badge) => {
-    const item = document.createElement("p");
+  badgeDetails.replaceChildren();
+  if (!earnedBadges.length) {
+    const empty = document.createElement("p");
+    empty.className = "profile-badge-empty";
+    empty.textContent = currentInterfaceLanguage() === "Korean"
+      ? "아직 받은 배지가 없습니다. 훈련장, 퍼즐, 대국에서 첫 배지를 획득해 보세요."
+      : "No badges yet. Earn your first one in training, puzzles, or a match.";
+    badgeDetails.append(empty);
+  }
+  earnedBadges.forEach((badge) => {
+    const item = document.createElement("article");
+    item.className = "profile-badge-item";
+
+    const artwork = document.createElement("img");
+    artwork.className = "profile-badge-artwork";
+    artwork.src = badge.imageUrl || "/assets/badges/canva-first-step.png";
+    artwork.alt = `${badge.name || "EasyMate"} 배지`;
+    artwork.loading = "lazy";
+    artwork.addEventListener("error", () => artwork.remove(), { once: true });
+
+    const copy = document.createElement("div");
+    copy.className = "profile-badge-copy";
+    if (badge.category) {
+      const category = document.createElement("span");
+      category.className = "profile-badge-category";
+      category.textContent = badge.category;
+      copy.append(category);
+    }
     const name = document.createElement("strong");
     name.textContent = badge.name || "Badge";
-    item.append(name, document.createTextNode(` ${badge.detail || ""}`));
+    const detail = document.createElement("p");
+    detail.textContent = badge.detail || "";
+    copy.append(name, detail);
+    if (badge.earnedAt) {
+      const earnedAt = new Date(badge.earnedAt);
+      if (!Number.isNaN(earnedAt.getTime())) {
+        const time = document.createElement("time");
+        time.dateTime = badge.earnedAt;
+        time.textContent = new Intl.DateTimeFormat(
+          currentInterfaceLanguage() === "Korean" ? "ko-KR" : "en-US",
+          { year: "numeric", month: "short", day: "numeric" },
+        ).format(earnedAt);
+        copy.append(time);
+      }
+    }
+    item.append(artwork, copy);
     badgeDetails.append(item);
   });
 
@@ -4619,6 +5154,7 @@ async function refreshProfile() {
     const profile = await api("/api/profile");
     currentUser = profile.user;
     renderProfile(profile);
+    showAchievementUnlocks(profile.unlocked);
     renderAuthState();
   } catch (error) {
     profileStatus.textContent = error.message;
@@ -5218,6 +5754,7 @@ textSizeSlider.addEventListener("input", (event) => applyTextSize(event.target.v
 
 languageSelect?.addEventListener("change", () => {
   applyInterfaceLanguage();
+  renderLandingTypewriter();
   renderAuthState();
   renderDashboardSummary();
   updateTemperature(currentUser?.mannerTemperature ?? currentManner);
@@ -5282,7 +5819,8 @@ showTutorialGuideButton?.addEventListener("click", () => {
 
 backToTrainingModulesButton?.addEventListener("click", () => {
   clearRequestedTrainingModule();
-  showTrainingModuleHome();
+  if (howToPlayView?.classList.contains("puzzle-mode")) showPuzzlePath();
+  else showTrainingModuleHome();
 });
 
 showPuzzleGuideButton?.addEventListener("click", async () => {
@@ -5291,7 +5829,10 @@ showPuzzleGuideButton?.addEventListener("click", async () => {
 });
 
 howToPlayFrame?.addEventListener("load", watchPuzzleFrameHeight);
-window.addEventListener("resize", schedulePuzzleFrameHeightSync, { passive: true });
+window.addEventListener("resize", () => {
+  schedulePuzzleFrameHeightSync();
+  fitLandingTypewriter();
+}, { passive: true });
 
 window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin && event.origin !== "null") return;
@@ -5301,6 +5842,10 @@ window.addEventListener("message", (event) => {
   if (event.data?.type === "easymate:return-training") {
     setView("how-to-play");
     showTrainingModuleHome();
+  }
+  if (event.data?.type === "easymate:return-puzzle-path") {
+    setView("how-to-play");
+    showPuzzlePath();
   }
   if (event.data?.type === "easymate:puzzle-complete") completePuzzle(event.data);
 });
@@ -5391,8 +5936,27 @@ submitPeerFeedbackButton?.addEventListener("click", submitPeerFeedback);
 saveCultureGuideButton?.addEventListener("click", saveCultureGuide);
 joinLeagueButton?.addEventListener("click", joinLeague);
 createLeagueButton?.addEventListener("click", createLeague);
+leagueActionButtons.forEach((button) => {
+  button.addEventListener("click", () => setLeagueActionMode(button.dataset.leagueAction));
+});
+closeLeagueActionPopoverButton?.addEventListener("click", () => setLeagueActionMode(null));
+document.addEventListener("click", (event) => {
+  if (!leagueActionMode) return;
+  if (leagueActionPopover?.contains(event.target)) return;
+  if (Array.from(leagueActionButtons).some((button) => button.contains(event.target))) return;
+  leagueActionMode = null;
+  renderLeagueAction();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || !leagueActionMode) return;
+  const previouslyActive = leagueActionMode;
+  leagueActionMode = null;
+  renderLeagueAction();
+  document.querySelector(`[data-league-action="${previouslyActive}"]`)?.focus();
+});
 leagueCodeInput?.addEventListener("input", () => {
   leagueCodeInput.value = leagueCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 16);
+  renderLeagueAction();
 });
 leagueCodeInput?.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
@@ -5551,6 +6115,7 @@ updateHeaderPieceEditionToggle(selectedPieceEdition);
 updateRoomLink(null);
 renderAuthState();
 applyInterfaceLanguage();
+renderLandingTypewriter();
 if (isStudentTutorialRequired()) {
   setView("how-to-play");
 } else if (isTutorialRoute()) {

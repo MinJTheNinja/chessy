@@ -917,7 +917,43 @@ const achievementCatalog = [
   { id: "returning-warrior", name: "돌아온 용사", category: "꾸준함", detail: "7일 이상 쉬었다가 다시 학습을 완료했습니다." },
 ];
 
-const achievementById = new Map(achievementCatalog.map((achievement) => [achievement.id, achievement]));
+const achievementArtwork = {
+  "first-step": "/assets/badges/canva-first-step.png",
+  "piece-commander": "/assets/badges/canva-piece-commander.png",
+  "capture-specialist": "/assets/badges/canva-piece-commander.png",
+  "crisis-escape": "/assets/badges/canva-crisis-escape.png",
+  "mate-solver": "/assets/badges/canva-mate-master.png",
+  "review-craftsperson": "/assets/badges/canva-review-craftsperson.png",
+  "gate-guardian": "/assets/badges/canva-gate-guardian.png",
+  "flawless-solver": "/assets/badges/canva-flawless-solver.png",
+  "lightning-move": "/assets/badges/canva-flawless-solver.png",
+  "five-routes": "/assets/badges/canva-five-routes.png",
+  "puzzle-explorer": "/assets/badges/canva-puzzle-explorer.png",
+  "perfect-march": "/assets/badges/canva-perfect-march.png",
+  "first-match": "/assets/badges/canva-first-step.png",
+  "first-victory": "/assets/badges/canva-mate-master.png",
+  "finish-the-game": "/assets/badges/canva-perfect-march.png",
+  "comeback-master": "/assets/badges/canva-crisis-escape.png",
+  "first-checkmate": "/assets/badges/canva-mate-master.png",
+  "solid-defense": "/assets/badges/canva-gate-guardian.png",
+  "conversation-listener": "/assets/badges/canva-puzzle-explorer.png",
+  "respectful-move": "/assets/badges/canva-flawless-solver.png",
+  "first-greeting": "/assets/badges/canva-first-step.png",
+  "league-together": "/assets/badges/canva-five-routes.png",
+  "league-founder": "/assets/badges/canva-piece-commander.png",
+  "friend-match": "/assets/badges/canva-five-routes.png",
+  "march-3": "/assets/badges/canva-first-step.png",
+  "march-7": "/assets/badges/canva-five-routes.png",
+  "march-30": "/assets/badges/canva-perfect-march.png",
+  "morning-strategist": "/assets/badges/canva-piece-commander.png",
+  "night-strategist": "/assets/badges/canva-piece-commander.png",
+  "returning-warrior": "/assets/badges/canva-review-craftsperson.png",
+};
+
+const achievementById = new Map(achievementCatalog.map((achievement) => [
+  achievement.id,
+  { ...achievement, imageUrl: achievementArtwork[achievement.id] },
+]));
 
 function normalizeAchievementEntries(entries) {
   const seen = new Set();
@@ -937,6 +973,12 @@ function userAchievementEntries(user) {
   user.achievements = normalizeAchievementEntries(user.achievements);
   user.badgeNotifications = normalizeAchievementEntries(user.badgeNotifications);
   return user.achievements;
+}
+
+function pendingAchievementViews(user) {
+  if (!user) return [];
+  userAchievementEntries(user);
+  return user.badgeNotifications.map(achievementView).filter(Boolean);
 }
 
 function awardAchievements(user, ids, earnedAt = new Date().toISOString()) {
@@ -984,6 +1026,8 @@ function trainingState(user) {
     tutorialSrc: nextModule?.src || "",
     puzzleUnlocked: !nextModule,
     completedModules: training.completedModules,
+    completedPuzzles: training.completedPuzzles,
+    reviewQuizzes: training.reviewQuizzes,
     modules: trainingModules.map((module) => ({ ...module, completed: training.completedModules.includes(module.id) })),
     reviewOptions: trainingModules
       .filter((module) => training.completedModules.includes(module.id))
@@ -1078,7 +1122,7 @@ function publicUser(user) {
     leagueCode: user.leagueCode || "",
     training: trainingState(user),
     achievements,
-    badgeNotifications: (user.badgeNotifications || []).map(achievementView).filter(Boolean),
+    badgeNotifications: pendingAchievementViews(user),
   };
 }
 
@@ -1285,9 +1329,14 @@ function profileBadges(user, db) {
   syncAchievements(user, db);
   const wonBadges = user.leagueBadges || [];
   const badges = userAchievementEntries(user).map(achievementView).filter(Boolean);
-  wonBadges.forEach((badge) => badges.push({ name: badge.name, detail: badge.detail || "리그 순위 보상 배지입니다." }));
-
-  if (!badges.length) badges.push({ name: "새 플레이어", detail: "훈련장이나 플레이로 배지를 모아보세요." });
+  wonBadges.forEach((badge, index) => badges.push({
+    id: badge.id || `league-badge-${index + 1}`,
+    name: badge.name,
+    category: badge.category || "리그",
+    detail: badge.detail || "리그 순위 보상 배지입니다.",
+    imageUrl: badge.imageUrl || achievementArtwork["league-together"],
+    earnedAt: badge.earnedAt || "",
+  }));
   return badges;
 }
 
@@ -1667,9 +1716,9 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
   }
 
   if (req.method === "GET" && pathname === "/api/session") {
-    const unlocked = user ? syncAchievements(user, db) : [];
-    if (unlocked.length) await writeDb(db);
-    sendJson(res, 200, { user: publicUser(user), unlocked });
+    const newlyUnlocked = user ? syncAchievements(user, db) : [];
+    if (newlyUnlocked.length) await writeDb(db);
+    sendJson(res, 200, { user: publicUser(user), unlocked: pendingAchievementViews(user) });
     return true;
   }
 
@@ -1688,7 +1737,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     if (!requireUser(user, res)) return true;
     const unlocked = syncAchievements(user, db);
     if (unlocked.length) await writeDb(db);
-    sendJson(res, 200, buildProfile(user, db));
+    sendJson(res, 200, { ...buildProfile(user, db), unlocked: pendingAchievementViews(user) });
     return true;
   }
 
@@ -1859,7 +1908,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     const body = await readBody(req);
     const ids = new Set(Array.isArray(body.ids) ? body.ids.map(String) : []);
     userAchievementEntries(user);
-    user.badgeNotifications = user.badgeNotifications.filter((badgeId) => !ids.has(badgeId));
+    user.badgeNotifications = user.badgeNotifications.filter((badge) => !ids.has(String(badge?.id || badge)));
     await writeDb(db);
     sendJson(res, 200, { user: publicUser(user) });
     return true;
