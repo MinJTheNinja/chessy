@@ -94,7 +94,6 @@ const trainingModuleList = document.querySelector("#trainingModuleList");
 const puzzlePathList = document.querySelector("#puzzlePathList");
 const trainingModuleToolbar = document.querySelector("#trainingModuleToolbar");
 const activeTrainingModuleTitle = document.querySelector("#activeTrainingModuleTitle");
-const backToTrainingModulesButton = document.querySelector("#backToTrainingModules");
 const headerProfile = document.querySelector("#headerProfile");
 const headerProfileButton = document.querySelector("#headerProfileButton");
 const headerProfileMenu = document.querySelector("#headerProfileMenu");
@@ -851,7 +850,6 @@ function syncLocalizedControls() {
   setText(document.querySelector('[data-league-action="create"]'), korean ? "리그 만들기" : "Create league");
   setText(joinLeagueButton, korean ? "참여" : "Join");
   setText(createLeagueButton, korean ? "코드 생성" : "Generate code");
-  setText(backToTrainingModulesButton, korean ? "경로로 돌아가기" : "Back to path");
   closeLeagueActionPopoverButton?.setAttribute("aria-label", korean ? "리그 코드 창 닫기" : "Close league code dialog");
   setText(mainTutorialButton, korean ? "훈련장으로 가기" : "Go to training");
   if (!currentUser) {
@@ -2042,10 +2040,59 @@ const puzzlePathStages = [
     koDescription: "앞 룩을 내어주고 뒤 룩으로 성문을 돌파합니다.",
     enDescription: "Offer the front rook so the rook behind can break through.",
   },
+  {
+    id: "cheoin-1",
+    series: "cheoinseong",
+    player: "/assets/cheoinseong-battle.html",
+    glyph: "♟",
+    ko: "관군 없이, 스스로",
+    en: "Without the royal army",
+    koDescription: "처인부곡의 백성이 성벽에 다가온 몽골 병졸을 직접 막아냅니다.",
+    enDescription: "The people of Cheoin stop a Mongol foot soldier approaching the wall.",
+  },
+  {
+    id: "cheoin-2",
+    series: "cheoinseong",
+    player: "/assets/cheoinseong-battle.html",
+    glyph: "♞",
+    ko: "몽골 기병, 성을 에워싸다",
+    en: "Mongol cavalry surrounds the fort",
+    koDescription: "나이트 포크로 적 지휘부와 공성탑을 동시에 위협합니다.",
+    enDescription: "Use a knight fork to threaten the commander and siege tower together.",
+  },
+  {
+    id: "cheoin-3",
+    series: "cheoinseong",
+    player: "/assets/cheoinseong-battle.html",
+    glyph: "♝",
+    ko: "승려들, 최전선에 서다",
+    en: "Monks take the front line",
+    koDescription: "승려를 상징하는 비숍이 긴 대각선에서 이중공격을 만듭니다.",
+    enDescription: "A bishop representing the warrior monks creates a double attack.",
+  },
+  {
+    id: "cheoin-4",
+    series: "cheoinseong",
+    player: "/assets/cheoinseong-battle.html",
+    glyph: "♜",
+    ko: "성벽이 버티다",
+    en: "The walls hold",
+    koDescription: "처인성 성벽을 상징하는 룩으로 왕과 기병을 함께 겨눕니다.",
+    enDescription: "Use the rook-like fortress wall to fork the king and cavalry.",
+  },
+  {
+    id: "cheoin-5",
+    series: "cheoinseong",
+    player: "/assets/cheoinseong-battle.html",
+    glyph: "♜",
+    ko: "화살, 살리타이에게 향하다",
+    en: "The arrow flies toward Sartai",
+    koDescription: "마지막 룩 수로 뒷줄 체크메이트를 완성합니다.",
+    enDescription: "Deliver the final back-rank checkmate with the rook.",
+  },
 ];
 
 let entryTypewriterTimer = 0;
-let trainingReviewPickerOpen = false;
 let selectedTrainingReviewModuleId = 0;
 
 function landingTypewriterPhrase() {
@@ -2263,73 +2310,28 @@ function renderTrainingModuleList() {
     </div>`;
   const reviewChooser = document.createElement("div");
   reviewChooser.className = "training-review-chooser";
-  const reviewPicker = document.createElement("button");
-  reviewPicker.type = "button";
-  reviewPicker.className = "training-review-picker";
-  reviewPicker.setAttribute("aria-expanded", String(trainingReviewPickerOpen));
-  reviewPicker.setAttribute("aria-controls", "trainingReviewPopover");
-  reviewPicker.disabled = reviewModules.length === 0;
-  const selectedLabel = document.createElement("span");
   const selectedReviewModule =
     reviewModules.find((module) => Number(module.id) === selectedTrainingReviewModuleId) || reviewModules[0] || null;
   selectedTrainingReviewModuleId = Number(selectedReviewModule?.id || 0);
-  selectedLabel.textContent = selectedReviewModule
-    ? `모듈 ${selectedReviewModule.id} · ${selectedReviewModule.title}`
-    : "완료한 모듈이 없습니다";
-  const reviewPickerIcon = document.createElement("span");
-  reviewPickerIcon.className = `training-stage-icon icon-${trainingStageIconNames.review}`;
-  reviewPickerIcon.setAttribute("aria-hidden", "true");
-  reviewPicker.append(reviewPickerIcon, selectedLabel);
-
-  const reviewPopover = document.createElement("div");
-  reviewPopover.className = "training-review-popover";
-  reviewPopover.id = "trainingReviewPopover";
-  reviewPopover.hidden = !trainingReviewPickerOpen;
-  const reviewPath = document.createElement("div");
-  reviewPath.className = "training-review-path";
-  reviewPopover.append(reviewPath);
-  reviewChooser.classList.toggle("open", trainingReviewPickerOpen);
-
-  const updateReviewSelection = (module) => {
-    selectedTrainingReviewModuleId = Number(module.id);
-    selectedLabel.textContent = `모듈 ${module.id} · ${module.title}`;
-    reviewPath.querySelectorAll("button").forEach((button) => {
-      button.setAttribute("aria-pressed", String(Number(button.dataset.reviewModule) === selectedTrainingReviewModuleId));
-    });
-  };
-
-  reviewModules.forEach((module, index) => {
-    const pathItem = document.createElement("div");
-    pathItem.className = `training-review-path-item ${index % 2 ? "path-right" : "path-left"}`;
-    const option = document.createElement("button");
-    option.type = "button";
-    option.className = "training-review-path-node";
-    option.dataset.reviewModule = String(module.id);
-    option.setAttribute("aria-pressed", String(Number(module.id) === selectedTrainingReviewModuleId));
-    option.setAttribute("aria-label", `모듈 ${module.id} ${module.title} 복습 퀴즈 선택`);
-    option.innerHTML = `<span class="training-stage-icon icon-${trainingStageIconNames[Number(module.id)]}" aria-hidden="true"></span>`;
-    const label = document.createElement("span");
-    label.className = "training-review-node-label";
-    label.textContent = module.title;
-    option.addEventListener("click", () => updateReviewSelection(module));
-    pathItem.append(option, label);
-    reviewPath.append(pathItem);
+  const reviewSelect = document.createElement("select");
+  reviewSelect.className = "training-review-select";
+  reviewSelect.setAttribute("aria-label", "복습할 모듈 선택");
+  reviewSelect.disabled = reviewModules.length === 0;
+  if (!reviewModules.length) {
+    const emptyOption = document.createElement("option");
+    emptyOption.textContent = "완료한 모듈이 없습니다";
+    emptyOption.value = "";
+    reviewSelect.append(emptyOption);
+  }
+  reviewModules.forEach((module) => {
+    const option = document.createElement("option");
+    option.value = String(module.id);
+    option.textContent = `모듈 ${module.id} · ${module.title}`;
+    option.selected = Number(module.id) === selectedTrainingReviewModuleId;
+    reviewSelect.append(option);
   });
-
-  reviewPicker.addEventListener("click", () => {
-    trainingReviewPickerOpen = !trainingReviewPickerOpen;
-    reviewPopover.hidden = !trainingReviewPickerOpen;
-    reviewPicker.setAttribute("aria-expanded", String(trainingReviewPickerOpen));
-    reviewChooser.classList.toggle("open", trainingReviewPickerOpen);
-    if (trainingReviewPickerOpen) reviewPopover.querySelector("button")?.focus();
-  });
-  reviewPopover.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape") return;
-    trainingReviewPickerOpen = false;
-    reviewPopover.hidden = true;
-    reviewPicker.setAttribute("aria-expanded", "false");
-    reviewChooser.classList.remove("open");
-    reviewPicker.focus();
+  reviewSelect.addEventListener("change", () => {
+    selectedTrainingReviewModuleId = Number(reviewSelect.value || 0);
   });
 
   const reviewControl = document.createElement("button");
@@ -2338,7 +2340,7 @@ function renderTrainingModuleList() {
   reviewControl.textContent = "복습 퀴즈 시작";
   reviewControl.disabled = reviewModules.length === 0;
   if (reviewModules.length) reviewControl.addEventListener("click", () => openTrainingReview(selectedTrainingReviewModuleId));
-  reviewChooser.append(reviewPicker, reviewPopover, reviewControl);
+  reviewChooser.append(reviewSelect, reviewControl);
   review.append(reviewChooser);
   trainingModuleList.append(review);
 }
@@ -2364,39 +2366,65 @@ function renderPuzzlePath() {
   if (!puzzlePathList) return;
   const korean = currentInterfaceLanguage() === "Korean";
   const completed = completedPuzzleIds();
-  const nextStageIndex = puzzlePathStages.findIndex((stage) => !completed.has(stage.id));
-  const currentStageIndex = nextStageIndex === -1 ? puzzlePathStages.length - 1 : nextStageIndex;
   puzzlePathList.replaceChildren();
 
-  puzzlePathStages.forEach((stage, index) => {
-    const isComplete = completed.has(stage.id);
-    const isCurrent = index === currentStageIndex;
-    const accessible = isComplete || index <= currentStageIndex;
-    const status = isComplete
-      ? korean ? "완료" : "Complete"
-      : isCurrent
-        ? korean ? "도전 가능" : "Ready"
-        : korean ? "잠김" : "Locked";
-    const row = document.createElement("article");
-    row.className = `training-module-row puzzle-stage-row ${index % 2 ? "path-right" : "path-left"}${isComplete ? " completed" : ""}${isCurrent ? " current" : ""}${accessible ? "" : " locked"}${index === puzzlePathStages.length - 1 ? " path-last" : ""}`;
-    const tooltipId = `puzzleStageTooltip${index + 1}`;
-    const title = korean ? stage.ko : stage.en;
-    const description = korean ? stage.koDescription : stage.enDescription;
-    row.innerHTML = `
-      <div class="training-path-anchor">
-        <button class="training-path-node" type="button" aria-describedby="${tooltipId}"${accessible ? "" : ' aria-disabled="true"'}>
-          <span class="puzzle-stage-icon puzzle-stage-icon-${index + 1}" aria-hidden="true"></span>
-          <span class="visually-hidden">${index + 1}. ${title} · ${status}</span>
-        </button>
-        <div class="training-path-tooltip" id="${tooltipId}" role="tooltip">
-          <span class="training-module-index">${korean ? "퍼즐" : "Puzzle"} ${index + 1} · ${status}</span>
-          <h3>${title}</h3>
-          <p>${description}</p>
-          <strong>${accessible ? korean ? "눌러서 퍼즐 풀기" : "Open puzzle" : korean ? "이전 퍼즐을 먼저 완료하세요" : "Complete the previous puzzle first"}</strong>
-        </div>
-      </div>`;
-    if (accessible) row.querySelector(".training-path-node")?.addEventListener("click", () => openPuzzleStage(stage, index));
-    puzzlePathList.append(row);
+  const series = [
+    {
+      id: "goryeo",
+      ko: "고려 vs 몽골",
+      en: "Goryeo vs Mongol",
+      stages: puzzlePathStages.filter((stage) => (stage.series || "goryeo") === "goryeo"),
+    },
+    {
+      id: "cheoinseong",
+      ko: "처인성의 마지막 화살",
+      en: "The Last Arrow of Cheoinseong",
+      stages: puzzlePathStages.filter((stage) => stage.series === "cheoinseong"),
+    },
+  ];
+
+  series.forEach((seriesItem) => {
+    const heading = document.createElement("header");
+    heading.className = "puzzle-series-heading";
+    heading.innerHTML = `<span>${korean ? "퍼즐 시리즈" : "Puzzle series"}</span><h2>${korean ? seriesItem.ko : seriesItem.en}</h2>`;
+    puzzlePathList.append(heading);
+
+    const nextStageIndex = seriesItem.stages.findIndex((stage) => !completed.has(stage.id));
+    const currentStageIndex = nextStageIndex === -1 ? seriesItem.stages.length - 1 : nextStageIndex;
+
+    seriesItem.stages.forEach((stage, index) => {
+      const isComplete = completed.has(stage.id);
+      const isCurrent = index === currentStageIndex;
+      const accessible = isComplete || index <= currentStageIndex;
+      const status = isComplete
+        ? korean ? "완료" : "Complete"
+        : isCurrent
+          ? korean ? "도전 가능" : "Ready"
+          : korean ? "잠김" : "Locked";
+      const row = document.createElement("article");
+      row.className = `training-module-row puzzle-stage-row ${index % 2 ? "path-right" : "path-left"}${isComplete ? " completed" : ""}${isCurrent ? " current" : ""}${accessible ? "" : " locked"}${index === seriesItem.stages.length - 1 ? " path-last" : ""}`;
+      const tooltipId = `puzzleStageTooltip-${seriesItem.id}-${index + 1}`;
+      const title = korean ? stage.ko : stage.en;
+      const description = korean ? stage.koDescription : stage.enDescription;
+      const icon = stage.glyph
+        ? `<span class="puzzle-stage-glyph" aria-hidden="true">${stage.glyph}</span>`
+        : `<span class="puzzle-stage-icon puzzle-stage-icon-${index + 1}" aria-hidden="true"></span>`;
+      row.innerHTML = `
+        <div class="training-path-anchor">
+          <button class="training-path-node" type="button" aria-describedby="${tooltipId}"${accessible ? "" : ' aria-disabled="true"'}>
+            ${icon}
+            <span class="visually-hidden">${index + 1}. ${title} · ${status}</span>
+          </button>
+          <div class="training-path-tooltip" id="${tooltipId}" role="tooltip">
+            <span class="training-module-index">${korean ? "퍼즐" : "Puzzle"} ${index + 1} · ${status}</span>
+            <h3>${title}</h3>
+            <p>${description}</p>
+            <strong>${accessible ? korean ? "눌러서 퍼즐 풀기" : "Open puzzle" : korean ? "이전 퍼즐을 먼저 완료하세요" : "Complete the previous puzzle first"}</strong>
+          </div>
+        </div>`;
+      if (accessible) row.querySelector(".training-path-node")?.addEventListener("click", () => openPuzzleStage(stage, index));
+      puzzlePathList.append(row);
+    });
   });
 }
 
@@ -2533,7 +2561,8 @@ function openPuzzleStage(stage, index = 0) {
   trainingModuleToolbar?.removeAttribute("hidden");
   const title = currentInterfaceLanguage() === "Korean" ? stage.ko : stage.en;
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${currentInterfaceLanguage() === "Korean" ? "퍼즐" : "Puzzle"} ${index + 1} · ${title}`;
-  if (howToPlayFrame) howToPlayFrame.src = `/assets/goryeo-vs-mongol-puzzle.html?puzzle=${encodeURIComponent(stage.id)}&v=20260828-puzzle-path`;
+  const player = stage.player || "/assets/goryeo-vs-mongol-puzzle.html";
+  if (howToPlayFrame) howToPlayFrame.src = `${player}?puzzle=${encodeURIComponent(stage.id)}&v=20260829-cheoinseong`;
   showTutorialGuideButton?.classList.remove("active");
   showPuzzleGuideButton?.classList.add("active");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -5815,12 +5844,6 @@ tutorialLoginButton?.addEventListener("click", () => openAccountEntry("signup"))
 showTutorialGuideButton?.addEventListener("click", () => {
   clearRequestedTrainingModule();
   showTrainingModuleHome();
-});
-
-backToTrainingModulesButton?.addEventListener("click", () => {
-  clearRequestedTrainingModule();
-  if (howToPlayView?.classList.contains("puzzle-mode")) showPuzzlePath();
-  else showTrainingModuleHome();
 });
 
 showPuzzleGuideButton?.addEventListener("click", async () => {

@@ -7943,7 +7943,7 @@ button:active {
 }
 
 button.active:not(.training-path-node),
-button[aria-pressed="true"]:not(.training-path-node):not(.training-review-path-node) {
+button[aria-pressed="true"]:not(.training-path-node) {
   background: transparent !important;
   color: var(--ink) !important;
   box-shadow: none !important;
@@ -8038,8 +8038,7 @@ button[aria-pressed="true"]:not(.training-path-node):not(.training-review-path-n
   transform: translateX(calc(-50% + var(--path-shift)));
 }
 
-.training-path-node,
-.training-review-path-node {
+.training-path-node {
   display: grid;
   width: 72px;
   height: 72px;
@@ -8055,11 +8054,7 @@ button[aria-pressed="true"]:not(.training-path-node):not(.training-review-path-n
 
 .training-path-node:hover,
 .training-path-node:active,
-.training-path-node:focus-visible,
-.training-review-path-node:hover,
-.training-review-path-node:active,
-.training-review-path-node:focus-visible,
-.training-review-path-node[aria-pressed="true"] {
+.training-path-node:focus-visible {
   border-color: var(--ink);
   background: var(--theme-accent);
   color: var(--theme-panel);
@@ -8187,112 +8182,6 @@ button[aria-pressed="true"]:not(.training-path-node):not(.training-review-path-n
 .training-review-chooser {
   display: grid;
   gap: 10px;
-}
-
-.training-review-picker {
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  min-height: 48px;
-  padding: 7px 12px;
-  border: 1px solid var(--line-strong);
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
-}
-
-.training-review-picker:hover,
-.training-review-picker:active,
-.training-review-picker[aria-expanded="true"] {
-  border-color: var(--ink);
-  background: transparent;
-  color: var(--ink);
-}
-
-.training-review-picker .training-stage-icon {
-  width: 32px;
-  height: 32px;
-}
-
-.training-review-popover {
-  padding: 14px 12px 4px;
-  border: 1px solid var(--line);
-  background: var(--theme-panel);
-}
-
-.training-review-popover[hidden] {
-  display: none;
-}
-
-.training-review-path {
-  display: grid;
-  gap: 0;
-  width: 100%;
-}
-
-.training-review-path-item {
-  position: relative;
-  display: grid;
-  height: 88px;
-  justify-items: center;
-}
-
-.training-review-path-item.path-left {
-  padding-right: 42%;
-}
-
-.training-review-path-item.path-right {
-  padding-left: 42%;
-}
-
-.training-review-path-item:not(:last-child)::after {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  top: 29px;
-  left: calc(29% + 30px);
-  width: 47%;
-  height: 2px;
-  background: var(--line-strong);
-  transform: rotate(28deg);
-  transform-origin: 0 50%;
-}
-
-.training-review-path-item.path-right:not(:last-child)::after {
-  right: calc(29% + 30px);
-  left: auto;
-  transform: rotate(152deg);
-}
-
-.training-review-path-node {
-  position: relative;
-  z-index: 1;
-  width: 58px;
-  height: 58px;
-}
-
-.training-review-path-node .training-stage-icon {
-  width: 38px;
-  height: 38px;
-}
-
-.training-review-node-label {
-  position: relative;
-  z-index: 1;
-  max-width: 128px;
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: 0.72rem;
-  line-height: 1.2;
-  text-align: center;
-}
-
-.training-review-path-node[aria-pressed="true"] + .training-review-node-label {
-  color: var(--ink);
-  font-weight: 750;
 }
 
 .training-review-open {
@@ -8564,6 +8453,32 @@ body.is-signed-in .workspace .home-league-actions #createLeagueButton:focus-visi
   display: none !important;
 }
 
+.puzzle-series-heading {
+  width: min(100%, 680px);
+  margin: 8px auto 18px;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.puzzle-series-heading:not(:first-child) {
+  margin-top: 38px;
+}
+
+.puzzle-series-heading span {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--theme-accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.puzzle-series-heading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.12rem;
+  line-height: 1.3;
+}
+
 .how-to-play-view .puzzle-stage-row.path-last::after {
   display: none;
 }
@@ -8572,67 +8487,60 @@ body.is-signed-in .workspace .home-league-actions #createLeagueButton:focus-visi
   display: block;
   width: 52px;
   height: 52px;
-  background-image: url("/assets/puzzle-stage-icons-v2.png");
   background-repeat: no-repeat;
-  background-size: 400% 200%;
+  background-position: center;
+  background-size: contain;
+}
+
+.puzzle-stage-glyph {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 50px;
+  height: 50px;
+  place-items: center;
+  background: var(--theme-accent);
+  color: #fff;
+  font-family: "Arial Unicode MS", "Segoe UI Symbol", sans-serif;
+  font-size: 2.25rem;
+  line-height: 1;
+}
+
+.puzzle-stage-row.locked .puzzle-stage-glyph {
+  background: var(--theme-panel);
+  color: var(--muted);
 }
 
 .puzzle-stage-icon-1 {
-  background-position: 0 0;
+  background-image: url("/assets/puzzle-stage-icons-v3/01-back-rank.png");
 }
 
 .puzzle-stage-icon-2 {
-  background-position: 33.333% 0;
+  background-image: url("/assets/puzzle-stage-icons-v3/02-smothered-king.png");
 }
 
 .puzzle-stage-icon-3 {
-  background-position: 66.667% 0;
+  background-image: url("/assets/puzzle-stage-icons-v3/03-queen-bishop.png");
 }
 
 .puzzle-stage-icon-4 {
-  background-position: 100% 0;
+  background-image: url("/assets/puzzle-stage-icons-v3/04-rook-ladder.png");
 }
 
 .puzzle-stage-icon-5 {
-  background-position: 0 100%;
+  background-image: url("/assets/puzzle-stage-icons-v3/05-king-march.png");
 }
 
 .puzzle-stage-icon-6 {
-  background-position: 33.333% 100%;
+  background-image: url("/assets/puzzle-stage-icons-v3/06-pawn-promotion.png");
 }
 
 .puzzle-stage-icon-7 {
-  background-position: 66.667% 100%;
+  background-image: url("/assets/puzzle-stage-icons-v3/07-queen-sacrifice.png");
 }
 
 .puzzle-stage-icon-8 {
-  background-position: 100% 100%;
-}
-
-.training-module-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.training-back-button {
-  min-height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--line-strong);
-  background: transparent;
-  color: var(--ink);
-  font-size: 0.75rem;
-  font-weight: 720;
-  white-space: nowrap;
-}
-
-.training-back-button:hover,
-.training-back-button:focus-visible {
-  border-color: var(--ink);
-  color: var(--ink);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  background-image: url("/assets/puzzle-stage-icons-v3/08-stacked-rooks.png");
 }
 
 @media (max-width: 760px) {
@@ -8646,6 +8554,12 @@ body.is-signed-in .workspace .home-league-actions #createLeagueButton:focus-visi
     height: 46px;
   }
 
+  .puzzle-stage-glyph {
+    width: 44px;
+    height: 44px;
+    font-size: 2rem;
+  }
+
   .league-action-popover {
     top: 48px;
   }
@@ -8656,5 +8570,84 @@ body.is-signed-in .workspace .home-league-actions #createLeagueButton:focus-visi
   .entry-content .entry-typewriter.complete .entry-typewriter-text::after {
     animation: none;
     opacity: 1;
+  }
+}
+
+/* Hallmark · interaction cleanup: neutral focus, open page headers, compact review selection. */
+:where(button, a, input, select, textarea, [role="button"]):focus,
+:where(button, a, input, select, textarea, [role="button"]):focus-visible {
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
+:where(input, select, textarea):focus,
+:where(input, select, textarea):focus-visible,
+body.is-signed-in .workspace :is(input, select, textarea):focus,
+body.is-signed-in .workspace :is(input, select, textarea):focus-visible {
+  border-color: var(--line-strong) !important;
+  box-shadow: none !important;
+}
+
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  text-decoration: none !important;
+}
+
+.button.primary:focus-visible,
+.button.dark:focus-visible,
+.play-find-button:focus-visible,
+body.is-signed-in .workspace .button.primary:focus-visible {
+  border-color: var(--ink) !important;
+  background: var(--ink) !important;
+  color: var(--theme-panel) !important;
+}
+
+.button.secondary:focus-visible,
+.auth-tab:focus-visible,
+.training-mode-toggle button:focus-visible,
+.league-mode-toggle button:focus-visible,
+.board-theme-option:focus-visible {
+  border-color: var(--ink) !important;
+  background: transparent !important;
+  color: var(--ink) !important;
+}
+
+.desktop-header-nav button:focus-visible {
+  box-shadow: none !important;
+}
+
+.view-header,
+.forum-heading {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.home-dashboard,
+.profile-settings-panel {
+  border-top: 0;
+}
+
+.training-review-chooser {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.training-review-select {
+  width: 100%;
+  max-width: none;
+  min-height: 44px;
+  border-color: var(--line-strong);
+  border-radius: 0;
+  background: var(--theme-panel);
+}
+
+@media (max-width: 760px) {
+  .training-review-chooser {
+    grid-template-columns: 1fr;
+  }
+
+  .training-review-open {
+    justify-self: stretch;
   }
 }

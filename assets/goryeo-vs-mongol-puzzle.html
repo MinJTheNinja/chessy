@@ -294,10 +294,6 @@ h1,h2,h3,h4,.jua,.lv-btn,.pz-card-title,.pz-title,.turn-banner,.win-card h2{font
       <div class="pz-top">
         <button class="back" id="backBtn">← 목록</button>
         <div class="pz-title" id="pzTitle"></div>
-        <div class="pz-top-btns">
-          <button class="mute2" id="muteBtn2" title="효과음">🔊</button>
-          <button class="reset" id="resetBtn">다시 놓기</button>
-        </div>
       </div>
       <div class="turn-banner" id="banner"></div>
       <div class="frame-outer">
@@ -709,6 +705,13 @@ function goHome(){
   document.body.classList.add('home-mode');
   renderHome();
 }
+function returnToPuzzlePath(){
+  if(window.parent&&window.parent!==window){
+    window.parent.postMessage({type:'easymate:return-puzzle-path'},'*');
+    return;
+  }
+  goHome();
+}
 function firstBannerText(){
   return cur.depth===2
     ? '고려의 차례 — 두 수 만에 체크메이트! 첫 수를 찾아라'
@@ -885,10 +888,9 @@ function winPuzzle(){
 }
 
 /* ───────── 버튼 ───────── */
-document.getElementById('backBtn').onclick=()=>{ SFX.select(); goHome(); };
-document.getElementById('resetBtn').onclick=()=>{ SFX.select(); resetPuzzle(); };
+document.getElementById('backBtn').onclick=()=>{ SFX.select(); returnToPuzzlePath(); };
 document.getElementById('againBtn').onclick=()=>{ overlay.classList.remove('show'); resetPuzzle(); };
-document.getElementById('toListBtn').onclick=()=>{ SFX.select(); goHome(); };
+document.getElementById('toListBtn').onclick=()=>{ SFX.select(); returnToPuzzlePath(); };
 hintBtn.onclick=()=>{
   if(!cur) return;
   SFX.select();
@@ -903,19 +905,22 @@ hintBtn.onclick=()=>{
     hintBtn.hidden=true;
   }
 };
-function bindMute(btn){
-  if(!btn) return;
-  btn.onclick=()=>{ const m=SFX.toggle();
-    ['muteBtn','muteBtn2'].forEach(id=>{
-      const control=document.getElementById(id);
-      if(control) control.textContent=m?'🔇':'🔊';
-    });
-    if(!m) SFX.select();
-  };
+function openRequestedPuzzle(){
+  const requestedId=new URLSearchParams(window.location.search).get('puzzle');
+  if(requestedId){
+    for(let levelIndex=0;levelIndex<LEVELS.length;levelIndex+=1){
+      const puzzleIndex=LEVELS[levelIndex].puzzles.findIndex((puzzle)=>puzzle.id===requestedId);
+      if(puzzleIndex!==-1){
+        curLevel=levelIndex;
+        openPuzzle(levelIndex,puzzleIndex);
+        return;
+      }
+    }
+  }
+  renderHome();
 }
-bindMute(document.getElementById('muteBtn2'));
 
-renderHome();
+openRequestedPuzzle();
 </script>
 </body>
 </html>
