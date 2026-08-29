@@ -38,6 +38,24 @@ let cachedGoogleKeys = null;
 let cachedGoogleKeysAt = 0;
 const pieceEditions = new Set(["original", "cheoinseong", "beta"]);
 const dayMs = 24 * 60 * 60 * 1000;
+let streakTimeZone = String(process.env.STREAK_TIME_ZONE || "Asia/Seoul").trim() || "Asia/Seoul";
+let streakDateFormatter;
+try {
+  streakDateFormatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: streakTimeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+} catch {
+  streakTimeZone = "Asia/Seoul";
+  streakDateFormatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: streakTimeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
 const trainingModules = [
   { id: 1, title: "기물의 움직임", src: "/assets/how-to-play.html?module=1&v=20260824-cleanup" },
   { id: 2, title: "기물 잡기", src: "/assets/how-to-play.html?module=2&v=20260824-cleanup" },
@@ -1048,11 +1066,24 @@ function markTutorialComplete(user, requestedModule) {
   return trainingState(user);
 }
 
+function calendarDayNumber(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  const parts = Object.fromEntries(
+    streakDateFormatter
+      .formatToParts(date)
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, Number(part.value)]),
+  );
+  return Math.floor(Date.UTC(parts.year, parts.month - 1, parts.day) / dayMs);
+}
+
 function applyDailyStreak(user, completedAt = new Date(), activityType = "match") {
   if (!user) return false;
   const completedTime = completedAt.getTime();
-  const previousTime = Date.parse(user.lastStreakAt || "");
   const previousLearningTime = Date.parse(user.lastLearningAt || "");
+  const completedDay = calendarDayNumber(completedAt);
+  const previousDay = calendarDayNumber(user.lastStreakAt);
   if (activityType === "learning") {
     const hour = completedAt.getHours();
     user.learningActivityHours = [...(Array.isArray(user.learningActivityHours) ? user.learningActivityHours : []), hour].slice(-120);
@@ -1061,9 +1092,10 @@ function applyDailyStreak(user, completedAt = new Date(), activityType = "match"
     }
     user.lastLearningAt = completedAt.toISOString();
   }
-  if (Number.isFinite(previousTime) && completedTime - previousTime < dayMs) return false;
+  if (completedDay === null) return false;
+  if (previousDay !== null && completedDay <= previousDay) return false;
   const current = Math.max(0, Number(user.streak || 0));
-  user.streak = Number.isFinite(previousTime) && completedTime - previousTime < dayMs * 2 ? current + 1 : 1;
+  user.streak = previousDay !== null && completedDay - previousDay === 1 ? current + 1 : 1;
   user.lastStreakAt = completedAt.toISOString();
   return true;
 }
@@ -3194,6 +3226,7 @@ const server = http.createServer(async (req, res) => {
         nvidia: nvidiaEnabled ? "configured" : "not-configured",
         safetyModel: nvidiaEnabled ? nvidiaSafetyModel : "local-fallback",
         translatorEmail: myMemoryEmail ? "configured" : "anonymous",
+        streakTimeZone,
         now: new Date().toISOString(),
       });
       return;

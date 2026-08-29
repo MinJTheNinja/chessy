@@ -14,8 +14,8 @@
     <noscript>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
     </noscript>
-    <link rel="stylesheet" href="/styles.css?v=20260829-cheoinseong" />
-    <script src="/app.js?v=20260829-cheoinseong" defer></script>
+    <link rel="stylesheet" href="/styles.css?v=20260829-text-active-states" />
+    <script src="/app.js?v=20260829-dashboard-simplify" defer></script>
   </head>
   <body>
     <header class="site-header">
@@ -30,7 +30,7 @@
         <button type="button" data-view-link="dashboard">플레이</button>
         <button type="button" data-view-link="how-to-play">훈련장</button>
         <button type="button" data-view-link="forum">게시판</button>
-        <button type="button" data-view-link="chessboards">상점</button>
+        <button type="button" data-view-link="chessboards" hidden>상점</button>
       </nav>
       <div class="header-actions">
         <div class="piece-edition-toggle" id="headerPieceEditionToggle" role="group" aria-label="말 디자인 선택">
@@ -118,7 +118,7 @@
             <button class="side-link" data-view-link="dashboard">플레이</button>
             <button class="side-link" data-view-link="how-to-play">훈련장</button>
             <button class="side-link" data-view-link="forum">게시판</button>
-            <button class="side-link" data-view-link="chessboards">상점</button>
+            <button class="side-link" data-view-link="chessboards" hidden>상점</button>
             <button class="side-link staff-only" data-view-link="staff" hidden>운영자</button>
           </div>
           <div class="sidebar-themes" aria-label="보드 테마 선택">
@@ -142,21 +142,53 @@
             <div class="home-dashboard">
               <div class="home-main-column">
                 <section class="home-match-intro" aria-labelledby="dashboardTitle">
-                  <h2 id="dashboardTitle">환영합니다, <span id="welcomeName">Player</span>님!</h2>
+                  <div class="home-overview-head">
+                    <h2 id="dashboardTitle">환영합니다, <span id="welcomeName">Player</span>님!</h2>
+                    <div class="home-theme-control">
+                      <button class="home-theme-toggle" id="homeThemeToggle" type="button" aria-label="보드 테마 선택" aria-expanded="false" aria-controls="homeThemePopover">
+                        <img src="/assets/board-theme-selector-icon-v1.png" alt="" aria-hidden="true" />
+                      </button>
+                      <section class="home-theme-popover" id="homeThemePopover" aria-labelledby="homeThemeGuideTitle" hidden>
+                        <h3 id="homeThemeGuideTitle">보드 테마</h3>
+                        <div class="home-theme-list" role="group" aria-label="보드 테마 선택">
+                          <button type="button" data-piece-edition="original"><b>오리지널</b><small>기본 체스판</small></button>
+                          <button type="button" data-piece-edition="cheoinseong"><b>처인성</b><small>EasyMate &amp; 용인문화원</small></button>
+                          <button type="button" data-piece-edition="beta"><b>Beta</b><small>한국 테마 체스</small></button>
+                        </div>
+                      </section>
+                    </div>
+                  </div>
                 </section>
 
                 <article class="home-daily-puzzle" aria-labelledby="dailyPuzzleTitle">
-              <img src="/assets/daily-puzzle-icon-transparent.png" alt="퍼즐 탐험 아이콘" />
+                  <img src="/assets/daily-puzzle-icon-transparent.png" alt="퍼즐 탐험 아이콘" />
                   <div>
                     <h3 id="dailyPuzzleTitle">오늘의 퍼즐: 성문 뒤의 함정</h3>
-              <button class="button secondary" data-view-link="how-to-play" type="button">풀기</button>
+                    <button class="button primary" data-view-link="how-to-play" type="button">풀어보기</button>
                   </div>
                 </article>
 
-                <div class="home-lower-grid">
-                  <article class="home-leaderboard">
+                <section class="home-elo-strip" aria-label="내 학습 기록">
+                  <div class="home-elo">
+                    <strong id="dashboardEasyElo">1000</strong>
+                    <span>Easy Elo</span>
+                  </div>
+                  <div class="home-stat-inline">
+                    <span><b id="dashboardStreak">0</b>일 연속</span>
+                    <span><b>0</b> 대국</span>
+                    <span><b>0</b> 퍼즐</span>
+                    <span><b>0</b> 배지</span>
+                  </div>
+                </section>
+
+                <section class="home-insight-panel" aria-label="리더보드와 오늘의 퀘스트">
+                  <div class="home-insight-tabs" role="tablist" aria-label="홈 정보">
+                    <button class="active" id="homeLeaderboardTab" type="button" role="tab" aria-selected="true" aria-controls="homeLeaderboardPanel">리더보드</button>
+                    <button id="homeQuestTab" type="button" role="tab" aria-selected="false" aria-controls="homeQuestPanel">오늘의 퀘스트</button>
+                  </div>
+
+                  <article class="home-leaderboard" id="homeLeaderboardPanel" role="tabpanel" aria-labelledby="homeLeaderboardTab">
                     <div class="home-section-head">
-                      <span class="eyebrow">리더보드</span>
                       <div class="home-leaderboard-scope" role="group" aria-label="리더보드 범위">
                         <button class="active" type="button" data-leaderboard-scope="mine">내 리그</button>
                         <button type="button" data-leaderboard-scope="all">전체</button>
@@ -186,37 +218,13 @@
                       <p class="profile-status" id="leagueStatus" aria-live="polite">아직 참여한 리그가 없습니다.</p>
                     </section>
                   </article>
-                  <section class="home-today-quests" aria-labelledby="todayQuestsTitle">
-                    <span class="eyebrow">오늘의 퀘스트</span>
-                    <h3 id="todayQuestsTitle">Today's quests</h3>
+
+                  <section class="home-today-quests" id="homeQuestPanel" role="tabpanel" aria-labelledby="homeQuestTab" hidden>
+                    <h3 id="todayQuestsTitle">오늘의 퀘스트</h3>
                     <ul class="today-quest-list" id="todayQuestList"></ul>
                   </section>
-                </div>
-              </div>
-
-              <aside class="home-status-column" aria-label="내 학습 기록">
-                <div class="home-elo">
-                  <span>Easy Elo</span>
-                  <strong id="dashboardEasyElo">1000</strong>
-                </div>
-                <div class="home-stat-grid">
-                  <span><b id="dashboardStreak">0</b>연속 학습일</span>
-                  <span><b>0</b>둔 대국</span>
-                  <span><b>0</b>푼 퍼즐</span>
-                  <span><b>0</b>받은 배지</span>
-                </div>
-
-                <section class="home-theme-summary" aria-labelledby="homeThemeGuideTitle">
-                  <h3 id="homeThemeGuideTitle">보드 테마란?</h3>
-                  <p>내가 고른 테마로 퍼즐과 대국을 둘 수 있는 EasyMate만의 설정입니다.</p>
-                  <div class="home-theme-list" role="group" aria-label="보드 테마 선택">
-                    <button type="button" data-piece-edition="original"><b>오리지널</b><small>기본 체스판</small></button>
-                    <button type="button" data-piece-edition="cheoinseong"><b>처인성</b><small>EasyMate &amp; 용인문화원</small></button>
-                    <button type="button" data-piece-edition="beta"><b>Beta</b><small>한국 테마 체스</small></button>
-                  </div>
                 </section>
-
-              </aside>
+              </div>
             </div>
           </section>
 
@@ -561,17 +569,19 @@
             <div class="training-mode-toggle" aria-label="훈련장 종류">
               <button class="active" id="showTutorialGuide" type="button">튜토리얼</button>
               <button id="showPuzzleGuide" type="button">퍼즐</button>
+              <button id="showCheoinseongGuide" type="button">처인성</button>
             </div>
 
             <div class="tutorial-gate-note" id="tutorialGateNote" hidden>
               초등학생 모드입니다. 훈련장을 끝내면 모든 메뉴가 열립니다.
             </div>
             <div class="tutorial-puzzle-note" id="tutorialPuzzleNote">
-              훈련장을 완료하면 고려 vs 몽골 퍼즐을 열 수 있습니다.
+              훈련장을 완료하면 퍼즐과 처인성 시리즈를 열 수 있습니다.
             </div>
 
             <section class="training-module-list" id="trainingModuleList" aria-label="튜토리얼 모듈"></section>
             <section class="training-module-list puzzle-path-list" id="puzzlePathList" aria-label="퍼즐 단계" hidden></section>
+            <section class="training-module-list puzzle-path-list cheoinseong-path-list" id="cheoinseongPathList" aria-label="처인성 퍼즐 단계" hidden></section>
 
             <div class="how-to-play-shell" id="howToPlayShell" hidden>
               <div class="training-module-toolbar" id="trainingModuleToolbar">
