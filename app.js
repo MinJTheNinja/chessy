@@ -7,6 +7,9 @@ const syncState = document.querySelector("#syncState");
 const queueTime = document.querySelector("#queueTime");
 const queueProgress = document.querySelector("#queueProgress");
 const queuePrompt = document.querySelector("#queuePrompt");
+const queueTipPanel = document.querySelector("#queueTipPanel");
+const queueTip = document.querySelector("#queueTip");
+const nextQueueTipButton = document.querySelector("#nextQueueTip");
 const findMatchButton = document.querySelector("#findMatch");
 const cancelMatchSearchButton = document.querySelector("#cancelMatchSearch");
 const showCreateSeekButton = document.querySelector("#showCreateSeek");
@@ -18,6 +21,7 @@ const resignMatchButton = document.querySelector("#resignMatch");
 const drawMatchButton = document.querySelector("#drawMatch");
 const matchResult = document.querySelector("#matchResult span");
 const newGameButton = document.querySelector("#newGame");
+const matchHomeButton = document.querySelector("#matchHome");
 const matchLayout = document.querySelector("#matchLayout");
 const partnerLanguage = document.querySelector("#partnerLanguage");
 const partnerName = document.querySelector("#partnerName");
@@ -122,6 +126,12 @@ const homeLeaderboardPanel = document.querySelector("#homeLeaderboardPanel");
 const homeQuestPanel = document.querySelector("#homeQuestPanel");
 const homeThemeToggle = document.querySelector("#homeThemeToggle");
 const homeThemePopover = document.querySelector("#homeThemePopover");
+const activeMatchReturn = document.querySelector("#activeMatchReturn");
+const activeMatchReturnLabel = document.querySelector("#activeMatchReturnLabel");
+const activeMatchReturnTitle = document.querySelector("#activeMatchReturnTitle");
+const activeMatchReturnMeta = document.querySelector("#activeMatchReturnMeta");
+const resumeMatchButton = document.querySelector("#resumeMatchButton");
+const homeDailyPuzzleButton = document.querySelector("#homeDailyPuzzleButton");
 const leaderboardButtons = document.querySelectorAll("[data-leaderboard-period]");
 const leaderboardScopeButtons = document.querySelectorAll("[data-leaderboard-scope]");
 const leagueCodeInput = document.querySelector("#leagueCodeInput");
@@ -171,6 +181,7 @@ const privateChallengeInput = document.querySelector("#privateChallengeInput");
 const joinPrivateChallengeButton = document.querySelector("#joinPrivateChallenge");
 const matchRoomLink = document.querySelector("#matchRoomLink");
 const copyMatchRoomLinkButton = document.querySelector("#copyMatchRoomLink");
+const friendRoomStatus = document.querySelector("#friendRoomStatus");
 const matchSourceBadge = document.querySelector("#matchSourceBadge");
 const timeControlBadge = document.querySelector("#timeControlBadge");
 const whiteClock = document.querySelector("#whiteClock");
@@ -642,6 +653,15 @@ Object.assign(englishText, {
   "훈련장 진행": "Training Progress",
   "체스 기물 움직임": "Chess Piece Movement",
   "기물 잡기": "Capturing Pieces",
+  "기물의 움직임": "Piece Movement",
+  "체크에서 벗어나기": "Escaping Check",
+  "체크메이트": "Checkmate",
+  "복습할 모듈을 골라 한 문제로 확인해 볼까요?": "Choose a completed module for a review quiz.",
+  "복습할 모듈을 골라 네 문제로 확인해 볼까요?": "Choose a completed module for a four-question review.",
+  "복습 퀴즈 시작": "Start Review Quiz",
+  "완료한 모듈이 없습니다": "No completed modules",
+  "답글 입력": "Write a reply",
+  "답글 등록": "Post reply",
   "체크에서 벗어나는 법": "Escaping Check",
   "훈련장으로 →": "Go to Training →",
   "참가 코드": "Join Code",
@@ -1034,6 +1054,29 @@ const missions = [
   "체스 표현 하나를 자막으로 말해 연습해보세요.",
 ];
 
+const queueTips = [
+  {
+    ko: "첫 수를 두기 전에 상대에게 좋아하는 오프닝을 물어보세요.",
+    en: "Before the first move, ask your opponent about their favorite opening.",
+  },
+  {
+    ko: "기물이 공격받으면 먼저 안전한 칸, 막는 수, 잡는 수를 차례로 확인해보세요.",
+    en: "When a piece is attacked, check safe squares, blocks, and captures in that order.",
+  },
+  {
+    ko: "대국 중에는 짧은 문장 하나만 말해도 충분합니다. '좋은 수네요'부터 시작해보세요.",
+    en: "One short sentence is enough during a match. Start with 'Nice move.'",
+  },
+  {
+    ko: "상대의 마지막 수를 확인한 뒤 내 수를 고르면 실수를 줄일 수 있어요.",
+    en: "Review your opponent's last move before choosing yours to reduce mistakes.",
+  },
+  {
+    ko: "매칭은 이 화면을 떠나도 계속됩니다. 홈의 진행 중인 대국에서 다시 들어올 수 있어요.",
+    en: "Matching continues if you leave this screen. Re-enter from the active match panel on Home.",
+  },
+];
+
 const defaultReview = {
   vocabulary: [
     {
@@ -1089,6 +1132,10 @@ let currentUser = null;
 let selectedPieceEdition = "cheoinseong";
 let currentMatchPlayers = [];
 let currentMatchId = null;
+let resumableMatch = null;
+let resumableOpenSeek = null;
+let resumableChallenge = null;
+let queueTipIndex = 0;
 let drawOfferFromOpponent = false;
 let selectedSquare = null;
 let legalMoveTargets = [];
@@ -1101,6 +1148,7 @@ let googleScriptPromise = null;
 let boardInitialized = false;
 let reviewInitialized = false;
 let forumInitialized = false;
+let forumPollInterval = null;
 let shopInitialized = false;
 let cachedSpeechVoices = [];
 let peerConnection = null;
@@ -1126,8 +1174,9 @@ let sttSessionTimer = null;
 let cachedAdminData = null;
 let cachedLobbyData = null;
 let adminCommandBuffer = "";
-let forumFilter = "All";
+let forumFilter = "Question";
 let forumPosts = [];
+let expandedForumPostId = null;
 let staffShopProducts = [];
 let deletedShopProductIds = [];
 
@@ -1284,6 +1333,71 @@ function speakText(text, options = {}) {
   return true;
 }
 
+function showQueueTip(index = queueTipIndex) {
+  if (!queueTip || !queueTips.length) return;
+  queueTipIndex = ((index % queueTips.length) + queueTips.length) % queueTips.length;
+  const item = queueTips[queueTipIndex];
+  queueTip.textContent = currentInterfaceLanguage() === "Korean" ? item.ko : item.en;
+}
+
+function renderActiveMatchReturn() {
+  if (!activeMatchReturn) return;
+  const hasMatch = Boolean(resumableMatch && resumableMatch.status !== "ended");
+  const hasWaitingRoom = Boolean(resumableChallenge || resumableOpenSeek);
+  activeMatchReturn.hidden = !hasMatch && !hasWaitingRoom;
+  if (activeMatchReturn.hidden) return;
+
+  const isWaiting = resumableMatch?.status === "waiting" || hasWaitingRoom;
+  activeMatchReturnLabel.textContent = currentInterfaceLanguage() === "Korean"
+    ? isWaiting ? "친구 입장 대기 중" : "진행 중인 대국"
+    : isWaiting ? "Waiting room" : "Active match";
+  activeMatchReturnTitle.textContent = currentInterfaceLanguage() === "Korean"
+    ? isWaiting ? "만든 방으로 돌아갈 수 있어요." : "두던 대국을 이어서 진행하세요."
+    : isWaiting ? "Return to the room you created." : "Continue your active match.";
+  const code = resumableChallenge?.code;
+  const timeControl = resumableMatch?.timeControl || resumableOpenSeek?.timeControl || "10+0";
+  activeMatchReturnMeta.textContent = currentInterfaceLanguage() === "Korean"
+    ? `${timeControl}${code ? ` · 초대 코드 ${code}` : ""}`
+    : `${timeControl}${code ? ` · Invite code ${code}` : ""}`;
+  resumeMatchButton.textContent = currentInterfaceLanguage() === "Korean"
+    ? isWaiting ? "방으로 돌아가기" : "대국 계속하기"
+    : isWaiting ? "Return to room" : "Continue match";
+}
+
+function rememberMatch(match) {
+  if (!match || match.status === "ended") {
+    if (resumableMatch?.id === match?.id) resumableMatch = null;
+  } else {
+    resumableMatch = match;
+  }
+  renderActiveMatchReturn();
+}
+
+function clearCurrentMatch() {
+  currentMatchId = null;
+  currentMatchPlayers = [];
+  resumableMatch = null;
+  resumableChallenge = null;
+  resumableOpenSeek = null;
+  updateRoomLink(null);
+  renderActiveMatchReturn();
+}
+
+function syncLegalLanguage() {
+  const language = currentInterfaceLanguage() === "Korean" ? "ko" : "en";
+  document.querySelectorAll("[data-legal-language]").forEach((section) => {
+    section.hidden = section.dataset.legalLanguage !== language;
+  });
+}
+
+function openLegalDialog(dialogId) {
+  const dialog = document.getElementById(dialogId);
+  if (!(dialog instanceof HTMLDialogElement)) return;
+  syncLegalLanguage();
+  dialog.showModal();
+  dialog.querySelector("[data-close-dialog]")?.focus();
+}
+
 function setMatchState(state) {
   const allowedStates = new Set(["idle", "searching", "playing", "ended"]);
   const nextState = allowedStates.has(state) ? state : "idle";
@@ -1297,8 +1411,11 @@ function setMatchState(state) {
   showCreateSeekButton.hidden = !isIdle;
   showFriendRoomButton.hidden = !isIdle;
   cancelMatchSearchButton.hidden = nextState !== "searching";
+  if (queueTipPanel) queueTipPanel.hidden = nextState !== "searching";
+  matchLayout.classList.toggle("queue-active", nextState === "searching");
   if (generateReviewButton) generateReviewButton.hidden = true;
   newGameButton.hidden = !isEnded;
+  if (matchHomeButton) matchHomeButton.hidden = !isEnded;
   if (!isIdle) seekComposer.hidden = true;
 
   const titles = {
@@ -1954,7 +2071,7 @@ function localTrainingState() {
   return {
     hasTutorial: Boolean(nextModule),
     nextModule,
-    tutorialSrc: nextModule ? `/assets/how-to-play.html?module=${nextModule.id}` : "",
+    tutorialSrc: nextModule ? `/assets/how-to-play.html?module=${nextModule.id}&v=20260829-editorial-nav` : "",
     puzzleUnlocked: !nextModule,
     completedModules,
     completedPuzzles: [],
@@ -1969,7 +2086,7 @@ function activeTrainingState() {
 }
 
 const trainingModuleDescriptions = {
-  1: "기물의 움직임과 왕끼리 붙을 수 없는 규칙을 배워요.",
+  1: "폰, 룩, 비숍, 나이트, 퀸, 킹의 움직임과 임금끼리 싸울 수 없는 규칙을 배워요.",
   2: "각 기물이 상대 기물을 잡는 방법을 연습해요.",
   3: "체크를 피하고, 막고, 공격한 기물을 잡아봐요.",
   4: "여러 체크메이트 모양과 승리 조건을 배워요.",
@@ -1977,7 +2094,7 @@ const trainingModuleDescriptions = {
 
 const trainingModuleArt = {
   1: { src: "/assets/tutorial-pieces/g_pawn.png", alt: "고려 꼬마 창병" },
-  2: { src: "/assets/tutorial-pieces/g_bishop.png", alt: "고려 승려" },
+  2: { src: "/assets/tutorial-pieces/g_bishop.png", alt: "고려 승병" },
   3: { src: "/assets/tutorial-pieces/g_king.png", alt: "고려 임금님" },
   4: { src: "/assets/tutorial-pieces/g_knight.png", alt: "고려 백마 기수" },
 };
@@ -2073,9 +2190,9 @@ const puzzlePathStages = [
     series: "cheoinseong",
     player: "/assets/cheoinseong-battle.html",
     glyph: "♝",
-    ko: "승려들, 최전선에 서다",
+    ko: "승병들, 최전선에 서다",
     en: "Monks take the front line",
-    koDescription: "승려를 상징하는 비숍이 긴 대각선에서 이중공격을 만듭니다.",
+    koDescription: "승병을 상징하는 비숍이 긴 대각선에서 이중공격을 만듭니다.",
     enDescription: "A bishop representing the warrior monks creates a double attack.",
   },
   {
@@ -2315,7 +2432,7 @@ function renderTrainingModuleList() {
   review.innerHTML = `
     <div class="training-review-intro">
       <span class="training-module-index">복습 퀴즈</span>
-      <p>${reviewModules.length ? "복습할 모듈을 골라 한 문제로 확인해 볼까요?" : "모듈을 완료하면 복습 퀴즈를 시작할 수 있어요."}</p>
+      <p>${reviewModules.length ? "복습할 모듈을 골라 네 문제로 확인해 볼까요?" : "모듈을 완료하면 복습 퀴즈를 시작할 수 있어요."}</p>
     </div>`;
   const reviewChooser = document.createElement("div");
   reviewChooser.className = "training-review-chooser";
@@ -2348,7 +2465,10 @@ function renderTrainingModuleList() {
   reviewControl.className = "training-review-open";
   reviewControl.textContent = "복습 퀴즈 시작";
   reviewControl.disabled = reviewModules.length === 0;
-  if (reviewModules.length) reviewControl.addEventListener("click", () => openTrainingReview(selectedTrainingReviewModuleId));
+  if (reviewModules.length) reviewControl.addEventListener("click", () => {
+    const chosenModuleId = Number(reviewSelect.value || selectedTrainingReviewModuleId || 0);
+    if (chosenModuleId) openTrainingReview(chosenModuleId);
+  });
   reviewChooser.append(reviewSelect, reviewControl);
   review.append(reviewChooser);
   trainingModuleList.append(review);
@@ -2547,8 +2667,9 @@ function openTrainingModule(moduleId) {
   cheoinseongPathList?.setAttribute("hidden", "");
   howToPlayShell?.removeAttribute("hidden");
   trainingModuleToolbar?.removeAttribute("hidden");
-  if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `모듈 ${normalizedModuleId} · ${module.title}`;
-  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&v=20260828-training-path`;
+  const korean = currentInterfaceLanguage() === "Korean";
+  if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${korean ? "모듈" : "Module"} ${normalizedModuleId} · ${korean ? module.title : translateCopy(module.title)}`;
+  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&lang=${korean ? "ko" : "en"}&v=20260829-tutorial-fixes`;
   setActiveTrainingPathMode("tutorial");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -2566,14 +2687,15 @@ function openTrainingReview(moduleId) {
   cheoinseongPathList?.setAttribute("hidden", "");
   howToPlayShell?.removeAttribute("hidden");
   trainingModuleToolbar?.removeAttribute("hidden");
-  if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `모듈 ${normalizedModuleId} · 복습 퀴즈`;
-  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&review=1&v=20260828-training-path`;
+  const korean = currentInterfaceLanguage() === "Korean";
+  if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${korean ? "모듈" : "Module"} ${normalizedModuleId} · ${korean ? "복습 퀴즈" : "Review Quiz"}`;
+  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&review=1&lang=${korean ? "ko" : "en"}&v=20260829-tutorial-fixes`;
   setActiveTrainingPathMode("tutorial");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function openPuzzleStage(stage, index = 0) {
-  if (!stage || !activeTrainingState().puzzleUnlocked) return;
+function openPuzzleStage(stage, index = 0, options = {}) {
+  if (!stage || (!options.allowLocked && !activeTrainingState().puzzleUnlocked)) return;
   trainingModuleOpen = true;
   howToPlayShell?.classList.add("puzzle-mode");
   howToPlayView?.classList.add("puzzle-mode");
@@ -2586,9 +2708,22 @@ function openPuzzleStage(stage, index = 0) {
   const title = currentInterfaceLanguage() === "Korean" ? stage.ko : stage.en;
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${currentInterfaceLanguage() === "Korean" ? "퍼즐" : "Puzzle"} ${index + 1} · ${title}`;
   const player = stage.player || "/assets/goryeo-vs-mongol-puzzle.html";
-  if (howToPlayFrame) howToPlayFrame.src = `${player}?puzzle=${encodeURIComponent(stage.id)}&v=20260829-cheoinseong`;
+  const language = currentInterfaceLanguage() === "Korean" ? "ko" : "en";
+  if (howToPlayFrame) howToPlayFrame.src = `${player}?puzzle=${encodeURIComponent(stage.id)}&lang=${language}&v=20260829-localized-puzzles`;
   setActiveTrainingPathMode(stage.series === "cheoinseong" ? "cheoinseong" : "puzzle");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function syncOpenTrainingFrameLanguage() {
+  if (!trainingModuleOpen || !howToPlayFrame?.src || howToPlayFrame.src === "about:blank") return;
+  try {
+    const url = new URL(howToPlayFrame.src, window.location.origin);
+    url.searchParams.set("lang", currentInterfaceLanguage() === "Korean" ? "ko" : "en");
+    url.searchParams.set("locale", String(Date.now()));
+    howToPlayFrame.src = `${url.pathname}${url.search}`;
+  } catch {
+    // Keep the current training screen if its URL cannot be normalized.
+  }
 }
 
 function openRequestedTrainingModule() {
@@ -2689,14 +2824,19 @@ function updateTutorialGateState() {
   });
 }
 
-async function completeStudentTutorial(module) {
-  if (trainingModuleTransition) return trainingModuleTransition;
+async function completeStudentTutorial(module, advance = false) {
+  if (trainingModuleTransition) {
+    if (advance) return trainingModuleTransition.then(() => completeStudentTutorial(module, true));
+    return trainingModuleTransition;
+  }
   const moduleId = Number(module) || activeTrainingState().nextModule?.id;
   trainingModuleTransition = (async () => {
     const wasAlreadyCompleted = activeTrainingState().completedModules?.includes(moduleId);
     if (wasAlreadyCompleted) {
-      if (moduleId < 4) openTrainingModule(moduleId + 1);
-      else showTrainingModuleHome();
+      if (advance) {
+        if (moduleId < 4) openTrainingModule(moduleId + 1);
+        else showTrainingModuleHome();
+      }
       return;
     }
     if (currentUser && backendOnline) {
@@ -2730,8 +2870,10 @@ async function completeStudentTutorial(module) {
     // the iframe first, which can briefly show the puzzle home before the next module loads.
     trainingModuleOpen = true;
     updateTutorialGateState();
-    if (moduleId < 4) openTrainingModule(moduleId + 1);
-    else showTrainingModuleHome();
+    if (advance) {
+      if (moduleId < 4) openTrainingModule(moduleId + 1);
+      else showTrainingModuleHome();
+    }
     renderTrainingControls();
   })().finally(() => {
     trainingModuleTransition = null;
@@ -2851,7 +2993,13 @@ async function loadMatchFromRoute() {
   if (!matchId || !backendOnline) return false;
 
   try {
-    let data = await api(`/api/matches/${matchId}`);
+    let data;
+    try {
+      data = await api(`/api/matches/${matchId}`);
+    } catch (error) {
+      if (!currentUser) throw error;
+      data = await api(`/api/matches/${matchId}/join`, { method: "POST" });
+    }
     if (currentUser && !matchBelongsToCurrentUser(data.match) && matchHasOpenSlot(data.match)) {
       data = await api(`/api/matches/${matchId}/join`, { method: "POST" });
     }
@@ -3356,6 +3504,7 @@ async function checkBackend() {
     showAchievementUnlocks(session.unlocked);
     if (currentUser) connectSocket(null);
     const routedToMatch = await loadMatchFromRoute();
+    if (currentUser && !routedToMatch) await refreshActivePlayState();
     if (isStaffRoute()) {
       setView(isStaffUser() ? "staff" : "overview");
     } else if (isTutorialRoute()) {
@@ -3392,6 +3541,9 @@ function connectSocket(matchId) {
     const message = JSON.parse(event.data);
     if ((message.type === "match:started" || message.type === "queue:matched" || message.type === "match:joined") && matchBelongsToCurrentUser(message.match)) {
       renderMatch(message.match);
+      if (friendRoomDialog?.open && (message.match?.players || []).filter((player) => player.userId).length > 1) {
+        friendRoomDialog.close();
+      }
     }
     if (message.type === "match:move" && matchBelongsToCurrentUser(message.match)) renderMatch(message.match);
     if (message.type === "match:ended" && matchBelongsToCurrentUser(message.match)) renderMatch(message.match);
@@ -3462,6 +3614,7 @@ async function signInOrRegister() {
     authConfirmPassword.value = "";
     renderAuthState();
     connectSocket(null);
+    await refreshActivePlayState();
     setView("overview");
   } catch (error) {
     authStatus.textContent = error.message;
@@ -3472,6 +3625,7 @@ async function signInOrRegister() {
 async function signOut() {
   if (!backendOnline) {
     currentUser = null;
+    clearCurrentMatch();
     clearProfile();
     renderAuthState();
     setView("home");
@@ -3484,6 +3638,7 @@ async function signOut() {
     // The visible account state can still reset if the server logout response is missed.
   }
   currentUser = null;
+  clearCurrentMatch();
   authEmail.disabled = false;
   authPassword.disabled = false;
   authLanguagePair.disabled = false;
@@ -3534,6 +3689,7 @@ async function finishGoogleLogin(credential) {
     authConfirmPassword.value = "";
     renderAuthState();
     connectSocket(null);
+    await refreshActivePlayState();
     setView("overview");
   } catch (error) {
     authStatus.textContent = error.message;
@@ -3597,6 +3753,7 @@ async function deleteAccount() {
 
   if (!backendOnline) {
     currentUser = null;
+    clearCurrentMatch();
     clearProfile();
     renderAuthState();
     authStatus.textContent =
@@ -3612,6 +3769,7 @@ async function deleteAccount() {
   try {
     await api("/api/auth/delete", { method: "DELETE" });
     currentUser = null;
+    clearCurrentMatch();
     clearProfile();
     renderAuthState();
     authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "계정을 삭제했습니다." : "Account deleted.";
@@ -3680,6 +3838,7 @@ async function deleteAccountWithTypedConfirmation() {
   }
   if (!backendOnline) {
     currentUser = null;
+    clearCurrentMatch();
     clearProfile();
     renderAuthState();
     if (deleteAccountConfirm) deleteAccountConfirm.value = "";
@@ -3696,6 +3855,7 @@ async function deleteAccountWithTypedConfirmation() {
   try {
     await api("/api/auth/delete", { method: "DELETE" });
     currentUser = null;
+    clearCurrentMatch();
     clearProfile();
     renderAuthState();
     if (deleteAccountConfirm) deleteAccountConfirm.value = "";
@@ -3755,6 +3915,86 @@ async function uploadProfileImage(file) {
   }
 }
 
+function forumTimeLabel(createdAt) {
+  const date = new Date(createdAt);
+  if (!Number.isFinite(date.getTime())) return "";
+  return new Intl.DateTimeFormat(currentInterfaceLanguage() === "Korean" ? "ko-KR" : "en-US", {
+    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+  }).format(date);
+}
+
+async function refreshForumPosts({ quiet = false } = {}) {
+  if (!backendOnline) {
+    if (!quiet) renderForumPosts();
+    return;
+  }
+  try {
+    const data = await api("/api/forum/posts");
+    forumPosts = Array.isArray(data.posts) ? data.posts : [];
+    renderForumPosts();
+  } catch (error) {
+    if (!quiet) {
+      forumPosts = [];
+      renderForumPosts();
+    }
+  }
+}
+
+async function refreshActivePlayState({ enter = false } = {}) {
+  if (!backendOnline || !currentUser) {
+    clearCurrentMatch();
+    return null;
+  }
+
+  try {
+    const data = await api("/api/matches/active");
+    resumableMatch = data.match || null;
+    resumableOpenSeek = data.openSeek || null;
+    resumableChallenge = data.openChallenge || null;
+    renderActiveMatchReturn();
+    if (enter && resumableMatch) {
+      renderMatch(resumableMatch);
+      setView("dashboard");
+    }
+    return data;
+  } catch {
+    renderActiveMatchReturn();
+    return null;
+  }
+}
+
+async function resumeActivePlay() {
+  const state = await refreshActivePlayState();
+  if (state?.match) {
+    renderMatch(state.match);
+    setView("dashboard");
+    return;
+  }
+  if (state?.openSeek) {
+    setView("dashboard");
+    setMatchState("searching");
+    queueTime.textContent = currentInterfaceLanguage() === "Korean" ? "대기 중" : "Waiting";
+    queueProgress.style.width = "38%";
+    queuePrompt.textContent = currentInterfaceLanguage() === "Korean"
+      ? `${state.openSeek.timeControl} 방에서 상대를 기다리고 있습니다.`
+      : `Waiting for an opponent in your ${state.openSeek.timeControl} room.`;
+    showQueueTip();
+    return;
+  }
+  if (state?.openChallenge) {
+    privateChallengeCode.textContent = state.openChallenge.code;
+    friendRoomStatus.textContent = currentInterfaceLanguage() === "Korean" ? "친구가 참여하기를 기다리고 있습니다." : "Waiting for your friend to join.";
+    friendRoomDialog.showModal();
+  }
+}
+
+function setForumPolling(active) {
+  window.clearInterval(forumPollInterval);
+  forumPollInterval = null;
+  if (!active) return;
+  forumPollInterval = window.setInterval(() => refreshForumPosts({ quiet: true }), 5000);
+}
+
 function renderForumPosts() {
   forumPostList.replaceChildren();
   forumFilterButtons.forEach((button) => {
@@ -3794,9 +4034,15 @@ function renderForumPosts() {
     titleLine.className = "forum-post-titleline";
     titleLine.append(category, title);
 
-    const body = document.createElement("p");
-    body.className = "forum-post-body";
-    body.textContent = post.body || "";
+    const summary = document.createElement("button");
+    summary.type = "button";
+    summary.className = "forum-post-summary";
+    summary.setAttribute("aria-expanded", String(expandedForumPostId === post.id));
+    summary.append(titleLine);
+    summary.addEventListener("click", () => {
+      expandedForumPostId = expandedForumPostId === post.id ? null : post.id;
+      renderForumPosts();
+    });
 
     const side = document.createElement("div");
     side.className = "forum-post-side";
@@ -3809,7 +4055,8 @@ function renderForumPosts() {
 
     const comments = document.createElement("span");
     comments.className = "forum-comments";
-    comments.textContent = currentInterfaceLanguage() === "Korean" ? `댓글 ${post.comments || 0}` : `${post.comments || 0} comments`;
+    const replies = Array.isArray(post.comments) ? post.comments : [];
+    comments.textContent = currentInterfaceLanguage() === "Korean" ? `댓글 ${replies.length}` : `${replies.length} comments`;
 
     let pinButton = null;
     if (isStaffUser()) {
@@ -3822,10 +4069,59 @@ function renderForumPosts() {
       pinButton.addEventListener("click", () => toggleForumPin(post.id));
     }
 
-    main.append(titleLine);
-    if (body.textContent.trim()) main.append(body);
+    main.append(summary);
+    if (expandedForumPostId === post.id) {
+      const detail = document.createElement("section");
+      detail.className = "forum-post-detail";
+      const body = document.createElement("p");
+      body.className = "forum-post-body";
+      body.textContent = post.body || "";
+      detail.append(body);
+      const replyList = document.createElement("div");
+      replyList.className = "forum-reply-list";
+      replies.forEach((reply) => {
+        const row = document.createElement("article");
+        row.className = "forum-reply";
+        const meta = document.createElement("div");
+        meta.className = "forum-reply-meta";
+        meta.textContent = `${reply.author || "Player"} · ${forumTimeLabel(reply.createdAt)}`;
+        const copy = document.createElement("p");
+        copy.textContent = reply.body || "";
+        row.append(meta, copy);
+        replyList.append(row);
+      });
+      detail.append(replyList);
+      if (currentUser) {
+        const form = document.createElement("form");
+        form.className = "forum-reply-form";
+        const input = document.createElement("textarea");
+        input.maxLength = 1000;
+        input.rows = 2;
+        input.placeholder = currentInterfaceLanguage() === "Korean" ? "답글 입력" : "Write a reply";
+        const submit = document.createElement("button");
+        submit.type = "submit";
+        submit.className = "button primary";
+        submit.textContent = currentInterfaceLanguage() === "Korean" ? "답글 등록" : "Post reply";
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const value = input.value.trim();
+          if (!value) return;
+          submit.disabled = true;
+          try {
+            await api(`/api/forum/posts/${encodeURIComponent(post.id)}/comments`, { method: "POST", body: { body: value } });
+            await refreshForumPosts();
+          } finally {
+            submit.disabled = false;
+          }
+        });
+        form.append(input, submit);
+        detail.append(form);
+      }
+      main.append(detail);
+    }
     side.append(author, time, comments);
     if (pinButton) side.append(pinButton);
+    time.textContent = forumTimeLabel(post.createdAt);
     item.append(pin, main, side);
     forumPostList.append(item);
   });
@@ -3927,7 +4223,7 @@ function renderHomeForumPreview() {
   });
 }
 
-function publishForumPost() {
+async function publishForumPost() {
   const title = forumPostTitle.value.trim();
   const body = forumPostBody.value.trim();
   if (forumPostCategory.value === "Notice" && !isStaffUser()) {
@@ -3939,23 +4235,26 @@ function publishForumPost() {
     forumPostBody.focus();
     return;
   }
-  forumPosts = [
-    {
-      id: window.crypto?.randomUUID?.() || `post_${Date.now()}`,
-      title,
-      category: forumPostCategory.value,
-      body,
-      author: currentUser?.displayName || "Guest Player",
-      time: currentInterfaceLanguage() === "Korean" ? "방금 전" : "Just now",
-      comments: 0,
-      pinned: false,
-    },
-    ...forumPosts,
-  ];
-  forumPostTitle.value = "";
-  forumPostBody.value = "";
-  forumComposer.hidden = true;
-  renderForumPosts();
+  if (!currentUser || !backendOnline) {
+    forumPostBody.setCustomValidity(currentInterfaceLanguage() === "Korean" ? "게시하려면 로그인과 서버 연결이 필요합니다." : "Sign in and connect to publish.");
+    forumPostBody.reportValidity();
+    return;
+  }
+  forumPostBody.setCustomValidity("");
+  publishForumPostButton.disabled = true;
+  try {
+    const data = await api("/api/forum/posts", {
+      method: "POST",
+      body: { title, body, category: forumPostCategory.value },
+    });
+    expandedForumPostId = data.post?.id || null;
+    forumPostTitle.value = "";
+    forumPostBody.value = "";
+    forumComposer.hidden = true;
+    await refreshForumPosts();
+  } finally {
+    publishForumPostButton.disabled = false;
+  }
 }
 
 function toggleForumComposer() {
@@ -3964,10 +4263,10 @@ function toggleForumComposer() {
   if (!forumComposer.hidden) forumPostTitle.focus();
 }
 
-function toggleForumPin(postId) {
+async function toggleForumPin(postId) {
   if (!isStaffUser()) return;
-  forumPosts = forumPosts.map((post) => (post.id === postId ? { ...post, pinned: !post.pinned } : post));
-  renderForumPosts();
+  await api(`/api/forum/posts/${encodeURIComponent(postId)}/pin`, { method: "PATCH" });
+  await refreshForumPosts();
 }
 
 async function saveShopInterest(productName) {
@@ -4173,6 +4472,7 @@ function setView(viewName) {
     viewName = "how-to-play";
   }
   if (viewName === "how-to-play") showTrainingModuleHome();
+  setForumPolling(viewName === "forum");
   if (viewName === "home") {
     updateRouteForView(viewName);
     document.body.classList.add("show-landing");
@@ -4206,8 +4506,8 @@ function setView(viewName) {
     Promise.allSettled([refreshStats(), refreshLobby()]);
   }
   if (viewName === "how-to-play") refreshTrainingState();
-  if (viewName === "forum" && !forumInitialized) {
-    renderForumPosts();
+  if (viewName === "forum") {
+    refreshForumPosts();
     forumInitialized = true;
   }
   if (viewName === "chessboards" && !shopInitialized) {
@@ -4395,11 +4695,19 @@ function renderMatch(match) {
   clearInterval(queuePollInterval);
   clearInterval(queueInterval);
   currentMatchId = match.id;
+  rememberMatch(match);
   drawOfferFromOpponent = false;
   updateRoomLink(match.id);
   updateMatchRoute(match.id);
   const matchEnded = match.status === "ended" || match.game?.gameOver;
-  setMatchState(matchEnded ? "ended" : "playing");
+  const humanPlayerCount = (match.players || []).filter((player) => player.userId).length;
+  const waitingForOpponent = !matchEnded && (match.status === "waiting" || (match.pairingType === "private-challenge" && humanPlayerCount < 2));
+  if (!waitingForOpponent) {
+    resumableChallenge = null;
+    resumableOpenSeek = null;
+    renderActiveMatchReturn();
+  }
+  setMatchState(matchEnded ? "ended" : waitingForOpponent ? "searching" : "playing");
   if (!matchEnded) timeoutNotifiedFor = null;
   boardOrientation = currentPlayerColor(match);
   currentMatchPlayers = match.players || [];
@@ -4426,10 +4734,15 @@ function renderMatch(match) {
       : `${turn} to move`;
   matchSourceBadge.textContent = matchSourceLabel(match);
   timeControlBadge.textContent = matchClockLabel(match);
-  startMatchClock(match);
+  startMatchClock(waitingForOpponent ? { ...match, clocks: match.clocks ? { ...match.clocks, running: false } : null } : match);
   connectSocket(match.id);
   if (matchEnded) {
     endVoiceCall(false);
+  } else if (waitingForOpponent) {
+    startPassiveWaitingDisplay();
+    queuePrompt.textContent = currentInterfaceLanguage() === "Korean"
+      ? "방이 준비되었습니다. 초대 코드나 방 링크를 친구에게 보내세요."
+      : "Your room is ready. Send the invite code or room link to a friend.";
   } else if (!localVoiceStream) {
     setVoiceStatus(currentInterfaceLanguage() === "Korean" ? "매칭되었습니다. 마이크를 시작할 수 있습니다." : "Match paired. You can start your mic.");
   }
@@ -4481,6 +4794,22 @@ async function makeMove(from, to) {
     selectedSquare = null;
     legalMoveTargets = [];
     buildBoard();
+    if (/match not found/i.test(error.message)) {
+      const state = await refreshActivePlayState();
+      if (state?.match && state.match.id !== currentMatchId) {
+        renderMatch(state.match);
+        syncState.textContent = currentInterfaceLanguage() === "Korean"
+          ? "서버의 진행 중 대국으로 다시 연결했습니다."
+          : "Reconnected to your active server match.";
+        return;
+      }
+      clearCurrentMatch();
+      setMatchState("idle");
+      syncState.textContent = currentInterfaceLanguage() === "Korean"
+        ? "종료되었거나 삭제된 방입니다. 새 대국을 시작하세요."
+        : "This room ended or no longer exists. Start a new match.";
+      return;
+    }
     syncState.textContent = error.message;
   }
 }
@@ -4555,18 +4884,51 @@ function handleDrawOffer(message) {
   syncState.textContent = currentInterfaceLanguage() === "Korean" ? "수락하려면 1/2 버튼을 누르세요." : "Opponent offered a draw. Press 1/2 to accept.";
 }
 
+function startPassiveWaitingDisplay({ pollActive = true } = {}) {
+  clearInterval(queueInterval);
+  clearInterval(queuePollInterval);
+  let seconds = 0;
+  setMatchState("searching");
+  queueTime.textContent = currentInterfaceLanguage() === "Korean" ? "00:00 경과" : "00:00 elapsed";
+  queueProgress.style.width = "38%";
+  showQueueTip(0);
+  queueInterval = setInterval(() => {
+    seconds += 1;
+    const elapsed = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+    queueTime.textContent = currentInterfaceLanguage() === "Korean" ? `${elapsed} 경과` : `${elapsed} elapsed`;
+    if (seconds % 7 === 0) showQueueTip(queueTipIndex + 1);
+  }, 1000);
+  if (!pollActive || !backendOnline || !currentUser) return;
+  queuePollInterval = setInterval(async () => {
+    try {
+      const data = await api("/api/matches/active");
+      resumableChallenge = data.openChallenge || null;
+      resumableOpenSeek = data.openSeek || null;
+      if (data.match && data.match.status !== "waiting") {
+        renderMatch(data.match);
+        matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "상대가 입장했습니다" : "Your opponent joined";
+      } else {
+        resumableMatch = data.match || resumableMatch;
+        renderActiveMatchReturn();
+      }
+    } catch {
+      // WebSocket updates can still complete the waiting room.
+    }
+  }, 2000);
+}
+
 async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안전하게 대화할 수 있는 파트너를 찾는 중입니다." : "Searching for a safe partner with matching goals.", liveQueue = false, overrides = {}) {
   clearInterval(queueInterval);
   clearInterval(queuePollInterval);
-  currentMatchId = null;
+  clearCurrentMatch();
   setMatchState("searching");
-  let seconds = 25;
-  let progress = 22;
+  let seconds = 0;
   cancelMatchSearchButton.hidden = false;
   queuePrompt.textContent = label;
-  queueProgress.style.width = `${progress}%`;
+  queueProgress.style.width = "38%";
   matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "검색 중" : "Searching";
-  queueTime.textContent = "00:25";
+  queueTime.textContent = currentInterfaceLanguage() === "Korean" ? "00:00 경과" : "00:00 elapsed";
+  showQueueTip(0);
 
   if (backendOnline) {
     try {
@@ -4621,39 +4983,59 @@ async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안
   }
 
   queueInterval = setInterval(() => {
-    seconds = Math.max(0, seconds - 1);
-    progress = Math.min(95, progress + 3);
-    queueTime.textContent = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-    queueProgress.style.width = `${progress}%`;
-    if (seconds <= 0) {
-      seconds = 25;
-      progress = 42;
-    }
+    seconds += 1;
+    const elapsed = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+    queueTime.textContent = currentInterfaceLanguage() === "Korean" ? `${elapsed} 경과` : `${elapsed} elapsed`;
+    if (seconds % 7 === 0) showQueueTip(queueTipIndex + 1);
   }, 1000);
 }
 
-function cancelMatchSearch() {
+async function cancelMatchSearch() {
   clearInterval(queueInterval);
   clearInterval(queuePollInterval);
+  if (backendOnline && currentUser) {
+    try {
+      await api("/api/matches/waiting", { method: "DELETE" });
+    } catch {
+      // The local waiting state still closes if the cancellation response is missed.
+    }
+  }
+  clearCurrentMatch();
   setMatchState("idle");
   queueTime.textContent = currentInterfaceLanguage() === "Korean" ? "방식 선택" : "Choose mode";
   queueProgress.style.width = "0%";
   queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "검색을 취소했습니다. 대국 방식을 다시 선택하세요." : "Search canceled. Choose how you want to play.";
   matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "취소됨" : "Canceled";
+  if (queueTipPanel) queueTipPanel.hidden = true;
 }
 
 function resetToNewGame() {
   clearInterval(queueInterval);
   clearInterval(queuePollInterval);
   endVoiceCall(false);
-  currentMatchId = null;
-  updateRoomLink(null);
+  clearCurrentMatch();
   setMatchState("idle");
   queueTime.textContent = currentInterfaceLanguage() === "Korean" ? "방식 선택" : "Choose mode";
   queueProgress.style.width = "0%";
   queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "원하는 대국 방식을 선택하세요." : "Choose how you want to play.";
   matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "진행 중인 대국이 없어요" : "No active match";
   if (location.protocol !== "file:") history.replaceState({}, "", "/");
+}
+
+function returnHomeAfterMatch() {
+  clearInterval(queueInterval);
+  clearInterval(queuePollInterval);
+  endVoiceCall(false);
+  clearCurrentMatch();
+  setMatchState("idle");
+  if (location.protocol !== "file:") history.replaceState({}, "", "/");
+  setView("overview");
+}
+
+async function queueNewMatch() {
+  resetToNewGame();
+  setView("dashboard");
+  await quickPairFromSelectedPool();
 }
 
 async function quickPairFromSelectedPool() {
@@ -4722,7 +5104,9 @@ async function createOpenSeek() {
       await refreshLobby();
       return;
     }
-    setMatchState("searching");
+    resumableOpenSeek = data.seek;
+    renderActiveMatchReturn();
+    startPassiveWaitingDisplay();
     queuePrompt.textContent =
       currentInterfaceLanguage() === "Korean"
         ? `게임을 만들었습니다. ${data.seek.timeControl}, ${translateCopy(data.seek.partnerLanguage)}, ${translateCopy(data.seek.goal)} 조건의 상대를 기다립니다.`
@@ -4750,10 +5134,17 @@ async function createPrivateChallenge() {
         goal: conversationGoal.value,
       },
     });
+    resumableChallenge = data.challenge;
     privateChallengeCode.textContent = data.challenge.code;
+    if (data.match) renderMatch(data.match);
     queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "초대 코드를 만들었습니다. 친구에게 코드를 공유하세요." : "Private invite created. Share the code with a friend.";
+    friendRoomStatus.textContent = currentInterfaceLanguage() === "Korean"
+      ? "방이 생성되었습니다. 코드나 아래 링크를 친구에게 보내세요."
+      : "Room created. Send the code or link below to your friend.";
+    renderActiveMatchReturn();
   } catch (error) {
     queuePrompt.textContent = error.message;
+    friendRoomStatus.textContent = error.message;
   }
 }
 
@@ -4761,11 +5152,13 @@ async function joinPrivateChallenge() {
   const code = privateChallengeInput.value.trim().toUpperCase();
   if (!code) {
     queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "먼저 비공개 방 코드를 입력하세요." : "Enter a private challenge code first.";
+    friendRoomStatus.textContent = queuePrompt.textContent;
     privateChallengeInput.focus();
     return;
   }
   if (!backendOnline) {
     queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "비공개 방에 참여하려면 서버를 시작하세요." : "Start the backend to join private challenges.";
+    friendRoomStatus.textContent = queuePrompt.textContent;
     return;
   }
 
@@ -4774,11 +5167,13 @@ async function joinPrivateChallenge() {
     const data = await api(`/api/challenges/${encodeURIComponent(code)}/accept`, { method: "POST" });
     privateChallengeInput.value = "";
     renderMatch(data.match);
+    friendRoomDialog.close();
     matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "비공개 방에 참여했습니다" : "Private challenge joined";
     await refreshStats();
     await refreshLobby();
   } catch (error) {
     queuePrompt.textContent = error.message;
+    friendRoomStatus.textContent = error.message;
   }
 }
 
@@ -5824,6 +6219,9 @@ textSizeSlider.addEventListener("input", (event) => applyTextSize(event.target.v
 
 languageSelect?.addEventListener("change", () => {
   applyInterfaceLanguage();
+  syncLegalLanguage();
+  renderActiveMatchReturn();
+  if (!queueTipPanel?.hidden) showQueueTip();
   renderLandingTypewriter();
   renderAuthState();
   renderDashboardSummary();
@@ -5833,7 +6231,10 @@ languageSelect?.addEventListener("change", () => {
   const activeView = document.querySelector(".view.active")?.dataset.view;
   if (activeView === "forum" && forumInitialized) renderForumPosts();
   if (activeView === "overview") refreshLeaderboard();
-  if (activeView === "how-to-play") refreshTrainingState();
+  if (activeView === "how-to-play") {
+    refreshTrainingState();
+    syncOpenTrainingFrameLanguage();
+  }
   resetSubtitlePlaceholders();
   setSttStatus(sttListening);
 });
@@ -5855,6 +6256,12 @@ document.addEventListener("click", (event) => {
 
 homeLeaderboardTab?.addEventListener("click", () => setHomeInsightTab("leaderboard"));
 homeQuestTab?.addEventListener("click", () => setHomeInsightTab("quests"));
+resumeMatchButton?.addEventListener("click", resumeActivePlay);
+homeDailyPuzzleButton?.addEventListener("click", async () => {
+  setView("how-to-play");
+  await refreshTrainingState();
+  openPuzzleStage(puzzlePathStages[0], 0, { allowLocked: true });
+});
 homeThemeToggle?.addEventListener("click", (event) => {
   event.stopPropagation();
   setHomeThemePopover(homeThemePopover?.hidden !== false);
@@ -5920,7 +6327,7 @@ window.addEventListener("resize", () => {
 window.addEventListener("message", (event) => {
   if (event.origin !== window.location.origin && event.origin !== "null") return;
   if (howToPlayFrame?.contentWindow && event.source !== howToPlayFrame.contentWindow) return;
-  if (event.data?.type === "easymate:tutorial-complete") completeStudentTutorial(event.data.module);
+  if (event.data?.type === "easymate:tutorial-complete") completeStudentTutorial(event.data.module, Boolean(event.data.advance));
   if (event.data?.type === "easymate:review-quiz-complete") completeReviewQuiz(event.data);
   if (event.data?.type === "easymate:return-training") {
     setView("how-to-play");
@@ -5939,12 +6346,25 @@ continueToDashboardButton.addEventListener("click", () => {
 
 findMatchButton.addEventListener("click", quickPairFromSelectedPool);
 cancelMatchSearchButton.addEventListener("click", cancelMatchSearch);
+nextQueueTipButton?.addEventListener("click", () => showQueueTip(queueTipIndex + 1));
 showCreateSeekButton.addEventListener("click", () => {
   seekComposer.hidden = false;
   queuePrompt.textContent = "Choose settings, then create a game.";
   seekTimeControl.focus();
 });
-showFriendRoomButton.addEventListener("click", () => {
+showFriendRoomButton.addEventListener("click", async () => {
+  const state = await refreshActivePlayState();
+  if (state?.openChallenge) {
+    resumableChallenge = state.openChallenge;
+    privateChallengeCode.textContent = state.openChallenge.code;
+    friendRoomStatus.textContent = currentInterfaceLanguage() === "Korean"
+      ? "이미 만든 방이 있습니다. 같은 코드로 친구를 초대하세요."
+      : "You already have a waiting room. Share the same code with your friend.";
+    if (state.match) updateRoomLink(state.match.id);
+  } else {
+    privateChallengeCode.textContent = "----";
+    friendRoomStatus.textContent = "";
+  }
   friendRoomDialog.showModal();
   privateChallengeInput.focus();
 });
@@ -6081,7 +6501,15 @@ publishStaffProductButton?.addEventListener("click", publishStaffProduct);
 
 resignMatchButton.addEventListener("click", () => finishMatch("Resigned"));
 drawMatchButton.addEventListener("click", offerDraw);
-newGameButton.addEventListener("click", resetToNewGame);
+newGameButton.addEventListener("click", queueNewMatch);
+matchHomeButton?.addEventListener("click", returnHomeAfterMatch);
+
+document.querySelectorAll("[data-legal-dialog]").forEach((button) => {
+  button.addEventListener("click", () => openLegalDialog(button.dataset.legalDialog));
+});
+document.querySelectorAll("[data-close-dialog]").forEach((button) => {
+  button.addEventListener("click", () => button.closest("dialog")?.close());
+});
 
 partnerLanguage.addEventListener("change", () => {
   partnerName.textContent = `Mina K. (${partnerLanguage.value})`;
@@ -6198,6 +6626,7 @@ updateHeaderPieceEditionToggle(selectedPieceEdition);
 updateRoomLink(null);
 renderAuthState();
 applyInterfaceLanguage();
+syncLegalLanguage();
 renderLandingTypewriter();
 if (isStudentTutorialRequired()) {
   setView("how-to-play");

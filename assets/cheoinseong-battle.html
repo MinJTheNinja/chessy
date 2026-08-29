@@ -263,13 +263,13 @@
   <section class="section">
     <h2>배경 · 1232년 8월 – 12월</h2>
     <p>몽골 원수 살리타이가 이끄는 군대가 고려에 두 번째로 쳐들어왔다. 개경까지 밀고 내려왔지만 고종은 이미 강화도로 도읍을 옮긴 뒤였다. 살리타이는 전역을 불태우며 남하했고, 11월에는 광주성을 공격했지만 부사 이세화의 방어에 막혀 우회해야 했다.</p>
-    <p>그 남하의 끝에서 몽골군은 작은 부곡 마을, 처인에 다다른다. 처인부곡은 당시 신분이 낮은 사람들이 모여 살던 곳이었고, 지키는 것은 정규군이 아니라 승려 김윤후와 부곡의 백성들이었다.</p>
+    <p>그 남하의 끝에서 몽골군은 작은 부곡 마을, 처인에 다다른다. 처인부곡은 당시 신분이 낮은 사람들이 모여 살던 곳이었고, 지키는 것은 정규군이 아니라 승병 김윤후와 부곡의 백성들이었다.</p>
 
     <div class="legend-grid">
       <div class="legend-row"><div class="legend-tile g">♟</div><div class="legend-text">백성<span class="role">폰 · 처인부곡의 백성들</span></div></div>
       <div class="legend-row"><div class="legend-tile m">♟</div><div class="legend-text">병졸<span class="role">폰 · 몽골 보병</span></div></div>
       <div class="legend-row"><div class="legend-tile g">♞</div><div class="legend-text">말<span class="role">나이트 · 양측 기병</span></div></div>
-      <div class="legend-row"><div class="legend-tile g">♝</div><div class="legend-text">승려<span class="role">비숍 · 백현원 승병</span></div></div>
+      <div class="legend-row"><div class="legend-tile g">♝</div><div class="legend-text">승병<span class="role">비숍 · 백현원 승병</span></div></div>
       <div class="legend-row"><div class="legend-tile m">♝</div><div class="legend-text">샤먼·책사<span class="role">비숍 · 몽골측 조언자</span></div></div>
       <div class="legend-row"><div class="legend-tile g">♜</div><div class="legend-text">처인성 성벽<span class="role">룩 · 방어 진지</span></div></div>
       <div class="legend-row"><div class="legend-tile m">♜</div><div class="legend-text">몽골 공성탑<span class="role">룩 · 공성 장비</span></div></div>
@@ -311,9 +311,20 @@
 (function(){
   "use strict";
 
+  var language = new URLSearchParams(window.location.search).get('lang') === 'en' ? 'en' : 'ko';
+  document.documentElement.lang = language;
+  var EN = {
+    '퍼즐 진행 상황':'Puzzle progress','처음부터':'Restart','정사 기반':'Based on records','재구성':'Reconstruction',
+    '몽골군':'Mongol Army','고려군 (나)':'Goryeo Army (You)','힌트':'Hint','정답 보기':'Show Answer','다시 풀기':'Retry',
+    '이 기물을 움직여보세요.':'Move this piece.','처인성 전투':'Battle of Cheoinseong','처인성의 마지막 화살':'The Last Arrow of Cheoinseong',
+    '백성':'People','말':'Cavalry','승병':'Monk Soldier','처인성 성벽':'Cheoinseong Wall','김윤후':'Kim Yun-hu',
+    '병졸':'Infantry','샤먼':'Shaman','공성탑':'Siege Tower','살리타이':'Sartaq'
+  };
+  function tx(value){ return language==='en' ? (EN[value] || value) : value; }
+
   var GLYPH = { P:'♟', N:'♞', B:'♝', R:'♜', K:'♚' };
-  var LABEL = { wP:'백성', wN:'말', wB:'승려', wR:'처인성 성벽', wK:'김윤후',
-                bP:'병졸', bN:'말', bB:'샤먼', bR:'공성탑', bK:'살리타이' };
+  var LABEL = { wP:tx('백성'), wN:tx('말'), wB:tx('승병'), wR:tx('처인성 성벽'), wK:tx('김윤후'),
+                bP:tx('병졸'), bN:tx('말'), bB:tx('샤먼'), bR:tx('공성탑'), bK:tx('살리타이') };
 
   function inb(r,c){ return r>=0 && r<8 && c>=0 && c<8; }
   function color(p){ return p ? p[0] : null; }
@@ -370,7 +381,7 @@
       tag: 'fact',
       narrative: [
         '처인성은 둘레 350m 안팎의 작은 토성이었다. 100명 남짓이 물자를 갖고 들어가면 꽉 찰 만큼 좁았다.',
-        '중앙군은 오지 않았다. 성 안에는 승려 김윤후와 백현원 승려들, 그리고 처인부곡의 백성들만 있었다. 몽골 병졸이 성벽 가까이 다가온다.'
+        '중앙군은 오지 않았다. 성 안에는 승병 김윤후와 백현원 승병들, 그리고 처인부곡의 백성들만 있었다. 몽골 병졸이 성벽 가까이 다가온다.'
       ],
       prompt: '백성(폰)으로 다가오는 병졸을 잡아내세요.',
       verifyNote: null,
@@ -418,14 +429,14 @@
     {
       id: 'cheoin-3',
       date: '같은 날 · 장면 3',
-      title: '승려들, 최전선에 서다',
+      title: '승병들, 최전선에 서다',
       tag: 'recon',
       narrative: [
-        '이 성의 지휘자는 정규군 장수가 아니라 승려, 김윤후였다. 백현원의 승려가 부곡민들을 이끌었다는 사실 자체가 처인성 전투를 특별하게 만든다.',
-        '승려들이 전선 깊숙이 파고들어 대각선 너머의 적을 함께 겨눈다.'
+        '이 성의 지휘자는 정규군 장수가 아니라 승병 김윤후였다. 백현원의 승병이 부곡민들을 이끌었다는 사실 자체가 처인성 전투를 특별하게 만든다.',
+        '승병들이 전선 깊숙이 파고들어 대각선 너머의 적을 함께 겨눈다.'
       ],
-      prompt: '승려(비숍)로 대각선을 가로질러 적의 왕과 공성탑을 함께 겨누세요.',
-      verifyNote: '승려가 이 시점에 직접 전투에 나섰는지는 각색된 부분으로, 사학자 확인이 필요합니다.',
+      prompt: '승병(비숍)으로 대각선을 가로질러 적의 왕과 공성탑을 함께 겨누세요.',
+      verifyNote: '승병이 이 시점에 직접 전투에 나섰는지는 각색된 부분으로, 사학자 확인이 필요합니다.',
       board: [
         ['bR',null,null,null,null,null,null,null],
         [null,null,null,null,null,null,null,'bK'],
@@ -495,6 +506,68 @@
     }
   ];
 
+  if(language==='en'){
+    var EN_PUZZLES = [
+      {
+        date:'Dawn, December 16, 1232 · Scene 1', title:'On Their Own, Without the Royal Army',
+        narrative:['Cheoinseong was a small earthen fortress only about 350 meters around. It was so confined that roughly one hundred people and their supplies could fill it.','No central army came. Inside were the monk soldier Kim Yun-hu, monk soldiers from Baekhyeonwon, and the people of Cheoin Bugok. Mongol infantry approached the wall.'],
+        prompt:'Use the people (pawn) to capture the approaching infantry.', verifyNote:null,
+        resultTitle:'The first clash was repelled.', resultBody:'The people drove back the Mongol infantry. It was only the beginning; Sartaq’s main force had not yet arrived.', arrowNote:null
+      },
+      {
+        date:'The same day · Scene 2', title:'Mongol Cavalry Encircle the Fortress',
+        narrative:['Accounts say Sartaq prepared an encirclement by positioning cavalry around Wanjang-ri and Maeryong-ri northeast of Cheoinseong. The exact deployment still needs historical review.','Cheoinseong’s cavalry moves first, pressuring the Mongol command and rear at the same time.'],
+        prompt:'Find the knight move that attacks both the enemy king and siege tower.', verifyNote:'This tactical reconstruction may differ from the historical battle and requires review.',
+        resultTitle:'Check, and the siege tower is threatened.', resultBody:'The cavalry attacks Sartaq’s command and the rear siege tower at once. Sartaq must find a retreat.', arrowNote:null
+      },
+      {
+        date:'The same day · Scene 3', title:'Monk Soldiers Take the Front Line',
+        narrative:['The fortress was led not by a regular army officer but by the monk soldier Kim Yun-hu. That monk soldiers from Baekhyeonwon led the Bugok people makes Cheoinseong exceptional.','The monk soldiers press deep into the line and attack enemies across the diagonal.'],
+        prompt:'Move the monk soldier (bishop) across the diagonal to attack the enemy king and siege tower.', verifyNote:'Direct combat by monk soldiers at this exact moment is reconstructed and needs historical review.',
+        resultTitle:'Check, with the siege tower caught too.', resultBody:'One diagonal threatens Sartaq and the rear siege tower. Cheoinseong’s resistance tightens.', arrowNote:null
+      },
+      {
+        date:'The same day · Scene 4', title:'The Wall Holds',
+        narrative:['Depending on the terrain, Cheoinseong’s walls stood 4.8 to 6.3 meters high. Its raised rear and lower front made the cocoon-shaped fortress well suited to defense.','The wall itself becomes the last line, pressing the enemy king and cavalry together.'],
+        prompt:'Use the Cheoinseong wall (rook) to attack the enemy king and cavalry at once.', verifyNote:'The sequence in this scene is reconstructed and may differ from the historical order.',
+        resultTitle:'Check, and the cavalry is caught.', resultBody:'The wall holds its ground and attacks both the enemy king and cavalry. Sartaq has few places left.', arrowNote:null
+      },
+      {
+        date:'December 16, 1232 · Scene 5, Finale', title:'The Arrow Flies Toward Sartaq',
+        narrative:['The History of Yuan records only that Sartaq died after being struck by a stray arrow. The identity of the archer is unknown.','When the king offered Kim Yun-hu a senior military title, he declined, saying he had possessed no bow or arrow. The victory is therefore widely understood as a collective resistance by the people of Cheoinseong.'],
+        prompt:'Complete the final checkmate with the wall (rook).', verifyNote:null,
+        resultTitle:'Checkmate. Sartaq has fallen.', resultBody:'The Mongol commander Sartaq is killed. Deputy commander Tege negotiates peace and begins a hurried withdrawal.',
+        arrowNote:'History does not tell us whose arrow it was, but it was enough.'
+      }
+    ];
+    PUZZLES.forEach(function(puzzle,index){ Object.assign(puzzle,EN_PUZZLES[index]); });
+    document.title='The Last Arrow of Cheoinseong';
+    document.querySelector('.chapter').textContent='Cheoinseong Chapter';
+    document.querySelector('.progress-track').setAttribute('aria-label','Puzzle progress');
+    document.getElementById('restartBtn').textContent='Restart';
+    document.querySelector('.hero .eyebrow').textContent='Training · Cheoinseong Cultural Festival Special Chapter';
+    document.querySelector('.hero h1').textContent='The Last Arrow of Cheoinseong';
+    document.querySelector('.hero .sub').textContent='In December 1232, a small earthen fortress less than 350 meters around halted the Mongol Empire’s southward advance. Revisit Cheoinseong through five chess-puzzle scenes.';
+    document.querySelector('.draft-note span:last-child').innerHTML='<b>Draft pending review.</b> The battle facts and reconstructed scenes have not yet been reviewed by historians at the Yongin Cultural Center. Piece graphics are placeholders until final character art is available.';
+    var historySection=document.querySelector('.section');
+    historySection.querySelector('h2').textContent='Background · August–December 1232';
+    var historyParagraphs=historySection.querySelectorAll(':scope > p');
+    historyParagraphs[0].textContent='A second Mongol invasion entered Goryeo under commander Sartaq. The army reached Gaegyeong, but King Gojong had already moved the capital to Ganghwa Island. Sartaq burned southward and attacked Gwangju Fortress in November, but magistrate Yi Se-hwa’s defense forced a detour.';
+    historyParagraphs[1].textContent='At the end of that advance, the Mongol army reached Cheoin, a small Bugok settlement. Its people held low social status, and the settlement was defended not by the royal army but by the monk soldier Kim Yun-hu and local residents.';
+    var legendCopy=[['People','Pawn · people of Cheoin Bugok'],['Infantry','Pawn · Mongol infantry'],['Cavalry','Knight · cavalry on both sides'],['Monk Soldier','Bishop · Baekhyeonwon fighters'],['Shaman / Adviser','Bishop · Mongol adviser'],['Cheoinseong Wall','Rook · defensive position'],['Mongol Siege Tower','Rook · siege equipment'],['Kim Yun-hu','King · Cheoinseong command'],['Sartaq','King · Mongol commander']];
+    historySection.querySelectorAll('.legend-text').forEach(function(el,index){ el.innerHTML=legendCopy[index][0]+'<span class="role">'+legendCopy[index][1]+'</span>'; });
+    historySection.querySelector('.queen-note').textContent='The queen does not appear in this series because it has not yet been reinterpreted for the Cheoinseong theme. Piece graphics remain placeholders until final art is ready.';
+    var epilogue=document.querySelector('.epilogue');
+    epilogue.querySelector('h2').textContent='Afterward';
+    var epilogueParagraphs=epilogue.querySelectorAll('p');
+    epilogueParagraphs[0].textContent='After Sartaq died, deputy commander Tege negotiated peace and withdrew in haste. Contemporary records describe Mongol troops retreating in disorder, unsure whether to head east or north.';
+    epilogueParagraphs[1].textContent='Cheoin Bugok was promoted to Cheoin County after the victory. Kim Yun-hu declined a senior military title and accepted a lower office. Twenty-one years later, in 1253, he faced the Mongols again at Chungju Fortress.';
+    document.querySelector('#finalBanner h3').textContent='Cheoinseong Complete';
+    document.querySelector('#finalBanner p').textContent='All five scenes are complete. Nearly eight centuries later, this small earthen fortress has stopped Sartaq once again on the chessboard.';
+    document.querySelector('footer .label').textContent='Sources';
+    document.querySelector('footer .credit').textContent='EasyMate · Cheoinseong Cultural Festival Booth (Sept. 12–13, 2026)';
+  }
+
   var scenesEl = document.getElementById('scenes');
   var progressTrack = document.getElementById('progressTrack');
   var pathNav = document.getElementById('pathNav');
@@ -551,7 +624,7 @@
     dateEl.textContent = puzzle.date;
     var tagEl = document.createElement('span');
     tagEl.className = 'tag ' + (puzzle.tag==='fact' ? 'fact' : 'recon');
-    tagEl.textContent = puzzle.tag==='fact' ? '정사 기반' : '재구성';
+    tagEl.textContent = puzzle.tag==='fact' ? tx('정사 기반') : tx('재구성');
     meta.appendChild(dateEl);
     meta.appendChild(tagEl);
     var h2 = document.createElement('h2');
@@ -586,7 +659,7 @@
 
     var topChip = document.createElement('div');
     topChip.className = 'side-chip top';
-    topChip.textContent = '몽골군';
+    topChip.textContent = tx('몽골군');
     boardCol.appendChild(topChip);
 
     var frame = document.createElement('div');
@@ -597,7 +670,7 @@
     var boardEl = document.createElement('div');
     boardEl.className = 'board';
     boardEl.setAttribute('role','grid');
-    boardEl.setAttribute('aria-label', puzzle.title + ' 체스판');
+    boardEl.setAttribute('aria-label', puzzle.title + (language==='en' ? ' chessboard' : ' 체스판'));
     var filesEl = document.createElement('div');
     filesEl.className = 'files';
     FILES.forEach(function(f){ var s=document.createElement('span'); s.textContent=f; filesEl.appendChild(s); });
@@ -606,17 +679,17 @@
 
     var bottomChip = document.createElement('div');
     bottomChip.className = 'side-chip bottom';
-    bottomChip.textContent = '고려군 (나)';
+    bottomChip.textContent = tx('고려군 (나)');
     boardCol.appendChild(bottomChip);
 
     var controls = document.createElement('div');
     controls.className = 'board-controls';
     var hintBtn = document.createElement('button');
-    hintBtn.className = 'btn'; hintBtn.type='button'; hintBtn.textContent = '힌트';
+    hintBtn.className = 'btn'; hintBtn.type='button'; hintBtn.textContent = tx('힌트');
     var revealBtn = document.createElement('button');
-    revealBtn.className = 'btn'; revealBtn.type='button'; revealBtn.textContent = '정답 보기';
+    revealBtn.className = 'btn'; revealBtn.type='button'; revealBtn.textContent = tx('정답 보기');
     var resetBtn = document.createElement('button');
-    resetBtn.className = 'btn primary'; resetBtn.type='button'; resetBtn.textContent = '다시 풀기';
+    resetBtn.className = 'btn primary'; resetBtn.type='button'; resetBtn.textContent = tx('다시 풀기');
     controls.appendChild(hintBtn); controls.appendChild(revealBtn); controls.appendChild(resetBtn);
     boardCol.appendChild(controls);
 
@@ -672,8 +745,8 @@
           puzzleId: puzzle.id,
           stars: stars,
           title: puzzle.title,
-          theme: '처인성 전투',
-          family: '처인성의 마지막 화살',
+          theme: tx('처인성 전투'),
+          family: tx('처인성의 마지막 화살'),
           level: 4,
           hintsUsed: hintsUsed,
           durationMs: Math.max(0, Date.now() - startedAt),
@@ -768,7 +841,9 @@
         resultEl.classList.add('show');
         markSolvedUI();
       } else {
-        feedback.textContent = LABEL[movingPiece] + '(으)로 가능한 수지만, 이 장면의 결정적인 한 수는 아니에요. 다시 시도해보세요.';
+        feedback.textContent = language==='en'
+          ? 'That is a legal move for '+LABEL[movingPiece]+', but not the decisive move in this scene. Try again.'
+          : LABEL[movingPiece] + '(으)로 가능한 수지만, 이 장면의 결정적인 한 수는 아니에요. 다시 시도해보세요.';
         feedback.className = 'feedback meh';
         window.setTimeout(function(){
           board = cloneBoard();
@@ -781,7 +856,7 @@
       if(solved) return;
       hintsUsed = Math.max(1, hintsUsed);
       selected = puzzle.solution.from.slice();
-      feedback.textContent = '이 기물을 움직여보세요.';
+      feedback.textContent = tx('이 기물을 움직여보세요.');
       feedback.className = 'feedback';
       render();
     });

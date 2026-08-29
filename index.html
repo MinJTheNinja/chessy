@@ -160,11 +160,20 @@
                   </div>
                 </section>
 
+                <section class="active-match-return" id="activeMatchReturn" aria-live="polite" hidden>
+                  <div>
+                    <span class="label" id="activeMatchReturnLabel">진행 중인 대국</span>
+                    <strong id="activeMatchReturnTitle">대국으로 돌아갈 수 있어요.</strong>
+                    <p id="activeMatchReturnMeta">현재 방 상태를 서버에서 확인했습니다.</p>
+                  </div>
+                  <button class="button dark small" id="resumeMatchButton" type="button">방으로 돌아가기</button>
+                </section>
+
                 <article class="home-daily-puzzle" aria-labelledby="dailyPuzzleTitle">
                   <img src="/assets/daily-puzzle-icon-transparent.png" alt="퍼즐 탐험 아이콘" />
                   <div>
                     <h3 id="dailyPuzzleTitle">오늘의 퍼즐: 성문 뒤의 함정</h3>
-                    <button class="button primary" data-view-link="how-to-play" type="button">풀어보기</button>
+                    <button class="button primary" id="homeDailyPuzzleButton" type="button">풀어보기</button>
                   </div>
                 </article>
 
@@ -240,7 +249,6 @@
               <aside class="panel lobby-panel">
                 <div class="lobby-main-panel">
                   <section class="quick-match-intro" aria-labelledby="quickMatchTitle">
-                    <span class="label">가장 빠름</span>
                     <h3 id="quickMatchTitle">퀵 매칭</h3>
                     <p>기본 설정으로 바로 상대를 찾습니다. 보통 20초 안에 연결됩니다.</p>
                     <button class="play-find-button" id="findMatch" type="button">상대 찾기</button>
@@ -266,6 +274,11 @@
                     <strong id="queueTime">방식 선택</strong>
                     <div class="progress-track"><span id="queueProgress"></span></div>
                     <p id="queuePrompt">원하는 대국 방식을 선택하세요.</p>
+                    <div class="queue-tip" id="queueTipPanel" hidden>
+                      <span class="label">기다리는 동안</span>
+                      <p id="queueTip">첫 수를 두기 전에 상대에게 좋아하는 오프닝을 물어보세요.</p>
+                      <button class="text-link" id="nextQueueTip" type="button">다른 안내</button>
+                    </div>
                   </div>
                 </div>
 
@@ -346,7 +359,8 @@
                       <strong>Game status</strong>
                       <span>대국 중</span>
                       <div class="match-result-actions">
-                        <button class="button secondary small" id="newGame" type="button" hidden>새 대국</button>
+                        <button class="button secondary small" id="matchHome" type="button" hidden>홈으로 돌아가기</button>
+                        <button class="button dark small" id="newGame" type="button" hidden>새 대국</button>
                         <button class="button dark small" id="generateReview" data-view-link="review" hidden>AI 복습 만들기</button>
                       </div>
                     </div>
@@ -471,6 +485,7 @@
                   <input id="privateChallengeInput" type="text" placeholder="ABC123" autocomplete="off" />
                 </label>
                 <button class="button primary full" id="joinPrivateChallenge" type="button">방 참여</button>
+                <p class="friend-room-status" id="friendRoomStatus" role="status" aria-live="polite"></p>
                 <div class="room-share">
                   <span class="label">방 링크</span>
                   <input id="matchRoomLink" type="text" value="아직 만들어진 방이 없어요" readonly />
@@ -631,9 +646,9 @@
               </article>
 
               <nav class="forum-tabs" aria-label="게시판 분류">
-                <button class="active" type="button" data-forum-filter="All">전체</button>
+                <button type="button" data-forum-filter="All">전체</button>
                 <button type="button" data-forum-filter="Notice">공지</button>
-                <button type="button" data-forum-filter="Question">질문</button>
+                <button class="active" type="button" data-forum-filter="Question">질문</button>
                 <button type="button" data-forum-filter="Free">자유</button>
               </nav>
 
@@ -977,6 +992,97 @@
         <button data-view-link="profile" type="button">나</button>
       </nav>
     </main>
+
+    <footer class="site-footer">
+      <div class="site-footer-inner">
+        <span>EasyMate</span>
+        <nav aria-label="서비스 정보">
+          <button type="button" data-legal-dialog="termsDialog">이용약관</button>
+          <button type="button" data-legal-dialog="privacyDialog">개인정보 및 아동 보호</button>
+          <button type="button" data-legal-dialog="aboutDialog">About Us</button>
+          <a href="mailto:easymate.team@gmail.com">easymate.team@gmail.com</a>
+        </nav>
+      </div>
+    </footer>
+
+    <dialog class="legal-dialog" id="termsDialog" aria-labelledby="termsTitle">
+      <article>
+        <button class="legal-dialog-close" type="button" data-close-dialog aria-label="닫기">x</button>
+        <div data-legal-language="ko">
+          <span class="eyebrow">시행일 2026년 8월 29일</span>
+          <h2 id="termsTitle">EasyMate 이용약관</h2>
+          <h3>1. 서비스</h3>
+          <p>EasyMate는 체스 대국, 튜토리얼, 퍼즐, 리그와 커뮤니티 기능을 제공합니다. 일부 기능은 시험 운영 중이며 예고 후 변경되거나 중단될 수 있습니다.</p>
+          <h3>2. 계정과 이용 자격</h3>
+          <p>사용자는 정확한 계정 정보를 제공하고 계정 접근 정보를 안전하게 관리해야 합니다. 만 14세 미만 사용자는 개인정보 처리에 앞서 법정대리인의 동의와 확인이 필요합니다.</p>
+          <h3>3. 공정한 플레이와 커뮤니티</h3>
+          <p>부정행위, 괴롭힘, 혐오 표현, 타인 사칭, 불법 콘텐츠, 서비스 방해 행위를 금지합니다. 게시물과 대국 중 메시지는 운영 및 안전을 위해 검토될 수 있습니다.</p>
+          <h3>4. 사용자 콘텐츠</h3>
+          <p>사용자는 게시한 콘텐츠에 필요한 권리를 보유해야 합니다. EasyMate는 서비스 제공, 안전 관리와 화면 표시를 위해 필요한 범위에서 해당 콘텐츠를 처리할 수 있습니다.</p>
+          <h3>5. 제한과 종료</h3>
+          <p>약관 또는 관련 법령 위반, 보안 위험이 확인되면 콘텐츠를 제한하거나 계정 이용을 정지할 수 있습니다. 사용자는 프로필에서 계정을 삭제할 수 있습니다.</p>
+          <h3>6. 문의</h3>
+          <p>약관 문의: <a href="mailto:easymate.team@gmail.com">easymate.team@gmail.com</a></p>
+        </div>
+        <div data-legal-language="en" hidden>
+          <span class="eyebrow">Effective August 29, 2026</span>
+          <h2>EasyMate Terms of Service</h2>
+          <h3>1. Service</h3><p>EasyMate provides chess matches, tutorials, puzzles, leagues, and community features. Some features are experimental and may change or stop after notice.</p>
+          <h3>2. Accounts and eligibility</h3><p>Keep account information accurate and credentials secure. Users under 14 require verified consent from a legal guardian before their personal data is processed.</p>
+          <h3>3. Fair play and community</h3><p>Cheating, harassment, hate speech, impersonation, unlawful content, and interference with the service are prohibited. Posts and match messages may be reviewed for operations and safety.</p>
+          <h3>4. User content</h3><p>You must have the rights needed for content you submit. EasyMate may process it as needed to provide the service, display it, and protect users.</p>
+          <h3>5. Restrictions and termination</h3><p>We may restrict content or accounts for violations or security risks. You can delete your account from your profile.</p>
+          <h3>6. Contact</h3><p><a href="mailto:easymate.team@gmail.com">easymate.team@gmail.com</a></p>
+        </div>
+      </article>
+    </dialog>
+
+    <dialog class="legal-dialog" id="privacyDialog" aria-labelledby="privacyTitle">
+      <article>
+        <button class="legal-dialog-close" type="button" data-close-dialog aria-label="닫기">x</button>
+        <div data-legal-language="ko">
+          <span class="eyebrow">개인정보 및 아동 보호</span>
+          <h2 id="privacyTitle">개인정보 처리방침</h2>
+          <h3>수집 정보와 목적</h3>
+          <p>계정 생성 시 이메일, 표시 이름과 비밀번호 해시를 처리합니다. 서비스 이용 중 대국 기록, 퍼즐·튜토리얼 진행도, 리그·배지, 게시물·답글, 신고와 세션 정보가 저장될 수 있습니다. 이 정보는 계정 운영, 학습 진행 저장, 대국 연결, 안전 관리와 서비스 개선에 사용됩니다.</p>
+          <h3>음성 및 자막</h3>
+          <p>마이크는 사용자가 켠 경우에만 사용합니다. 실시간 음성은 대국 상대와 연결되며, 자막 또는 대국 기록으로 전송한 텍스트는 복습과 안전 기능을 위해 저장될 수 있습니다.</p>
+          <h3>보유와 삭제</h3>
+          <p>계정 정보는 계정 삭제 전까지 보유하며, 법적 의무나 분쟁 대응에 필요한 정보는 관련 기간 동안 별도로 보관할 수 있습니다. 사용자는 프로필에서 계정을 삭제하거나 이메일로 열람·정정·삭제를 요청할 수 있습니다.</p>
+          <h3>만 14세 미만 아동</h3>
+          <p>만 14세 미만 아동의 개인정보를 처리하려면 법정대리인의 동의를 받아야 하며, EasyMate는 해당 법정대리인의 동의 여부를 확인합니다. 보호자는 아래 이메일로 아동의 개인정보 열람, 정정 또는 삭제를 요청할 수 있습니다.</p>
+          <h3>외부 서비스와 문의</h3>
+          <p>로그인, 호스팅, 데이터 저장 또는 번역 기능을 위해 설정된 서비스 제공자가 필요한 범위에서 정보를 처리할 수 있습니다. 개인정보 문의 및 권리 행사: <a href="mailto:easymate.team@gmail.com">easymate.team@gmail.com</a></p>
+        </div>
+        <div data-legal-language="en" hidden>
+          <span class="eyebrow">Privacy and child protection</span>
+          <h2>Privacy Notice</h2>
+          <h3>Data and purposes</h3><p>We process email, display name, and password-hash information for accounts. Match history, tutorial and puzzle progress, leagues, badges, posts, replies, reports, and session data may be stored to operate accounts, save learning progress, connect matches, protect users, and improve the service.</p>
+          <h3>Voice and captions</h3><p>The microphone is used only when you turn it on. Live audio connects to your opponent. Caption text or transcript text you send may be stored for review and safety features.</p>
+          <h3>Retention and deletion</h3><p>Account data is kept until account deletion, except where law or dispute handling requires longer retention. Use profile settings or contact us to request access, correction, or deletion.</p>
+          <h3>Children under 14</h3><p>Personal data for a child under 14 requires consent from a legal guardian. EasyMate verifies that guardian consent before processing the child's personal data. A guardian may contact us to request access, correction, or deletion.</p>
+          <h3>Providers and contact</h3><p>Configured providers may process limited data for login, hosting, storage, or translation. Contact: <a href="mailto:easymate.team@gmail.com">easymate.team@gmail.com</a></p>
+        </div>
+      </article>
+    </dialog>
+
+    <dialog class="legal-dialog" id="aboutDialog" aria-labelledby="aboutTitle">
+      <article>
+        <button class="legal-dialog-close" type="button" data-close-dialog aria-label="닫기">x</button>
+        <div data-legal-language="ko">
+          <span class="eyebrow">About Us</span>
+          <h2 id="aboutTitle">체스와 대화를 함께 배우는 곳</h2>
+          <p>EasyMate는 체스 튜토리얼과 퍼즐, 실시간 대국을 통해 초보자가 한 수씩 배우고 다른 플레이어와 안전하게 대화할 수 있도록 만드는 학습 서비스입니다.</p>
+          <p>서비스 및 협업 문의: <a href="mailto:easymate.team@gmail.com">easymate.team@gmail.com</a></p>
+        </div>
+        <div data-legal-language="en" hidden>
+          <span class="eyebrow">About Us</span>
+          <h2>Learn chess and conversation together</h2>
+          <p>EasyMate helps beginners learn one move at a time through tutorials, puzzles, and live matches while practicing safe conversation with other players.</p>
+          <p>Product and partnership contact: <a href="mailto:easymate.team@gmail.com">easymate.team@gmail.com</a></p>
+        </div>
+      </article>
+    </dialog>
 
   </body>
 </html>

@@ -57,10 +57,10 @@ try {
   });
 }
 const trainingModules = [
-  { id: 1, title: "기물의 움직임", src: "/assets/how-to-play.html?module=1&v=20260824-cleanup" },
-  { id: 2, title: "기물 잡기", src: "/assets/how-to-play.html?module=2&v=20260824-cleanup" },
-  { id: 3, title: "체크에서 벗어나기", src: "/assets/how-to-play.html?module=3&v=20260824-cleanup" },
-  { id: 4, title: "체크메이트", src: "/assets/how-to-play.html?module=4&v=20260824-cleanup" },
+  { id: 1, title: "기물의 움직임", src: "/assets/how-to-play.html?module=1&v=20260829-tutorial-fixes" },
+  { id: 2, title: "기물 잡기", src: "/assets/how-to-play.html?module=2&v=20260829-tutorial-fixes" },
+  { id: 3, title: "체크에서 벗어나기", src: "/assets/how-to-play.html?module=3&v=20260829-tutorial-fixes" },
+  { id: 4, title: "체크메이트", src: "/assets/how-to-play.html?module=4&v=20260829-tutorial-fixes" },
 ];
 const pgPool = databaseUrl
   ? new Pool({
@@ -216,6 +216,7 @@ function defaultDb() {
     reports: [],
     shopInterests: [],
     leagues: [],
+    forumPosts: [],
   };
 }
 
@@ -234,6 +235,7 @@ function normalizeDb(db = {}) {
     reports: db.reports || [],
     shopInterests: db.shopInterests || [],
     leagues: db.leagues || [],
+    forumPosts: Array.isArray(db.forumPosts) ? db.forumPosts : [],
   };
 }
 
@@ -904,68 +906,68 @@ function defaultTraining() {
 
 const achievementCatalog = [
   { id: "first-step", name: "첫걸음", category: "훈련장", detail: "첫 튜토리얼을 완료했습니다." },
-  { id: "piece-commander", name: "기물 지휘관", category: "훈련장", detail: "기물 움직임 모듈을 완료했습니다." },
+  { id: "piece-commander", name: "기물 지휘관", category: "훈련장", detail: "모든 기본 훈련 모듈을 완료했습니다." },
   { id: "capture-specialist", name: "포획 전문가", category: "훈련장", detail: "기물 잡기 모듈을 완료했습니다." },
   { id: "crisis-escape", name: "위기 탈출", category: "훈련장", detail: "체크 피하기 모듈을 완료했습니다." },
   { id: "mate-solver", name: "외통수 해결사", category: "훈련장", detail: "체크메이트 모듈을 완료했습니다." },
   { id: "review-craftsperson", name: "복습 장인", category: "훈련장", detail: "복습 퀴즈를 다섯 번 완료했습니다." },
-  { id: "gate-guardian", name: "성문 수호자", category: "퍼즐", detail: "성문 뒤의 함정을 처음 해결했습니다." },
-  { id: "flawless-solver", name: "무결점 풀이", category: "퍼즐", detail: "힌트 없이 퍼즐을 해결했습니다." },
-  { id: "lightning-move", name: "번개 수", category: "퍼즐", detail: "제한 시간 안에 퍼즐을 해결했습니다." },
+  { id: "gate-guardian", name: "성문 수호자", category: "퍼즐", detail: "성문 뒤의 함정 퍼즐을 세 번 해결했습니다." },
+  { id: "flawless-solver", name: "무결점 풀이", category: "퍼즐", detail: "힌트 없이 퍼즐을 다섯 번 해결했습니다." },
+  { id: "lightning-move", name: "번개 수", category: "퍼즐", detail: "45초 안에 힌트 없이 퍼즐을 세 번 해결했습니다." },
   { id: "five-routes", name: "다섯 갈래 길", category: "퍼즐", detail: "같은 테마의 유사 퍼즐 다섯 개를 모두 해결했습니다." },
-  { id: "puzzle-explorer", name: "퍼즐 탐험가", category: "퍼즐", detail: "서로 다른 퍼즐 테마 세 개를 완료했습니다." },
-  { id: "perfect-march", name: "완벽한 행군", category: "퍼즐", detail: "한 레벨의 모든 퍼즐을 해결했습니다." },
-  { id: "first-match", name: "첫 대국", category: "대국", detail: "첫 실제 대국을 완료했습니다." },
-  { id: "first-victory", name: "첫 승리", category: "대국", detail: "첫 승리를 거뒀습니다." },
-  { id: "finish-the-game", name: "끝까지 한 판", category: "대국", detail: "기권하지 않고 대국을 마쳤습니다." },
+  { id: "puzzle-explorer", name: "퍼즐 탐험가", category: "퍼즐", detail: "서로 다른 퍼즐 테마 다섯 개를 완료했습니다." },
+  { id: "perfect-march", name: "완벽한 행군", category: "퍼즐", detail: "한 레벨의 퍼즐을 별 2개 이상으로 모두 해결했습니다." },
+  { id: "first-match", name: "첫 대국", category: "대국", detail: "충분히 진행된 첫 실제 대국을 완료했습니다." },
+  { id: "first-victory", name: "첫 승리", category: "대국", detail: "충분히 진행된 대국에서 첫 승리를 거뒀습니다." },
+  { id: "finish-the-game", name: "끝까지 한 판", category: "대국", detail: "기권하지 않고 대국 세 판을 마쳤습니다." },
   { id: "comeback-master", name: "역전의 명수", category: "대국", detail: "불리한 상황에서 승리했습니다." },
   { id: "first-checkmate", name: "체크메이트", category: "대국", detail: "체크메이트로 첫 승리를 거뒀습니다." },
   { id: "solid-defense", name: "단단한 수비", category: "대국", detail: "체크를 세 번 이상 적절히 피했습니다." },
-  { id: "conversation-listener", name: "대화 리스너", category: "커뮤니티와 매너", detail: "대국 중 대화를 충분히 활용했습니다." },
-  { id: "respectful-move", name: "존중의 한 수", category: "커뮤니티와 매너", detail: "신고 없이 여러 대국을 완료했습니다." },
+  { id: "conversation-listener", name: "대화 리스너", category: "커뮤니티와 매너", detail: "대국 중 직접 작성한 대화를 여덟 번 남겼습니다." },
+  { id: "respectful-move", name: "존중의 한 수", category: "커뮤니티와 매너", detail: "신고 없이 충분히 진행된 대국 열 판을 완료했습니다." },
   { id: "first-greeting", name: "첫 인사", category: "커뮤니티와 매너", detail: "아이스브레이커 미션을 완료했습니다." },
   { id: "league-together", name: "함께하는 리그", category: "커뮤니티와 매너", detail: "리그에 처음 참가했습니다." },
-  { id: "league-founder", name: "리그 개설자", category: "커뮤니티와 매너", detail: "첫 리그 코드를 만들었습니다." },
-  { id: "friend-match", name: "친구와 한 판", category: "커뮤니티와 매너", detail: "초대 코드로 친구와 대국을 마쳤습니다." },
+  { id: "league-founder", name: "리그 개설자", category: "커뮤니티와 매너", detail: "세 명 이상이 참여한 리그를 개설했습니다." },
+  { id: "friend-match", name: "친구와 한 판", category: "커뮤니티와 매너", detail: "초대 코드로 충분히 진행된 친구 대국을 마쳤습니다." },
   { id: "march-3", name: "3일 행군", category: "꾸준함", detail: "3일 연속 학습하거나 대국을 완료했습니다." },
   { id: "march-7", name: "7일 행군", category: "꾸준함", detail: "7일 연속 학습하거나 대국을 완료했습니다." },
   { id: "march-30", name: "30일 행군", category: "꾸준함", detail: "30일 연속 학습하거나 대국을 완료했습니다." },
-  { id: "morning-strategist", name: "아침의 전략가", category: "꾸준함", detail: "아침에 첫 학습을 마쳤습니다." },
-  { id: "night-strategist", name: "밤의 전략가", category: "꾸준함", detail: "밤에 첫 학습을 마쳤습니다." },
+  { id: "morning-strategist", name: "아침의 전략가", category: "꾸준함", detail: "아침 학습을 세 번 완료했습니다." },
+  { id: "night-strategist", name: "밤의 전략가", category: "꾸준함", detail: "밤 학습을 세 번 완료했습니다." },
   { id: "returning-warrior", name: "돌아온 용사", category: "꾸준함", detail: "7일 이상 쉬었다가 다시 학습을 완료했습니다." },
 ];
 
 const achievementArtwork = {
   "first-step": "/assets/badges/canva-first-step.png",
   "piece-commander": "/assets/badges/canva-piece-commander.png",
-  "capture-specialist": "/assets/badges/canva-piece-commander.png",
+  "capture-specialist": "/assets/badges/capture-specialist.png",
   "crisis-escape": "/assets/badges/canva-crisis-escape.png",
   "mate-solver": "/assets/badges/canva-mate-master.png",
   "review-craftsperson": "/assets/badges/canva-review-craftsperson.png",
   "gate-guardian": "/assets/badges/canva-gate-guardian.png",
   "flawless-solver": "/assets/badges/canva-flawless-solver.png",
-  "lightning-move": "/assets/badges/canva-flawless-solver.png",
+  "lightning-move": "/assets/badges/lightning-move.png",
   "five-routes": "/assets/badges/canva-five-routes.png",
   "puzzle-explorer": "/assets/badges/canva-puzzle-explorer.png",
   "perfect-march": "/assets/badges/canva-perfect-march.png",
-  "first-match": "/assets/badges/canva-first-step.png",
-  "first-victory": "/assets/badges/canva-mate-master.png",
-  "finish-the-game": "/assets/badges/canva-perfect-march.png",
-  "comeback-master": "/assets/badges/canva-crisis-escape.png",
-  "first-checkmate": "/assets/badges/canva-mate-master.png",
-  "solid-defense": "/assets/badges/canva-gate-guardian.png",
-  "conversation-listener": "/assets/badges/canva-puzzle-explorer.png",
-  "respectful-move": "/assets/badges/canva-flawless-solver.png",
-  "first-greeting": "/assets/badges/canva-first-step.png",
-  "league-together": "/assets/badges/canva-five-routes.png",
-  "league-founder": "/assets/badges/canva-piece-commander.png",
-  "friend-match": "/assets/badges/canva-five-routes.png",
-  "march-3": "/assets/badges/canva-first-step.png",
-  "march-7": "/assets/badges/canva-five-routes.png",
-  "march-30": "/assets/badges/canva-perfect-march.png",
-  "morning-strategist": "/assets/badges/canva-piece-commander.png",
-  "night-strategist": "/assets/badges/canva-piece-commander.png",
-  "returning-warrior": "/assets/badges/canva-review-craftsperson.png",
+  "first-match": "/assets/badges/first-match.png",
+  "first-victory": "/assets/badges/first-victory.png",
+  "finish-the-game": "/assets/badges/finish-the-game.png",
+  "comeback-master": "/assets/badges/comeback-master.png",
+  "first-checkmate": "/assets/badges/checkmate.png",
+  "solid-defense": "/assets/badges/solid-defense.png",
+  "conversation-listener": "/assets/badges/conversation-listener.png",
+  "respectful-move": "/assets/badges/respectful-move.png",
+  "first-greeting": "/assets/badges/first-greeting.png",
+  "league-together": "/assets/badges/league-together.png",
+  "league-founder": "/assets/badges/league-founder.png",
+  "friend-match": "/assets/badges/friend-match.png",
+  "march-3": "/assets/badges/march-3.png",
+  "march-7": "/assets/badges/march-7.png",
+  "march-30": "/assets/badges/march-30.png",
+  "morning-strategist": "/assets/badges/morning-strategist.png",
+  "night-strategist": "/assets/badges/night-strategist.png",
+  "returning-warrior": "/assets/badges/returning-warrior.png",
 };
 
 const achievementById = new Map(achievementCatalog.map((achievement) => [
@@ -999,14 +1001,17 @@ function pendingAchievementViews(user) {
   return user.badgeNotifications.map(achievementView).filter(Boolean);
 }
 
-function awardAchievements(user, ids, earnedAt = new Date().toISOString()) {
+const maxAchievementUnlocksPerSync = 3;
+
+function awardAchievements(user, ids, earnedAt = new Date().toISOString(), maxUnlocks = maxAchievementUnlocksPerSync) {
   if (!user) return [];
   const earned = userAchievementEntries(user);
   const known = new Set(earned.map((entry) => entry.id));
   const pending = new Set(user.badgeNotifications.map((entry) => entry.id));
   const unlocked = [];
-  ids.forEach((id) => {
-    if (!achievementById.has(id) || known.has(id)) return;
+  for (const id of ids) {
+    if (unlocked.length >= maxUnlocks) break;
+    if (!achievementById.has(id) || known.has(id)) continue;
     const entry = { id, earnedAt };
     earned.push(entry);
     known.add(id);
@@ -1015,7 +1020,7 @@ function awardAchievements(user, ids, earnedAt = new Date().toISOString()) {
       pending.add(id);
     }
     unlocked.push(achievementView(entry));
-  });
+  }
   return unlocked;
 }
 
@@ -1287,17 +1292,53 @@ function matchUserStats(match, userId) {
     || {};
 }
 
+function matchMoveCount(match) {
+  return Array.isArray(match?.moves) ? match.moves.length : 0;
+}
+
+function userMoveCount(match, userId) {
+  const color = (match?.players || []).find((player) => player.userId === userId)?.color;
+  if (!color) return 0;
+  return (Array.isArray(match?.moves) ? match.moves : []).filter((move) => move.color === color).length;
+}
+
+function isSubstantialFinishedMatch(match, userId) {
+  return match?.status === "ended"
+    && matchHasUser(match, userId)
+    && matchMoveCount(match) >= 10
+    && userMoveCount(match, userId) >= 4
+    && !/cancel|canceled|abandon|timeout before move/i.test(matchText(match));
+}
+
+function userSpeechCount(match, userId) {
+  return (Array.isArray(match?.transcript) ? match.transcript : [])
+    .filter((entry) =>
+      entry?.kind === "speech"
+      && [entry.userId, entry.authorId, entry.senderId].includes(userId)
+      && String(entry.text || "").trim().length >= 8
+    )
+    .length;
+}
+
+function leagueMemberCount(db, code) {
+  const normalizedCode = String(code || "").trim().toUpperCase();
+  if (!normalizedCode) return 0;
+  return (Array.isArray(db.users) ? db.users : []).filter((item) => String(item.leagueCode || "").trim().toUpperCase() === normalizedCode).length;
+}
+
 function syncAchievements(user, db) {
   if (!user) return [];
   user.training = normalizeTraining(user.training);
   const training = user.training;
+  const earnedIds = new Set(userAchievementEntries(user).map((entry) => entry.id));
   const completedModules = new Set(training.completedModules);
   const puzzles = training.completedPuzzles.filter((puzzle) => puzzle && puzzle.id);
   const matches = Array.isArray(db.matches) ? db.matches : [];
   const reports = Array.isArray(db.reports) ? db.reports : [];
   const finishedMatches = matches.filter((match) => match.status === "ended" && matchHasUser(match, user.id));
-  const wonMatches = finishedMatches.filter((match) => matchWinnerIs(match, user));
-  const hasReport = reports.some((report) => [report.reportedUserId, report.targetUserId, report.userId].includes(user.id));
+  const substantialMatches = finishedMatches.filter((match) => isSubstantialFinishedMatch(match, user.id));
+  const wonMatches = substantialMatches.filter((match) => matchWinnerIs(match, user));
+  const hasReport = reports.some((report) => [report.reporterId, report.reportedUserId, report.targetUserId, report.userId].includes(user.id));
   const puzzleThemes = new Set(puzzles.map((puzzle) => puzzle.theme).filter(Boolean));
   const familyGroups = new Map();
   const levelGroups = new Map();
@@ -1317,48 +1358,57 @@ function syncAchievements(user, db) {
   });
 
   const candidateIds = [];
-  if (completedModules.size >= 1) candidateIds.push("first-step", "piece-commander");
+  if (completedModules.has(1)) candidateIds.push("first-step");
+  if (completedModules.size >= trainingModules.length) candidateIds.push("piece-commander");
   if (completedModules.has(2)) candidateIds.push("capture-specialist");
   if (completedModules.has(3)) candidateIds.push("crisis-escape");
   if (completedModules.has(4)) candidateIds.push("mate-solver");
-  if (training.reviewQuizzes.length >= 5) candidateIds.push("review-craftsperson");
+  if (training.reviewQuizzes.filter((quiz) => Number(quiz.score || 0) >= 4).length >= 5) candidateIds.push("review-craftsperson");
 
-  if (puzzles.some((puzzle) => String(puzzle.title || "").includes("성문 뒤의 함정") || /(^|[-_:])s1($|[-_:])/.test(String(puzzle.id)))) {
+  const gatePuzzles = puzzles.filter((puzzle) => String(puzzle.title || "").includes("성문 뒤의 함정") || /(^|[-_:])s1($|[-_:])/.test(String(puzzle.id)));
+  const noHintPuzzles = puzzles.filter((puzzle) => Number.isFinite(Number(puzzle.hintsUsed)) && Number(puzzle.hintsUsed) === 0);
+  const fastNoHintPuzzles = noHintPuzzles.filter((puzzle) => Number(puzzle.durationMs) > 0 && Number(puzzle.durationMs) <= 45000);
+  if (gatePuzzles.length >= 3) {
     candidateIds.push("gate-guardian");
   }
-  if (puzzles.some((puzzle) => Number.isFinite(Number(puzzle.hintsUsed)) && Number(puzzle.hintsUsed) === 0)) candidateIds.push("flawless-solver");
-  if (puzzles.some((puzzle) => Number(puzzle.durationMs) > 0 && Number(puzzle.durationMs) <= 60000)) candidateIds.push("lightning-move");
+  if (noHintPuzzles.length >= 5) candidateIds.push("flawless-solver");
+  if (fastNoHintPuzzles.length >= 3) candidateIds.push("lightning-move");
   if ([...familyGroups.values()].some((family) => family.total >= 5 && family.ids.size >= family.total)) candidateIds.push("five-routes");
-  if (puzzleThemes.size >= 3) candidateIds.push("puzzle-explorer");
-  if ([...levelGroups.values()].some((level) => level.ids.size >= level.total)) candidateIds.push("perfect-march");
+  if (puzzleThemes.size >= 5) candidateIds.push("puzzle-explorer");
+  if ([...levelGroups.values()].some((level) =>
+    level.total >= 6
+    && level.ids.size >= level.total
+    && puzzles
+      .filter((puzzle) => level.ids.has(String(puzzle.id)))
+      .every((puzzle) => Number(puzzle.stars || 0) >= 2)
+  )) candidateIds.push("perfect-march");
 
-  if (finishedMatches.length >= 1) candidateIds.push("first-match");
+  if (substantialMatches.length >= 1) candidateIds.push("first-match");
   if (wonMatches.length >= 1) candidateIds.push("first-victory");
-  if (finishedMatches.some((match) => !/resign|forfeit|기권/.test(matchText(match)))) candidateIds.push("finish-the-game");
+  if (substantialMatches.filter((match) => !/resign|forfeit|기권/.test(matchText(match))).length >= 3) candidateIds.push("finish-the-game");
   if (wonMatches.some((match) => [match.comebackWinnerId, match.result?.comebackWinnerId].includes(user.id) || match.result?.comeback === true)) candidateIds.push("comeback-master");
   if (wonMatches.some((match) => /checkmate|체크메이트/.test(matchText(match)))) candidateIds.push("first-checkmate");
-  if (finishedMatches.some((match) => Number(matchUserStats(match, user.id).checksEscaped || matchUserStats(match, user.id).escapedChecks || 0) >= 3)) candidateIds.push("solid-defense");
-  if (finishedMatches.some((match) => (match.transcript || []).filter((entry) => [entry.userId, entry.authorId, entry.senderId].includes(user.id)).length >= 5)) candidateIds.push("conversation-listener");
-  if (finishedMatches.length >= 5 && !hasReport) candidateIds.push("respectful-move");
-  if (finishedMatches.some((match) => match.icebreakerCompletedBy === user.id || match.icebreaker?.completedBy === user.id || match.icebreaker?.completed === true)) candidateIds.push("first-greeting");
-  if (user.leagueJoined || user.leagueCode) candidateIds.push("league-together");
-  if (user.leagueCreated) candidateIds.push("league-founder");
-  if (finishedMatches.some((match) => ["friend", "private", "invite"].includes(match.pairingType) || match.inviteCode || match.roomCode)) candidateIds.push("friend-match");
+  if (substantialMatches.filter((match) => Number(matchUserStats(match, user.id).checksEscaped || matchUserStats(match, user.id).escapedChecks || 0) >= 3).length >= 2) candidateIds.push("solid-defense");
+  if (substantialMatches.reduce((total, match) => total + userSpeechCount(match, user.id), 0) >= 8) candidateIds.push("conversation-listener");
+  if (substantialMatches.length >= 10 && !hasReport) candidateIds.push("respectful-move");
+  if (substantialMatches.some((match) => match.icebreakerCompletedBy === user.id || match.icebreaker?.completedBy === user.id)) candidateIds.push("first-greeting");
+  if ((user.leagueJoined || user.leagueCode) && leagueMemberCount(db, user.leagueCode) >= 2) candidateIds.push("league-together");
+  if (user.leagueCreated && leagueMemberCount(db, user.leagueCode) >= 3) candidateIds.push("league-founder");
+  if (substantialMatches.some((match) => ["friend", "private", "invite", "private-challenge"].includes(match.pairingType) || match.inviteCode || match.roomCode || match.challengeId)) candidateIds.push("friend-match");
 
   const streak = Number(user.streak || 0);
-  if (streak >= 3) candidateIds.push("march-3");
-  if (streak >= 7) candidateIds.push("march-7");
-  if (streak >= 30) candidateIds.push("march-30");
+  if (streak >= 30 && earnedIds.has("march-7")) candidateIds.push("march-30");
+  else if (streak >= 7 && earnedIds.has("march-3")) candidateIds.push("march-7");
+  else if (streak >= 3) candidateIds.push("march-3");
   const learningHours = Array.isArray(user.learningActivityHours) ? user.learningActivityHours : [];
-  if (learningHours.some((hour) => Number(hour) >= 5 && Number(hour) < 12)) candidateIds.push("morning-strategist");
-  if (learningHours.some((hour) => Number(hour) >= 20 || Number(hour) < 5)) candidateIds.push("night-strategist");
+  if (learningHours.filter((hour) => Number(hour) >= 5 && Number(hour) < 12).length >= 3) candidateIds.push("morning-strategist");
+  if (learningHours.filter((hour) => Number(hour) >= 20 || Number(hour) < 5).length >= 3) candidateIds.push("night-strategist");
   if (user.returnedAfterBreak) candidateIds.push("returning-warrior");
 
   return awardAchievements(user, candidateIds);
 }
 
 function profileBadges(user, db) {
-  syncAchievements(user, db);
   const wonBadges = user.leagueBadges || [];
   const badges = userAchievementEntries(user).map(achievementView).filter(Boolean);
   wonBadges.forEach((badge, index) => badges.push({
@@ -1524,14 +1574,15 @@ function liveClockState(match, now = new Date()) {
   const base = match.clocks || createClockState(match.timeControl, now.toISOString());
   const clocks = { ...base };
   const activeColor = clocks.activeColor;
-  if (match.status !== "ended" && clocks.running !== false && activeColor) {
+  const shouldRun = match.status !== "ended" && match.status !== "waiting" && clocks.running !== false && Boolean(activeColor);
+  if (shouldRun) {
     const key = `${activeColor}Ms`;
     const lastUpdated = Date.parse(clocks.lastUpdatedAt || clocks.startedAt || match.createdAt || now.toISOString());
     const elapsed = Number.isFinite(lastUpdated) ? Math.max(0, now.getTime() - lastUpdated) : 0;
     clocks[key] = Math.max(0, Number(clocks[key] || 0) - elapsed);
   }
   clocks.lastUpdatedAt = now.toISOString();
-  clocks.running = match.status !== "ended" && Boolean(activeColor);
+  clocks.running = shouldRun;
   return clocks;
 }
 
@@ -1584,9 +1635,9 @@ function playerColor(match, user) {
 
 function activeMatchForUser(db, user) {
   if (!user) return null;
-  return db.matches.find(
-    (match) => match.status !== "ended" && (match.players || []).some((player) => player.userId === user.id),
-  );
+  return db.matches
+    .filter((match) => match.status !== "ended" && (match.players || []).some((player) => player.userId === user.id))
+    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0] || null;
 }
 
 function describeGameResult(game, move) {
@@ -1612,11 +1663,16 @@ function createMatch(db, user, body = {}, opponent = null) {
     : { userId: null, displayName: "Guest", color: "white", pieceEdition: "cheoinseong" };
   const black = opponent
     ? { userId: opponent.id, displayName: opponent.displayName, color: "black", pieceEdition: normalizedPieceEdition(opponent.pieceEdition) }
-    : { userId: null, displayName: "Mina K.", color: "black", pieceEdition: "beta" };
+    : {
+        userId: null,
+        displayName: body.waitingForOpponent ? "Partner waiting" : "Mina K.",
+        color: "black",
+        pieceEdition: "beta",
+      };
 
   const match = {
     id: id("match"),
-    status: "matched",
+    status: body.waitingForOpponent ? "waiting" : "matched",
     userId: user?.id || null,
     players: [white, black],
     partnerName: black.displayName,
@@ -1638,6 +1694,9 @@ function createMatch(db, user, body = {}, opponent = null) {
     createdAt,
     endedAt: null,
   };
+  if (body.waitingForOpponent && match.clocks) {
+    match.clocks.running = false;
+  }
   db.matches.push(match);
   return match;
 }
@@ -1748,8 +1807,6 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
   }
 
   if (req.method === "GET" && pathname === "/api/session") {
-    const newlyUnlocked = user ? syncAchievements(user, db) : [];
-    if (newlyUnlocked.length) await writeDb(db);
     sendJson(res, 200, { user: publicUser(user), unlocked: pendingAchievementViews(user) });
     return true;
   }
@@ -1767,9 +1824,83 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
 
   if (req.method === "GET" && pathname === "/api/profile") {
     if (!requireUser(user, res)) return true;
-    const unlocked = syncAchievements(user, db);
-    if (unlocked.length) await writeDb(db);
     sendJson(res, 200, { ...buildProfile(user, db), unlocked: pendingAchievementViews(user) });
+    return true;
+  }
+
+  if (req.method === "GET" && pathname === "/api/forum/posts") {
+    const posts = [...db.forumPosts]
+      .sort((first, second) => Number(second.pinned) - Number(first.pinned) || Date.parse(second.createdAt) - Date.parse(first.createdAt))
+      .map((post) => ({
+        id: post.id,
+        title: post.title,
+        body: post.body,
+        category: post.category,
+        pinned: Boolean(post.pinned),
+        authorId: post.authorId,
+        author: post.author,
+        createdAt: post.createdAt,
+        comments: (Array.isArray(post.comments) ? post.comments : []).map((comment) => ({
+          id: comment.id,
+          body: comment.body,
+          authorId: comment.authorId,
+          author: comment.author,
+          createdAt: comment.createdAt,
+        })),
+      }));
+    sendJson(res, 200, { posts });
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/forum/posts") {
+    if (!requireUser(user, res)) return true;
+    const body = await readBody(req);
+    const title = String(body.title || "").trim().slice(0, 80);
+    const postBody = String(body.body || "").trim().slice(0, 2000);
+    let category = ["Notice", "Question", "Free"].includes(body.category) ? body.category : "Question";
+    if (category === "Notice" && user.role !== "admin") category = "Question";
+    if (!title || !postBody) {
+      sendJson(res, 400, { error: "Title and body are required." });
+      return true;
+    }
+    const post = {
+      id: crypto.randomUUID(), title, body: postBody, category, pinned: false,
+      authorId: user.id, author: publicDisplayName(user), createdAt: new Date().toISOString(), comments: [],
+    };
+    db.forumPosts.unshift(post);
+    await writeDb(db);
+    sendJson(res, 201, { post });
+    return true;
+  }
+
+  const forumCommentParams = routePattern(pathname, "/api/forum/posts/:id/comments");
+  if (req.method === "POST" && forumCommentParams) {
+    if (!requireUser(user, res)) return true;
+    const post = db.forumPosts.find((item) => item.id === forumCommentParams.id);
+    if (!post) { sendJson(res, 404, { error: "Forum post not found." }); return true; }
+    const body = await readBody(req);
+    const commentBody = String(body.body || "").trim().slice(0, 1000);
+    if (!commentBody) { sendJson(res, 400, { error: "Comment body is required." }); return true; }
+    const comment = {
+      id: crypto.randomUUID(), body: commentBody, authorId: user.id,
+      author: publicDisplayName(user), createdAt: new Date().toISOString(),
+    };
+    if (!Array.isArray(post.comments)) post.comments = [];
+    post.comments.push(comment);
+    await writeDb(db);
+    sendJson(res, 201, { comment });
+    return true;
+  }
+
+  const forumPinParams = routePattern(pathname, "/api/forum/posts/:id/pin");
+  if (req.method === "PATCH" && forumPinParams) {
+    if (!requireUser(user, res)) return true;
+    if (user.role !== "admin") { sendJson(res, 403, { error: "Staff access required." }); return true; }
+    const post = db.forumPosts.find((item) => item.id === forumPinParams.id);
+    if (!post) { sendJson(res, 404, { error: "Forum post not found." }); return true; }
+    post.pinned = !post.pinned;
+    await writeDb(db);
+    sendJson(res, 200, { post });
     return true;
   }
 
@@ -2187,6 +2318,51 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     return true;
   }
 
+  if (req.method === "GET" && pathname === "/api/matches/active") {
+    if (!requireUser(user, res)) return true;
+    const match = activeMatchForUser(db, user);
+    const openSeek = db.seeks
+      .filter((seek) => seek.userId === user.id && seek.status === "open")
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0] || null;
+    const openChallenge = db.challenges
+      .filter((challenge) => challenge.userId === user.id && challenge.status === "open")
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0] || null;
+    const queueEntry = db.queue.find((entry) => entry.userId === user.id) || null;
+    sendJson(res, 200, {
+      match: match ? decorateMatch(match) : null,
+      openSeek: openSeek ? decorateSeek(db, openSeek) : null,
+      openChallenge,
+      queueEntry,
+    });
+    return true;
+  }
+
+  if (req.method === "DELETE" && pathname === "/api/matches/waiting") {
+    if (!requireUser(user, res)) return true;
+    db.queue = db.queue.filter((entry) => entry.userId !== user.id);
+    db.seeks.forEach((seek) => {
+      if (seek.userId === user.id && seek.status === "open") seek.status = "canceled";
+    });
+    const canceledChallengeIds = new Set();
+    db.challenges.forEach((challenge) => {
+      if (challenge.userId === user.id && challenge.status === "open") {
+        challenge.status = "canceled";
+        canceledChallengeIds.add(challenge.id);
+      }
+    });
+    db.matches.forEach((match) => {
+      if (match.status !== "waiting" || !matchHasUser(match, user.id)) return;
+      if (match.challengeId && !canceledChallengeIds.has(match.challengeId)) return;
+      match.status = "ended";
+      match.result = "Canceled";
+      match.endedAt = new Date().toISOString();
+    });
+    await writeDb(db);
+    broadcast(null, { type: "lobby:updated", openSeeks: db.seeks.filter((item) => item.status === "open").length });
+    sendJson(res, 200, { ok: true });
+    return true;
+  }
+
   if (req.method === "POST" && pathname === "/api/auth/signup") {
     const body = await readBody(req);
     const email = String(body.email || "").trim().toLowerCase();
@@ -2542,10 +2718,30 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
   if (req.method === "POST" && pathname === "/api/challenges") {
     if (!requireUser(user, res)) return true;
     const body = await readBody(req);
+    db.challenges.forEach((item) => {
+      if (item.userId !== user.id || item.status !== "open") return;
+      item.status = "canceled";
+      const waitingMatch = item.matchId ? db.matches.find((match) => match.id === item.matchId && match.status === "waiting") : null;
+      if (waitingMatch) {
+        waitingMatch.status = "ended";
+        waitingMatch.result = "Canceled";
+        waitingMatch.endedAt = new Date().toISOString();
+      }
+    });
     const code = crypto.randomBytes(3).toString("hex").toUpperCase();
+    const match = createMatch(db, user, {
+      timeControl: body.timeControl || "10+0",
+      rated: false,
+      partnerLanguage: body.partnerLanguage || "English",
+      goal: body.goal || "Explain chess moves",
+      mode: "Private",
+      pairingType: "private-challenge",
+      waitingForOpponent: true,
+    });
     const challenge = {
       id: id("challenge"),
       code,
+      matchId: match.id,
       userId: user.id,
       displayName: user.displayName || "Player",
       timeControl: body.timeControl || "10+0",
@@ -2555,9 +2751,11 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       status: "open",
       createdAt: new Date().toISOString(),
     };
+    match.challengeId = challenge.id;
     db.challenges.push(challenge);
     await writeDb(db);
-    sendJson(res, 200, { challenge });
+    await syncRedisRoom(match);
+    sendJson(res, 200, { challenge, match: decorateMatch(match) });
     return true;
   }
 
@@ -2581,20 +2779,41 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     challenge.acceptedBy = user.id;
     challenge.acceptedAt = new Date().toISOString();
 
-    const match = createMatch(
-      db,
-      challenger || null,
-      {
-        timeControl: challenge.timeControl,
-        rated: challenge.rated,
-        partnerLanguage: challenge.partnerLanguage,
-        goal: challenge.goal,
-        mode: "Private",
-        pairingType: "private-challenge",
-        challengeId: challenge.id,
-      },
-      user,
-    );
+    let match = challenge.matchId ? db.matches.find((item) => item.id === challenge.matchId) : null;
+    if (match) {
+      const openSlot = match.players?.find((player) => !player.userId);
+      if (!openSlot || match.status === "ended") {
+        sendJson(res, 409, { error: "This private room is no longer available." });
+        return true;
+      }
+      openSlot.userId = user.id;
+      openSlot.displayName = user.displayName;
+      openSlot.pieceEdition = normalizedPieceEdition(user.pieceEdition);
+      match.status = "matched";
+      match.partnerName = user.displayName;
+      match.joinedAt = new Date().toISOString();
+      if (match.clocks) {
+        match.clocks.running = true;
+        match.clocks.lastUpdatedAt = match.joinedAt;
+        match.clocks.startedAt = match.joinedAt;
+      }
+    } else {
+      match = createMatch(
+        db,
+        challenger || null,
+        {
+          timeControl: challenge.timeControl,
+          rated: challenge.rated,
+          partnerLanguage: challenge.partnerLanguage,
+          goal: challenge.goal,
+          mode: "Private",
+          pairingType: "private-challenge",
+          challengeId: challenge.id,
+        },
+        user,
+      );
+      challenge.matchId = match.id;
+    }
     await writeDb(db);
     await syncRedisRoom(match);
     broadcast(match.id, { type: "match:started", match: decorateMatch(match) });
@@ -2678,6 +2897,23 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       openSlot.pieceEdition = normalizedPieceEdition(user.pieceEdition);
       match.partnerName = user.displayName;
       match.joinedAt = new Date().toISOString();
+    }
+
+    if ((match.players || []).filter((player) => player.userId).length > 1) {
+      match.status = "matched";
+      if (match.clocks) {
+        match.clocks.running = true;
+        match.clocks.lastUpdatedAt = match.joinedAt || new Date().toISOString();
+        match.clocks.startedAt = match.clocks.lastUpdatedAt;
+      }
+      const challenge = match.challengeId
+        ? db.challenges.find((item) => item.id === match.challengeId && item.status === "open")
+        : null;
+      if (challenge) {
+        challenge.status = "accepted";
+        challenge.acceptedBy = user.id;
+        challenge.acceptedAt = new Date().toISOString();
+      }
     }
 
     await writeDb(db);

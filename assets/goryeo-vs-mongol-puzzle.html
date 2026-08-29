@@ -326,6 +326,8 @@ h1,h2,h3,h4,.jua,.lv-btn,.pz-card-title,.pz-title,.turn-banner,.win-card h2{font
 </div>
 
 <script>
+const PUZZLE_LANGUAGE=new URLSearchParams(window.location.search).get('lang')==='en'?'en':'ko';
+document.documentElement.lang=PUZZLE_LANGUAGE;
 /* 고려 vs 몽골 — 치비 기물 원화 (전 기물 원화) */
 const ART = {
 g_pawn: `<img alt="" src="/assets/tutorial-pieces/g_pawn.png" loading="lazy" decoding="async">`,
@@ -383,7 +385,9 @@ const SFX = {
 };
 
 /* ───────── 데이터 ───────── */
-const KO_NAME={p:'폰',r:'룩',n:'나이트',b:'비숍',q:'퀸',k:'킹'};
+const KO_NAME=PUZZLE_LANGUAGE==='en'
+  ? {p:'Pawn',r:'Rook',n:'Knight',b:'Bishop',q:'Queen',k:'King'}
+  : {p:'폰',r:'룩',n:'나이트',b:'비숍',q:'퀸',k:'킹'};
 const ART_KEY=(t,c)=> (c==='w'?'g_':'m_')+({p:'pawn',r:'rook',n:'knight',b:'bishop',q:'queen',k:'king'}[t]);
 function P(t,c){return {t,c};}
 function empty(){return Array.from({length:8},()=>Array(8).fill(null));}
@@ -477,6 +481,42 @@ const LEVELS=[
   ]}
 ];
 
+if(PUZZLE_LANGUAGE==='en'){
+  const levelCopy=[
+    ['Level 1','Mate in One','Find the finishing move'],
+    ['Level 2','Mate in Two','Plan two moves ahead'],
+    ['Level 3','Mate in Two · Advanced','A commander does not fear sacrifice'],
+  ];
+  LEVELS.forEach((level,index)=>{ [level.name,level.tag,level.sub]=levelCopy[index]; });
+  const copy={
+    s1:['Trap Behind the Gate','The Mongol Khan hides behind his troops, leaving the back rank empty.','Move the rook to the top rank and seal every escape square.'],
+    gate2:['Trap Behind the Gate 2','The rook approaches the gate from another file.','Move the rook to the top rank and control the Khan’s entire row.'],
+    gate3:['Trap Behind the Gate 3','An empty back rank also endangers the left gate.','Use the rook to control the empty top rank.'],
+    gate4:['Trap Behind the Gate 4','Troops block the center gate as well.','Cross the top rank with the rook to cover every escape square.'],
+    gate5:['Trap Behind the Gate 5','Even the longest wall falls to one rook move.','Move the right rook to the top rank and take control of the Khan’s row.'],
+    s2:['The Smothered Khan','The Mongol Khan is surrounded by his own troops with nowhere to hide.','Only the knight can jump over the troops and land beside the Khan.'],
+    s3:['A Four-Move Ambush','The battle has barely begun, yet it can already end.','The bishop also protects the square the queen attacks. Find the weak square beside the Khan.'],
+    m1:['The Ladder of Two Rooks','Two rooks drive the Mongol Khan toward the last rank like a ladder.','Start with check. The lower rook seals the seventh rank and forces the Khan back.'],
+    m2:["The King’s March",'A quiet move can win without giving check.','The first move is not check. Move the king one square closer to seal the escape route.'],
+    m3:["A Pawn’s Dream",'Something remarkable happens when the young soldier reaches the final rank.','Push the pawn to the last rank. It promotes to a queen with check while the rook protects it.'],
+    h1:['The Khan Smothered','A stunning queen sacrifice followed by the final knight leap.','Offer the queen beside the Khan. When the Mongol rook captures it, the Khan is sealed in and the knight finishes.'],
+    h2:['Stacked Rooks','Sacrifice one rook so the rook behind it can break the gate.','Invade the last rank with the stacked rook. If the Mongol rook blocks it, the rear rook enters again.'],
+  };
+  LEVELS.flatMap(level=>level.puzzles).forEach(puzzle=>{
+    const translated=copy[puzzle.id];
+    if(translated) [puzzle.title,puzzle.sub,puzzle.hint]=translated;
+  });
+  document.getElementById('backBtn').textContent='← List';
+  document.querySelector('.banner-mongol').textContent='Mongol Army';
+  document.querySelector('.banner-goryeo').textContent='Goryeo Army (You)';
+  document.getElementById('captureTray').setAttribute('aria-label','Captured Mongol pieces');
+  document.getElementById('hintBtn').textContent='💡 Show Hint';
+  document.querySelector('.win-card h2').textContent='Checkmate!';
+  document.getElementById('winText').innerHTML='The Mongol Khan has nowhere to run.<br>Goryeo wins!';
+  document.getElementById('againBtn').textContent='Retry';
+  document.getElementById('toListBtn').textContent='Puzzle List →';
+}
+
 function cloneBoard(board){ return board.map(row=>row.map(piece=>piece?{...piece}:null)); }
 
 function makeVariants(base){
@@ -485,7 +525,7 @@ function makeVariants(base){
     ...base,
     id:`${base.id}-v${index+2}`,
     title:`${base.title} ${index+2}`,
-    sub:`${base.sub} 비슷하지만 조금 다른 포지션입니다.`,
+    sub:PUZZLE_LANGUAGE==='en' ? `${base.sub} A similar position with a small change.` : `${base.sub} 비슷하지만 조금 다른 포지션입니다.`,
     setup(){
       const board=cloneBoard(base.setup());
       if(!board[row][col]) board[row][col]=P('p','w');
@@ -676,8 +716,8 @@ function makePuzzleCard(level,puzzle,isMain){
   card.className='pz-card'+(isMain?' main-puzzle-card':'');
   card.innerHTML=
     '<div class="thumb">'+
-      '<div class="t-badge">'+(isMain?'대표 퍼즐':'유사 포지션')+'</div>'+
-      (starsForPuzzle>0?'<div class="t-done">완료 ✓</div>':'')+
+      '<div class="t-badge">'+(PUZZLE_LANGUAGE==='en'?(isMain?'Main Puzzle':'Similar Position'):(isMain?'대표 퍼즐':'유사 포지션'))+'</div>'+
+      (starsForPuzzle>0?'<div class="t-done">'+(PUZZLE_LANGUAGE==='en'?'Complete':'완료')+' ✓</div>':'')+
       '<div class="t-art">'+ART[puzzle.art]+'</div>'+
     '</div>'+
     '<div class="pz-card-body">'+
@@ -713,14 +753,15 @@ function returnToPuzzlePath(){
   goHome();
 }
 function firstBannerText(){
-  return cur.depth===2
-    ? '고려의 차례 — 두 수 만에 체크메이트! 첫 수를 찾아라'
-    : '고려의 차례 — 한 수로 체크메이트를 찾아라!';
+  if(PUZZLE_LANGUAGE==='en') return cur.depth===2
+    ? 'Goryeo to move — checkmate in two. Find the first move.'
+    : 'Goryeo to move — find checkmate in one.';
+  return cur.depth===2 ? '고려의 차례 — 두 수 만에 체크메이트! 첫 수를 찾아라' : '고려의 차례 — 한 수로 체크메이트를 찾아라!';
 }
 function resetPuzzle(){
   bd=cur.setup(); sel=null; locked=false; phase=1; wrongCount=0; hintLevel=0; history=[]; puzzleStartedAt=Date.now();
   hintLine.textContent='';
-  hintBtn.textContent='💡 힌트 보기';
+  hintBtn.textContent=PUZZLE_LANGUAGE==='en'?'💡 Show Hint':'💡 힌트 보기';
   hintBtn.hidden=false;
   captureTray.innerHTML='';
   setBanner(firstBannerText(),'');
@@ -777,15 +818,17 @@ function onSquare(r,c,sq){
     sel=[r,c];
     SFX.select();
     const n=legalMoves(bd,r,c).length;
-    setBanner(n?KO_NAME[p.t]+' 선택! 파란 점으로 움직일 수 있어요.':'이 용사는 지금 움직일 수 없어요.','');
+    setBanner(PUZZLE_LANGUAGE==='en'
+      ? (n?KO_NAME[p.t]+' selected. Move to a blue dot.':'This piece cannot move now.')
+      : (n?KO_NAME[p.t]+' 선택! 파란 점으로 움직일 수 있어요.':'이 용사는 지금 움직일 수 없어요.'),'');
     drawBoard();
   }else if(sel){
     sel=null; drawBoard();
-    setBanner(phase===2?'마무리 일격을 찾아라!':firstBannerText(),'');
+    setBanner(phase===2?(PUZZLE_LANGUAGE==='en'?'Find the finishing move!':'마무리 일격을 찾아라!'):firstBannerText(),'');
   }else if(p){
     sq.classList.remove('wrong');void sq.offsetWidth;sq.classList.add('wrong');
     SFX.wrong();
-    setBanner('그건 몽골군이에요! 고려군을 골라주세요.','alert');
+    setBanner(PUZZLE_LANGUAGE==='en'?'That is a Mongol piece. Choose a Goryeo piece.':'그건 몽골군이에요! 고려군을 골라주세요.','alert');
   }
 }
 /* 오답 시 몽골의 탈출로: 킹 이동 목적지 우선, 없으면 방어수(잡기/차단) 출발지 */
@@ -812,7 +855,7 @@ function tryMove(from,to){
   /* 2) 2수 퍼즐 1단계: 강제 M2 수라면 몽골 응수 진행 */
   if(cur.depth===2 && phase===1 && forcesMateNext(after)){
     history.push(before);
-    setBanner('좋은 수! 몽골군이 응수합니다…','good');
+    setBanner(PUZZLE_LANGUAGE==='en'?'Good move. The Mongol army responds…':'좋은 수! 몽골군이 응수합니다…','good');
     SFX.good();
     setTimeout(()=>{
       const rep=bestReply(bd);
@@ -821,7 +864,7 @@ function tryMove(from,to){
       if(bCaptured) SFX.capture(); else SFX.move();
       phase=2; locked=false;
       drawBoard({lastB:rep[1]});
-      setBanner('몽골이 응수했어요 — 마무리 일격을 찾아라!','');
+      setBanner(PUZZLE_LANGUAGE==='en'?'Mongol replied. Find the finishing move!':'몽골이 응수했어요 — 마무리 일격을 찾아라!','');
     },850);
     return;
   }
@@ -829,9 +872,9 @@ function tryMove(from,to){
   /* 3) 오답 — 되돌리기 전에 왜 안 되는지 보여주기 */
   wrongCount++;
   const wasCheck=inCheck(after,'b');
-  const msg = wasCheck
-    ? '체크! 하지만 몽골이 빠져나가요 — 빨간 점선이 탈출로예요.'
-    : '음… 그 수로는 몽골 칸을 잡을 수 없어요. 다시!';
+  const msg = PUZZLE_LANGUAGE==='en'
+    ? (wasCheck?'Check, but the Mongol Khan escapes along the red dashed route.':'That move does not trap the Mongol Khan. Try again.')
+    : (wasCheck?'체크! 하지만 몽골이 빠져나가요 — 빨간 점선이 탈출로예요.':'음… 그 수로는 몽골 칸을 잡을 수 없어요. 다시!');
   setBanner(msg,'alert');
   SFX.wrong();
   if(wasCheck){
@@ -840,7 +883,7 @@ function tryMove(from,to){
   setTimeout(()=>{
     bd=before; locked=false;
     drawBoard();
-    setBanner(phase===2?'마무리 일격을 찾아라!':firstBannerText(),'');
+    setBanner(phase===2?(PUZZLE_LANGUAGE==='en'?'Find the finishing move!':'마무리 일격을 찾아라!'):firstBannerText(),'');
   }, wasCheck?1700:1200);
 }
 function stackCapturedPiece(piece){
@@ -866,7 +909,7 @@ function winPuzzle(){
     puzzleId:cur.id,
     stars:earned,
     title:cur.title,
-    theme:'고려 vs 몽골',
+    theme:PUZZLE_LANGUAGE==='en'?'Goryeo vs Mongol':'고려 vs 몽골',
     family:familyTitle,
     level:curLvIdx+1,
     hintsUsed:hintLevel,
@@ -874,15 +917,16 @@ function winPuzzle(){
     familyTotal:familyPuzzles.length,
     levelTotal:level.puzzles.length
   }, '*');
-  setBanner('체크메이트! 고려의 승리!','win');
+  setBanner(PUZZLE_LANGUAGE==='en'?'Checkmate! Goryeo wins!':'체크메이트! 고려의 승리!','win');
   SFX.win();
   setTimeout(()=>{
     document.getElementById('winArt').innerHTML=ART[cur.art];
     document.getElementById('winStars').innerHTML=starsHtml(earned);
-    document.getElementById('winText').innerHTML=
-      earned===3 ? '완벽해요! 힌트도, 실수도 없이 해냈어요.<br>몽골 칸이 항복합니다!'
-      : earned===2 ? '해냈어요! 몽골 칸이 도망갈 곳이 없어요.<br>다시 풀면 별 3개에 도전할 수 있어요.'
-      : '승리! 연습하면 별을 더 모을 수 있어요.<br>다시 도전해볼까요?';
+    document.getElementById('winText').innerHTML=PUZZLE_LANGUAGE==='en'
+      ? (earned===3?'Perfect. No hints and no mistakes.<br>The Mongol Khan surrenders!':earned===2?'Solved. The Mongol Khan has nowhere to go.<br>Retry for three stars.':'Victory. Practice to earn more stars.<br>Try again?')
+      : (earned===3 ? '완벽해요! 힌트도, 실수도 없이 해냈어요.<br>몽골 칸이 항복합니다!'
+        : earned===2 ? '해냈어요! 몽골 칸이 도망갈 곳이 없어요.<br>다시 풀면 별 3개에 도전할 수 있어요.'
+        : '승리! 연습하면 별을 더 모을 수 있어요.<br>다시 도전해볼까요?');
     overlay.classList.add('show');
   },650);
 }
@@ -897,10 +941,10 @@ hintBtn.onclick=()=>{
   if(hintLevel===0){
     hintLevel=1;
     hintLine.textContent='💡 '+cur.hint;
-    hintBtn.textContent='💡 힌트 한 번 더 (움직일 용사 보기)';
+    hintBtn.textContent=PUZZLE_LANGUAGE==='en'?'💡 One more hint (show the piece)':'💡 힌트 한 번 더 (움직일 용사 보기)';
   }else{
     hintLevel=2;
-    hintLine.textContent='💡 '+cur.hint+'  — 반짝이는 용사를 움직여보세요!';
+    hintLine.textContent='💡 '+cur.hint+(PUZZLE_LANGUAGE==='en'?' — Move the glowing piece.':'  — 반짝이는 용사를 움직여보세요!');
     if(phase===1) drawBoard({glow:cur.hintFrom});
     hintBtn.hidden=true;
   }
