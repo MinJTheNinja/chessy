@@ -23,7 +23,7 @@
         <span aria-hidden="true">☰</span>
       </button>
       <a class="brand" href="#home" data-view-link="home" aria-label="EasyMate 홈">
-        <img src="/assets/easymate-logo-transparent-v2.png" alt="EasyMate" />
+        <img src="/assets/easymate-logo-transparent-v2.png" alt="EasyMate" decoding="async" />
       </a>
       <nav class="desktop-header-nav" aria-label="주요 메뉴">
         <button class="active" type="button" data-view-link="overview">홈</button>
@@ -62,7 +62,7 @@
         <div class="entry-visual">
           <div class="entry-content">
             <a class="entry-logo" href="#home" data-view-link="home" aria-label="EasyMate 홈">
-              <img src="/assets/easymate-logo-transparent-v2.png" alt="EasyMate" />
+              <img src="/assets/easymate-logo-transparent-v2.png" alt="EasyMate" decoding="async" />
             </a>
             <p class="entry-typewriter" id="entryTypewriter" aria-live="polite">
               <span class="entry-typewriter-text" aria-hidden="true"></span>
@@ -75,8 +75,6 @@
         </div>
         <div class="entry-auth" hidden>
           <form class="auth-card" id="authForm" aria-label="Account entry">
-            <span class="eyebrow">EasyMate 계정</span>
-            <h2>계정으로 입장하기</h2>
             <div class="auth-tabs" aria-label="Account mode">
               <button class="auth-tab active" id="loginButton" type="button">로그인</button>
               <button class="auth-tab" id="signupButton" type="button">새 계정</button>
@@ -146,7 +144,7 @@
                     <h2 id="dashboardTitle">환영합니다, <span id="welcomeName">Player</span>님!</h2>
                     <div class="home-theme-control">
                       <button class="home-theme-toggle" id="homeThemeToggle" type="button" aria-label="보드 테마 선택" aria-expanded="false" aria-controls="homeThemePopover">
-                        <img src="/assets/board-theme-selector-icon-v1.png" alt="" aria-hidden="true" />
+                        <img src="/assets/board-theme-selector-icon-v1.png" alt="" aria-hidden="true" loading="lazy" decoding="async" />
                       </button>
                       <section class="home-theme-popover" id="homeThemePopover" aria-labelledby="homeThemeGuideTitle" hidden>
                         <h3 id="homeThemeGuideTitle">보드 테마</h3>
@@ -170,7 +168,7 @@
                 </section>
 
                 <article class="home-daily-puzzle" aria-labelledby="dailyPuzzleTitle">
-                  <img src="/assets/daily-puzzle-icon-transparent.png" alt="퍼즐 탐험 아이콘" />
+                  <img src="/assets/daily-puzzle-icon-transparent.png" alt="퍼즐 탐험 아이콘" loading="lazy" decoding="async" />
                   <div>
                     <h3 id="dailyPuzzleTitle">오늘의 퍼즐: 성문 뒤의 함정</h3>
                     <button class="button primary" id="homeDailyPuzzleButton" type="button">풀어보기</button>

@@ -3799,6 +3799,21 @@ body.piece-theme-beta .chess-board {
   min-height: 100%;
 }
 
+.forum-delete-action {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--em-jinsa);
+  font: inherit;
+  font-weight: 800;
+}
+
+.forum-delete-action:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .delete-account-zone p {
   margin: 0;
 }
@@ -7589,8 +7604,11 @@ body.is-signed-in .workspace .button.primary:focus-visible {
 }
 
 .view[data-view="dashboard"]::before {
-  inset: 110px 7% 40px 48%;
+  inset: 40px 3% 24px 40%;
   background-image: url("/assets/play-queen-watermark.png");
+  background-position: center right;
+  background-size: min(62vw, 680px) auto;
+  opacity: 0.1;
 }
 
 .forum-heading {
@@ -8081,13 +8099,15 @@ button[aria-pressed="true"]:not(.training-path-node) {
 
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 #trainingModuleList,
-#puzzlePathList {
+#puzzlePathList,
+#cheoinseongPathList {
   isolation: isolate;
   min-height: 640px;
 }
 
 #trainingModuleList::before,
-#puzzlePathList::before {
+#puzzlePathList::before,
+#cheoinseongPathList::before {
   content: "";
   position: absolute;
   z-index: 0;
@@ -8109,8 +8129,16 @@ button[aria-pressed="true"]:not(.training-path-node) {
   background-position: 45% 48%;
 }
 
+#cheoinseongPathList::before {
+  background-image: url("/assets/cheoinseong-path-watermark-v1.png");
+  background-position: 50% 48%;
+  background-size: min(62%, 520px) auto;
+  opacity: 0.1;
+}
+
 #trainingModuleList > *,
-#puzzlePathList > * {
+#puzzlePathList > *,
+#cheoinseongPathList > * {
   position: relative;
   z-index: 1;
 }
@@ -8213,7 +8241,12 @@ button[aria-pressed="true"]:not(.training-path-node) {
   color: var(--muted);
   cursor: not-allowed;
   filter: grayscale(1);
-  opacity: 0.58;
+  opacity: 1;
+}
+
+.training-module-row.locked :is(.training-stage-icon, .puzzle-stage-icon),
+.training-path-node[aria-disabled="true"] :is(.training-stage-icon, .puzzle-stage-icon) {
+  opacity: 0.48;
 }
 
 .training-stage-icon {
@@ -8387,7 +8420,8 @@ button[aria-pressed="true"]:not(.training-path-node) {
   }
 
   #trainingModuleList::before,
-  #puzzlePathList::before {
+  #puzzlePathList::before,
+  #cheoinseongPathList::before {
     inset-inline: -12px;
     background-size: min(92vw, 460px) auto;
     opacity: 0.14;
@@ -8638,6 +8672,20 @@ body.is-signed-in .workspace .home-league-actions #createLeagueButton:focus-visi
   background-size: contain;
 }
 
+.cheoinseong-stage-icon {
+  width: 54px;
+  height: 54px;
+  background-image: url("/assets/cheoinseong-stage-icons-v2.png");
+  background-size: 300% 200%;
+}
+
+.cheoinseong-stage-icon-1 { background-position: 0 0; }
+.cheoinseong-stage-icon-2 { background-position: 50% 0; }
+.cheoinseong-stage-icon-3 { background-position: 100% 0; }
+.cheoinseong-stage-icon-4 { background-position: 0 100%; }
+.cheoinseong-stage-icon-5 { background-position: 50% 100%; }
+}
+
 .puzzle-stage-glyph {
   position: relative;
   z-index: 1;
@@ -8780,12 +8828,59 @@ body.is-signed-in .workspace .button.primary:focus-visible {
 }
 
 .training-review-select {
+  display: flex;
   width: 100%;
   max-width: none;
   min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 10px 12px;
   border-color: var(--line-strong);
   border-radius: 0;
   background: var(--theme-panel);
+  color: var(--ink);
+  text-align: left;
+}
+
+.training-review-menu {
+  position: relative;
+  min-width: 0;
+}
+
+.training-review-options {
+  position: absolute;
+  z-index: 12;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  border: 1px solid var(--line-strong);
+  background: var(--theme-panel);
+}
+
+.training-review-options[hidden] {
+  display: none;
+}
+
+.training-review-option {
+  display: block;
+  width: 100%;
+  padding: 11px 12px;
+  border: 0;
+  background: var(--theme-panel);
+  color: var(--muted);
+  text-align: left;
+}
+
+.training-review-option + .training-review-option {
+  border-top: 1px solid var(--line);
+}
+
+.training-review-option:hover,
+.training-review-option[aria-selected="true"] {
+  background: var(--theme-panel-soft);
+  color: var(--ink);
+  font-weight: 800;
 }
 
 @media (max-width: 760px) {

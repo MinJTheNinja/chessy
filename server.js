@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const zlib = require("zlib");
+const util = require("util");
 const { URL } = require("url");
 const { Chess } = require("chess.js");
 const { Pool } = require("pg");
@@ -86,6 +87,11 @@ const contentTypes = {
   ".stl": "model/stl",
 };
 const compressibleExtensions = new Set([".html", ".css", ".js", ".json", ".svg"]);
+const gzipAsync = util.promisify(zlib.gzip);
+const brotliAsync = util.promisify(zlib.brotliCompress);
+const staticTextCache = new Map();
+let localDbCache = null;
+let localDbWriteQueue = Promise.resolve();
 
 const sampleTranscript = [
   {
@@ -242,19 +248,27 @@ function normalizeDb(db = {}) {
 function ensureJsonDb() {
   fs.mkdirSync(dataDir, { recursive: true });
   if (!fs.existsSync(dbPath)) {
-    writeJsonDb(defaultDb());
+    fs.writeFileSync(dbPath, JSON.stringify(normalizeDb(defaultDb()), null, 2), "utf8");
   }
 }
 
-function readJsonDb() {
+async function readJsonDb() {
   ensureJsonDb();
-  const db = JSON.parse(fs.readFileSync(dbPath, "utf8"));
-  return normalizeDb(db);
+  if (localDbCache) return localDbCache;
+  const source = await fs.promises.readFile(dbPath, "utf8");
+  localDbCache = normalizeDb(JSON.parse(source));
+  return localDbCache;
 }
 
-function writeJsonDb(db) {
-  fs.mkdirSync(dataDir, { recursive: true });
-  fs.writeFileSync(dbPath, JSON.stringify(normalizeDb(db), null, 2), "utf8");
+async function writeJsonDb(db) {
+  const normalized = normalizeDb(db);
+  const payload = JSON.stringify(normalized, null, 2);
+  localDbCache = normalized;
+  localDbWriteQueue = localDbWriteQueue.catch(() => {}).then(async () => {
+    await fs.promises.mkdir(dataDir, { recursive: true });
+    await fs.promises.writeFile(dbPath, payload, "utf8");
+  });
+  await localDbWriteQueue;
 }
 
 async function ensurePostgresDb() {
@@ -318,7 +332,7 @@ async function readDb() {
 
 async function writeDb(db) {
   if (!pgPool) {
-    writeJsonDb(db);
+    await writeJsonDb(db);
     return;
   }
   await ensurePostgresDb();
@@ -1869,7 +1883,23 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     };
     db.forumPosts.unshift(post);
     await writeDb(db);
+    broadcast(null, { type: "forum:updated", action: "created", postId: post.id });
     sendJson(res, 201, { post });
+    return true;
+  }
+
+  const forumPostParams = routePattern(pathname, "/api/forum/posts/:id");
+  if (req.method === "DELETE" && forumPostParams) {
+    if (!requireStaff(user, res)) return true;
+    const postIndex = db.forumPosts.findIndex((item) => item.id === forumPostParams.id);
+    if (postIndex === -1) {
+      sendJson(res, 404, { error: "Forum post not found." });
+      return true;
+    }
+    const [deletedPost] = db.forumPosts.splice(postIndex, 1);
+    await writeDb(db);
+    broadcast(null, { type: "forum:updated", action: "deleted", postId: deletedPost.id });
+    sendJson(res, 200, { ok: true, postId: deletedPost.id });
     return true;
   }
 
@@ -1888,6 +1918,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     if (!Array.isArray(post.comments)) post.comments = [];
     post.comments.push(comment);
     await writeDb(db);
+    broadcast(null, { type: "forum:updated", action: "commented", postId: post.id });
     sendJson(res, 201, { comment });
     return true;
   }
@@ -1900,6 +1931,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     if (!post) { sendJson(res, 404, { error: "Forum post not found." }); return true; }
     post.pinned = !post.pinned;
     await writeDb(db);
+    broadcast(null, { type: "forum:updated", action: "pinned", postId: post.id });
     sendJson(res, 200, { post });
     return true;
   }
@@ -3218,7 +3250,7 @@ function serveStatic(req, res, pathname) {
     return;
   }
 
-  fs.stat(filePath, (statError, stats) => {
+  fs.stat(filePath, async (statError, stats) => {
     if (statError || !stats.isFile()) {
       res.writeHead(404);
       res.end("Not found");
@@ -3231,7 +3263,7 @@ function serveStatic(req, res, pathname) {
       etag,
     };
     if (compressibleExtensions.has(extension)) responseHeaders.vary = "Accept-Encoding";
-    if (requested.startsWith("/assets/tutorial-pieces/")) {
+    if (requested.startsWith("/assets/tutorial-pieces/") || /-v\d+\.[a-z0-9]+$/i.test(requested)) {
       responseHeaders["cache-control"] = "public, max-age=31536000, immutable";
     } else if (requested === "/index.html" || requested === "/app.js" || requested === "/styles.css" || extension === ".html") {
       responseHeaders["cache-control"] = "no-cache, must-revalidate";
@@ -3244,29 +3276,50 @@ function serveStatic(req, res, pathname) {
       return;
     }
 
-    fs.readFile(filePath, (readError, data) => {
-      if (readError) {
-        res.writeHead(404);
-        res.end("Not found");
-        return;
+    if (req.method === "HEAD") {
+      responseHeaders["content-length"] = stats.size;
+      res.writeHead(200, responseHeaders);
+      res.end();
+      return;
+    }
+
+    if (!compressibleExtensions.has(extension)) {
+      responseHeaders["content-length"] = stats.size;
+      res.writeHead(200, responseHeaders);
+      const stream = fs.createReadStream(filePath);
+      stream.on("error", () => res.destroy());
+      stream.pipe(res);
+      return;
+    }
+
+    try {
+      let cached = staticTextCache.get(filePath);
+      if (!cached || cached.etag !== etag) {
+        const data = await fs.promises.readFile(filePath);
+        const [gzip, brotli] = await Promise.all([
+          gzipAsync(data, { level: zlib.constants.Z_BEST_SPEED }),
+          brotliAsync(data, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 4 } }),
+        ]);
+        cached = { etag, data, gzip, brotli };
+        staticTextCache.set(filePath, cached);
       }
-      const acceptsGzip = /\bgzip\b/i.test(String(req.headers["accept-encoding"] || ""));
-      if (!acceptsGzip || !compressibleExtensions.has(extension)) {
-        responseHeaders["content-length"] = data.length;
-        res.writeHead(200, responseHeaders);
-        res.end(req.method === "HEAD" ? undefined : data);
-        return;
+
+      const accepted = String(req.headers["accept-encoding"] || "");
+      let body = cached.data;
+      if (/\bbr\b/i.test(accepted)) {
+        body = cached.brotli;
+        responseHeaders["content-encoding"] = "br";
+      } else if (/\bgzip\b/i.test(accepted)) {
+        body = cached.gzip;
+        responseHeaders["content-encoding"] = "gzip";
       }
-      zlib.gzip(data, { level: zlib.constants.Z_BEST_SPEED }, (gzipError, compressed) => {
-        const body = gzipError ? data : compressed;
-        if (!gzipError) {
-          responseHeaders["content-encoding"] = "gzip";
-        }
-        responseHeaders["content-length"] = body.length;
-        res.writeHead(200, responseHeaders);
-        res.end(req.method === "HEAD" ? undefined : body);
-      });
-    });
+      responseHeaders["content-length"] = body.length;
+      res.writeHead(200, responseHeaders);
+      res.end(body);
+    } catch {
+      res.writeHead(404);
+      res.end("Not found");
+    }
   });
 }
 

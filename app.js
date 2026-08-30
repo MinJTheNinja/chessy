@@ -1125,6 +1125,7 @@ const defaultReview = {
 let pieces = { ...initialPieces };
 let queueInterval;
 let queuePollInterval;
+let queuePollBusy = false;
 let missionIndex = 0;
 let currentManner = 42.8;
 let backendOnline = false;
@@ -1149,6 +1150,10 @@ let boardInitialized = false;
 let reviewInitialized = false;
 let forumInitialized = false;
 let forumPollInterval = null;
+let forumRefreshPromise = null;
+let forumPostsSignature = "";
+let trainingModuleRenderSignature = "";
+let puzzlePathRenderSignature = "";
 let shopInitialized = false;
 let cachedSpeechVoices = [];
 let peerConnection = null;
@@ -1174,6 +1179,7 @@ let sttSessionTimer = null;
 let cachedAdminData = null;
 let cachedLobbyData = null;
 let adminCommandBuffer = "";
+let adminSearchFrame = 0;
 let forumFilter = "Question";
 let forumPosts = [];
 let expandedForumPostId = null;
@@ -2169,7 +2175,7 @@ const puzzlePathStages = [
     id: "cheoin-1",
     series: "cheoinseong",
     player: "/assets/cheoinseong-battle.html",
-    glyph: "♟",
+    iconIndex: 1,
     ko: "관군 없이, 스스로",
     en: "Without the royal army",
     koDescription: "처인부곡의 백성이 성벽에 다가온 몽골 병졸을 직접 막아냅니다.",
@@ -2179,7 +2185,7 @@ const puzzlePathStages = [
     id: "cheoin-2",
     series: "cheoinseong",
     player: "/assets/cheoinseong-battle.html",
-    glyph: "♞",
+    iconIndex: 2,
     ko: "몽골 기병, 성을 에워싸다",
     en: "Mongol cavalry surrounds the fort",
     koDescription: "나이트 포크로 적 지휘부와 공성탑을 동시에 위협합니다.",
@@ -2189,7 +2195,7 @@ const puzzlePathStages = [
     id: "cheoin-3",
     series: "cheoinseong",
     player: "/assets/cheoinseong-battle.html",
-    glyph: "♝",
+    iconIndex: 3,
     ko: "승병들, 최전선에 서다",
     en: "Monks take the front line",
     koDescription: "승병을 상징하는 비숍이 긴 대각선에서 이중공격을 만듭니다.",
@@ -2199,7 +2205,7 @@ const puzzlePathStages = [
     id: "cheoin-4",
     series: "cheoinseong",
     player: "/assets/cheoinseong-battle.html",
-    glyph: "♜",
+    iconIndex: 4,
     ko: "성벽이 버티다",
     en: "The walls hold",
     koDescription: "처인성 성벽을 상징하는 룩으로 왕과 기병을 함께 겨눕니다.",
@@ -2209,7 +2215,7 @@ const puzzlePathStages = [
     id: "cheoin-5",
     series: "cheoinseong",
     player: "/assets/cheoinseong-battle.html",
-    glyph: "♜",
+    iconIndex: 5,
     ko: "화살, 살리타이에게 향하다",
     en: "The arrow flies toward Sartai",
     koDescription: "마지막 룩 수로 뒷줄 체크메이트를 완성합니다.",
@@ -2368,6 +2374,16 @@ function renderTodayQuests() {
 function renderTrainingModuleList() {
   if (!trainingModuleList) return;
   const state = activeTrainingState();
+  const renderSignature = JSON.stringify({
+    language: currentInterfaceLanguage(),
+    next: state.nextModule?.id || null,
+    completedModules: state.completedModules || [],
+    completedPuzzles: state.completedPuzzles || [],
+    puzzleUnlocked: Boolean(state.puzzleUnlocked),
+    modules: (state.modules || []).map((module) => [module.id, module.title, Boolean(module.completed)]),
+  });
+  if (renderSignature === trainingModuleRenderSignature && trainingModuleList.childElementCount) return;
+  trainingModuleRenderSignature = renderSignature;
   const nextModuleId = Number(state.nextModule?.id || 0);
   trainingModuleList.innerHTML = "";
   (state.modules || []).forEach((module) => {
@@ -2439,26 +2455,51 @@ function renderTrainingModuleList() {
   const selectedReviewModule =
     reviewModules.find((module) => Number(module.id) === selectedTrainingReviewModuleId) || reviewModules[0] || null;
   selectedTrainingReviewModuleId = Number(selectedReviewModule?.id || 0);
-  const reviewSelect = document.createElement("select");
-  reviewSelect.className = "training-review-select";
-  reviewSelect.setAttribute("aria-label", "복습할 모듈 선택");
-  reviewSelect.disabled = reviewModules.length === 0;
-  if (!reviewModules.length) {
-    const emptyOption = document.createElement("option");
-    emptyOption.textContent = "완료한 모듈이 없습니다";
-    emptyOption.value = "";
-    reviewSelect.append(emptyOption);
-  }
+  const reviewMenu = document.createElement("div");
+  reviewMenu.className = "training-review-menu";
+  const reviewTrigger = document.createElement("button");
+  reviewTrigger.type = "button";
+  reviewTrigger.className = "training-review-select";
+  reviewTrigger.disabled = reviewModules.length === 0;
+  reviewTrigger.setAttribute("aria-haspopup", "listbox");
+  reviewTrigger.setAttribute("aria-expanded", "false");
+  reviewTrigger.innerHTML = `<span>${selectedReviewModule ? `모듈 ${selectedReviewModule.id} · ${selectedReviewModule.title}` : "완료한 모듈이 없습니다"}</span><span aria-hidden="true">⌄</span>`;
+
+  const reviewOptions = document.createElement("div");
+  reviewOptions.className = "training-review-options";
+  reviewOptions.setAttribute("role", "listbox");
+  reviewOptions.hidden = true;
   reviewModules.forEach((module) => {
-    const option = document.createElement("option");
-    option.value = String(module.id);
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "training-review-option";
+    option.setAttribute("role", "option");
+    option.setAttribute("aria-selected", String(Number(module.id) === selectedTrainingReviewModuleId));
     option.textContent = `모듈 ${module.id} · ${module.title}`;
-    option.selected = Number(module.id) === selectedTrainingReviewModuleId;
-    reviewSelect.append(option);
+    option.addEventListener("click", () => {
+      selectedTrainingReviewModuleId = Number(module.id);
+      reviewTrigger.querySelector("span").textContent = option.textContent;
+      reviewOptions.querySelectorAll('[role="option"]').forEach((item) => {
+        item.setAttribute("aria-selected", String(item === option));
+      });
+      reviewOptions.hidden = true;
+      reviewTrigger.setAttribute("aria-expanded", "false");
+      reviewTrigger.focus();
+    });
+    reviewOptions.append(option);
   });
-  reviewSelect.addEventListener("change", () => {
-    selectedTrainingReviewModuleId = Number(reviewSelect.value || 0);
+  reviewTrigger.addEventListener("click", () => {
+    const opening = reviewOptions.hidden;
+    reviewOptions.hidden = !opening;
+    reviewTrigger.setAttribute("aria-expanded", String(opening));
   });
+  reviewMenu.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || reviewOptions.hidden) return;
+    reviewOptions.hidden = true;
+    reviewTrigger.setAttribute("aria-expanded", "false");
+    reviewTrigger.focus();
+  });
+  reviewMenu.append(reviewTrigger, reviewOptions);
 
   const reviewControl = document.createElement("button");
   reviewControl.type = "button";
@@ -2466,10 +2507,10 @@ function renderTrainingModuleList() {
   reviewControl.textContent = "복습 퀴즈 시작";
   reviewControl.disabled = reviewModules.length === 0;
   if (reviewModules.length) reviewControl.addEventListener("click", () => {
-    const chosenModuleId = Number(reviewSelect.value || selectedTrainingReviewModuleId || 0);
+    const chosenModuleId = Number(selectedTrainingReviewModuleId || 0);
     if (chosenModuleId) openTrainingReview(chosenModuleId);
   });
-  reviewChooser.append(reviewSelect, reviewControl);
+  reviewChooser.append(reviewMenu, reviewControl);
   review.append(reviewChooser);
   trainingModuleList.append(review);
 }
@@ -2519,8 +2560,8 @@ function renderPuzzleStageList(list, seriesItem) {
     const tooltipId = `puzzleStageTooltip-${seriesItem.id}-${index + 1}`;
     const title = korean ? stage.ko : stage.en;
     const description = korean ? stage.koDescription : stage.enDescription;
-    const icon = stage.glyph
-      ? `<span class="puzzle-stage-glyph" aria-hidden="true">${stage.glyph}</span>`
+    const icon = stage.iconIndex
+      ? `<span class="puzzle-stage-icon cheoinseong-stage-icon cheoinseong-stage-icon-${stage.iconIndex}" aria-hidden="true"></span>`
       : `<span class="puzzle-stage-icon puzzle-stage-icon-${index + 1}" aria-hidden="true"></span>`;
     row.innerHTML = `
       <div class="training-path-anchor">
@@ -2541,6 +2582,13 @@ function renderPuzzleStageList(list, seriesItem) {
 }
 
 function renderPuzzlePath() {
+  const renderSignature = `${currentInterfaceLanguage()}:${[...completedPuzzleIds()].sort().join(",")}`;
+  if (
+    renderSignature === puzzlePathRenderSignature &&
+    puzzlePathList?.childElementCount &&
+    cheoinseongPathList?.childElementCount
+  ) return;
+  puzzlePathRenderSignature = renderSignature;
   renderPuzzleStageList(puzzlePathList, {
     id: "goryeo",
     koLabel: "전술 퍼즐",
@@ -3548,6 +3596,7 @@ function connectSocket(matchId) {
     if (message.type === "match:move" && matchBelongsToCurrentUser(message.match)) renderMatch(message.match);
     if (message.type === "match:ended" && matchBelongsToCurrentUser(message.match)) renderMatch(message.match);
     if (message.type === "review:generated") renderReview(message.review);
+    if (message.type === "forum:updated" && forumInitialized) refreshForumPosts({ quiet: true });
     if (message.type?.startsWith("voice:")) handleVoiceSignal(message);
     if (message.type === "stt:subtitle") handleSubtitleSignal(message);
     if (message.type === "draw:offer") handleDrawOffer(message);
@@ -3928,16 +3977,27 @@ async function refreshForumPosts({ quiet = false } = {}) {
     if (!quiet) renderForumPosts();
     return;
   }
-  try {
-    const data = await api("/api/forum/posts");
-    forumPosts = Array.isArray(data.posts) ? data.posts : [];
-    renderForumPosts();
-  } catch (error) {
-    if (!quiet) {
-      forumPosts = [];
+  if (forumRefreshPromise) return forumRefreshPromise;
+  forumRefreshPromise = (async () => {
+    try {
+      const data = await api("/api/forum/posts");
+      const nextPosts = Array.isArray(data.posts) ? data.posts : [];
+      const nextSignature = JSON.stringify(nextPosts);
+      if (nextSignature === forumPostsSignature) return;
+      forumPostsSignature = nextSignature;
+      forumPosts = nextPosts;
       renderForumPosts();
+    } catch (error) {
+      if (!quiet) {
+        forumPosts = [];
+        forumPostsSignature = "";
+        renderForumPosts();
+      }
+    } finally {
+      forumRefreshPromise = null;
     }
-  }
+  })();
+  return forumRefreshPromise;
 }
 
 async function refreshActivePlayState({ enter = false } = {}) {
@@ -3964,6 +4024,14 @@ async function refreshActivePlayState({ enter = false } = {}) {
 }
 
 async function resumeActivePlay() {
+  const cachedMatch = resumableMatch && resumableMatch.status !== "ended" ? resumableMatch : null;
+  if (cachedMatch) {
+    renderMatch(cachedMatch);
+    setView("dashboard");
+    refreshActivePlayState().catch(() => {});
+    return;
+  }
+
   const state = await refreshActivePlayState();
   if (state?.match) {
     renderMatch(state.match);
@@ -3985,14 +4053,22 @@ async function resumeActivePlay() {
     privateChallengeCode.textContent = state.openChallenge.code;
     friendRoomStatus.textContent = currentInterfaceLanguage() === "Korean" ? "친구가 참여하기를 기다리고 있습니다." : "Waiting for your friend to join.";
     friendRoomDialog.showModal();
+    return;
   }
+
+  setView("dashboard");
+  queuePrompt.textContent = currentInterfaceLanguage() === "Korean"
+    ? "진행 중인 방을 찾지 못했습니다. 새 방을 만들거나 초대 코드를 다시 확인하세요."
+    : "The room is no longer active. Create a new room or check the invite code.";
 }
 
 function setForumPolling(active) {
   window.clearInterval(forumPollInterval);
   forumPollInterval = null;
   if (!active) return;
-  forumPollInterval = window.setInterval(() => refreshForumPosts({ quiet: true }), 5000);
+  forumPollInterval = window.setInterval(() => {
+    if (!document.hidden) refreshForumPosts({ quiet: true });
+  }, 30000);
 }
 
 function renderForumPosts() {
@@ -4059,6 +4135,7 @@ function renderForumPosts() {
     comments.textContent = currentInterfaceLanguage() === "Korean" ? `댓글 ${replies.length}` : `${replies.length} comments`;
 
     let pinButton = null;
+    let deleteButton = null;
     if (isStaffUser()) {
       pinButton = document.createElement("button");
       pinButton.className = "forum-pin-action";
@@ -4067,6 +4144,12 @@ function renderForumPosts() {
         ? currentInterfaceLanguage() === "Korean" ? "고정 해제" : "Unpin"
         : currentInterfaceLanguage() === "Korean" ? "고정" : "Pin";
       pinButton.addEventListener("click", () => toggleForumPin(post.id));
+
+      deleteButton = document.createElement("button");
+      deleteButton.className = "forum-delete-action";
+      deleteButton.type = "button";
+      deleteButton.textContent = currentInterfaceLanguage() === "Korean" ? "삭제" : "Delete";
+      deleteButton.addEventListener("click", () => deleteForumPost(post, deleteButton));
     }
 
     main.append(summary);
@@ -4121,6 +4204,7 @@ function renderForumPosts() {
     }
     side.append(author, time, comments);
     if (pinButton) side.append(pinButton);
+    if (deleteButton) side.append(deleteButton);
     time.textContent = forumTimeLabel(post.createdAt);
     item.append(pin, main, side);
     forumPostList.append(item);
@@ -4174,6 +4258,7 @@ function showAchievementUnlocks(unlocked = []) {
     artwork.className = "achievement-toast-artwork";
     artwork.src = badge.imageUrl || "/assets/badges/canva-first-step.png";
     artwork.alt = `${badge.name} 배지`;
+    artwork.decoding = "async";
     artwork.addEventListener("error", () => artwork.remove(), { once: true });
 
     const copy = document.createElement("div");
@@ -4269,6 +4354,27 @@ async function toggleForumPin(postId) {
   await refreshForumPosts();
 }
 
+async function deleteForumPost(post, control) {
+  if (!isStaffUser() || !post?.id) return;
+  const message = currentInterfaceLanguage() === "Korean"
+    ? `“${post.title}” 게시글과 답글을 모두 삭제할까요?`
+    : `Delete “${post.title}” and all of its replies?`;
+  if (!window.confirm(message)) return;
+
+  if (control) control.disabled = true;
+  try {
+    await api(`/api/forum/posts/${encodeURIComponent(post.id)}`, { method: "DELETE" });
+    if (expandedForumPostId === post.id) expandedForumPostId = null;
+    forumPosts = forumPosts.filter((item) => item.id !== post.id);
+    renderForumPosts();
+  } catch (error) {
+    if (control) {
+      control.disabled = false;
+      control.textContent = error.message;
+    }
+  }
+}
+
 async function saveShopInterest(productName) {
   if (!currentUser) {
     shopInterestStatus.textContent = translateCopy("Sign in before reserving product interest.");
@@ -4356,6 +4462,8 @@ function addShopProductCard({ id, tag: productTag = "Staff pick", imageSrc, name
     image.className = "product-image";
     image.src = imageSrc;
     image.alt = name;
+    image.loading = "lazy";
+    image.decoding = "async";
     card.append(image);
   }
 
@@ -4468,7 +4576,8 @@ function setView(viewName) {
   if (viewName === "home" && currentUser) viewName = "overview";
   if (viewName === "staff" && !isStaffUser()) viewName = "dashboard";
   updateTutorialGateState();
-  if (isStudentTutorialRequired() && viewName !== "how-to-play") {
+  const returningToActiveMatch = viewName === "dashboard" && Boolean(currentMatchId || resumableMatch || resumableChallenge || resumableOpenSeek);
+  if (isStudentTutorialRequired() && viewName !== "how-to-play" && !returningToActiveMatch) {
     viewName = "how-to-play";
   }
   if (viewName === "how-to-play") showTrainingModuleHome();
@@ -4887,6 +4996,7 @@ function handleDrawOffer(message) {
 function startPassiveWaitingDisplay({ pollActive = true } = {}) {
   clearInterval(queueInterval);
   clearInterval(queuePollInterval);
+  queuePollBusy = false;
   let seconds = 0;
   setMatchState("searching");
   queueTime.textContent = currentInterfaceLanguage() === "Korean" ? "00:00 경과" : "00:00 elapsed";
@@ -4900,6 +5010,8 @@ function startPassiveWaitingDisplay({ pollActive = true } = {}) {
   }, 1000);
   if (!pollActive || !backendOnline || !currentUser) return;
   queuePollInterval = setInterval(async () => {
+    if (queuePollBusy || document.hidden) return;
+    queuePollBusy = true;
     try {
       const data = await api("/api/matches/active");
       resumableChallenge = data.openChallenge || null;
@@ -4913,13 +5025,16 @@ function startPassiveWaitingDisplay({ pollActive = true } = {}) {
       }
     } catch {
       // WebSocket updates can still complete the waiting room.
+    } finally {
+      queuePollBusy = false;
     }
-  }, 2000);
+  }, 5000);
 }
 
 async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안전하게 대화할 수 있는 파트너를 찾는 중입니다." : "Searching for a safe partner with matching goals.", liveQueue = false, overrides = {}) {
   clearInterval(queueInterval);
   clearInterval(queuePollInterval);
+  queuePollBusy = false;
   clearCurrentMatch();
   setMatchState("searching");
   let seconds = 0;
@@ -4956,6 +5071,8 @@ async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안
             clearInterval(queuePollInterval);
             return;
           }
+          if (queuePollBusy || document.hidden) return;
+          queuePollBusy = true;
           try {
             const next = await api(endpoint, { method: "POST", body });
             if (!next.waiting) {
@@ -4968,8 +5085,10 @@ async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안
             }
           } catch {
             // Keep the visible queue running if a poll misses.
+          } finally {
+            queuePollBusy = false;
           }
-        }, 1200);
+        }, 3000);
       } else {
         renderMatch(data.match);
         matchResult.textContent = overrides.readyText || (liveQueue ? currentInterfaceLanguage() === "Korean" ? "상대를 찾았습니다" : "Opponent matched" : currentInterfaceLanguage() === "Korean" ? "대국 준비 완료" : "Game ready");
@@ -5216,6 +5335,7 @@ function renderAvatar(target, user, fallback = "GP") {
     const image = document.createElement("img");
     image.src = avatarUrl;
     image.alt = `${user?.displayName || "Player"} avatar`;
+    image.decoding = "async";
     target.append(image);
   } else {
     target.textContent = initials(user?.displayName || fallback);
@@ -5523,6 +5643,8 @@ function renderProfile(profile) {
     artwork.className = "profile-badge-artwork";
     artwork.src = badge.imageUrl || "/assets/badges/canva-first-step.png";
     artwork.alt = `${badge.name || "EasyMate"} 배지`;
+    artwork.loading = "lazy";
+    artwork.decoding = "async";
     artwork.loading = "lazy";
     artwork.addEventListener("error", () => artwork.remove(), { once: true });
 
@@ -6384,12 +6506,15 @@ privateChallengeInput.addEventListener("keydown", (event) => {
 });
 copyMatchRoomLinkButton.addEventListener("click", copyRoomLink);
 refreshAdminButton.addEventListener("click", refreshAdmin);
-adminMatchSearch.addEventListener("input", () => {
-  if (cachedAdminData) renderAdminOverview(cachedAdminData);
-});
-adminUserSearch.addEventListener("input", () => {
-  if (cachedAdminData) renderAdminOverview(cachedAdminData);
-});
+const scheduleAdminSearchRender = () => {
+  if (adminSearchFrame) return;
+  adminSearchFrame = window.requestAnimationFrame(() => {
+    adminSearchFrame = 0;
+    if (cachedAdminData) renderAdminOverview(cachedAdminData);
+  });
+};
+adminMatchSearch.addEventListener("input", scheduleAdminSearchRender);
+adminUserSearch.addEventListener("input", scheduleAdminSearchRender);
 
 async function saveProfilePatch(patch = {}) {
   if (!currentUser) {
