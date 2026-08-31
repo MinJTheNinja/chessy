@@ -38,6 +38,7 @@ let cachedIceServersAt = 0;
 let cachedGoogleKeys = null;
 let cachedGoogleKeysAt = 0;
 const pieceEditions = new Set(["original", "cheoinseong", "beta"]);
+const privateRoomTtlMs = 5 * 60 * 1000;
 const dayMs = 24 * 60 * 60 * 1000;
 let streakTimeZone = String(process.env.STREAK_TIME_ZONE || "Asia/Seoul").trim() || "Asia/Seoul";
 let streakDateFormatter;
@@ -1654,6 +1655,38 @@ function activeMatchForUser(db, user) {
     .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0] || null;
 }
 
+async function expireStalePrivateRooms(db, now = Date.now()) {
+  const expiredMatches = [];
+  let changed = false;
+
+  db.challenges.forEach((challenge) => {
+    if (challenge.status !== "open") return;
+    const createdAt = Date.parse(challenge.createdAt || "");
+    if (!Number.isFinite(createdAt) || now - createdAt < privateRoomTtlMs) return;
+
+    const expiredAt = new Date(now).toISOString();
+    challenge.status = "expired";
+    challenge.expiredAt = expiredAt;
+    changed = true;
+
+    const match = challenge.matchId ? db.matches.find((item) => item.id === challenge.matchId) : null;
+    const joinedPlayers = (match?.players || []).filter((player) => player.userId).length;
+    if (!match || match.status !== "waiting" || joinedPlayers > 1) return;
+    match.status = "ended";
+    match.result = "Expired";
+    match.endedAt = expiredAt;
+    if (match.clocks) match.clocks.running = false;
+    expiredMatches.push(match);
+  });
+
+  if (!changed) return false;
+  await writeDb(db);
+  expiredMatches.forEach((match) => {
+    syncRedisRoom(match).catch((error) => console.warn(`Redis room expiry sync failed: ${error.message}`));
+  });
+  return true;
+}
+
 function describeGameResult(game, move) {
   if (game.isCheckmate()) {
     return `${move.color === "w" ? "White" : "Black"} won by checkmate`;
@@ -1777,6 +1810,7 @@ function routePattern(pathname, pattern) {
 async function handleApi(req, res, pathname, searchParams = new URLSearchParams()) {
   const db = await readDb();
   const user = getSessionUser(req, db);
+  await expireStalePrivateRooms(db);
 
   if (req.method === "GET" && pathname === "/api/config") {
     sendJson(res, 200, {

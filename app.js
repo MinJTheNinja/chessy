@@ -1007,8 +1007,16 @@ function cheoinseongPieceSvg(pieceCode) {
   return `<svg viewBox="0 0 100 100" role="img" aria-label="${pieceEditionNames.cheoinseong} ${color} ${pieceNames[type] || "piece"}">${details[type] || details.p}</svg>`;
 }
 
+function originalPieceSprite(pieceCode) {
+  const color = pieceCode?.[0] === "w" ? "white" : "black";
+  const type = pieceCode?.[1] || "p";
+  return `<img class="original-piece-image original-piece-${type}" src="/assets/original-chess-pieces-v1/${type}.png" alt="${pieceEditionNames.original} ${color} ${pieceNames[type] || "piece"}" decoding="async">`;
+}
+
 function pieceSvg(pieceCode, edition = "beta") {
-  return normalizePieceEdition(edition) === "cheoinseong" ? cheoinseongPieceSvg(pieceCode) : betaPieceSvg(pieceCode);
+  const normalizedEdition = normalizePieceEdition(edition);
+  if (normalizedEdition === "original") return originalPieceSprite(pieceCode);
+  return normalizedEdition === "cheoinseong" ? cheoinseongPieceSvg(pieceCode) : betaPieceSvg(pieceCode);
 }
 
 const initialPieces = {
@@ -1348,7 +1356,7 @@ function showQueueTip(index = queueTipIndex) {
 
 function renderActiveMatchReturn() {
   if (!activeMatchReturn) return;
-  const hasMatch = Boolean(resumableMatch && resumableMatch.status !== "ended");
+  const hasMatch = Boolean(resumableMatch && !["ended", "waiting"].includes(resumableMatch.status));
   const hasWaitingRoom = Boolean(resumableChallenge || resumableOpenSeek);
   activeMatchReturn.hidden = !hasMatch && !hasWaitingRoom;
   if (activeMatchReturn.hidden) return;
@@ -5017,11 +5025,23 @@ function startPassiveWaitingDisplay({ pollActive = true } = {}) {
     queuePollBusy = true;
     try {
       const data = await api("/api/matches/active");
+      const wasWaitingForPrivateRoom = Boolean(resumableChallenge);
       resumableChallenge = data.openChallenge || null;
       resumableOpenSeek = data.openSeek || null;
       if (data.match && data.match.status !== "waiting") {
         renderMatch(data.match);
         matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "상대가 입장했습니다" : "Your opponent joined";
+      } else if (!data.match && !data.openChallenge && !data.openSeek && wasWaitingForPrivateRoom) {
+        clearInterval(queueInterval);
+        clearInterval(queuePollInterval);
+        clearCurrentMatch();
+        setMatchState("idle");
+        privateChallengeCode.textContent = "----";
+        const expiredMessage = currentInterfaceLanguage() === "Korean"
+          ? "5분 동안 친구가 입장하지 않아 방이 만료되었습니다."
+          : "The room expired because no friend joined within 5 minutes.";
+        queuePrompt.textContent = expiredMessage;
+        friendRoomStatus.textContent = expiredMessage;
       } else {
         resumableMatch = data.match || resumableMatch;
         renderActiveMatchReturn();
@@ -5276,6 +5296,15 @@ async function joinPrivateChallenge() {
     queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "먼저 비공개 방 코드를 입력하세요." : "Enter a private challenge code first.";
     friendRoomStatus.textContent = queuePrompt.textContent;
     privateChallengeInput.focus();
+    return;
+  }
+  const ownChallengeCode = String(resumableChallenge?.code || privateChallengeCode.textContent || "").trim().toUpperCase();
+  if (ownChallengeCode && ownChallengeCode !== "----" && code === ownChallengeCode) {
+    queuePrompt.textContent = currentInterfaceLanguage() === "Korean"
+      ? "이미 이 방에 참여 중입니다. 만든 방으로 돌아가 친구를 기다리세요."
+      : "You are already in this room. Return to it and wait for your friend.";
+    friendRoomStatus.textContent = queuePrompt.textContent;
+    privateChallengeInput.select();
     return;
   }
   if (!backendOnline) {

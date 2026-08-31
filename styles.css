@@ -2961,6 +2961,21 @@ body.piece-theme-beta .chess-board {
   height: 100%;
 }
 
+.original-piece-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.piece-edition-original.white-piece .original-piece-image {
+  filter: drop-shadow(0 2px 1px rgba(32, 52, 72, 0.28));
+}
+
+.piece-edition-original.black-piece .original-piece-image {
+  filter: brightness(0.2) contrast(1.2) drop-shadow(0 1px 1px rgba(247, 240, 223, 0.5));
+}
+
 .piece-edition-cheoinseong {
   filter: drop-shadow(0 4px 2px rgba(40, 55, 42, 0.22));
 }
@@ -8675,7 +8690,7 @@ body.is-signed-in .workspace .home-league-actions #createLeagueButton:focus-visi
 .cheoinseong-stage-icon {
   width: 54px;
   height: 54px;
-  background-image: url("/assets/cheoinseong-stage-icons-v2.png");
+  background-image: url("/assets/cheoinseong-stage-icons-v3.png");
   background-size: 300% 200%;
 }
 
@@ -9436,5 +9451,56 @@ body.is-signed-in .view[data-view="overview"] {
 
   .site-footer nav {
     justify-content: flex-start;
+  }
+}
+
+/* Shared chess line-art wallpaper across every application tab. */
+body,
+body.is-signed-in,
+body.piece-theme-original,
+body.piece-theme-cheoinseong,
+body.piece-theme-beta {
+  background-color: #ffffff;
+  background-image: url("/assets/chess-line-wallpaper-v1.png");
+  background-repeat: repeat;
+  background-position: 0 0;
+  background-size: 940px 940px;
+  background-attachment: fixed;
+}
+
+.entry,
+.app-shell,
+.workspace,
+.view {
+  background-color: transparent;
+}
+
+/* The landing logo is a true-alpha PNG; let the wallpaper continue through its panel. */
+.entry-content {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: transparent !important;
+  box-shadow: none;
+}
+
+/* Remove the older page-specific hero watermarks in favor of one quiet pattern. */
+.home-dashboard::before,
+.home-dashboard::after,
+.forum-board::before,
+.view[data-view="dashboard"]::before,
+#trainingModuleList::before,
+#puzzlePathList::before,
+#cheoinseongPathList::before {
+  content: none !important;
+  display: none !important;
+}
+
+@media (max-width: 680px) {
+  body,
+  body.is-signed-in,
+  body.piece-theme-original,
+  body.piece-theme-cheoinseong,
+  body.piece-theme-beta {
+    background-size: 720px 720px;
+    background-attachment: scroll;
   }
 }

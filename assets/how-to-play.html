@@ -271,6 +271,7 @@ h1,h2,h3,h4,.jua,.title-label,.warrior-label,.lesson-board-label,.mission,.lesso
 .lesson-piece-brief .speech{margin:0;min-height:0;border:0;border-left:2px solid var(--goryeo);border-radius:0;background:#f6f4ef;padding:16px 18px;font-size:15px;line-height:1.75}
 .lesson-piece-brief.enemy-brief .speech{border-left-color:var(--mongol);background:rgba(142,59,49,.045)}
 .lesson-piece-brief.enemy-brief .speech,.lesson-piece-brief .speech{animation:none}
+.lesson-piece-brief .speech.typewriter-pending{visibility:hidden}
 .lesson-piece-brief .speech.typewriter-active::after{
   content:"";
   display:inline-block!important;
@@ -283,8 +284,8 @@ h1,h2,h3,h4,.jua,.title-label,.warrior-label,.lesson-board-label,.mission,.lesso
 }
 @keyframes typewriter-cursor{0%,46%{opacity:1}47%,100%{opacity:0}}
 .lesson-nav{align-self:center;justify-content:center;gap:16px;margin-top:16px;padding-top:12px}
-.lesson-nav .next-wrap{width:auto;max-width:min(240px,100%)}
-.lesson-nav .cd-bubble{max-width:min(240px,100%);width:auto;border-radius:0;box-shadow:none}
+.lesson-nav .next-wrap{position:relative;width:auto;max-width:min(240px,100%);overflow:visible}
+.lesson-nav .cd-bubble{position:absolute;right:0;bottom:calc(100% + 8px);left:auto;max-width:min(240px,calc(100vw - 40px));width:max-content;border-radius:0;box-shadow:none;overflow:visible;text-overflow:clip}
 .lesson-nav .cd-bubble::after{right:18px}
 .lesson-nav .btn-prev,.lesson-nav .btn-next{min-height:38px;padding:7px 0}
 .lesson-nav .dots{align-self:center}
@@ -294,7 +295,7 @@ h1,h2,h3,h4,.jua,.title-label,.warrior-label,.lesson-board-label,.mission,.lesso
 .scene.story-intro .char-row,.scene.story-ready .char-row{transform:none;animation:none}
 /* Avoid horizontal spill from lesson panels and their prompt bubble. */
 .scene,.lesson-layout,.lesson-board-panel,.lesson-copy-panel,.lesson-copy-content,.lesson-nav,.lesson-nav .next-wrap{min-width:0;max-width:100%}
-.lesson-nav .cd-bubble{overflow:hidden;text-overflow:ellipsis}
+.lesson-nav .cd-bubble{overflow:visible;text-overflow:clip}
 @media (max-width:720px){
   .lesson-layout{grid-template-columns:1fr;gap:22px}
   .lesson-copy-panel{padding-top:0;min-height:0}
@@ -303,6 +304,18 @@ h1,h2,h3,h4,.jua,.title-label,.warrior-label,.lesson-board-label,.mission,.lesso
   .lesson-piece-brief .speech{padding:13px 14px;font-size:14px}
 }
 @media (prefers-reduced-motion:reduce){.lesson-piece-brief .speech.typewriter-active::after{display:none!important}}
+
+/* Shared EasyMate chess wallpaper. */
+body{
+  background-color:#fff;
+  background-image:url('/assets/chess-line-wallpaper-v1.png');
+  background-repeat:repeat;
+  background-position:0 0;
+  background-size:940px 940px;
+  background-attachment:fixed;
+}
+#app,.scene{background-color:transparent}
+@media (max-width:680px){body{background-size:720px 720px;background-attachment:scroll}}
 
 /* Hallmark · tutorial navigation: one editorial row, numeric progress, square actions. */
 .nav,
@@ -360,15 +373,28 @@ h1,h2,h3,h4,.jua,.title-label,.warrior-label,.lesson-board-label,.mission,.lesso
   opacity:1;
   cursor:not-allowed;
 }
-.nav .next-wrap{
-  position:static;
+.nav .next-wrap,
+.nav.lesson-nav .next-wrap{
+  position:relative;
   display:inline-flex;
   width:auto;
   max-width:min(240px,100%);
   align-items:flex-end;
+  overflow:visible;
+}
+.nav.lesson-nav .cd-bubble{
+  position:absolute;
+  right:0;
+  bottom:calc(100% + 8px);
+  left:auto;
+  width:max-content;
+  max-width:min(240px,calc(100vw - 40px));
+  transform:none;
+  overflow:visible;
+  text-overflow:clip;
 }
 .nav.has-cd,
-.nav.lesson-nav.has-cd{padding-top:22px}
+.nav.lesson-nav.has-cd{padding-top:70px}
 .step-counter{
   align-self:center;
   justify-self:center;
@@ -404,6 +430,11 @@ const tutorialLanguage=new URLSearchParams(window.location.search).get('lang')==
 const isEnglish=tutorialLanguage==='en';
 document.documentElement.lang=tutorialLanguage;
 const choose=(ko,en)=>isEnglish?en:ko;
+const koreanSubjectParticle=(value)=>{
+  const characters=Array.from(String(value||'').trim());
+  const code=characters.at(-1)?.charCodeAt(0)-0xAC00;
+  return Number.isInteger(code)&&code>=0&&code<=11171&&code%28!==0?'이':'가';
+};
 const ART = {
 g_pawn:pieceArt('g_pawn'), g_rook:pieceArt('g_rook'), g_knight:pieceArt('g_knight'),
 g_bishop:pieceArt('g_bishop'), g_queen:pieceArt('g_queen'), g_king:pieceArt('g_king'),
@@ -626,7 +657,7 @@ function render(){
   root.innerHTML = `<div class="scene active">${html}</div>`;
   bindScene();
   beginStoryIntro();
-  requestAnimationFrame(runSceneTypewriters);
+  runSceneTypewriters();
 }
 
 function beginStoryIntro(){
@@ -879,6 +910,7 @@ function typewriteSpeech(element,runId,onComplete){
   const segments=[];
   element.replaceChildren();
   element.style.minHeight=measuredHeight+'px';
+  element.classList.remove('typewriter-pending');
   element.classList.add('typewriter-active');
   cloneTypewriterContent(source,element,segments);
 
@@ -907,6 +939,7 @@ function runSceneTypewriters(){
   if(reduceTutorialMotion.matches) return;
   const targets=Array.from(root.querySelectorAll('.lesson-copy-panel .speech'));
   if(!targets.length) return;
+  targets.forEach((target)=>target.classList.add('typewriter-pending'));
   const runId=sceneTypewriterRun;
   const play=(index)=>{
     if(runId!==sceneTypewriterRun||index>=targets.length) return;
@@ -1080,7 +1113,7 @@ function setupBoard(p, goNext){
     mission.classList.remove('done'); mission.classList.add('quiz');
     mission.innerHTML='<span class="quiz-flag">'+choose('확인 문제','Quick check')+'</span><br>'
       +(moved?choose('출발 자리로 돌아왔어! ','Back at the starting square. '):'')
-      +choose('파란 점 없이! 지금 자리에서 ','Without blue dots, choose a legal square for ')+'<b>'+p.name+'</b>'+choose('가 갈 수 있는 칸을 하나 눌러봐.','.');
+      +choose('파란 점 없이! 지금 자리에서 ','Without blue dots, choose a legal square for ')+'<b>'+p.name+'</b>'+choose(koreanSubjectParticle(p.name)+' 갈 수 있는 칸을 하나 눌러봐.','.');
   }
 
   board.addEventListener('click', e=>{
