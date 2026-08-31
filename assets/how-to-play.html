@@ -271,6 +271,17 @@ h1,h2,h3,h4,.jua,.title-label,.warrior-label,.lesson-board-label,.mission,.lesso
 .lesson-piece-brief .speech{margin:0;min-height:0;border:0;border-left:2px solid var(--goryeo);border-radius:0;background:#f6f4ef;padding:16px 18px;font-size:15px;line-height:1.75}
 .lesson-piece-brief.enemy-brief .speech{border-left-color:var(--mongol);background:rgba(142,59,49,.045)}
 .lesson-piece-brief.enemy-brief .speech,.lesson-piece-brief .speech{animation:none}
+.lesson-piece-brief .speech.typewriter-active::after{
+  content:"";
+  display:inline-block!important;
+  width:2px;
+  height:1.05em;
+  margin-left:3px;
+  vertical-align:-.12em;
+  background:currentColor;
+  animation:typewriter-cursor .72s steps(1,end) infinite;
+}
+@keyframes typewriter-cursor{0%,46%{opacity:1}47%,100%{opacity:0}}
 .lesson-nav{align-self:center;justify-content:center;gap:16px;margin-top:16px;padding-top:12px}
 .lesson-nav .next-wrap{width:auto;max-width:min(240px,100%)}
 .lesson-nav .cd-bubble{max-width:min(240px,100%);width:auto;border-radius:0;box-shadow:none}
@@ -291,6 +302,7 @@ h1,h2,h3,h4,.jua,.title-label,.warrior-label,.lesson-board-label,.mission,.lesso
   .lesson-piece-brief .char-art{width:60px;height:60px}
   .lesson-piece-brief .speech{padding:13px 14px;font-size:14px}
 }
+@media (prefers-reduced-motion:reduce){.lesson-piece-brief .speech.typewriter-active::after{display:none!important}}
 
 /* Hallmark · tutorial navigation: one editorial row, numeric progress, square actions. */
 .nav,
@@ -596,6 +608,7 @@ function moduleProgressCount(scene){
 }
 
 function render(){
+  cancelSceneTypewriters();
   if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; }
   const s = state.scene;
   let html='';
@@ -613,6 +626,7 @@ function render(){
   root.innerHTML = `<div class="scene active">${html}</div>`;
   bindScene();
   beginStoryIntro();
+  requestAnimationFrame(runSceneTypewriters);
 }
 
 function beginStoryIntro(){
@@ -827,6 +841,78 @@ function reviewScene(){
   const set=questions[moduleId];
   const item=set[state.reviewIndex];
   return `<div class="eyebrow">${choose(`모듈 ${moduleId} 복습 퀴즈`,`Module ${moduleId} Review Quiz`)}</div><div class="review-status">${state.reviewIndex+1} / ${set.length}</div><h2 style="text-align:center">${item.question}</h2><div class="rule-list">${item.answers.map((answer,index)=>`<button class="rule-item review-answer" data-answer="${index}" data-correct="${index===item.correct}">${answer}</button>`).join('')}</div><p class="lesson-note" id="reviewResult">${choose('정답을 골라 보세요.','Choose an answer.')}</p><div class="nav"><button class="btn-prev" id="reviewBack">← ${choose('연습마당','Training')}</button>${progressCount(set.length,state.reviewIndex)}<button class="btn-next" id="reviewNext" disabled>${state.reviewIndex===set.length-1?choose('복습 완료','Finish Review'):choose('다음 문제 →','Next Question →')}</button></div>`;
+}
+
+let sceneTypewriterRun=0;
+const reduceTutorialMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function cancelSceneTypewriters(){
+  sceneTypewriterRun+=1;
+}
+
+function cloneTypewriterContent(source,target,segments){
+  source.childNodes.forEach((child)=>{
+    if(child.nodeType===Node.TEXT_NODE){
+      const node=document.createTextNode('');
+      target.appendChild(node);
+      segments.push({node,characters:Array.from(child.nodeValue||'')});
+      return;
+    }
+    if(child.nodeType===Node.ELEMENT_NODE){
+      const clone=child.cloneNode(false);
+      target.appendChild(clone);
+      cloneTypewriterContent(child,clone,segments);
+    }
+  });
+}
+
+function typewriterDelay(character){
+  if(/[.!?。！？]/.test(character)) return 105;
+  if(/[,，;:]/.test(character)) return 55;
+  if(/\s/.test(character)) return 8;
+  return 19;
+}
+
+function typewriteSpeech(element,runId,onComplete){
+  const source=element.cloneNode(true);
+  const measuredHeight=Math.ceil(element.getBoundingClientRect().height);
+  const segments=[];
+  element.replaceChildren();
+  element.style.minHeight=measuredHeight+'px';
+  element.classList.add('typewriter-active');
+  cloneTypewriterContent(source,element,segments);
+
+  let segmentIndex=0;
+  let characterIndex=0;
+  const step=()=>{
+    if(runId!==sceneTypewriterRun) return;
+    while(segmentIndex<segments.length&&characterIndex>=segments[segmentIndex].characters.length){
+      segmentIndex+=1;
+      characterIndex=0;
+    }
+    if(segmentIndex>=segments.length){
+      element.classList.remove('typewriter-active');
+      onComplete?.();
+      return;
+    }
+    const segment=segments[segmentIndex];
+    const character=segment.characters[characterIndex++];
+    segment.node.nodeValue+=character;
+    window.setTimeout(step,typewriterDelay(character));
+  };
+  window.setTimeout(step,120);
+}
+
+function runSceneTypewriters(){
+  if(reduceTutorialMotion.matches) return;
+  const targets=Array.from(root.querySelectorAll('.lesson-copy-panel .speech'));
+  if(!targets.length) return;
+  const runId=sceneTypewriterRun;
+  const play=(index)=>{
+    if(runId!==sceneTypewriterRun||index>=targets.length) return;
+    typewriteSpeech(targets[index],runId,()=>window.setTimeout(()=>play(index+1),110));
+  };
+  play(0);
 }
 /* ---------- 보드 유틸 ---------- */
 function makeGrid(board){

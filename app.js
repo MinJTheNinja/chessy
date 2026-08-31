@@ -2228,7 +2228,7 @@ let selectedTrainingReviewModuleId = 0;
 let activeTrainingPathMode = "tutorial";
 
 function landingTypewriterPhrase() {
-  return currentInterfaceLanguage() === "Korean" ? "체스? 엄청 쉽죠…" : "chess? it’s easy…";
+  return currentInterfaceLanguage() === "Korean" ? "체스..? 엄청 쉽죠." : "chess..? it’s easy.";
 }
 
 function fitLandingTypewriter(phrase = landingTypewriterPhrase()) {
@@ -2265,11 +2265,14 @@ function renderLandingTypewriter({ animate = true } = {}) {
   entryTypewriterText.textContent = "";
   entryTypewriter.classList.add("typing");
   let characterIndex = 0;
+  const pauseAfterCharacter = phrase.indexOf("?") + 1;
+  const characterDelay = currentInterfaceLanguage() === "Korean" ? 105 : 78;
   const typeNextCharacter = () => {
     characterIndex += 1;
     entryTypewriterText.textContent = characters.slice(0, characterIndex).join("");
     if (characterIndex < characters.length) {
-      entryTypewriterTimer = window.setTimeout(typeNextCharacter, currentInterfaceLanguage() === "Korean" ? 105 : 78);
+      const delay = characterIndex === pauseAfterCharacter ? 2000 : characterDelay;
+      entryTypewriterTimer = window.setTimeout(typeNextCharacter, delay);
       return;
     }
     entryTypewriter.classList.remove("typing");
