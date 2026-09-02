@@ -104,11 +104,10 @@
   .legend-grid{ margin-top:20px; display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); }
   .legend-row{ background:var(--paper); padding:10px 12px; display:flex; align-items:center; gap:10px; }
   .legend-tile{
-    width:30px; height:30px; flex:none; display:flex; align-items:center; justify-content:center;
-    font-size:1.05rem; color:var(--on-strong);
+    width:42px; height:42px; flex:none; display:flex; align-items:center; justify-content:center;
+    overflow:hidden; border-radius:50%; background:var(--accent);
   }
-  .legend-tile.g{ background:var(--goryeo); }
-  .legend-tile.m{ background:var(--jinsa); }
+  .legend-tile img{ display:block; width:92%; height:92%; object-fit:contain; filter:drop-shadow(0 1px 1px rgba(0,0,0,.3)); }
   .legend-text{ font-size:0.84rem; }
   .legend-text .role{ display:block; color:var(--ink-faint); font-size:0.72rem; margin-top:1px; }
   .queen-note{ margin-top:12px; font-size:0.8rem; color:var(--ink-faint); }
@@ -181,14 +180,17 @@
   .sq.flash{ animation:flashSq .8s ease; }
   @keyframes flashSq{ 0%{ box-shadow:inset 0 0 0 40px var(--accent); } 100%{ box-shadow:inset 0 0 0 40px transparent; } }
 
-  .piece{ width:82%; height:82%; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  .piece .glyph{ font-size:clamp(1.1rem,4.6vw,1.65rem); color:#fff; line-height:1; }
+  .piece{ width:92%; height:92%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent !important; }
+  .piece .art{ display:block; width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 1px 1px rgba(0,0,0,.32)); }
+  .piece .glyph{ display:none; }
   .piece .tag-chip{
-    margin-top:2px; font-size:clamp(0.5rem,1.6vw,0.62rem); font-weight:700; color:#fff;
-    padding:0 3px; line-height:1.3; text-align:center; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    display:none;
   }
-  .piece.w{ background:var(--goryeo); }
-  .piece.b{ background:var(--jinsa); }
+
+  .scene-illustration{
+    display:block; width:100%; aspect-ratio:16/9; object-fit:cover; margin:16px 0 0;
+    border:1px solid var(--border); border-radius:8px;
+  }
 
   .board-controls{ display:flex; flex-wrap:wrap; gap:16px; margin-top:16px; justify-content:center; }
   .btn{
@@ -265,7 +267,7 @@
     <p class="sub">1232년 12월, 둘레 350m가 채 안 되는 작은 토성 하나가 몽골 제국의 남하를 멈춰 세웠다. 다섯 장면의 체스 퍼즐로 그날의 처인성을 되짚는다.</p>
     <div class="draft-note">
       <span>⚑</span>
-      <span><b>감수 전 초안.</b> 전투 사실관계와 아래 재구성 장면은 아직 용인문화원 사학자분들의 확인을 거치지 않았습니다. 기물 그림은 실제 캐릭터 아트가 나오기 전까지 자리표시자(placeholder)입니다.</span>
+      <span><b>감수 전 초안.</b> 전투 사실관계와 아래 재구성 장면은 아직 용인문화원 사학자분들의 확인을 거치지 않았습니다.</span>
     </div>
   </section>
 
@@ -275,17 +277,17 @@
     <p>그 남하의 끝에서 몽골군은 작은 부곡 마을, 처인에 다다른다. 처인부곡은 당시 신분이 낮은 사람들이 모여 살던 곳이었고, 지키는 것은 정규군이 아니라 승병 김윤후와 부곡의 백성들이었다.</p>
 
     <div class="legend-grid">
-      <div class="legend-row"><div class="legend-tile g">♟</div><div class="legend-text">백성<span class="role">폰 · 처인부곡의 백성들</span></div></div>
-      <div class="legend-row"><div class="legend-tile m">♟</div><div class="legend-text">병졸<span class="role">폰 · 몽골 보병</span></div></div>
-      <div class="legend-row"><div class="legend-tile g">♞</div><div class="legend-text">말<span class="role">나이트 · 양측 기병</span></div></div>
-      <div class="legend-row"><div class="legend-tile g">♝</div><div class="legend-text">승병<span class="role">비숍 · 백현원 승병</span></div></div>
-      <div class="legend-row"><div class="legend-tile m">♝</div><div class="legend-text">샤먼·책사<span class="role">비숍 · 몽골측 조언자</span></div></div>
-      <div class="legend-row"><div class="legend-tile g">♜</div><div class="legend-text">처인성 성벽<span class="role">룩 · 방어 진지</span></div></div>
-      <div class="legend-row"><div class="legend-tile m">♜</div><div class="legend-text">몽골 공성탑<span class="role">룩 · 공성 장비</span></div></div>
-      <div class="legend-row"><div class="legend-tile g">♚</div><div class="legend-text">김윤후<span class="role">킹 · 처인성 지휘</span></div></div>
-      <div class="legend-row"><div class="legend-tile m">♚</div><div class="legend-text">살리타이<span class="role">킹 · 몽골군 원수</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/goryeo-people-pawn.png" alt=""></div><div class="legend-text">백성<span class="role">폰 · 처인부곡의 백성들</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/mongol-infantry-pawn.png" alt=""></div><div class="legend-text">병졸<span class="role">폰 · 몽골 보병</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/goryeo-cavalry-knight.png" alt=""></div><div class="legend-text">말<span class="role">나이트 · 양측 기병</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png" alt=""></div><div class="legend-text">승병<span class="role">비숍 · 백현원 승병</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/mongol-adviser-bishop.png" alt=""></div><div class="legend-text">샤먼·책사<span class="role">비숍 · 몽골측 조언자</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png" alt=""></div><div class="legend-text">처인성 성벽<span class="role">룩 · 방어 진지</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/mongol-siege-tower-rook.png" alt=""></div><div class="legend-text">몽골 공성탑<span class="role">룩 · 공성 장비</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/goryeo-king.png" alt=""></div><div class="legend-text">김윤후<span class="role">킹 · 처인성 지휘</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/mongol-sartaq-king.png" alt=""></div><div class="legend-text">살리타이<span class="role">킹 · 몽골군 원수</span></div></div>
     </div>
-    <p class="queen-note">※ 퀸은 아직 처인성 테마로 재해석되지 않아 이번 시리즈에는 등장하지 않습니다. 기물 그림은 실제 아트가 준비되기 전까지 자리표시자입니다.</p>
+    <p class="queen-note">※ 퀸은 아직 처인성 테마로 재해석되지 않아 이번 시리즈에는 등장하지 않습니다.</p>
   </section>
 
   <div class="path" id="pathNav"></div>
@@ -334,6 +336,25 @@
   var GLYPH = { P:'♟', N:'♞', B:'♝', R:'♜', K:'♚' };
   var LABEL = { wP:tx('백성'), wN:tx('말'), wB:tx('승병'), wR:tx('처인성 성벽'), wK:tx('김윤후'),
                 bP:tx('병졸'), bN:tx('말'), bB:tx('샤먼'), bR:tx('공성탑'), bK:tx('살리타이') };
+  var PIECE_ART = {
+    wP:'/assets/cheoinseong/pieces/goryeo-people-pawn.png',
+    wN:'/assets/cheoinseong/pieces/goryeo-cavalry-knight.png',
+    wB:'/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png',
+    wR:'/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png',
+    wK:'/assets/cheoinseong/pieces/goryeo-king.png',
+    bP:'/assets/cheoinseong/pieces/mongol-infantry-pawn.png',
+    bN:'/assets/cheoinseong/pieces/mongol-cavalry-knight.png',
+    bB:'/assets/cheoinseong/pieces/mongol-adviser-bishop.png',
+    bR:'/assets/cheoinseong/pieces/mongol-siege-tower-rook.png',
+    bK:'/assets/cheoinseong/pieces/mongol-sartaq-king.png'
+  };
+  var SCENE_ART = [
+    '/assets/cheoinseong/illustrations/scene-1-people-defend.png',
+    '/assets/cheoinseong/illustrations/scene-2-cavalry-encircle.png',
+    '/assets/cheoinseong/illustrations/scene-3-monk-soldiers.png',
+    '/assets/cheoinseong/illustrations/scene-4-wall-holds.png',
+    '/assets/cheoinseong/illustrations/scene-5-last-arrow.png'
+  ];
 
   function inb(r,c){ return r>=0 && r<8 && c>=0 && c<8; }
   function color(p){ return p ? p[0] : null; }
@@ -557,7 +578,7 @@
     document.querySelector('.hero .eyebrow').textContent='Training · Cheoinseong Cultural Festival Special Chapter';
     document.querySelector('.hero h1').textContent='The Last Arrow of Cheoinseong';
     document.querySelector('.hero .sub').textContent='In December 1232, a small earthen fortress less than 350 meters around halted the Mongol Empire’s southward advance. Revisit Cheoinseong through five chess-puzzle scenes.';
-    document.querySelector('.draft-note span:last-child').innerHTML='<b>Draft pending review.</b> The battle facts and reconstructed scenes have not yet been reviewed by historians at the Yongin Cultural Center. Piece graphics are placeholders until final character art is available.';
+    document.querySelector('.draft-note span:last-child').innerHTML='<b>Draft pending review.</b> The battle facts and reconstructed scenes have not yet been reviewed by historians at the Yongin Cultural Center.';
     var historySection=document.querySelector('.section');
     historySection.querySelector('h2').textContent='Background · August–December 1232';
     var historyParagraphs=historySection.querySelectorAll(':scope > p');
@@ -565,7 +586,7 @@
     historyParagraphs[1].textContent='At the end of that advance, the Mongol army reached Cheoin, a small Bugok settlement. Its people held low social status, and the settlement was defended not by the royal army but by the monk soldier Kim Yun-hu and local residents.';
     var legendCopy=[['People','Pawn · people of Cheoin Bugok'],['Infantry','Pawn · Mongol infantry'],['Cavalry','Knight · cavalry on both sides'],['Monk Soldier','Bishop · Baekhyeonwon fighters'],['Shaman / Adviser','Bishop · Mongol adviser'],['Cheoinseong Wall','Rook · defensive position'],['Mongol Siege Tower','Rook · siege equipment'],['Kim Yun-hu','King · Cheoinseong command'],['Sartaq','King · Mongol commander']];
     historySection.querySelectorAll('.legend-text').forEach(function(el,index){ el.innerHTML=legendCopy[index][0]+'<span class="role">'+legendCopy[index][1]+'</span>'; });
-    historySection.querySelector('.queen-note').textContent='The queen does not appear in this series because it has not yet been reinterpreted for the Cheoinseong theme. Piece graphics remain placeholders until final art is ready.';
+    historySection.querySelector('.queen-note').textContent='The queen does not appear in this series because it has not yet been reinterpreted for the Cheoinseong theme.';
     var epilogue=document.querySelector('.epilogue');
     epilogue.querySelector('h2').textContent='Afterward';
     var epilogueParagraphs=epilogue.querySelectorAll('p');
@@ -651,6 +672,13 @@
       p.textContent = txt;
       narrativeCol.appendChild(p);
     });
+    var illustration = document.createElement('img');
+    illustration.className = 'scene-illustration';
+    illustration.src = SCENE_ART[idx];
+    illustration.alt = language==='en' ? 'Illustration for Cheoinseong puzzle scene ' + (idx + 1) : '처인성 퍼즐 장면 ' + (idx + 1) + ' 일러스트';
+    illustration.loading = 'lazy';
+    illustration.decoding = 'async';
+    narrativeCol.appendChild(illustration);
     var promptEl = document.createElement('div');
     promptEl.className = 'prompt-banner';
     promptEl.textContent = puzzle.prompt;
@@ -790,13 +818,15 @@
             var pc = document.createElement('div');
             pc.className = 'piece ' + p[0];
             pc.title = LABEL[p];
-            var glyphEl = document.createElement('div');
-            glyphEl.className = 'glyph';
-            glyphEl.textContent = GLYPH[p[1]];
+            var artEl = document.createElement('img');
+            artEl.className = 'art';
+            artEl.src = PIECE_ART[p];
+            artEl.alt = LABEL[p];
+            artEl.decoding = 'async';
             var tagEl2 = document.createElement('div');
             tagEl2.className = 'tag-chip';
             tagEl2.textContent = LABEL[p];
-            pc.appendChild(glyphEl);
+            pc.appendChild(artEl);
             pc.appendChild(tagEl2);
             sq.appendChild(pc);
           }

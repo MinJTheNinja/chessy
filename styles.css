@@ -2968,6 +2968,13 @@ body.piece-theme-beta .chess-board {
   object-fit: contain;
 }
 
+.cheoinseong-piece-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .piece-edition-original.white-piece .original-piece-image {
   filter: drop-shadow(0 2px 1px rgba(32, 52, 72, 0.28));
 }
@@ -8147,8 +8154,8 @@ button[aria-pressed="true"]:not(.training-path-node) {
 #cheoinseongPathList::before {
   background-image: url("/assets/cheoinseong-path-watermark-v1.png");
   background-position: 50% 48%;
-  background-size: min(62%, 520px) auto;
-  opacity: 0.1;
+  background-size: min(70%, 620px) auto;
+  opacity: 0.22;
 }
 
 #trainingModuleList > *,
@@ -8690,15 +8697,18 @@ body.is-signed-in .workspace .home-league-actions #createLeagueButton:focus-visi
 .cheoinseong-stage-icon {
   width: 54px;
   height: 54px;
-  background-image: url("/assets/cheoinseong-stage-icons-v3.png");
-  background-size: 300% 200%;
+  border-radius: 50%;
+  background-color: var(--theme-accent);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 78%;
 }
 
-.cheoinseong-stage-icon-1 { background-position: 0 0; }
-.cheoinseong-stage-icon-2 { background-position: 50% 0; }
-.cheoinseong-stage-icon-3 { background-position: 100% 0; }
-.cheoinseong-stage-icon-4 { background-position: 0 100%; }
-.cheoinseong-stage-icon-5 { background-position: 50% 100%; }
+.cheoinseong-stage-icon-1 { background-image: url("/assets/cheoinseong/pieces/goryeo-people-pawn.png"); }
+.cheoinseong-stage-icon-2 { background-image: url("/assets/cheoinseong/pieces/goryeo-cavalry-knight.png"); }
+.cheoinseong-stage-icon-3 { background-image: url("/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png"); }
+.cheoinseong-stage-icon-4 { background-image: url("/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png"); }
+.cheoinseong-stage-icon-5 { background-image: url("/assets/cheoinseong/pieces/goryeo-king.png"); }
 }
 
 .puzzle-stage-glyph {

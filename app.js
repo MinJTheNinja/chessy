@@ -977,6 +977,21 @@ function betaPieceSvg(pieceCode) {
 function cheoinseongPieceSvg(pieceCode) {
   const color = pieceCode?.[0] === "w" ? "white" : "black";
   const type = pieceCode?.[1] || "p";
+  const assets = {
+    wp: "/assets/cheoinseong/pieces/goryeo-people-pawn.png",
+    wn: "/assets/cheoinseong/pieces/goryeo-cavalry-knight.png",
+    wb: "/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png",
+    wr: "/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png",
+    wk: "/assets/cheoinseong/pieces/goryeo-king.png",
+    bp: "/assets/cheoinseong/pieces/mongol-infantry-pawn.png",
+    bn: "/assets/cheoinseong/pieces/mongol-cavalry-knight.png",
+    bb: "/assets/cheoinseong/pieces/mongol-adviser-bishop.png",
+    br: "/assets/cheoinseong/pieces/mongol-siege-tower-rook.png",
+    bk: "/assets/cheoinseong/pieces/mongol-sartaq-king.png",
+  };
+  const asset = assets[pieceCode] || assets.wp;
+  return `<img class="cheoinseong-piece-image cheoinseong-piece-${type}" src="${asset}" alt="${pieceEditionNames.cheoinseong} ${color} ${pieceNames[type] || "piece"}" decoding="async">`;
+
   const goryeo = color === "white";
   const fill = goryeo ? "#f4ead5" : "#4b241b";
   const robe = goryeo ? "#7b9276" : "#7f3228";
