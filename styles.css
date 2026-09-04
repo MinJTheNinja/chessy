@@ -7378,8 +7378,8 @@ body.is-signed-in .workspace .button.primary:focus-visible {
 }
 
 .league-mode-toggle {
-  display: inline-grid;
-  grid-template-columns: repeat(2, auto);
+  display: inline-flex;
+  flex-wrap: wrap;
   justify-self: start;
   gap: 16px;
   border: 0;
@@ -7403,6 +7403,16 @@ body.is-signed-in .workspace .button.primary:focus-visible {
   border-bottom-color: var(--theme-accent);
   background: transparent;
   color: var(--ink);
+}
+
+#leaveLeagueButton {
+  color: var(--em-danger);
+}
+
+#leaveLeagueButton:hover,
+#leaveLeagueButton:focus-visible {
+  border-bottom-color: var(--em-danger);
+  color: var(--em-danger);
 }
 
 .league-action-panel {

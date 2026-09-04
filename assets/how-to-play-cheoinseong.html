@@ -424,7 +424,7 @@ body{background-image:none!important}
 </div>
 <script>
 /* 고려 vs 몽골 — 치비 기물 원화 (전 기물 원화) */
-const pieceArt=(name)=>`<img alt="" src="/assets/tutorial-pieces/${name}.png?v=20260904-board-grounding" loading="eager" decoding="async">`;
+const pieceArt=(name)=>`<img alt="" src="/assets/tutorial-pieces/${name}.webp?v=20260905-webp" loading="eager" fetchpriority="high" decoding="async">`;
 const tutorialLanguage=new URLSearchParams(window.location.search).get('lang')==='en'?'en':'ko';
 const isEnglish=tutorialLanguage==='en';
 document.documentElement.lang=tutorialLanguage;
@@ -640,10 +640,9 @@ function moduleProgressCount(scene){
   return progressCount(MODULE_END_SCENE-MODULE_START_SCENE+1,scene-MODULE_START_SCENE);
 }
 
-function render(){
-  cancelSceneTypewriters();
-  if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; }
-  const s = state.scene;
+const sceneImagePreloads=new Map();
+
+function sceneHtml(s){
   let html='';
   if(s===REVIEW_SCENE) html = reviewScene();
   else if(s===MODULE_DONE_SCENE) html = moduleDoneScene();
@@ -656,12 +655,55 @@ function render(){
   else if(s>=CHECKMATE_START_SCENE && s<RECAP_SCENE) html = checkmateScene(CHECKMATE_LESSONS[s-CHECKMATE_START_SCENE], s-CHECKMATE_START_SCENE);
   else if(s===RECAP_SCENE) html = recapScene();
   else html = moduleDoneScene();
-  root.innerHTML = `<div class="scene active">${html}</div>`;
+  return html;
+}
+
+function nextSceneForPreload(s){
+  if(s===REVIEW_SCENE || s===MODULE_DONE_SCENE) return null;
+  return s===MODULE_END_SCENE ? MODULE_DONE_SCENE : s+1;
+}
+
+function preloadSceneImages(s){
+  if(s===null) return;
+  const template=document.createElement('template');
+  template.innerHTML=sceneHtml(s);
+  template.content.querySelectorAll('img[src]').forEach((element)=>{
+    const url=new URL(element.getAttribute('src'),window.location.href).href;
+    if(sceneImagePreloads.has(url)) return;
+    const image=new Image();
+    image.decoding='async';
+    image.fetchPriority='low';
+    image.src=url;
+    sceneImagePreloads.set(url,image);
+  });
+}
+
+function queueNextScenePreload(s){
+  const currentImages=Array.from(root.querySelectorAll('img[src]'));
+  const ready=currentImages.map((image)=>image.complete
+    ? Promise.resolve()
+    : new Promise((resolve)=>{
+        image.addEventListener('load',resolve,{once:true});
+        image.addEventListener('error',resolve,{once:true});
+      }));
+  Promise.allSettled(ready).then(()=>{
+    if(state.scene!==s) return;
+    const run=()=>preloadSceneImages(nextSceneForPreload(s));
+    if('requestIdleCallback' in window) window.requestIdleCallback(run,{timeout:800});
+    else window.setTimeout(run,120);
+  });
+}
+
+function render(){
+  cancelSceneTypewriters();
+  if(countdownTimer){ clearInterval(countdownTimer); countdownTimer=null; }
+  const s = state.scene;
+  root.innerHTML = `<div class="scene active">${sceneHtml(s)}</div>`;
   bindScene();
   beginStoryIntro();
   runSceneTypewriters();
+  queueNextScenePreload(s);
 }
-
 function beginStoryIntro(){
   const scene=root.querySelector('.scene');
   const board=scene?.querySelector('.board-wrap');

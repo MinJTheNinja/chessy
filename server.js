@@ -82,6 +82,7 @@ const contentTypes = {
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".png": "image/png",
+  ".webp": "image/webp",
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
   ".svg": "image/svg+xml",
@@ -2036,6 +2037,21 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     return true;
   }
 
+  if (req.method === "POST" && pathname === "/api/leagues/leave") {
+    if (!requireUser(user, res)) return true;
+    const code = String(user.leagueCode || "").trim().toUpperCase();
+    if (!code) {
+      sendJson(res, 409, { error: "You are not currently in a league." });
+      return true;
+    }
+    user.leagueCode = "";
+    user.leagueJoined = false;
+    delete user.weeklyEasyElo;
+    await writeDb(db);
+    sendJson(res, 200, { leftLeagueCode: code, user: publicUser(user) });
+    return true;
+  }
+
   if (req.method === "PUT" && pathname === "/api/profile") {
     if (!requireUser(user, res)) return true;
     const body = await readBody(req);
@@ -3297,7 +3313,7 @@ function serveStatic(req, res, pathname) {
       etag,
     };
     if (compressibleExtensions.has(extension)) responseHeaders.vary = "Accept-Encoding";
-    if (requested.startsWith("/assets/tutorial-pieces/") || /-v\d+\.[a-z0-9]+$/i.test(requested)) {
+    if (requested.startsWith("/assets/tutorial-pieces/") || requested.startsWith("/assets/original-chess-pieces-v1/") || /-v\d+\.[a-z0-9]+$/i.test(requested)) {
       responseHeaders["cache-control"] = "public, max-age=31536000, immutable";
     } else if (requested === "/index.html" || requested === "/app.js" || requested === "/styles.css" || extension === ".html") {
       responseHeaders["cache-control"] = "no-cache, must-revalidate";

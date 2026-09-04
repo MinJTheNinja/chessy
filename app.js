@@ -138,6 +138,7 @@ const leaderboardButtons = document.querySelectorAll("[data-leaderboard-period]"
 const leaderboardScopeButtons = document.querySelectorAll("[data-leaderboard-scope]");
 const leagueCodeInput = document.querySelector("#leagueCodeInput");
 const joinLeagueButton = document.querySelector("#joinLeagueButton");
+const leaveLeagueButton = document.querySelector("#leaveLeagueButton");
 const createLeagueButton = document.querySelector("#createLeagueButton");
 const leagueStatus = document.querySelector("#leagueStatus");
 const leagueActionButtons = document.querySelectorAll("[data-league-action]");
@@ -879,6 +880,7 @@ function syncLocalizedControls() {
   setText(document.querySelector('[data-league-action="join"]'), korean ? "참여하기" : "Join");
   setText(document.querySelector('[data-league-action="create"]'), korean ? "리그 만들기" : "Create league");
   setText(joinLeagueButton, korean ? "참여" : "Join");
+  setText(leaveLeagueButton, korean ? "나가기" : "Leave");
   setText(createLeagueButton, korean ? "코드 생성" : "Generate code");
   closeLeagueActionPopoverButton?.setAttribute("aria-label", korean ? "리그 코드 창 닫기" : "Close league code dialog");
   setText(mainTutorialButton, korean ? "훈련장으로 가기" : "Go to training");
@@ -1027,7 +1029,7 @@ function cheoinseongPieceSvg(pieceCode) {
 function originalPieceSprite(pieceCode) {
   const color = pieceCode?.[0] === "w" ? "white" : "black";
   const type = pieceCode?.[1] || "p";
-  return `<img class="original-piece-image original-piece-${type}" src="/assets/original-chess-pieces-v1/${type}.png" alt="${pieceEditionNames.original} ${color} ${pieceNames[type] || "piece"}" decoding="async">`;
+  return `<img class="original-piece-image original-piece-${type}" src="/assets/original-chess-pieces-v1/${type}.webp?v=20260905-webp" alt="${pieceEditionNames.original} ${color} ${pieceNames[type] || "piece"}" decoding="async">`;
 }
 
 function pieceSvg(pieceCode, edition = "beta") {
@@ -2124,10 +2126,10 @@ const trainingModuleDescriptions = {
 };
 
 const trainingModuleArt = {
-  1: { src: "/assets/tutorial-pieces/g_pawn.png?v=20260904-board-grounding", alt: "고려 꼬마 창병" },
-  2: { src: "/assets/tutorial-pieces/g_bishop.png?v=20260904-board-grounding", alt: "고려 승병" },
-  3: { src: "/assets/tutorial-pieces/g_king.png?v=20260904-board-grounding", alt: "고려 임금님" },
-  4: { src: "/assets/tutorial-pieces/g_knight.png?v=20260904-board-grounding", alt: "고려 백마 기수" },
+  1: { src: "/assets/tutorial-pieces/g_pawn.webp?v=20260905-webp", alt: "고려 꼬마 창병" },
+  2: { src: "/assets/tutorial-pieces/g_bishop.webp?v=20260905-webp", alt: "고려 승병" },
+  3: { src: "/assets/tutorial-pieces/g_king.webp?v=20260905-webp", alt: "고려 임금님" },
+  4: { src: "/assets/tutorial-pieces/g_knight.webp?v=20260905-webp", alt: "고려 백마 기수" },
 };
 
 function activeTrainingEdition() {
@@ -5438,6 +5440,8 @@ function currentLeagueCode() {
 function renderLeagueAction() {
   const korean = currentInterfaceLanguage() === "Korean";
   const popoverOpen = leagueActionMode === "join" || leagueActionMode === "create";
+  const hasLeague = Boolean(currentLeagueCode());
+  if (leaveLeagueButton) leaveLeagueButton.hidden = !hasLeague;
   if (leagueActionPopover) leagueActionPopover.hidden = !popoverOpen;
   leagueActionButtons.forEach((button) => {
     button.classList.remove("active");
@@ -5490,6 +5494,35 @@ async function joinLeague() {
     renderAuthState();
     setLeagueActionMode(null);
     if (leagueStatus) leagueStatus.textContent = `참여 완료: ${data.league.code}`;
+  } catch (error) {
+    if (leagueStatus) leagueStatus.textContent = error.message;
+  }
+}
+
+async function leaveLeague() {
+  const code = currentLeagueCode();
+  if (!currentUser || !code) {
+    renderLeagueAction();
+    return;
+  }
+  const korean = currentInterfaceLanguage() === "Korean";
+  const confirmed = window.confirm(
+    korean
+      ? `리그 ${code}에서 나갈까요? 다시 참여하려면 초대 코드가 필요합니다.`
+      : `Leave league ${code}? You will need an invite code to join again.`,
+  );
+  if (!confirmed) return;
+  try {
+    if (leagueStatus) leagueStatus.textContent = korean ? "리그에서 나가는 중..." : "Leaving league...";
+    const data = await api("/api/leagues/leave", { method: "POST" });
+    currentUser = data.user;
+    if (leagueCodeInput) leagueCodeInput.value = "";
+    leagueActionMode = null;
+    leaderboardPage = 0;
+    renderDashboardSummary();
+    renderAuthState();
+    await refreshLeaderboard();
+    if (leagueStatus) leagueStatus.textContent = korean ? "리그에서 나왔습니다." : "You left the league.";
   } catch (error) {
     if (leagueStatus) leagueStatus.textContent = error.message;
   }
@@ -6663,6 +6696,7 @@ profileImageFile?.addEventListener("change", () => uploadProfileImage(profileIma
 submitPeerFeedbackButton?.addEventListener("click", submitPeerFeedback);
 saveCultureGuideButton?.addEventListener("click", saveCultureGuide);
 joinLeagueButton?.addEventListener("click", joinLeague);
+leaveLeagueButton?.addEventListener("click", leaveLeague);
 createLeagueButton?.addEventListener("click", createLeague);
 leagueActionButtons.forEach((button) => {
   button.addEventListener("click", () => setLeagueActionMode(button.dataset.leagueAction));
