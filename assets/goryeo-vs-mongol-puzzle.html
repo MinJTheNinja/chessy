@@ -250,18 +250,10 @@ h1,h2,h3,h4,.jua,.lv-btn,.pz-card-title,.pz-title,.turn-banner,.win-card h2{font
 .pz-top .reset:active,.pz-top .mute2:active{transform:none;box-shadow:none}
 .turn-banner{border-radius:0;background:#fffdf7;border-width:1px}
 
-/* Shared EasyMate chess wallpaper. */
-body,body.home-mode{
-  background-color:#fff;
-  background-image:url('/assets/chess-line-wallpaper-v1.png');
-  background-repeat:repeat;
-  background-position:0 0;
-  background-size:940px 940px;
-  background-attachment:fixed;
-}
-#app,.screen,.home{background-color:transparent}
+/* The training shell owns the shared wallpaper so the iframe reads as one page. */
+html,body,body.home-mode,#app,.screen,.home{background:transparent!important}
+body,body.home-mode{background-image:none!important}
 .scenery{display:none!important}
-@media (max-width:680px){body,body.home-mode{background-size:720px 720px;background-attachment:scroll}}
 .banner-tag{border-radius:0;box-shadow:none}
 .win-card{border-radius:0;box-shadow:0 18px 50px rgba(31,51,72,.22)}
 .win-btns button{border-radius:0;box-shadow:none}

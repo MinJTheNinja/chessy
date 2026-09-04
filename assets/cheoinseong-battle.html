@@ -48,15 +48,7 @@
     line-height:1.65;
     font-size:16px;
   }
-  body{
-    background-color:#fff;
-    background-image:url('/assets/chess-line-wallpaper-v1.png');
-    background-repeat:repeat;
-    background-position:0 0;
-    background-size:940px 940px;
-    background-attachment:fixed;
-  }
-  @media (max-width:680px){body{background-size:720px 720px;background-attachment:scroll}}
+  html,body{ background:transparent; }
   h1,h2,h3{ margin:0; font-weight:900; letter-spacing:0; text-wrap:balance; }
   a{ color:var(--accent); }
   .num{ font-variant-numeric:tabular-nums; }
@@ -180,8 +172,13 @@
   .sq.flash{ animation:flashSq .8s ease; }
   @keyframes flashSq{ 0%{ box-shadow:inset 0 0 0 40px var(--accent); } 100%{ box-shadow:inset 0 0 0 40px transparent; } }
 
-  .piece{ width:92%; height:92%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent !important; }
-  .piece .art{ display:block; width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 1px 1px rgba(0,0,0,.32)); }
+  .piece{ position:relative; width:96%; height:96%; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; background:transparent !important; transform:translateY(4%); }
+  .piece::before{ content:''; position:absolute; z-index:0; left:24%; right:24%; bottom:4%; height:10%; border-radius:50%; background:radial-gradient(ellipse at center,rgba(32,52,72,.22) 0%,rgba(32,52,72,.1) 52%,rgba(32,52,72,0) 76%); filter:blur(1px); pointer-events:none; }
+  .piece .art{ position:relative; z-index:1; display:block; width:100%; height:100%; object-fit:contain; object-position:center bottom; transform:scale(.94); transform-origin:center bottom; filter:drop-shadow(0 1px 1px rgba(32,52,72,.18)); }
+  .piece-r .art{ clip-path:inset(0 0 30% 0); transform:translateY(18%) scale(1.1); }
+  .piece-p .art,.piece-k .art{ transform:translateY(2%) scale(.98); }
+  .piece-n .art{ transform:translateY(2%) scale(.96); }
+  .piece-b .art{ transform:translateY(3%) scale(1.08); }
   .piece .glyph{ display:none; }
   .piece .tag-chip{
     display:none;
@@ -242,8 +239,12 @@
   body.direct-mode .scene-body{ grid-template-columns:minmax(0,1fr) minmax(340px,420px); }
 
   @media (max-width:740px){
-    body.direct-mode .wrap{ padding-inline:14px; }
-    body.direct-mode .scene-body{ grid-template-columns:1fr; gap:24px; }
+    body.direct-mode{ overflow-x:hidden; }
+    body.direct-mode .wrap{ width:100%; padding-inline:14px; }
+    body.direct-mode .scene-body{ width:100%; min-width:0; grid-template-columns:minmax(0,1fr); gap:24px; }
+    body.direct-mode .narrative,body.direct-mode .board-wrap{ width:100%; min-width:0; }
+    body.direct-mode .board-frame{ width:min(100%,380px); }
+    body.direct-mode .scene-illustration{ max-width:100%; }
   }
 
   @media (prefers-reduced-motion: reduce){ .sq.flash{ animation:none; } }
@@ -337,23 +338,23 @@
   var LABEL = { wP:tx('백성'), wN:tx('말'), wB:tx('승병'), wR:tx('처인성 성벽'), wK:tx('김윤후'),
                 bP:tx('병졸'), bN:tx('말'), bB:tx('샤먼'), bR:tx('공성탑'), bK:tx('살리타이') };
   var PIECE_ART = {
-    wP:'/assets/cheoinseong/pieces/goryeo-people-pawn.png',
-    wN:'/assets/cheoinseong/pieces/goryeo-cavalry-knight.png',
-    wB:'/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png',
-    wR:'/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png',
-    wK:'/assets/cheoinseong/pieces/goryeo-king.png',
-    bP:'/assets/cheoinseong/pieces/mongol-infantry-pawn.png?v=20260903-wolf',
-    bN:'/assets/cheoinseong/pieces/mongol-cavalry-knight.png?v=20260903-wolf',
-    bB:'/assets/cheoinseong/pieces/mongol-adviser-bishop.png?v=20260903-wolf',
-    bR:'/assets/cheoinseong/pieces/mongol-siege-tower-rook.png?v=20260903-wolf',
-    bK:'/assets/cheoinseong/pieces/mongol-salitai-king-v2.png'
+    wP:'/assets/cheoinseong/pieces/goryeo-people-pawn.png?v=20260904-board-grounding',
+    wN:'/assets/cheoinseong/pieces/goryeo-cavalry-knight.png?v=20260904-board-grounding',
+    wB:'/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png?v=20260904-board-grounding',
+    wR:'/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png?v=20260904-board-grounding',
+    wK:'/assets/cheoinseong/pieces/goryeo-king.png?v=20260904-board-grounding',
+    bP:'/assets/cheoinseong/pieces/mongol-infantry-pawn.png?v=20260904-board-grounding',
+    bN:'/assets/cheoinseong/pieces/mongol-cavalry-knight.png?v=20260904-board-grounding',
+    bB:'/assets/cheoinseong/pieces/mongol-adviser-bishop.png?v=20260904-board-grounding',
+    bR:'/assets/cheoinseong/pieces/mongol-siege-tower-rook.png?v=20260904-board-grounding',
+    bK:'/assets/cheoinseong/pieces/mongol-salitai-king-v2.png?v=20260904-board-grounding'
   };
   var SCENE_ART = [
-    '/assets/cheoinseong/illustrations/scene-1-people-defend.png',
-    '/assets/cheoinseong/illustrations/scene-2-cavalry-encircle.png',
-    '/assets/cheoinseong/illustrations/scene-3-monk-soldiers.png',
-    '/assets/cheoinseong/illustrations/scene-4-wall-holds.png',
-    '/assets/cheoinseong/illustrations/scene-5-last-arrow.png'
+    '/assets/cheoinseong/illustrations/scene-1-people-defend.png?v=20260904-mascot',
+    '/assets/cheoinseong/illustrations/scene-2-cavalry-encircle.png?v=20260904-mascot',
+    '/assets/cheoinseong/illustrations/scene-3-monk-soldiers.png?v=20260904-mascot',
+    '/assets/cheoinseong/illustrations/scene-4-wall-holds.png?v=20260904-mascot',
+    '/assets/cheoinseong/illustrations/scene-5-last-arrow.png?v=20260904-mascot'
   ];
 
   function inb(r,c){ return r>=0 && r<8 && c>=0 && c<8; }
@@ -816,7 +817,7 @@
           var p = board[r][c];
           if(p){
             var pc = document.createElement('div');
-            pc.className = 'piece ' + p[0];
+            pc.className = 'piece ' + p[0] + ' piece-' + p[1].toLowerCase();
             pc.title = LABEL[p];
             var artEl = document.createElement('img');
             artEl.className = 'art';

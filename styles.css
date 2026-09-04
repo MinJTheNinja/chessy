@@ -1626,11 +1626,11 @@ body.auth-entry-open:not(.is-signed-in) .entry-auth {
 }
 
 .how-to-play-shell {
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: #fffcf5;
-  box-shadow: var(--shadow);
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .tutorial-gate-note {
@@ -1772,7 +1772,7 @@ body.auth-entry-open:not(.is-signed-in) .entry-auth {
   height: min(760px, calc(100vh - 190px));
   min-height: 700px;
   border: 0;
-  background: #fffcf5;
+  background: transparent;
 }
 
 .how-to-play-shell.puzzle-mode .how-to-play-frame {
@@ -8704,11 +8704,11 @@ body.is-signed-in .workspace .home-league-actions #createLeagueButton:focus-visi
   background-size: 78%;
 }
 
-.cheoinseong-stage-icon-1 { background-image: url("/assets/cheoinseong/pieces/goryeo-people-pawn.png"); }
-.cheoinseong-stage-icon-2 { background-image: url("/assets/cheoinseong/pieces/goryeo-cavalry-knight.png"); }
-.cheoinseong-stage-icon-3 { background-image: url("/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png"); }
-.cheoinseong-stage-icon-4 { background-image: url("/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png"); }
-.cheoinseong-stage-icon-5 { background-image: url("/assets/cheoinseong/pieces/goryeo-king.png"); }
+.cheoinseong-stage-icon-1 { background-image: url("/assets/cheoinseong/pieces/goryeo-people-pawn.png?v=20260904-board-grounding"); }
+.cheoinseong-stage-icon-2 { background-image: url("/assets/cheoinseong/pieces/goryeo-cavalry-knight.png?v=20260904-board-grounding"); }
+.cheoinseong-stage-icon-3 { background-image: url("/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png?v=20260904-board-grounding"); }
+.cheoinseong-stage-icon-4 { background-image: url("/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png?v=20260904-board-grounding"); }
+.cheoinseong-stage-icon-5 { background-image: url("/assets/cheoinseong/pieces/goryeo-king.png?v=20260904-board-grounding"); }
 }
 
 .puzzle-stage-glyph {

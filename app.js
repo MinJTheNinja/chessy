@@ -978,16 +978,16 @@ function cheoinseongPieceSvg(pieceCode) {
   const color = pieceCode?.[0] === "w" ? "white" : "black";
   const type = pieceCode?.[1] || "p";
   const assets = {
-    wp: "/assets/cheoinseong/pieces/goryeo-people-pawn.png",
-    wn: "/assets/cheoinseong/pieces/goryeo-cavalry-knight.png",
-    wb: "/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png",
-    wr: "/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png",
-    wk: "/assets/cheoinseong/pieces/goryeo-king.png",
-    bp: "/assets/cheoinseong/pieces/mongol-infantry-pawn.png",
-    bn: "/assets/cheoinseong/pieces/mongol-cavalry-knight.png",
-    bb: "/assets/cheoinseong/pieces/mongol-adviser-bishop.png",
-    br: "/assets/cheoinseong/pieces/mongol-siege-tower-rook.png",
-    bk: "/assets/cheoinseong/pieces/mongol-sartaq-king.png",
+    wp: "/assets/cheoinseong/pieces/goryeo-people-pawn.png?v=20260904-board-grounding",
+    wn: "/assets/cheoinseong/pieces/goryeo-cavalry-knight.png?v=20260904-board-grounding",
+    wb: "/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png?v=20260904-board-grounding",
+    wr: "/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png?v=20260904-board-grounding",
+    wk: "/assets/cheoinseong/pieces/goryeo-king.png?v=20260904-board-grounding",
+    bp: "/assets/cheoinseong/pieces/mongol-infantry-pawn.png?v=20260904-board-grounding",
+    bn: "/assets/cheoinseong/pieces/mongol-cavalry-knight.png?v=20260904-board-grounding",
+    bb: "/assets/cheoinseong/pieces/mongol-adviser-bishop.png?v=20260904-board-grounding",
+    br: "/assets/cheoinseong/pieces/mongol-siege-tower-rook.png?v=20260904-board-grounding",
+    bk: "/assets/cheoinseong/pieces/mongol-salitai-king-v2.png?v=20260904-board-grounding",
   };
   const asset = assets[pieceCode] || assets.wp;
   return `<img class="cheoinseong-piece-image cheoinseong-piece-${type}" src="${asset}" alt="${pieceEditionNames.cheoinseong} ${color} ${pieceNames[type] || "piece"}" decoding="async">`;
@@ -2100,7 +2100,7 @@ function localTrainingState() {
   return {
     hasTutorial: Boolean(nextModule),
     nextModule,
-    tutorialSrc: nextModule ? `/assets/how-to-play.html?module=${nextModule.id}&v=20260829-editorial-nav` : "",
+    tutorialSrc: nextModule ? `/assets/how-to-play.html?module=${nextModule.id}&v=20260904-continuous-page` : "",
     puzzleUnlocked: !nextModule,
     completedModules,
     completedPuzzles: [],
@@ -2122,10 +2122,10 @@ const trainingModuleDescriptions = {
 };
 
 const trainingModuleArt = {
-  1: { src: "/assets/tutorial-pieces/g_pawn.png", alt: "고려 꼬마 창병" },
-  2: { src: "/assets/tutorial-pieces/g_bishop.png", alt: "고려 승병" },
-  3: { src: "/assets/tutorial-pieces/g_king.png", alt: "고려 임금님" },
-  4: { src: "/assets/tutorial-pieces/g_knight.png", alt: "고려 백마 기수" },
+  1: { src: "/assets/tutorial-pieces/g_pawn.png?v=20260904-board-grounding", alt: "고려 꼬마 창병" },
+  2: { src: "/assets/tutorial-pieces/g_bishop.png?v=20260904-board-grounding", alt: "고려 승병" },
+  3: { src: "/assets/tutorial-pieces/g_king.png?v=20260904-board-grounding", alt: "고려 임금님" },
+  4: { src: "/assets/tutorial-pieces/g_knight.png?v=20260904-board-grounding", alt: "고려 백마 기수" },
 };
 
 const trainingStageIconNames = {
@@ -2743,7 +2743,7 @@ function openTrainingModule(moduleId) {
   trainingModuleToolbar?.removeAttribute("hidden");
   const korean = currentInterfaceLanguage() === "Korean";
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${korean ? "모듈" : "Module"} ${normalizedModuleId} · ${korean ? module.title : translateCopy(module.title)}`;
-  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&lang=${korean ? "ko" : "en"}&v=20260829-tutorial-fixes`;
+  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&lang=${korean ? "ko" : "en"}&v=20260904-continuous-page`;
   setActiveTrainingPathMode("tutorial");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -2763,7 +2763,7 @@ function openTrainingReview(moduleId) {
   trainingModuleToolbar?.removeAttribute("hidden");
   const korean = currentInterfaceLanguage() === "Korean";
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${korean ? "모듈" : "Module"} ${normalizedModuleId} · ${korean ? "복습 퀴즈" : "Review Quiz"}`;
-  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&review=1&lang=${korean ? "ko" : "en"}&v=20260829-tutorial-fixes`;
+  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&review=1&lang=${korean ? "ko" : "en"}&v=20260904-continuous-page`;
   setActiveTrainingPathMode("tutorial");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }

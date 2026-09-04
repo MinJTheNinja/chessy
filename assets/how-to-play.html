@@ -138,16 +138,21 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 .piece-token{
   position:absolute;width:20%;aspect-ratio:1;pointer-events:none;z-index:5;
   transition:left .45s cubic-bezier(.34,1.4,.64,1), top .45s cubic-bezier(.34,1.4,.64,1);
-  filter:drop-shadow(0 3px 2px rgba(0,0,0,.28));
+  display:flex;align-items:flex-end;justify-content:center;
 }
+.piece-token img{object-position:center bottom;transform:translateY(5%) scale(.94);transform-origin:center bottom;filter:drop-shadow(0 1px 1px rgba(32,52,72,.18))}
+.piece-token img[src*="_pawn.png"],.piece-token img[src*="_king.png"]{transform:translateY(6%) scale(.98)}
+.piece-token img[src*="_knight.png"]{transform:translateY(6%) scale(.96)}
+.piece-token img[src*="_bishop.png"]{transform:translateY(7%) scale(1.06)}
+.piece-token img[src*="g_rook.png"]{clip-path:inset(0 0 30% 0);transform:translateY(18%) scale(1.1)}
+.char-art img[src*="g_rook.png"]{clip-path:inset(0 0 30% 0);transform:translateY(14%) scale(1.08);transform-origin:center bottom}
 .piece-token::before{
-  content:"";position:absolute;left:15%;right:15%;bottom:1%;height:16%;border-radius:50%;z-index:-1;
-  background:radial-gradient(ellipse at center, rgba(62,92,148,.5) 0%, rgba(62,92,148,.24) 55%, rgba(62,92,148,0) 75%);
-  box-shadow:inset 0 0 0 2px rgba(62,92,148,.4);
+  content:"";position:absolute;left:24%;right:24%;bottom:2%;height:11%;border-radius:50%;z-index:-1;
+  background:radial-gradient(ellipse at center,rgba(32,52,72,.22) 0%,rgba(32,52,72,.1) 52%,rgba(32,52,72,0) 76%);
+  filter:blur(1px);
 }
 .enemy-token::before{
-  background:radial-gradient(ellipse at center, rgba(142,59,49,.5) 0%, rgba(142,59,49,.24) 55%, rgba(142,59,49,0) 75%);
-  box-shadow:inset 0 0 0 2px rgba(142,59,49,.45);
+  background:radial-gradient(ellipse at center,rgba(32,52,72,.22) 0%,rgba(32,52,72,.1) 52%,rgba(32,52,72,0) 76%);
 }
 .mission{text-align:center;font-family:var(--font-korean);font-size:15.5px;color:var(--noerok);margin-top:10px;min-height:24px}
 .mission.done{color:var(--jinsa)}
@@ -305,17 +310,9 @@ h1,h2,h3,h4,.jua,.title-label,.warrior-label,.lesson-board-label,.mission,.lesso
 }
 @media (prefers-reduced-motion:reduce){.lesson-piece-brief .speech.typewriter-active::after{display:none!important}}
 
-/* Shared EasyMate chess wallpaper. */
-body{
-  background-color:#fff;
-  background-image:url('/assets/chess-line-wallpaper-v1.png');
-  background-repeat:repeat;
-  background-position:0 0;
-  background-size:940px 940px;
-  background-attachment:fixed;
-}
-#app,.scene{background-color:transparent}
-@media (max-width:680px){body{background-size:720px 720px;background-attachment:scroll}}
+/* The training shell owns the shared wallpaper so the iframe reads as one page. */
+html,body,#app,.scene{background:transparent!important}
+body{background-image:none!important}
 
 /* Hallmark · tutorial navigation: one editorial row, numeric progress, square actions. */
 .nav,
@@ -425,7 +422,7 @@ body{
 </div>
 <script>
 /* 고려 vs 몽골 — 치비 기물 원화 (전 기물 원화) */
-const pieceArt=(name)=>`<img alt="" src="/assets/tutorial-pieces/${name}.png?v=20260903-wolf" loading="eager" decoding="async">`;
+const pieceArt=(name)=>`<img alt="" src="/assets/tutorial-pieces/${name}.png?v=20260904-board-grounding" loading="eager" decoding="async">`;
 const tutorialLanguage=new URLSearchParams(window.location.search).get('lang')==='en'?'en':'ko';
 const isEnglish=tutorialLanguage==='en';
 document.documentElement.lang=tutorialLanguage;
