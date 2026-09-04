@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>체스 기초 · 여섯 기물 · EasyMate</title>
+<title>고려 vs 몽골 · 여섯 용사 이야기 · EasyMate</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
@@ -407,8 +407,7 @@ body{background-image:none!important}
 .capture-case-card{border-top:2px solid var(--blue);padding:10px 8px;color:var(--meok);font-size:13px;font-weight:700;text-align:center}
 .capture-case-card.blocked{border-top-color:var(--red)}
 .review-status{display:flex;justify-content:center;gap:7px;margin:12px 0 4px;color:rgba(31,51,72,.55);font-size:13px;font-weight:700}
-.piece-art-original.black{filter:brightness(.2) contrast(1.18) drop-shadow(0 2px 1px rgba(247,240,223,.45))}
-.piece-art-original.white{filter:drop-shadow(0 2px 1px rgba(32,52,72,.24))}
+.review-credit{max-width:1160px;margin:18px auto 0;padding:12px 20px 4px;border-top:1px solid rgba(32,52,72,.18);color:rgba(32,52,72,.58);font-size:11px;line-height:1.6;text-align:center}
 @media (max-width:560px){
   .nav,
   .nav.lesson-nav{gap:8px;padding-top:16px}
@@ -421,18 +420,17 @@ body{background-image:none!important}
 <body>
 <div id="app">
   <div id="scenes"></div>
+  <p class="review-credit" id="reviewCredit">기물 캐릭터 및 처인성 관련 설명: 용인문화원 산하 용인학연구소 검수</p>
 </div>
 <script>
-/* Original chess set: one neutral render, tone-adjusted by side. */
-const pieceArt=(name)=>{
-  const type=name.split('_')[1]||'p';
-  const side=name.startsWith('m_')?'black':'white';
-  const file={pawn:'p',rook:'r',knight:'n',bishop:'b',queen:'q',king:'k'}[type]||'p';
-  return `<img class="piece-art-original ${side}" alt="" src="/assets/original-chess-pieces-v1/${file}.png?v=20260904-split-training" loading="eager" decoding="async">`;
-};
+/* 고려 vs 몽골 — 치비 기물 원화 (전 기물 원화) */
+const pieceArt=(name)=>`<img alt="" src="/assets/tutorial-pieces/${name}.png?v=20260904-board-grounding" loading="eager" decoding="async">`;
 const tutorialLanguage=new URLSearchParams(window.location.search).get('lang')==='en'?'en':'ko';
 const isEnglish=tutorialLanguage==='en';
 document.documentElement.lang=tutorialLanguage;
+document.getElementById('reviewCredit').textContent=isEnglish
+  ? 'Piece characters and Cheoinseong-related descriptions reviewed by the Yongin Studies Institute of the Yongin Cultural Center.'
+  : '기물 캐릭터 및 처인성 관련 설명: 용인문화원 산하 용인학연구소 검수';
 const choose=(ko,en)=>isEnglish?en:ko;
 const koreanSubjectParticle=(value)=>{
   const characters=Array.from(String(value||'').trim());
@@ -516,78 +514,78 @@ const MOVE_GEN = {
   g_king:  p=>hop(p,ORTHO.concat(DIAG))
 };
 const QUIZ_HINT = {
-  g_pawn:'폰은 앞으로만 한 칸씩 움직여요.',
-  g_rook:'룩은 앞·뒤·양옆으로 쭉 움직여요.',
-  g_bishop:'비숍은 대각선으로만 움직여요.',
-  g_queen:'퀸은 여덟 방향 모두 쭉 움직여요.',
-  g_knight:'나이트는 L자로 뛰어요.',
-  g_king:'킹은 어느 방향이든 딱 한 칸이에요.'
+  g_pawn:'고려 백성을 나타내는 폰은 앞으로만 걸어요.',
+  g_rook:'처인 토성을 나타내는 룩은 앞·뒤·양옆으로 쭉 움직여요.',
+  g_bishop:'승병은 대각선으로만 미끄러져요.',
+  g_queen:'근위대장은 여덟 방향 모두 쭉 달려요.',
+  g_knight:'백마는 L자로 폴짝 뛰어요.',
+  g_king:'김윤후 승장을 나타내는 킹은 어느 방향이든 딱 한 칸이에요.'
 };
 const PIECES = [
-  {id:'g_pawn', enemy:'m_pawn', enemyName:'상대 폰', name:'폰', en:'체스에서는 폰',
-   intro:`나는 <b>폰</b>이야. 체스판에서 여덟 개로 시작하고, 기본적으로 <b>앞으로 한 칸씩</b> 움직여. 뒤로는 갈 수 없어.`,
-   mission:'파란 점을 눌러 폰을 앞으로 움직여봐!', moves:[[2,2]], start:[3,2]},
-  {id:'g_rook', enemy:'m_rook', enemyName:'상대 룩', name:'룩', en:'체스에서는 룩',
-   intro:`나는 <b>룩</b>이야. <b>앞·뒤·양옆으로 칸 수에 상관없이</b> 곧게 움직일 수 있어. 다른 기물이 길을 막고 있으면 그 너머로 갈 수는 없어.`,
-   mission:'파란 점 중 아무 곳이나 눌러 룩을 움직여봐!',
+  {id:'g_pawn', enemy:'m_pawn', enemyName:'몽골 선봉병', name:'고려 백성 · 폰', en:'체스에서는 폰',
+   intro:`나는 처인성을 함께 지킨 <b>고려 백성</b>이야. 체스에서는 <b>폰</b>이라고 불러. 여덟 개로 시작해서 가장 수가 많고, <b>앞으로 한 칸씩</b> 나아가. 작아 보여도 모두 힘을 모으면 성을 지킬 수 있어!`,
+   mission:'파란 점을 눌러 고려 백성을 앞으로 보내줘!', moves:[[2,2]], start:[3,2]},
+  {id:'g_rook', enemy:'m_rook', enemyName:'몽골 공성탑', name:'처인 토성 · 룩', en:'체스에서는 룩',
+   intro:`나는 흙을 단단히 다져 세운 <b>처인 토성</b>이고, 체스에서는 <b>룩</b>이라고 불러. 성벽처럼 곧은 길을 지키며 <b>앞·뒤·양옆으로 칸 수에 상관없이</b> 움직일 수 있어.`,
+   mission:'파란 점 중 아무 곳이나 눌러 처인 토성을 움직여봐!',
    moves:rays([[1,0],[-1,0],[0,1],[0,-1]]), start:[2,2]},
-  {id:'g_knight', enemy:'m_knight', enemyName:'상대 나이트', name:'나이트', en:'체스에서는 나이트',
-   intro:`나는 <b>나이트</b>야. 곧게 두 칸 간 뒤 옆으로 한 칸 가는 <b>L자 모양</b>으로 움직여. 다른 기물이 길을 막아도 <b>뛰어넘을</b> 수 있어.`,
-   mission:'L자 모양 파란 점으로 나이트를 움직여봐!',
+  {id:'g_knight', enemy:'m_knight', enemyName:'몽골 기마궁수', name:'백마 기수 · 나이트', en:'체스에서는 나이트',
+   intro:`히힝! 나는 <b>백마 기수</b>이고, 체스에서는 <b>나이트</b>라고 불러. 나는 특별하게 <b>L자 모양</b>(곧게 두 칸 → 옆으로 한 칸)으로 폴짝 뛰어다녀. 다른 말이 길을 막고 있어도 <b>훌쩍 뛰어넘을</b> 수 있는 건 나뿐이야!`,
+   mission:'L자 모양 파란 점으로 백마를 점프시켜봐!',
    moves:[[0,1],[0,3],[1,0],[1,4],[3,0],[3,4],[4,1],[4,3]], start:[2,2]},
-  {id:'g_bishop', enemy:'m_bishop', enemyName:'상대 비숍', name:'비숍', en:'체스에서는 비숍',
-   intro:`나는 <b>비숍</b>이야. 언제나 <b>대각선으로만</b> 움직이고, 시작한 칸과 같은 색의 칸만 다닐 수 있어.`,
-   mission:'대각선 파란 점을 눌러 비숍을 움직여봐!',
+  {id:'g_bishop', enemy:'m_bishop', enemyName:'몽골 주술사', name:'지혜 승병 · 비숍', en:'체스에서는 비숍',
+   intro:`나는 팔만대장경을 지키는 <b>지혜 승병</b>이고, 체스에서는 <b>비숍</b>이라고 불러. 나는 언제나 <b>대각선으로만</b> 조용히 움직인다. 비스듬한 길이 나의 길!`,
+   mission:'대각선 파란 점을 눌러서 승병을 움직여 보자!',
    moves:rays([[1,1],[1,-1],[-1,1],[-1,-1]]), start:[2,2]},
-  {id:'g_queen', enemy:'m_queen', enemyName:'상대 퀸', name:'퀸', en:'체스에서는 퀸',
-   intro:`나는 <b>퀸</b>이야. 룩과 비숍의 움직임을 합쳐 <b>앞뒤·양옆·대각선 어디든</b> 칸 수에 상관없이 움직일 수 있어.`,
-   mission:'어느 방향이든 파란 점으로 퀸을 움직여봐!',
+  {id:'g_queen', enemy:'m_queen', enemyName:'칸의 친위장', name:'근위대장 · 퀸', en:'체스에서는 퀸',
+   intro:`나는 김윤후 승장과 처인성을 지키는 <b>근위대장</b>이다! 활과 지혜로 <b>앞뒤·양옆·대각선 어디든 쭉-!</b> 움직이지. 고려군에서 제일 힘이 센 건 바로 나야!`,
+   mission:'어느 방향이든 좋아! 파란 점으로 근위대장을 보내자!',
    moves:rays([[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]), start:[2,2]},
-  {id:'g_king', enemy:'m_king', enemyName:'상대 킹', name:'킹', en:'체스에서는 킹',
-   intro:`나는 <b>킹</b>이야. <b>어느 방향이든 딱 한 칸씩</b> 움직일 수 있어. 공격받는 칸으로는 갈 수 없고, 체크메이트를 당하면 대국이 끝나.`,
-   mission:'한 칸 옆 파란 점을 눌러 킹을 움직여봐!',
+  {id:'g_king', enemy:'m_king', enemyName:'몽골의 칸', name:'김윤후 승장 · 킹', en:'체스에서는 킹',
+   intro:`나는 처인성 방어를 이끈 <b>김윤후 승장</b>이오. 이 훈련에서는 <b>킹</b>을 맡아 어느 방향이든 <b>딱 한 칸씩</b> 움직이오. 킹이 공격을 피하지 못하면 대국이 끝나니, 주변을 살피며 함께 성을 지켜봅시다.`,
+   mission:'한 칸 옆 파란 점을 눌러 김윤후 승장을 움직여보자!',
    moves:[[1,1],[1,2],[1,3],[2,1],[2,3],[3,1],[3,2],[3,3]], start:[2,2]}
 ];
 const CAPTURE_SCENES = [
-  {id:'pawnCapture', piece:'g_pawn', enemy:'m_pawn', name:'폰', en:'체스에선 폰', intro:`폰은 앞으로 움직이지만 적을 잡을 때는 <b>대각선 앞 한 칸</b>으로 이동해.`, mission:'대각선 앞의 상대 폰을 눌러 잡아보자!', note:'폰은 걷는 길과 잡는 길이 달라요.', start:[3,2], target:[2,3]},
-  {id:'rookCapture', piece:'g_rook', enemy:'m_knight', name:'룩', en:'체스에선 룩', intro:`룩은 같은 줄에 있는 적을 향해 <b>칸 수에 상관없이</b> 움직여 잡을 수 있어.`, mission:'위쪽 상대 나이트가 있는 칸을 눌러 잡아보자!', note:'잡는 기물과 잡히는 기물의 종류가 같을 필요는 없어요.', start:[4,2], target:[1,2]},
-  {id:'knightCapture', piece:'g_knight', enemy:'m_bishop', name:'나이트', en:'체스에선 나이트', intro:`나이트는 다른 기물을 뛰어넘어 <b>L자</b>로 적을 잡을 수 있어.`, mission:'L자 점프로 상대 비숍이 있는 칸에 착지해 잡아보자!', note:'나이트는 중간의 기물을 뛰어넘어요.', start:[4,1], target:[2,2]},
-  {id:'bishopCapture', piece:'g_bishop', enemy:'m_rook', name:'비숍', en:'체스에선 비숍', intro:`비숍은 대각선을 따라 멀리 있는 적도 잡을 수 있어.`, mission:'대각선 끝의 상대 룩을 눌러 잡아보자!', note:'비숍은 대각선으로만 잡아요.', start:[4,0], target:[2,2]},
-  {id:'queenCapture', piece:'g_queen', enemy:'m_pawn', name:'퀸', en:'체스에선 퀸', intro:`퀸은 직선과 대각선 어디든 갈 수 있어. 두 길을 모두 써서 적을 잡아보자!`, mission:'직선과 대각선의 상대 기물을 차례로 잡아보자!', note:'퀸은 룩과 비숍의 움직임을 모두 써요.', start:[4,0], targets:[{at:[1,0],enemy:'m_rook'},{at:[2,2],enemy:'m_bishop'}]},
-  {id:'kingCapture', piece:'g_king', enemy:'m_pawn', name:'킹', en:'체스에선 킹', intro:`킹은 한 칸만 갈 수 있고, 상대가 지키지 않는 안전한 칸의 기물만 직접 잡을 수 있어.`, mission:'먼저 위험한 칸을 확인한 뒤, 안전한 상대 폰을 잡아보자!', note:'킹은 공격받는 칸으로 갈 수 없어요.', start:[3,2], target:[2,3], blockedTarget:[2,1]}
+  {id:'pawnCapture', piece:'g_pawn', enemy:'m_pawn', name:'고려 백성', en:'체스에선 폰', intro:`나는 <b>앞으로 걷지만</b>, 적을 잡을 때는 <b>대각선 앞 한 칸</b>으로 움직여. 바로 앞에 적이 있으면 지나갈 수 없어!`, mission:'대각선 앞의 몽골 병사를 눌러서 잡아보자!', note:'폰은 걷는 길과 잡는 길이 달라요.', start:[3,2], target:[2,3]},
+  {id:'rookCapture', piece:'g_rook', enemy:'m_knight', name:'처인 토성', en:'체스에선 룩', intro:`나는 곧은 줄을 지키며 같은 줄의 적을 향해 <b>칸 수에 상관없이</b> 움직여 잡아!`, mission:'위쪽 몽골 기마궁수가 있는 칸을 눌러 잡아보자!', note:'잡는 기물과 잡히는 기물의 종류가 같을 필요는 없어요.', start:[4,2], target:[1,2]},
+  {id:'knightCapture', piece:'g_knight', enemy:'m_bishop', name:'백마 기수', en:'체스에선 나이트', intro:`나는 다른 기물을 뛰어넘어 <b>L자</b>로 적을 잡을 수 있어!`, mission:'L자 점프로 샤먼이 있는 칸에 착지해 잡아보자!', note:'나이트는 중간의 기물을 뛰어넘어요.', start:[4,1], target:[2,2]},
+  {id:'bishopCapture', piece:'g_bishop', enemy:'m_rook', name:'지혜 승병', en:'체스에선 비숍', intro:`나는 비스듬한 길을 따라 멀리 있는 적도 잡을 수 있어.`, mission:'대각선 끝의 몽골 공성탑을 눌러 잡아보자!', note:'비숍은 대각선으로만 잡아요.', start:[4,0], target:[2,2]},
+  {id:'queenCapture', piece:'g_queen', enemy:'m_pawn', name:'근위대장', en:'체스에선 퀸', intro:`나는 직선과 대각선 어디든 갈 수 있어. 두 길을 모두 써서 적을 잡아 보자!`, mission:'직선과 대각선의 몽골군을 차례로 잡아보자!', note:'퀸은 룩과 비숍의 움직임을 모두 써요.', start:[4,0], targets:[{at:[1,0],enemy:'m_rook'},{at:[2,2],enemy:'m_bishop'}]},
+  {id:'kingCapture', piece:'g_king', enemy:'m_pawn', name:'김윤후 승장', en:'체스에선 킹', intro:`나는 한 칸만 갈 수 있고, 적이 지키지 않는 안전한 칸의 기물만 직접 잡을 수 있소.`, mission:'먼저 위험한 칸을 확인한 뒤, 안전한 몽골 병졸을 잡아보자!', note:'킹은 공격받는 칸으로 갈 수 없어요.', start:[3,2], target:[2,3], blockedTarget:[2,1]}
 ];
 const MONGOL_DIALOGUE = {
-  m_pawn:'나는 상대 폰이야. 네가 전진할 길을 막아볼게.',
-  m_rook:'나는 상대 룩이야. 곧게 뻗은 길을 지키고 있어.',
-  m_knight:'나는 상대 나이트야. 다음 L자 착지점을 살펴볼게.',
-  m_bishop:'나는 상대 비숍이야. 대각선에서 기다리고 있어.',
-  m_queen:'나는 상대 퀸이야. 어느 방향으로 오든 맞설 수 있어.',
-  m_king:'나는 상대 킹이야. 내 진영을 지켜볼게.'
+  m_pawn:'나는 몽골의 선봉병이다. 네가 전진할 길을 막아 보겠다.',
+  m_rook:'나는 성문을 압박하는 몽골 공성탑이다. 곧게 뻗은 길을 지켜보겠다.',
+  m_knight:'나는 초원을 달리는 몽골 기마궁수다. 네 다음 착지점을 읽어 보겠다.',
+  m_bishop:'나는 몽골군의 주술사다. 비스듬한 길에서 네 수를 기다리겠다.',
+  m_queen:'나는 칸의 친위장이다. 어느 방향으로 오든 맞서겠다.',
+  m_king:'나는 몽골의 칸이다. 내 진영을 쉽게 내주지 않겠다.'
 };
 if(isEnglish){
   const pieceCopy={
-    g_pawn:['Pawn','Opposing Pawn','I am a <b>pawn</b>. Eight of us begin on the board, and I normally move <b>one square forward</b>. I cannot move backward.','Move the pawn to a blue square.'],
-    g_rook:['Rook','Opposing Rook','I am a <b>rook</b>. I move any number of squares forward, backward, or sideways unless another piece blocks the way.','Move the rook to any blue square.'],
-    g_knight:['Knight','Opposing Knight','I am a <b>knight</b>. I move in an <b>L shape</b>: two squares straight, then one sideways. I can jump over pieces.','Jump the knight to an L-shaped blue square.'],
-    g_bishop:['Bishop','Opposing Bishop','I am a <b>bishop</b>. I move only along diagonals and remain on the same square color.','Move the bishop to a diagonal blue square.'],
-    g_queen:['Queen','Opposing Queen','I am the <b>queen</b>. I combine rook and bishop movement, traveling any number of squares in straight lines or diagonals.','Move the queen in any direction.'],
-    g_king:['King','Opposing King','I am the <b>king</b>. I move exactly one square in any direction and may not enter an attacked square. Checkmate ends the game.','Move the king one square.'],
+    g_pawn:['Goryeo Resident · Pawn','Mongol Vanguard','I represent a <b>Goryeo resident</b> who helped defend Cheoinseong. In chess I am a <b>pawn</b>, moving one square forward. Eight pawns begin together, showing the strength of a community.','Move the Goryeo resident to a blue square.'],
+    g_rook:['Cheoin Earthen Fortress · Rook','Mongol Siege Tower','I represent the compacted-earth walls of <b>Cheoinseong</b>. In chess I am a <b>rook</b>, moving any number of squares forward, backward, or sideways.','Move the Cheoin earthen fortress to any blue square.'],
+    g_knight:['White Horse Rider · Knight','Mongol Horse Archer','I am the <b>white horse rider</b>, called a <b>knight</b> in chess. I jump in an <b>L shape</b>: two squares straight, then one sideways. I can jump over pieces.','Jump the knight to an L-shaped blue square.'],
+    g_bishop:['Wise Monk Soldier · Bishop','Mongol Shaman','I am a <b>wise monk soldier</b>, called a <b>bishop</b> in chess. I move only along diagonals.','Move the bishop to a diagonal blue square.'],
+    g_queen:['Royal Guard · Queen',"Khan's Guard",'I am the <b>royal guard</b>, called the <b>queen</b> in chess. I move any number of squares in straight lines or diagonals.','Move the queen in any direction.'],
+    g_king:['Commander Kim Yun-hu · King','Mongol Khan','I am <b>Commander Kim Yun-hu</b>, who led the defense of Cheoinseong. I represent the <b>king</b> in this lesson and move exactly one square in any direction.','Move Commander Kim Yun-hu one square.'],
   };
   PIECES.forEach(piece=>{ const copy=pieceCopy[piece.id]; [piece.name,piece.enemyName,piece.intro,piece.mission]=copy; piece.en='Chess name shown above'; });
   const captureCopy={
-    pawnCapture:['I move forward, but capture one square diagonally forward.','Capture the opposing pawn diagonally.','A pawn moves and captures in different directions.'],
-    rookCapture:['I capture along the same rank or file, regardless of distance.','Capture the opposing knight above.','The captured piece does not have to be the same type.'],
+    pawnCapture:['I move forward, but capture one square diagonally forward.','Capture the Mongol infantry diagonally.','A pawn moves and captures in different directions.'],
+    rookCapture:['I capture along the same rank or file, regardless of distance.','Capture the Mongol horse archer above.','The captured piece does not have to be the same type.'],
     knightCapture:['I jump over pieces and capture in an L shape.','Jump onto the shaman to capture it.','A knight can jump over intervening pieces.'],
     bishopCapture:['I can capture distant enemies along a diagonal.','Capture the siege tower on the diagonal.','A bishop captures only on diagonals.'],
-    queenCapture:['I move in straight lines and diagonals. Use both routes to capture.','Capture both opposing pieces, one by a straight line and one diagonally.','A queen combines rook and bishop movement.'],
+    queenCapture:['I move in straight lines and diagonals. Use both routes to capture.','Capture both Mongol pieces, one by a straight line and one diagonally.','A queen combines rook and bishop movement.'],
     kingCapture:['I move one square and may capture only on a safe square.','Check the dangerous square first, then capture the safe infantry.','A king cannot move onto an attacked square.'],
   };
-  const captureNames={pawnCapture:'Pawn',rookCapture:'Rook',knightCapture:'Knight',bishopCapture:'Bishop',queenCapture:'Queen',kingCapture:'King'};
+  const captureNames={pawnCapture:'Goryeo Resident',rookCapture:'Cheoin Earthen Fortress',knightCapture:'White Horse Rider',bishopCapture:'Wise Monk Soldier',queenCapture:'Royal Guard',kingCapture:'Commander Kim Yun-hu'};
   CAPTURE_SCENES.forEach(scene=>{ const copy=captureCopy[scene.id]; [scene.intro,scene.mission,scene.note]=copy; scene.name=captureNames[scene.id]; scene.en='Chess piece'; });
   Object.assign(MONGOL_DIALOGUE,{
-    m_pawn:'I am the opposing pawn. I will block your advance.',m_rook:'I am the opposing rook. I control the straight line.',
-    m_knight:'I am the opposing knight. I will watch your next L-shaped landing.',m_bishop:'I am the opposing bishop. I wait on the diagonal.',
-    m_queen:'I am the opposing queen. I can meet you from any direction.',m_king:'I am the opposing king. I will defend my side.'
+    m_pawn:'I am the Mongol vanguard. I will block your advance.',m_rook:'I am a Mongol siege tower. I control the straight road.',
+    m_knight:'I am a Mongol horse archer. I will read your next landing square.',m_bishop:'I am the Mongol shaman. I wait on the diagonal.',
+    m_queen:"I am the Khan's guard. I will meet you from any direction.",m_king:'I am the Mongol Khan. My camp will not fall easily.'
   });
 }
 const totalPieceScenes = PIECES.length;
@@ -596,23 +594,23 @@ const PIECE_START_SCENE = 2;
 const CAPTURE_START_SCENE = PIECE_START_SCENE + totalPieceScenes;
 const CHECK_START_SCENE = CAPTURE_START_SCENE + CAPTURE_SCENES.length;
 const CHECK_LESSONS = [
-  { id:'escape', title:'안전한 칸으로 피하기', text:'킹을 공격받지 않는 파란 점으로 옮겨 체크를 피하자!', note:'공격받는 줄을 벗어나면 안전해요.', speech:'상대 룩이 킹을 공격하고 있어요. 이번에는 <b>안전한 칸으로 피하기</b>를 연습해보자!' },
-  { id:'block', title:'다른 기물로 길 막기', text:'비숍을 파란 점에 세워 룩의 공격 길을 막아보자!', note:'룩·비숍·퀸의 긴 공격 길은 다른 기물이 막을 수 있어요.', speech:'상대 룩의 긴 공격 길이 킹에게 닿았어요. 이번에는 <b>다른 기물로 길 막기</b>를 연습해보자!' },
-  { id:'capture', title:'공격한 기물 잡기', text:'나이트로 상대 룩이 있는 칸을 눌러 잡아보자!', note:'공격한 기물을 잡을 수 있다면 체크는 끝나요.', speech:'상대 룩이 킹을 공격하고 있어요. 이번에는 <b>공격한 기물 잡기</b>로 체크를 끝내보자!' },
+  { id:'escape', title:'안전한 칸으로 피하기', text:'김윤후 승장을 공격받지 않는 파란 점으로 옮겨 체크를 피하자!', note:'공격받는 줄을 벗어나면 안전해요.', speech:'몽골 공성탑이 김윤후 승장을 공격하고 있어요. 이번에는 <b>안전한 칸으로 피하기</b>를 연습해 보자!' },
+  { id:'block', title:'다른 용사가 길 막기', text:'지혜 승병을 파란 점에 세워 공성탑의 공격 길을 막아보자!', note:'룩·비숍·퀸의 긴 공격 길은 다른 기물이 막을 수 있어요.', speech:'공성탑의 긴 공격 길이 김윤후 승장에게 닿았어요. 이번에는 <b>다른 용사로 길 막기</b>를 해 보자!' },
+  { id:'capture', title:'공격한 적 잡기', text:'백마 기수로 공성탑이 있는 칸을 눌러 잡아보자!', note:'공격한 기물을 잡을 수 있다면 체크는 끝나요.', speech:'적 공성탑이 김윤후 승장을 공격하고 있어요. 이번에는 <b>공격한 적 잡기</b>로 체크를 끝내 보자!' },
 ];
 const CHECKMATE_START_SCENE = CHECK_START_SCENE + CHECK_LESSONS.length;
 const CHECKMATE_LESSONS = [
-  { id:'back-rank', title:'뒷줄 체크메이트', attacker:'g_rook', text:'룩을 파란 점으로 보내 상대 킹을 꼼짝 못 하게 하자!', note:'맨 윗줄은 룩이 노리고, 아래 칸은 우리 킹이 지켜요.', guardLabel:'킹이 지키는 칸', dangerLabel:'룩이 노리는 칸' },
-  { id:'defended', title:'보호받는 기물의 체크메이트', attacker:'g_queen', text:'우리 퀸이 상대 킹을 공격하고 있어요. 퀸은 우리 킹이 보호하는 칸에 있어서 상대 킹이 잡을 수 없어요!', speech:'우리 퀸이 상대 킹을 공격하고 있어요. 퀸은 우리 킹이 보호하는 칸에 있어서 상대 킹이 잡을 수 없어요!', note:'공격한 퀸을 잡으려 해도 킹이 지키고 있어서 체크를 해결할 수 없어요.', guardLabel:'킹이 지키는 기물', dangerLabel:'퀸이 노리는 칸' },
-  { id:'smothered', title:'질식 체크메이트', attacker:'g_knight', text:'상대 킹이 자기 편에 둘러싸인 완성 포지션을 살펴보자!', note:'도망길이 자기 기물로 막힌 체크메이트를 질식 체크메이트라고 해요.', guardLabel:'상대 기물이 막은 칸', dangerLabel:'나이트가 노리는 칸' },
+  { id:'back-rank', title:'뒷줄 체크메이트', attacker:'g_rook', text:'처인 토성을 파란 점으로 보내 몽골 칸을 꼼짝 못 하게 하자!', note:'맨 윗줄은 처인 토성이 노리고, 아래 칸은 김윤후 승장이 지켜요.', guardLabel:'김윤후 승장이 지키는 칸', dangerLabel:'처인 토성이 노리는 칸' },
+  { id:'defended', title:'보호받는 기물의 체크메이트', attacker:'g_queen', text:'우리 근위대장이 상대 왕을 공격하고 있어요! 근위대장은 김윤후 승장이 보호하는 칸에 있어서 상대 왕이 잡을 수 없어요!', speech:'우리 근위대장이 상대 왕을 공격하고 있어요! 근위대장은 김윤후 승장이 보호하는 칸에 있어서 상대 왕이 잡을 수 없어요!', note:'공격한 근위대장을 잡으려 해도 김윤후 승장이 지키고 있어서 해결되지 않아요.', guardLabel:'김윤후 승장이 지키는 기물', dangerLabel:'근위대장이 노리는 칸' },
+  { id:'smothered', title:'질식 체크메이트', attacker:'g_knight', text:'몽골 칸이 자기 편에 둘러싸인 완성 포지션을 살펴보자!', note:'도망길이 자기 기물로 막힌 체크메이트를 질식 체크메이트라고 해요.', guardLabel:'몽골 기물이 막은 칸', dangerLabel:'백마 기수가 노리는 칸' },
 ];
 if(isEnglish){
-  Object.assign(CHECK_LESSONS[0],{title:'Escape to Safety',text:'Move the king to a safe blue square.',note:'Leaving the attacked file makes the king safe.',speech:'The opposing rook is attacking the king. Practice <b>escaping to a safe square</b>.'});
-  Object.assign(CHECK_LESSONS[1],{title:'Block the Attack',text:'Place the bishop on the blue square to block the rook.',note:'Another piece can block a long rook, bishop, or queen attack.',speech:'The opposing rook’s line reaches the king. Practice <b>blocking with another piece</b>.'});
-  Object.assign(CHECK_LESSONS[2],{title:'Capture the Attacker',text:'Use the knight to capture the attacking rook.',note:'Capturing the attacking piece can end check.',speech:'The opposing rook is attacking the king. End check by <b>capturing the attacker</b>.'});
-  Object.assign(CHECKMATE_LESSONS[0],{title:'Back-Rank Checkmate',text:'Move the rook to the blue square and trap the opposing king.',note:'The rook controls the top rank while our king covers the lower squares.',guardLabel:'Squares protected by the king',dangerLabel:'Squares attacked by the rook'});
+  Object.assign(CHECK_LESSONS[0],{title:'Escape to Safety',text:'Move the king to a safe blue square.',note:'Leaving the attacked file makes the king safe.',speech:'A Mongol siege tower is attacking the king. Practice <b>escaping to a safe square</b>.'});
+  Object.assign(CHECK_LESSONS[1],{title:'Block the Attack',text:'Place the bishop on the blue square to block the siege tower.',note:'Another piece can block a long rook, bishop, or queen attack.',speech:'The siege tower’s line reaches the king. Practice <b>blocking with another piece</b>.'});
+  Object.assign(CHECK_LESSONS[2],{title:'Capture the Attacker',text:'Use the knight to capture the attacking siege tower.',note:'Capturing the attacking piece can end check.',speech:'The siege tower is attacking the king. End check by <b>capturing the attacker</b>.'});
+  Object.assign(CHECKMATE_LESSONS[0],{title:'Back-Rank Checkmate',text:'Move the rook to the blue square and trap the Mongol Khan.',note:'The rook controls the top rank while our king covers the lower squares.',guardLabel:'Squares protected by the king',dangerLabel:'Squares attacked by the rook'});
   Object.assign(CHECKMATE_LESSONS[1],{title:'Protected-Piece Checkmate',text:'The queen attacks the Khan while our king protects the queen.',speech:'The queen attacks the Khan from a square protected by our king, so the Khan cannot capture it.',note:'The attacking queen cannot be captured because the king protects it.',guardLabel:'Protected piece',dangerLabel:'Squares attacked by the queen'});
-  Object.assign(CHECKMATE_LESSONS[2],{title:'Smothered Checkmate',text:'Study the completed position where the opposing king is boxed in by its own pieces.',note:'A checkmate where friendly pieces block every escape square is called smothered mate.',guardLabel:'Squares blocked by opposing pieces',dangerLabel:'Squares attacked by the knight'});
+  Object.assign(CHECKMATE_LESSONS[2],{title:'Smothered Checkmate',text:'Study the completed position where the Khan is boxed in by his own pieces.',note:'A checkmate where friendly pieces block every escape square is called smothered mate.',guardLabel:'Squares blocked by Mongol pieces',dangerLabel:'Squares attacked by the knight'});
 }
 const RECAP_SCENE = CHECKMATE_START_SCENE + CHECKMATE_LESSONS.length;
 const MODULE_DONE_SCENE = -1;
@@ -673,16 +671,16 @@ function beginStoryIntro(){
 
 function titleScene(){
   if(isEnglish) return `
-    <div class="eyebrow">EasyMate Chess Basics</div><h1>White and Black<br>The Six Chess Pieces</h1>
-    <div class="title-art"><div>${ART.g_king}<span class="title-label">White</span></div><span class="title-vs">VS</span><div class="mongol-king-art">${ART.m_king}<span class="title-label">Black</span></div></div>
-    <p class="title-sub">Learn <b>how to win</b>, then practice how each of the six chess pieces moves.</p>
-    <button class="start-btn" id="startBtn">Start learning</button><div class="brand">EasyMate</div>`;
+    <div class="eyebrow">EasyMate Chess Story</div><h1>Goryeo vs Mongol<br>The Six Defenders</h1>
+    <div class="title-art"><div>${ART.g_king}<span class="title-label">Goryeo</span></div><span class="title-vs">VS</span><div class="mongol-king-art">${ART.m_king}<span class="title-label">Mongol</span></div></div>
+    <p class="title-sub">Long ago, a Mongol army invaded Goryeo.<br>First learn <b>how to win</b>, then meet the six defenders.</p>
+    <button class="start-btn" id="startBtn">Start the story</button><div class="brand">EasyMate</div>`;
   return `
-    <div class="eyebrow">EasyMate 체스 기초</div>
-    <h1>백과 흑<br>여섯 체스 기물</h1>
-    <div class="title-art"><div>${ART.g_king}<span class="title-label">백</span></div><span class="title-vs">VS</span><div class="mongol-king-art">${ART.m_king}<span class="title-label">흑</span></div></div>
-    <p class="title-sub">먼저 <b>이기는 방법</b>을 배우고,<br>여섯 체스 기물의 움직임을 하나씩 연습해볼까요?</p>
-    <button class="start-btn" id="startBtn">학습 시작!</button>
+    <div class="eyebrow">EasyMate 체스 동화</div>
+    <h1>고려 vs 몽골<br>여섯 용사 이야기</h1>
+    <div class="title-art"><div>${ART.g_king}<span class="title-label">고려</span></div><span class="title-vs">VS</span><div class="mongol-king-art">${ART.m_king}<span class="title-label">몽골</span></div></div>
+    <p class="title-sub">아주 먼 옛날, 몽골의 대군이 고려로 쳐들어왔어요.<br>먼저 <b>이기는 방법</b>을 배우고,<br>고려를 지키는 여섯 용사를 만나볼까요?</p>
+    <button class="start-btn" id="startBtn">모험 시작!</button>
     <div class="brand">EasyMate</div>`;
 }
 function goalScene(){
@@ -691,10 +689,10 @@ function goalScene(){
     <div class="goal-art"><div>${ART.g_king}</div><span class="vs">VS</span><div>${ART.m_king}</div></div>
     <div class="rule-list">
       <div class="rule-item"><div class="ri-num">1</div><div class="ri-body"><span class="ri-t">Goal · <em>Trap the opposing king</em></span>If the king is attacked and cannot escape, block, or capture the attacker, the game ends in <b>checkmate</b>.</div></div>
-      <div class="rule-item"><div class="ri-num">2</div><div class="ri-body"><span class="ri-t">Turns · <em>Move one piece at a time</em></span>White and Black alternate turns. You cannot move twice or skip a turn.</div></div>
+      <div class="rule-item"><div class="ri-num">2</div><div class="ri-body"><span class="ri-t">Turns · <em>Move one piece at a time</em></span>Goryeo and Mongol alternate turns. You cannot move twice or skip a turn.</div></div>
       <div class="rule-item"><div class="ri-num">3</div><div class="ri-body"><span class="ri-t">Board · <em>8 × 8 = 64 squares</em></span>A real chessboard has 64 squares. This practice board uses 5 × 5 squares.</div></div>
       <div class="rule-item"><div class="ri-num">4</div><div class="ri-body"><span class="ri-t">Kings · <em>They cannot fight each other</em></span>A king may not move onto a square attacked by the other king, so the two kings cannot stand next to each other.</div></div>
-    </div><p class="lesson-note">Now meet the six chess pieces.</p><div class="nav"><button class="btn-prev" id="prevBtn">← Previous</button>${moduleProgressCount(GOAL_SCENE)}<button class="btn-next" id="nextBtn">Meet the pieces →</button></div>`;
+    </div><p class="lesson-note">Now meet the six Goryeo defenders.</p><div class="nav"><button class="btn-prev" id="prevBtn">← Previous</button>${moduleProgressCount(GOAL_SCENE)}<button class="btn-next" id="nextBtn">Meet the defenders →</button></div>`;
   return `
     <div class="eyebrow">먼저, 전쟁의 규칙</div>
     <h2 style="text-align:center;font-size:24px;color:var(--meok)">이기는 방법은 딱 하나</h2>
@@ -709,7 +707,7 @@ function goalScene(){
       </div></div>
       <div class="rule-item"><div class="ri-num">2</div><div class="ri-body">
         <span class="ri-t">차례 — <em>한 번씩 번갈아</em></span>
-        백이 기물 하나를 옮기면, 다음은 흑 차례예요. 한 번에 두 수를 둘 수는 없고, 쉬어갈 수도 없어요.
+        고려가 용사 하나를 옮기면, 다음은 몽골 차례예요. 한 번에 두 수를 둘 수는 없고, 쉬어갈 수도 없어요.
       </div></div>
       <div class="rule-item"><div class="ri-num">3</div><div class="ri-body">
         <span class="ri-t">전장 — <em>가로 8칸 × 세로 8칸 = 64칸</em></span>
@@ -720,11 +718,11 @@ function goalScene(){
         두 임금은 서로 공격하는 칸에 갈 수 없어요. 그래서 바로 옆 칸이나 서로 같은 칸에 설 수 없답니다.
       </div></div>
     </div>
-    <p class="lesson-note">이제 여섯 체스 기물을 하나씩 만나볼까요?</p>
+    <p class="lesson-note">이제 고려를 지킬 여섯 용사를 한 명씩 만나볼까요?</p>
     <div class="nav">
       <button class="btn-prev" id="prevBtn">← 이전</button>
       ${moduleProgressCount(GOAL_SCENE)}
-      <button class="btn-next" id="nextBtn">여섯 기물 만나기 →</button>
+      <button class="btn-next" id="nextBtn">여섯 용사 만나기 →</button>
     </div>`;
 }
 function recapScene(){
@@ -752,7 +750,7 @@ function lessonLayout({goryeo, mongol, label='', speech, enemySpeech='', mission
       <section class="lesson-board-panel">
         ${label?`<div class="lesson-board-label">${label}</div>`:''}
         <div class="board-wrap"><div class="board" id="board"></div></div>
-        ${capture?`<div class="capture-shelf" id="captureShelf" aria-label="${choose('잡은 상대 기물','Captured opposing pieces')}"></div>`:''}
+        ${capture?`<div class="capture-shelf" id="captureShelf" aria-label="${choose('잡은 몽골 기물','Captured Mongol pieces')}"></div>`:''}
         <div class="mission" id="mission">${mission}</div>
       </section>
       <section class="lesson-copy-panel">
@@ -789,7 +787,7 @@ function captureScene(c, idx){
   return lessonLayout({
     goryeo:c.piece, mongol:c.enemy, label:`${choose('용사','Defender')} ${idx+1}: ${c.name}`,
     speech:c.intro,
-    enemySpeech:isEnglish?`I am the ${enemyName}. I hold this square. Show me how you capture.`:`나는 ${enemyName}이야. 이 칸을 지키고 있어. 올바른 움직임으로 잡아봐.`, mission:c.mission, note:c.note, capture:true, legend:caseLegend,
+    enemySpeech:isEnglish?`I am the Mongol ${enemyName}. I hold this square. Show me how you capture.`:`나는 몽골 ${enemyName}이다. 이 자리를 지키고 있다. 네 움직임으로 나를 잡아 보아라.`, mission:c.mission, note:c.note, capture:true, legend:caseLegend,
     nav:`<button class="btn-prev" id="prevBtn">← ${choose('이전','Previous')}</button>${progressCount(CAPTURE_SCENES.length,idx)}<button class="btn-next" id="nextBtn" disabled>${choose('다음','Next')} →</button>`
   });
 }
@@ -864,7 +862,7 @@ function reviewScene(){
       {question:'체크를 당했을 때 할 수 없는 행동은?',answers:['안전한 칸으로 피하기','공격 길 막기','차례 넘기기'],correct:2},
       {question:'공격한 기물을 잡으면 체크가 끝날 수 있을까요?',answers:['가능해요','절대 불가능해요','폰만 가능해요'],correct:0},
       {question:'룩의 긴 공격을 막을 수 있는 방법은?',answers:['공격선 사이에 기물 놓기','나이트를 판 밖으로 옮기기','차례 두 번 쉬기'],correct:0},
-      {question:'체크에서 벗어난 뒤 킹이 서야 하는 곳은?',answers:['공격받지 않는 안전한 칸','상대 킹 바로 옆','아무 칸'],correct:0},
+      {question:'체크에서 벗어난 뒤 김윤후 승장이 서야 하는 곳은?',answers:['공격받지 않는 안전한 칸','상대 킹 바로 옆','아무 칸'],correct:0},
     ],
     4:[
       {question:'체크메이트는 언제일까요?',answers:['피하거나 막거나 잡을 방법이 없을 때','체크를 한 번 했을 때','기물을 하나 잡았을 때'],correct:0},
@@ -1138,7 +1136,7 @@ function setupBoard(p, goNext){
           mission.classList.remove('quiz');
           mission.textContent = isEnglish
             ? (moves===1?'L-shaped jump complete. The available landing squares changed.':moves<4?'Good. Keep following the blue dots.':'You mastered the knight’s L-shaped jump.')
-            : (moves===1?'L자 이동 성공! 자리를 옮기니 갈 수 있는 칸도 달라졌지?':moves<4?'좋아! 파란 점을 따라 움직여보자.':'나이트의 L자 이동을 완전히 익혔구나!');
+            : (moves===1?'L자 점프 성공! 자리를 옮기니 뛸 수 있는 칸도 달라졌지?':moves<4?'좋아! 파란 점을 따라 마음껏 뛰어보자.':'백마 기수의 L자 점프를 완전히 익혔구나!');
         });
         return;
       }
@@ -1202,7 +1200,7 @@ function setupCapture(c){
     const m=document.getElementById('mission');
     if(c.blockedTarget && sq===sqAt(board,c.blockedTarget[0],c.blockedTarget[1])){
       blockedTried=true;
-      m.textContent=choose('그 칸은 상대 룩이 지키고 있어 킹이 움직일 수 없어요. 이제 안전한 칸을 골라 보세요.','The opposing rook attacks that square, so the king cannot move there. Now choose the safe square.');
+      m.textContent=choose('그 칸은 몽골 공성탑이 지키고 있어 김윤후 승장이 움직일 수 없어요. 이제 안전한 칸을 골라 보세요.','The Mongol siege tower attacks that square, so Commander Kim Yun-hu cannot move there. Now choose the safe square.');
       sq.classList.add('wrong');
       SFX.wrong();
       return;
@@ -1221,7 +1219,7 @@ function setupCapture(c){
         if(targets.every((candidate)=>candidate.done)){
           done=true;
           m.classList.remove('quiz');
-          m.textContent=choose('상대 기물을 잡았어요!','Captured the opposing piece.');
+          m.textContent=choose('몽골군을 잡았다! 고려군 만세!','Captured. Goryeo holds the line.');
           m.classList.add('done');
           state.captures[c.id]=true;
           document.getElementById('nextBtn').disabled=false;
@@ -1261,8 +1259,8 @@ function setupCheck(lesson){
     const target=sqAt(board,2,2); target.classList.add('hint');
     board.addEventListener('click',event=>{
       const sq=event.target.closest('.sq'); if(!sq) return;
-      if(sq===target){ placeToken(bishop,[2,2]); target.classList.remove('hint'); complete(sq,choose('비숍이 길을 막았어요! 체크에서 벗어났습니다.','The bishop blocked the line. The king is out of check.')); }
-      else flashWrong(sq,choose('상대 룩과 킹 사이의 파란 점에 비숍을 놓아보세요.','Place the bishop on the blue square between the opposing rook and king.'));
+      if(sq===target){ placeToken(bishop,[2,2]); target.classList.remove('hint'); complete(sq,choose('지혜 승병이 길을 막았어요! 체크에서 벗어났습니다.','The bishop blocked the line. The king is out of check.')); }
+      else flashWrong(sq,choose('공성탑과 김윤후 승장 사이의 파란 점에 승병을 세워 보세요.','Place the bishop on the blue square between the siege tower and Commander Kim Yun-hu.'));
     });
     return;
   }
@@ -1283,7 +1281,7 @@ function setupCheck(lesson){
           complete(sq,choose('공성탑을 잡았어요! 체크에서 벗어났습니다.','The siege tower is captured. The king is out of check.'));
         });
       }
-      else flashWrong(sq,choose('공격하고 있는 상대 룩을 잡아보세요.','Capture the attacking opposing rook.'));
+      else flashWrong(sq,choose('공격하고 있는 몽골 공성탑을 잡아 보세요.','Capture the attacking Mongol siege tower.'));
     });
     return;
   }
@@ -1303,7 +1301,7 @@ function setupCheck(lesson){
     if(sq.classList.contains('hint')){
       placeToken(king,[r,c]); king.classList.remove('king-danger');
       board.querySelectorAll('.sq.hint').forEach(el=>el.classList.remove('hint'));
-      complete(sq,choose('킹이 안전한 곳으로 이동했어요!','The king escaped to safety.'));
+      complete(sq,choose('김윤후 승장이 안전한 곳으로 이동했어요!','Commander Kim Yun-hu moved to safety.'));
     }else flashWrong(sq,c===dangerCol?choose('안돼! 그 줄은 아직 위험해!','That file is still under attack.'):choose('파란 점을 찾아보세요.','Choose a blue dot.'));
   });
 }
@@ -1332,8 +1330,8 @@ function setupCheckmate(lesson){
     enemyKing.classList.add('king-danger');
     addLabel(queen);
     mark([[1,2]], [[0,1],[0,3],[1,1],[1,3]]);
-    mission.textContent=choose('완성된 체크메이트 포지션입니다. 퀸은 우리 킹이 지켜서 상대 킹이 잡을 수 없어요.','This is checkmate. The king protects the queen, so the opposing king cannot capture it.');
-    if(note) note.innerHTML=choose('파란 테두리는 <b>킹이 지키는 퀸</b>이에요. 빨간 테두리의 탈출 칸은 퀸이 모두 노리고 있어요.','The blue outline marks the <b>protected queen</b>. The queen attacks every red escape square.');
+    mission.textContent=choose('완성된 체크메이트 포지션입니다. 근위대장은 김윤후 승장이 지켜서 몽골 칸이 잡을 수 없어요.','This is checkmate. Commander Kim Yun-hu protects the queen, so the Mongol Khan cannot capture it.');
+    if(note) note.innerHTML=choose('파란 테두리는 <b>김윤후 승장이 지키는 근위대장</b>이에요. 빨간 테두리의 탈출 칸은 근위대장이 모두 노리고 있어요.','The blue outline marks the <b>queen protected by Commander Kim Yun-hu</b>. The queen attacks every red escape square.');
     document.getElementById('nextBtn').disabled=false;
     return;
   }
@@ -1346,8 +1344,8 @@ function setupCheckmate(lesson){
     enemyKing.classList.add('king-danger');
     addLabel(knight);
     mark(blockedSquares, [[0,4]]);
-    mission.textContent=choose('완성된 질식 체크메이트 포지션입니다. 상대 킹의 도망길은 자기 편 기물이 모두 막고 있어요.','This is smothered mate. The opposing king’s own pieces block every escape square.');
-    if(note) note.innerHTML=choose('파란 테두리는 <b>상대 기물이 막은 칸</b>, 빨간 테두리는 <b>나이트가 체크하는 칸</b>이에요.','Blue marks squares <b>blocked by opposing pieces</b>; red marks the knight’s attack.');
+    mission.textContent=choose('완성된 질식 체크메이트 포지션입니다. 몽골 칸의 도망길은 자기 편이 모두 막고 있어요.','This is smothered mate. The Mongol Khan’s own pieces block every escape square.');
+    if(note) note.innerHTML=choose('파란 테두리는 <b>몽골 기물이 막은 칸</b>, 빨간 테두리는 <b>백마 기수가 체크하는 칸</b>이에요.','Blue marks squares <b>blocked by Mongol pieces</b>; red marks the knight’s attack.');
     document.getElementById('nextBtn').disabled=false;
     return;
   }
@@ -1360,12 +1358,12 @@ function setupCheckmate(lesson){
     enemyKing.classList.add('king-danger');
     addLabel(rook);
     mark([[1,3],[1,4]], [[0,0],[0,1],[0,2],[0,3],[0,4]]);
-    if(note) note.innerHTML=choose('테두리로 표시된 칸을 보세요. <b>우리 킹이 지키는 칸</b>과 <b>룩이 노리는 칸</b> 때문에 상대 킹은 갈 곳이 없어요.','The outlined squares are covered by <b>our king</b> and <b>rook</b>, leaving the opposing king no escape.');
+    if(note) note.innerHTML=choose('테두리로 표시된 칸을 보세요. <b>김윤후 승장이 지키는 칸</b>과 <b>처인 토성이 노리는 칸</b> 때문에 몽골 칸은 갈 곳이 없어요.','The outlined squares are covered by <b>Commander Kim Yun-hu</b> and the <b>Cheoin earthen fortress</b>, leaving the Mongol Khan no escape.');
   };
   const target=sqAt(board,0,0); target.classList.add('hint');
   board.addEventListener('click',event=>{
     const sq=event.target.closest('.sq'); if(!sq) return;
-    if(sq!==target){ flashWrong(sq,choose('룩이 맨 윗줄을 노리도록 파란 점을 눌러보세요.','Choose the blue square so the rook controls the top rank.')); return; }
+    if(sq!==target){ flashWrong(sq,choose('처인 토성이 맨 윗줄을 노리도록 파란 점을 눌러 보세요.','Choose the blue square so the Cheoin earthen fortress controls the top rank.')); return; }
     target.classList.remove('hint'); showCompletedPosition();
     celebrate(sq);
     mission.textContent=isEnglish?`Checkmate. You created ${lesson.title}.`:`체크메이트! ${lesson.title}를 만들었어요!`;

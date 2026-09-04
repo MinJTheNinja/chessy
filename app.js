@@ -94,6 +94,8 @@ const howToPlayView = document.querySelector(".how-to-play-view");
 const showTutorialGuideButton = document.querySelector("#showTutorialGuide");
 const showPuzzleGuideButton = document.querySelector("#showPuzzleGuide");
 const showCheoinseongGuideButton = document.querySelector("#showCheoinseongGuide");
+const trainingEditionLabel = document.querySelector("#trainingEditionLabel");
+const trainingEditionButtons = [...document.querySelectorAll("[data-training-edition]")];
 const tutorialPuzzleNote = document.querySelector("#tutorialPuzzleNote");
 const trainingModuleList = document.querySelector("#trainingModuleList");
 const puzzlePathList = document.querySelector("#puzzlePathList");
@@ -2128,6 +2130,40 @@ const trainingModuleArt = {
   4: { src: "/assets/tutorial-pieces/g_knight.png?v=20260904-board-grounding", alt: "고려 백마 기수" },
 };
 
+function activeTrainingEdition() {
+  return selectedPieceEdition === "original" ? "original" : "cheoinseong";
+}
+
+function trainingTutorialPath(edition = activeTrainingEdition()) {
+  return edition === "original" ? "/assets/how-to-play.html" : "/assets/how-to-play-cheoinseong.html";
+}
+
+function renderTrainingEditionControls() {
+  const edition = activeTrainingEdition();
+  const korean = currentInterfaceLanguage() === "Korean";
+  if (trainingEditionLabel) trainingEditionLabel.textContent = korean ? "튜토리얼 말 디자인" : "Tutorial piece design";
+  trainingEditionButtons.forEach((button) => {
+    const active = button.dataset.trainingEdition === edition;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+    button.textContent = button.dataset.trainingEdition === "original" ? (korean ? "오리지널" : "Original") : (korean ? "고려-몽골" : "Goryeo-Mongol");
+  });
+}
+
+function reloadOpenTrainingEdition() {
+  if (!trainingModuleOpen || activeTrainingPathMode !== "tutorial" || !howToPlayFrame?.src) return;
+  try {
+    const url = new URL(howToPlayFrame.src, window.location.origin);
+    if (!url.pathname.includes("how-to-play")) return;
+    url.pathname = trainingTutorialPath();
+    url.searchParams.set("edition", activeTrainingEdition());
+    url.searchParams.set("v", "20260904-split-training");
+    howToPlayFrame.src = `${url.pathname}${url.search}`;
+  } catch {
+    // Leave the current lesson in place if its URL cannot be normalized.
+  }
+}
+
 const trainingStageIconNames = {
   1: "movement",
   2: "capture",
@@ -2402,6 +2438,7 @@ function renderTrainingModuleList() {
   const state = activeTrainingState();
   const renderSignature = JSON.stringify({
     language: currentInterfaceLanguage(),
+    edition: activeTrainingEdition(),
     next: state.nextModule?.id || null,
     completedModules: state.completedModules || [],
     completedPuzzles: state.completedPuzzles || [],
@@ -2645,6 +2682,7 @@ function renderTrainingControls() {
     button.setAttribute("aria-disabled", puzzleUnlocked ? "false" : "true");
   });
   if (tutorialLoginButton) tutorialLoginButton.hidden = Boolean(currentUser);
+  renderTrainingEditionControls();
   if (tutorialPuzzleNote) {
     tutorialPuzzleNote.hidden = puzzleUnlocked;
     tutorialPuzzleNote.textContent =
@@ -2743,7 +2781,7 @@ function openTrainingModule(moduleId) {
   trainingModuleToolbar?.removeAttribute("hidden");
   const korean = currentInterfaceLanguage() === "Korean";
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${korean ? "모듈" : "Module"} ${normalizedModuleId} · ${korean ? module.title : translateCopy(module.title)}`;
-  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&lang=${korean ? "ko" : "en"}&v=20260904-continuous-page`;
+  if (howToPlayFrame) howToPlayFrame.src = `${trainingTutorialPath()}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&lang=${korean ? "ko" : "en"}&v=20260904-split-training`;
   setActiveTrainingPathMode("tutorial");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -2763,7 +2801,7 @@ function openTrainingReview(moduleId) {
   trainingModuleToolbar?.removeAttribute("hidden");
   const korean = currentInterfaceLanguage() === "Korean";
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${korean ? "모듈" : "Module"} ${normalizedModuleId} · ${korean ? "복습 퀴즈" : "Review Quiz"}`;
-  if (howToPlayFrame) howToPlayFrame.src = `/assets/how-to-play.html?module=${normalizedModuleId}&review=1&lang=${korean ? "ko" : "en"}&v=20260904-continuous-page`;
+  if (howToPlayFrame) howToPlayFrame.src = `${trainingTutorialPath()}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&review=1&lang=${korean ? "ko" : "en"}&v=20260904-split-training`;
   setActiveTrainingPathMode("tutorial");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -4663,12 +4701,16 @@ function setView(viewName) {
 
 function openMenu() {
   sidebarMenu.hidden = false;
+  document.body.classList.add("menu-open");
   menuToggle.setAttribute("aria-expanded", "true");
+  menuToggle.setAttribute("aria-label", currentInterfaceLanguage() === "Korean" ? "메뉴 닫기" : "Close menu");
 }
 
 function closeMenu() {
   sidebarMenu.hidden = true;
+  document.body.classList.remove("menu-open");
   menuToggle.setAttribute("aria-expanded", "false");
+  menuToggle.setAttribute("aria-label", currentInterfaceLanguage() === "Korean" ? "메뉴 열기" : "Open menu");
 }
 
 function closeProfileMenu() {
@@ -6421,6 +6463,17 @@ document.addEventListener("click", (event) => {
   if (!control) return;
   setPieceEdition(control.dataset.pieceEdition);
   if (homeThemePopover?.contains(control)) setHomeThemePopover(false);
+});
+
+trainingEditionButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const edition = button.dataset.trainingEdition === "original" ? "original" : "cheoinseong";
+    void setPieceEdition(edition);
+    trainingModuleRenderSignature = "";
+    renderTrainingEditionControls();
+    renderTrainingModuleList();
+    reloadOpenTrainingEdition();
+  });
 });
 
 homeLeaderboardTab?.addEventListener("click", () => setHomeInsightTab("leaderboard"));
