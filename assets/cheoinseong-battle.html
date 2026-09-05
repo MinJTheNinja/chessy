@@ -183,10 +183,25 @@
   .piece .tag-chip{
     display:none;
   }
+  .sq.target.capture .tag-chip{
+    display:block; position:absolute; z-index:4; left:50%; top:-20px; transform:translateX(-50%);
+    min-width:max-content; padding:3px 7px; border:1px solid var(--ink-strong); background:rgba(255,255,255,.96);
+    color:var(--ink-strong); font-size:.58rem; font-weight:800; line-height:1.1; pointer-events:none;
+  }
+  .board.is-animating .sq{ pointer-events:none; }
+  .piece.is-captured{ animation:capturedPiece .42s cubic-bezier(.4,0,.6,1) both; z-index:5; }
+  .piece.is-captured::before{ animation:capturedShadow .42s ease both; }
+  @keyframes capturedPiece{
+    0%{ opacity:1; transform:translateY(4%) rotate(0) scale(1); }
+    42%{ opacity:.92; transform:translateY(16%) rotate(7deg) scale(.88); }
+    100%{ opacity:0; transform:translateY(58%) rotate(14deg) scale(.28); }
+  }
+  @keyframes capturedShadow{ to{ opacity:0; transform:scale(.35); } }
 
   .scene-illustration{
     display:block; width:100%; aspect-ratio:16/9; object-fit:cover; margin:16px 0 0;
     border:1px solid var(--border); border-radius:8px;
+    user-select:none; -webkit-user-select:none; -webkit-user-drag:none;
   }
 
   .board-controls{ display:flex; flex-wrap:wrap; gap:16px; margin-top:16px; justify-content:center; }
@@ -207,6 +222,10 @@
   .result.show{ display:block; }
   .result b{ color:var(--jade); }
   .result .arrow-note{ margin-top:8px; padding-top:8px; border-top:1px dashed var(--jade); color:var(--ink-soft); font-size:0.84rem; }
+  .result-next{ display:block; margin:14px auto 0; }
+  @media (prefers-reduced-motion:reduce){
+    .piece.is-captured,.piece.is-captured::before{ animation-duration:.01ms; }
+  }
 
   .epilogue p{ color:var(--ink-soft); margin:12px 0 0; }
 
@@ -274,7 +293,7 @@
 
   <section class="section">
     <h2>배경 · 1232년 8월 – 12월</h2>
-    <p>1232년 8월, 몽골 원수 살리타이가 이끄는 군대가 고려를 두 번째로 침략했다. 고려 조정이 강화도로 도읍을 옮겨 장기 항전에 들어가자 몽골군은 남하했고, 광주성 공격에 실패한 뒤 수륙 교통과 물자의 요충지로 방향을 틀었다.</p>
+    <p>1232년 8월, 몽골의 칸이 이끄는 군대가 고려를 두 번째로 침략했다. 고려 조정이 강화도로 도읍을 옮겨 장기 항전에 들어가자 몽골군은 남하했고, 광주성 공격에 실패한 뒤 수륙 교통과 물자의 요충지로 방향을 틀었다.</p>
     <p>그 길목에는 군량미와 물자를 보관한 군창이 있던 처인부곡이 있었다. 처인부곡민은 천민이 아니라 법적으로 세금과 의무를 지는 양인이었지만, 일반 군현보다 무거운 세금과 잡역을 부담한 지역 주민이었다. 이들은 승려 김윤후와 함께 삶터와 공동체를 지키기 위해 자발적으로 항전에 나섰다.</p>
 
     <div class="legend-grid">
@@ -286,7 +305,7 @@
       <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png" alt=""></div><div class="legend-text">처인성 성벽<span class="role">룩 · 방어 진지</span></div></div>
       <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/mongol-siege-tower-rook.png?v=20260903-wolf" alt=""></div><div class="legend-text">몽골 공성탑<span class="role">룩 · 공성 장비</span></div></div>
       <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/goryeo-king.png" alt=""></div><div class="legend-text">김윤후<span class="role">킹 · 처인성 지휘</span></div></div>
-      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/mongol-salitai-king-v2.png" alt=""></div><div class="legend-text">살리타이<span class="role">킹 · 몽골군 원수</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/mongol-salitai-king-v2.png" alt=""></div><div class="legend-text">칸<span class="role">킹 · 몽골군 지휘관</span></div></div>
     </div>
     <p class="queen-note">※ 퀸은 아직 처인성 테마로 재해석되지 않아 이번 시리즈에는 등장하지 않습니다.</p>
   </section>
@@ -297,7 +316,7 @@
 
   <section class="epilogue section">
     <h2>그 후</h2>
-    <p>살리타이를 잃은 몽골군은 큰 혼란에 빠져 철수를 시작했다. 처인성 승리는 국가의 지원 없이 지역 양인 백성과 승병이 스스로 삶터와 군량을 지켜낸 공동체의 승리였다.</p>
+    <p>칸을 잃은 몽골군은 큰 혼란에 빠져 철수를 시작했다. 처인성 승리는 국가의 지원 없이 지역 양인 백성과 승병이 스스로 삶터와 군량을 지켜낸 공동체의 승리였다.</p>
     <p>처인부곡은 이 공로로 처인현으로 승격되었다. 이는 천민이 양인이 된 일이 아니라 행정적 차별을 받던 양인 백성이 공헌을 인정받고 정당한 권리를 회복한 사건이었다. 훗날 의병장 조헌은 격문에서 처인성 전투와 김윤후를 선례로 언급했다.</p>
   </section>
 
@@ -331,13 +350,13 @@
     '몽골군':'Mongol Army','고려군 (나)':'Goryeo Army (You)','힌트':'Hint','정답 보기':'Show Answer','다시 풀기':'Retry',
     '이 기물을 움직여보세요.':'Move this piece.','처인성 전투':'Battle of Cheoinseong','처인성의 마지막 화살':'The Last Arrow of Cheoinseong',
     '백성':'People','말':'Cavalry','승병':'Monk Soldier','처인성 성벽':'Cheoinseong Wall','김윤후':'Kim Yun-hu',
-    '병졸':'Infantry','샤먼':'Shaman','공성탑':'Siege Tower','살리타이':'Salitai'
+    '병졸':'Infantry','샤먼':'Shaman','공성탑':'Siege Tower','칸':'Khan'
   };
   function tx(value){ return language==='en' ? (EN[value] || value) : value; }
 
   var GLYPH = { P:'♟', N:'♞', B:'♝', R:'♜', K:'♚' };
   var LABEL = { wP:tx('백성'), wN:tx('말'), wB:tx('승병'), wR:tx('처인성 성벽'), wK:tx('김윤후'),
-                bP:tx('병졸'), bN:tx('말'), bB:tx('샤먼'), bR:tx('공성탑'), bK:tx('살리타이') };
+                bP:tx('병졸'), bN:tx('말'), bB:tx('샤먼'), bR:tx('공성탑'), bK:tx('칸') };
   var PIECE_ART = {
     wP:'/assets/cheoinseong/pieces/goryeo-people-pawn.png?v=20260904-board-grounding',
     wN:'/assets/cheoinseong/pieces/goryeo-cavalry-knight.png?v=20260904-board-grounding',
@@ -353,9 +372,9 @@
   var SCENE_ART = [
     '/assets/cheoinseong/illustrations/scene-1-people-defend.png?v=20260904-mascot',
     '/assets/cheoinseong/illustrations/scene-3-monk-soldiers.png?v=20260904-mascot',
-    '/assets/cheoinseong/illustrations/scene-2-cavalry-encircle.png?v=20260904-mascot',
-    '/assets/cheoinseong/illustrations/scene-5-last-arrow.png?v=20260904-mascot',
-    '/assets/cheoinseong/illustrations/scene-4-wall-holds.png?v=20260904-mascot'
+    '/assets/cheoinseong/illustrations/scene-3-ambush-mascot-v2.jpg?v=20260905-scenes-v2',
+    '/assets/cheoinseong/illustrations/scene-4-salitai-panic-v2.jpg?v=20260905-scenes-v2',
+    '/assets/cheoinseong/illustrations/scene-5-retreat-mascot-v2.jpg?v=20260905-scenes-v2'
   ];
 
   function inb(r,c){ return r>=0 && r<8 && c>=0 && c<8; }
@@ -465,9 +484,9 @@
       tag: 'recon',
       narrative: [
         '처인성은 높이 4~6m의 작은 토성이었지만 주변의 습지와 들판, 성 동북쪽 완장리 일대의 지형을 배후로 두고 있었다.',
-        '살리타이가 정예 기병을 이끌고 가까이 다가오자 김윤후와 처인부곡민들은 성문 밖 요충지에 매복조를 두고 적장이 접근할 때를 기다렸다.'
+        '칸이 정예 기병을 이끌고 가까이 다가오자 김윤후와 처인부곡민들은 성문 밖 요충지에 매복조를 두고 적장이 접근할 때를 기다렸다.'
       ],
-      prompt: '매복한 승병(비숍)을 움직여 살리타이와 공성탑을 동시에 겨누세요.',
+      prompt: '매복한 승병(비숍)을 움직여 칸과 공성탑을 동시에 겨누세요.',
       verifyNote: '성문 밖 매복 전략을 비숍의 이중공격으로 표현한 체스적 재구성입니다.',
       board: [
         ['bK',null,null,null,null,null,'bR',null],
@@ -481,19 +500,19 @@
       ],
       solution: { from:[6,6], to:[3,3] },
       resultTitle: '매복조가 두 길을 동시에 끊었다.',
-      resultBody: '대각선에 자리 잡은 승병이 살리타이와 후방 공성탑을 함께 겨눈다. 지형을 이용해 기다린 한 수가 포위군의 중심을 흔들었다.',
+      resultBody: '대각선에 자리 잡은 승병이 칸과 후방 공성탑을 함께 겨눈다. 지형을 이용해 기다린 한 수가 포위군의 중심을 흔들었다.',
       arrowNote: null
     },
     {
       id: 'cheoin-4',
-      date: '살리타이의 접근 · 장면 4',
+      date: '칸의 접근 · 장면 4',
       title: '이름을 알 수 없는 화살',
       tag: 'fact',
       narrative: [
-        '살리타이가 성 가까이 깊숙이 접근했을 때 사방에서 날아든 화살 가운데 한 발이 그의 목을 관통했다. 정확히 누가 쏜 화살인지는 기록에 남아 있지 않다.',
+        '칸이 성 가까이 깊숙이 접근했을 때 사방에서 날아든 화살 가운데 한 발이 그의 목을 관통했다. 정확히 누가 쏜 화살인지는 기록에 남아 있지 않다.',
         '훗날 김윤후는 자신에게 활과 화살이 없었다며 상장군 벼슬을 사양했다. 처인성 승리는 한 영웅이 아니라 지역 양인 백성들의 자발적 항전과 단결이 만든 집단적 승리였다.'
       ],
-      prompt: '공동체를 상징하는 백성(폰)으로 살리타이를 잡아내세요.',
+      prompt: '공동체를 상징하는 백성(폰)으로 칸을 잡아내세요.',
       verifyNote: '이 폰은 특정 궁수를 지칭하지 않으며, 이름을 남기지 않은 처인부곡 공동체를 상징합니다.',
       board: [
         [null,null,null,null,null,null,null,'bR'],
@@ -507,7 +526,7 @@
       ],
       solution: { from:[4,4], to:[3,3] },
       resultTitle: '한 발의 화살, 지휘부가 무너지다.',
-      resultBody: '살리타이가 쓰러지자 몽골군은 큰 혼란에 빠졌다. 승리는 이름 없는 한 사람을 포함한 처인부곡 공동체 모두의 것이었다.',
+      resultBody: '칸이 쓰러지자 몽골군은 큰 혼란에 빠졌다. 승리는 이름 없는 한 사람을 포함한 처인부곡 공동체 모두의 것이었다.',
       arrowNote: '누가 쏜 화살인지는 알 수 없다. 그래서 이 장면의 폰은 특정 영웅이 아니라 공동체를 나타낸다.'
     },
     {
@@ -516,10 +535,10 @@
       title: '처인현으로, 의병 정신으로',
       tag: 'fact',
       narrative: [
-        '살리타이를 잃은 몽골군은 철수를 시작했고, 처인부곡은 승리의 공로로 처인현으로 승격되었다. 이는 천민이 양인이 된 일이 아니라 양인 백성이 행정적 차별을 벗고 정당한 권리를 되찾은 사건이었다.',
+        '칸을 잃은 몽골군은 철수를 시작했고, 처인부곡은 승리의 공로로 처인현으로 승격되었다. 이는 천민이 양인이 된 일이 아니라 양인 백성이 행정적 차별을 벗고 정당한 권리를 되찾은 사건이었다.',
         '국가의 도움 없이 지역민과 승병이 함께 삶터를 지킨 경험은 훗날 의병 항쟁의 선례로 기억되었다. 임진왜란 의병장 조헌도 격문에서 처인성 전투와 김윤후를 언급했다.'
       ],
-      prompt: '처인 토성(룩)으로 마지막 외통수를 완성해 공동체의 승리를 지키세요.',
+      prompt: '처인 토성(룩)으로 마지막 체크메이트를 완성해 공동체의 승리를 지키세요.',
       verifyNote: null,
       board: [
         [null,null,null,null,null,null,'bK',null],
@@ -554,20 +573,20 @@
       },
       {
         date:'Wanjang-ri northeast of the fortress · Scene 3', title:'Ambush at the Wanjang-ri Approach',
-        narrative:['Cheoinseong was a small earthen fortress about four to six meters high, backed by wetlands, fields, and the terrain around Wanjang-ri to the northeast.','As Salitai approached with elite cavalry, Kim Yun-hu and the people placed an ambush at a key point outside the gate and waited for the commander to come close.'],
-        prompt:'Move the hidden monk soldier (bishop) to attack Salitai and the siege tower at once.', verifyNote:'This chess reconstruction represents the ambush outside the gate as a bishop fork.',
-        resultTitle:'The ambush cuts two routes at once.', resultBody:'From the diagonal, the monk soldier attacks Salitai and the rear siege tower together. A patient move using the terrain shakes the center of the besieging force.', arrowNote:null
+        narrative:['Cheoinseong was a small earthen fortress about four to six meters high, backed by wetlands, fields, and the terrain around Wanjang-ri to the northeast.','As the Khan approached with elite cavalry, Kim Yun-hu and the people placed an ambush at a key point outside the gate and waited for the commander to come close.'],
+        prompt:'Move the hidden monk soldier (bishop) to attack the Khan and the siege tower at once.', verifyNote:'This chess reconstruction represents the ambush outside the gate as a bishop fork.',
+        resultTitle:'The ambush cuts two routes at once.', resultBody:'From the diagonal, the monk soldier attacks the Khan and the rear siege tower together. A patient move using the terrain shakes the center of the besieging force.', arrowNote:null
       },
       {
-        date:'Salitai approaches · Scene 4', title:'The Arrow Without a Name',
-        narrative:['When Salitai came deep within range of the fortress, one arrow among many struck him in the neck. The records do not identify who fired it.','Kim Yun-hu later declined a senior military title, saying he had possessed no bow or arrow. The victory belonged not to a lone hero but to the collective resistance of Cheoin’s legally free local community.'],
-        prompt:'Use the people (pawn), representing the community, to capture Salitai.', verifyNote:'The pawn does not represent a named archer. It represents the people of Cheoin Bugok whose individual names were not recorded.',
-        resultTitle:'One arrow brings down the command.', resultBody:'Salitai falls and the Mongol army is thrown into confusion. The victory belongs to the whole community, including the person whose name history did not preserve.',
+        date:'The Khan approaches · Scene 4', title:'The Arrow Without a Name',
+        narrative:['When the Khan came deep within range of the fortress, one arrow among many struck him in the neck. The records do not identify who fired it.','Kim Yun-hu later declined a senior military title, saying he had possessed no bow or arrow. The victory belonged not to a lone hero but to the collective resistance of Cheoin’s legally free local community.'],
+        prompt:'Use the people (pawn), representing the community, to capture the Khan.', verifyNote:'The pawn does not represent a named archer. It represents the people of Cheoin Bugok whose individual names were not recorded.',
+        resultTitle:'One arrow brings down the command.', resultBody:'The Khan falls and the Mongol army is thrown into confusion. The victory belongs to the whole community, including the person whose name history did not preserve.',
         arrowNote:'The archer is unknown. The pawn therefore represents the community rather than a single hero.'
       },
       {
         date:'After the battle · Scene 5, Finale', title:'From Cheoin Bugok to Cheoin County',
-        narrative:['After losing Salitai, the Mongol force began to withdraw, and Cheoin Bugok was elevated to Cheoin County for its contribution. This was not an enslaved class becoming free; it was legally free residents overcoming administrative discrimination and recovering due recognition.','Local residents and monk soldiers defended their home without state support, leaving a precedent later associated with Korea’s civilian militia tradition. The Imjin War militia leader Jo Heon cited Cheoinseong and Kim Yun-hu in a public appeal.'],
+        narrative:['After losing the Khan, the Mongol force began to withdraw, and Cheoin Bugok was elevated to Cheoin County for its contribution. This was not an enslaved class becoming free; it was legally free residents overcoming administrative discrimination and recovering due recognition.','Local residents and monk soldiers defended their home without state support, leaving a precedent later associated with Korea’s civilian militia tradition. The Imjin War militia leader Jo Heon cited Cheoinseong and Kim Yun-hu in a public appeal.'],
         prompt:'Use the Cheoin earthen fortress (rook) to complete checkmate and secure the community’s victory.', verifyNote:null,
         resultTitle:'Checkmate. A victory for the local community.', resultBody:'The voluntary resistance of the people and monk soldiers defeats the Mongol force and leads to Cheoin’s elevation to county status.',
         arrowNote:'Cheoinseong is remembered as a victory in which a disadvantaged but legally free local community defended its home and rights.'
@@ -585,15 +604,15 @@
     var historySection=document.querySelector('.section');
     historySection.querySelector('h2').textContent='Background · August–December 1232';
     var historyParagraphs=historySection.querySelectorAll(':scope > p');
-    historyParagraphs[0].textContent='In August 1232, a second Mongol invasion entered Goryeo under commander Salitai. After the Goryeo court moved the capital to Ganghwa Island for a prolonged resistance, the Mongol army moved south and changed course after failing to take Gwangju Fortress.';
+    historyParagraphs[0].textContent='In August 1232, a second Mongol invasion entered Goryeo under the Khan. After the Goryeo court moved the capital to Ganghwa Island for a prolonged resistance, the Mongol army moved south and changed course after failing to take Gwangju Fortress.';
     historyParagraphs[1].textContent='On that route stood Cheoin Bugok, a strategic transport point with a military granary. Its residents were legally free commoners, not an enslaved or outcast class, although they bore heavier taxes and labor duties than ordinary counties. They voluntarily resisted with the monk Kim Yun-hu to defend their home and community.';
-    var legendCopy=[['People','Pawn · people of Cheoin Bugok'],['Infantry','Pawn · Mongol infantry'],['Cavalry','Knight · cavalry on both sides'],['Monk Soldier','Bishop · Baekhyeonwon fighters'],['Shaman / Adviser','Bishop · Mongol adviser'],['Cheoinseong Wall','Rook · defensive position'],['Mongol Siege Tower','Rook · siege equipment'],['Kim Yun-hu','King · Cheoinseong command'],['Salitai','King · Mongol commander']];
+    var legendCopy=[['People','Pawn · people of Cheoin Bugok'],['Infantry','Pawn · Mongol infantry'],['Cavalry','Knight · cavalry on both sides'],['Monk Soldier','Bishop · Baekhyeonwon fighters'],['Shaman / Adviser','Bishop · Mongol adviser'],['Cheoinseong Wall','Rook · defensive position'],['Mongol Siege Tower','Rook · siege equipment'],['Kim Yun-hu','King · Cheoinseong command'],['Khan','King · Mongol commander']];
     historySection.querySelectorAll('.legend-text').forEach(function(el,index){ el.innerHTML=legendCopy[index][0]+'<span class="role">'+legendCopy[index][1]+'</span>'; });
     historySection.querySelector('.queen-note').textContent='The queen does not appear in this series because it has not yet been reinterpreted for the Cheoinseong theme.';
     var epilogue=document.querySelector('.epilogue');
     epilogue.querySelector('h2').textContent='Afterward';
     var epilogueParagraphs=epilogue.querySelectorAll('p');
-    epilogueParagraphs[0].textContent='After Salitai fell, the Mongol force withdrew in confusion. Cheoinseong was a community victory in which legally free local residents and monk soldiers defended their home and provisions without state support.';
+    epilogueParagraphs[0].textContent='After the Khan fell, the Mongol force withdrew in confusion. Cheoinseong was a community victory in which legally free local residents and monk soldiers defended their home and provisions without state support.';
     epilogueParagraphs[1].textContent='Cheoin Bugok was elevated to Cheoin County in recognition of its contribution. This was not an enslaved class becoming free, but a legally free community overcoming administrative discrimination and recovering due recognition. The militia leader Jo Heon later cited Cheoinseong and Kim Yun-hu as a precedent.';
     document.querySelector('#finalBanner h3').textContent='Cheoinseong Complete';
     document.querySelector('#finalBanner p').textContent='All five scenes are complete. Cheoinseong remains a history of local residents and monk soldiers defending their community together, not the achievement of one hero alone.';
@@ -681,6 +700,8 @@
     illustration.alt = language==='en' ? 'Illustration for Cheoinseong puzzle scene ' + (idx + 1) : '처인성 퍼즐 장면 ' + (idx + 1) + ' 일러스트';
     illustration.loading = 'lazy';
     illustration.decoding = 'async';
+    illustration.draggable = false;
+    illustration.addEventListener('contextmenu', function(event){ event.preventDefault(); });
     narrativeCol.appendChild(illustration);
     var promptEl = document.createElement('div');
     promptEl.className = 'prompt-banner';
@@ -741,6 +762,29 @@
     resultEl.className = 'result';
     resultEl.innerHTML = '<b>' + puzzle.resultTitle + '</b><br>' + puzzle.resultBody +
       (puzzle.arrowNote ? '<div class="arrow-note">' + puzzle.arrowNote + '</div>' : '');
+    var nextBtn = document.createElement('button');
+    nextBtn.className = 'btn primary result-next';
+    nextBtn.type = 'button';
+    nextBtn.hidden = !directMode;
+    nextBtn.textContent = idx < PUZZLES.length - 1
+      ? (language === 'en' ? 'Next puzzle' : '다음 퍼즐')
+      : (language === 'en' ? 'Puzzle list' : '퍼즐 목록');
+    nextBtn.addEventListener('click', function(){
+      if(window.parent !== window){
+        window.parent.postMessage({
+          type: 'easymate:next-puzzle',
+          puzzleId: puzzle.id,
+          nextPuzzleId: PUZZLES[idx + 1] ? PUZZLES[idx + 1].id : null
+        }, '*');
+        return;
+      }
+      if(PUZZLES[idx + 1]){
+        var nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.set('puzzle', PUZZLES[idx + 1].id);
+        window.location.href = nextUrl.toString();
+      }
+    });
+    resultEl.appendChild(nextBtn);
     boardCol.appendChild(resultEl);
 
     body.appendChild(boardCol);
@@ -765,7 +809,7 @@
   }
 
   function initBoard(idx, puzzle, boardEl, feedback, resultEl, sceneEl, segEl, pathRow, hintBtn, revealBtn, resetBtn){
-    var board, selected, solved;
+    var board, selected, solved, animating;
     var hintsUsed = 0;
     var revealed = false;
     var startedAt = Date.now();
@@ -841,7 +885,7 @@
     }
 
     function onSquareClick(e){
-      if(solved) return;
+      if(solved || animating) return;
       var r = parseInt(this.dataset.r,10), c = parseInt(this.dataset.c,10);
       var p = board[r][c];
 
@@ -865,13 +909,12 @@
       }
     }
 
-    function attemptMove(from, to){
-      var isSolution = from[0]===puzzle.solution.from[0] && from[1]===puzzle.solution.from[1] &&
-                        to[0]===puzzle.solution.to[0] && to[1]===puzzle.solution.to[1];
-      var movingPiece = board[from[0]][from[1]];
+    function commitMove(from, to, movingPiece, isSolution){
       board[to[0]][to[1]] = movingPiece;
       board[from[0]][from[1]] = null;
       selected = null;
+      animating = false;
+      boardEl.classList.remove('is-animating');
       render();
 
       var targetSq = boardEl.querySelector('[data-r="'+to[0]+'"][data-c="'+to[1]+'"]');
@@ -894,8 +937,32 @@
       }
     }
 
+    function attemptMove(from, to){
+      var isSolution = from[0]===puzzle.solution.from[0] && from[1]===puzzle.solution.from[1] &&
+                        to[0]===puzzle.solution.to[0] && to[1]===puzzle.solution.to[1];
+      var movingPiece = board[from[0]][from[1]];
+      var targetSq = boardEl.querySelector('[data-r="'+to[0]+'"][data-c="'+to[1]+'"]');
+      var capturedPiece = targetSq && targetSq.querySelector('.piece');
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if(board[to[0]][to[1]] && capturedPiece && !reduceMotion){
+        animating = true;
+        boardEl.classList.add('is-animating');
+        capturedPiece.classList.add('is-captured');
+        var finished = false;
+        var finishCapture = function(){
+          if(finished) return;
+          finished = true;
+          commitMove(from, to, movingPiece, isSolution);
+        };
+        capturedPiece.addEventListener('animationend', finishCapture, { once:true });
+        window.setTimeout(finishCapture, 520);
+        return;
+      }
+      commitMove(from, to, movingPiece, isSolution);
+    }
+
     hintBtn.addEventListener('click', function(){
-      if(solved) return;
+      if(solved || animating) return;
       hintsUsed = Math.max(1, hintsUsed);
       selected = puzzle.solution.from.slice();
       feedback.textContent = tx('이 기물을 움직여보세요.');
@@ -904,16 +971,19 @@
     });
 
     revealBtn.addEventListener('click', function(){
-      if(solved) return;
+      if(solved || animating) return;
       revealed = true;
       hintsUsed = Math.max(2, hintsUsed);
       attemptMove(puzzle.solution.from, puzzle.solution.to);
     });
 
     resetBtn.addEventListener('click', function(){
+      if(animating) return;
       board = cloneBoard();
       selected = null;
       solved = false;
+      animating = false;
+      boardEl.classList.remove('is-animating');
       hintsUsed = 0;
       revealed = false;
       startedAt = Date.now();
@@ -931,6 +1001,7 @@
     board = cloneBoard();
     selected = null;
     solved = !!solvedFlags[idx];
+    animating = false;
     if(solved){
       segEl.classList.add('done');
       resultEl.classList.add('show');

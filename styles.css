@@ -3559,7 +3559,6 @@ body.piece-theme-beta .chess-board {
 .profile-hero-main,
 .profile-hero-scores,
 .profile-score,
-.profile-hero-bio-head,
 .profile-xp-row {
   display: flex;
   align-items: center;
@@ -3627,6 +3626,14 @@ body.piece-theme-beta .chess-board {
   overflow-wrap: anywhere;
 }
 
+.profile-email {
+  display: block;
+  margin-top: 12px;
+  color: var(--profile-muted);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
 .profile-hero-identity i {
   width: 12px;
   height: 12px;
@@ -3664,35 +3671,6 @@ body.piece-theme-beta .chess-board {
 
 .profile-score small {
   display: block;
-  color: var(--profile-muted);
-}
-
-.profile-hero-bio {
-  min-width: 0;
-  min-height: 128px;
-  padding-left: 30px;
-  border-left: 1px solid var(--profile-line);
-}
-
-.profile-hero-bio-head {
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.profile-bio-actions {
-  display: inline-flex;
-  gap: 8px;
-}
-
-.profile-hero-bio p {
-  margin: 0 0 18px;
-  color: var(--profile-text);
-  font-size: 1.15rem;
-  font-weight: 800;
-  overflow-wrap: anywhere;
-}
-
-.profile-hero-bio small {
   color: var(--profile-muted);
 }
 
@@ -3771,17 +3749,12 @@ body.piece-theme-beta .chess-board {
   margin-top: 12px;
 }
 
-.profile-inline-editor input,
-.profile-inline-editor textarea {
+.profile-inline-editor input {
   min-width: 0;
 }
 
 .profile-inline-editor[hidden] {
   display: none;
-}
-
-.profile-inline-editor textarea {
-  min-height: 86px;
 }
 
 .profile-settings-panel {
@@ -4502,11 +4475,6 @@ dialog::backdrop {
   .profile-hero-main {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .profile-hero-bio {
-    padding-left: 0;
-    border-left: 0;
   }
 
   .profile-stat-grid {
@@ -5985,29 +5953,9 @@ body.is-signed-in .view[data-view="overview"] {
   background: transparent;
 }
 
-.profile-view .profile-hero-bio {
-  min-height: 0;
-  margin-top: 18px;
-  padding: 0;
-  border: 0;
-}
-
-.profile-view .profile-hero-bio-head {
-  margin-bottom: 10px;
-}
-
-.profile-view .profile-hero-bio-head > strong {
-  color: var(--em-ink);
-  font-family: var(--font-ui);
-  font-size: 0.82rem;
-  line-height: 1;
-}
-
-.profile-view .profile-hero-bio p {
-  margin-bottom: 12px;
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  font-weight: 500;
+.profile-view .profile-email {
+  color: var(--em-muted);
+  font-size: 0.78rem;
 }
 
 .profile-view .profile-performance {
@@ -6988,7 +6936,6 @@ body.is-signed-in .site-header {
   }
 
   #profileEmail,
-  .profile-hero-bio p,
   .forum-post :is(h3, p, small) {
     overflow-wrap: anywhere;
   }

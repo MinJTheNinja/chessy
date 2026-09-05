@@ -532,7 +532,7 @@ const PIECES = [
    mission:'파란 점 중 아무 곳이나 눌러 룩을 움직여봐!',
    moves:rays([[1,0],[-1,0],[0,1],[0,-1]]), start:[2,2]},
   {id:'g_knight', enemy:'m_knight', enemyName:'상대 나이트', name:'나이트', en:'체스에서는 나이트',
-   intro:`나는 <b>나이트</b>야. 곧게 두 칸 간 뒤 옆으로 한 칸 가는 <b>L자 모양</b>으로 움직여. 다른 기물이 길을 막아도 <b>뛰어넘을</b> 수 있어.`,
+   intro:`나이트는 L자로 움직이며 중간에 기물이 있더라도 뛰어넘을 수 있어요.`,
    mission:'L자 모양 파란 점으로 나이트를 움직여봐!',
    moves:[[0,1],[0,3],[1,0],[1,4],[3,0],[3,4],[4,1],[4,3]], start:[2,2]},
   {id:'g_bishop', enemy:'m_bishop', enemyName:'상대 비숍', name:'비숍', en:'체스에서는 비숍',
@@ -815,16 +815,15 @@ function lessonLayout({goryeo, mongol, label='', speech, enemySpeech='', mission
 
 function pieceScene(p, idx){
   return lessonLayout({
-    goryeo:p.id, mongol:p.enemy, label:`${choose('용사','Defender')} ${idx+1}: ${p.name}`,
-    speech:p.intro,
-    enemySpeech:MONGOL_DIALOGUE[p.enemy] || `나는 ${p.enemyName}이다. 다음 수를 기다리겠다.`, mission:p.mission,
+    goryeo:p.id, label:`${choose('용사','Defender')} ${idx+1}: ${p.name}`,
+    speech:p.intro, mission:p.mission,
     nav:`<button class="btn-prev" id="prevBtn">← ${choose('이전','Previous')}</button>${progressCount(totalPieceScenes,idx)}<span class="next-wrap"><span class="cd-bubble" id="cdBubble" style="display:none"></span><button class="btn-next" id="nextBtn" disabled>${choose('확인 문제','Quick check')} →</button></span>`
   });
 }
 function captureScene(c, idx){
   const enemyName = isEnglish
-    ? (c.enemy==='m_rook'?'siege tower':c.enemy==='m_bishop'?'shaman':c.enemy==='m_knight'?'horse archer':c.enemy==='m_queen'?"Khan's guard":c.enemy==='m_king'?'Khan':'infantry')
-    : (c.enemy==='m_rook'?'공성탑':c.enemy==='m_bishop'?'주술사':c.enemy==='m_knight'?'기마궁수':c.enemy==='m_queen'?'친위장':c.enemy==='m_king'?'칸':'병졸');
+    ? (c.enemy==='m_rook'?'rook':c.enemy==='m_bishop'?'bishop':c.enemy==='m_knight'?'knight':c.enemy==='m_queen'?'queen':c.enemy==='m_king'?'king':'pawn')
+    : (c.enemy==='m_rook'?'룩':c.enemy==='m_bishop'?'비숍':c.enemy==='m_knight'?'나이트':c.enemy==='m_queen'?'퀸':c.enemy==='m_king'?'킹':'폰');
   const caseLegend = c.id==='kingCapture'
     ? `<div class="capture-case-legend"><div class="capture-case-card blocked">${choose('공격받는 칸<br>움직일 수 없어요','Attacked square<br>Cannot move')}</div><div class="capture-case-card">${choose('안전한 칸<br>움직일 수 있어요','Safe square<br>Can move')}</div></div>`
     : '';

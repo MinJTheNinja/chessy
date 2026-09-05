@@ -93,6 +93,7 @@ const howToPlayView = document.querySelector(".how-to-play-view");
 const showTutorialGuideButton = document.querySelector("#showTutorialGuide");
 const showPuzzleGuideButton = document.querySelector("#showPuzzleGuide");
 const showCheoinseongGuideButton = document.querySelector("#showCheoinseongGuide");
+const trainingEditionPicker = document.querySelector("#trainingEditionPicker");
 const trainingEditionLabel = document.querySelector("#trainingEditionLabel");
 const trainingEditionButtons = [...document.querySelectorAll("[data-training-edition]")];
 const tutorialPuzzleNote = document.querySelector("#tutorialPuzzleNote");
@@ -222,19 +223,14 @@ const profileAvatarButton = document.querySelector("#profileAvatarButton");
 const profileImageFile = document.querySelector("#profileImageFile");
 const profileName = document.querySelector("#profileName");
 const profileEmail = document.querySelector("#profileEmail");
-const profileBioText = document.querySelector("#profileBioText");
 const editProfileNameButton = document.querySelector("#editProfileName");
 const profileNameEditor = document.querySelector("#profileNameEditor");
 const saveProfileNameButton = document.querySelector("#saveProfileName");
-const editProfileBioButton = document.querySelector("#editProfileBio");
-const profileBioEditor = document.querySelector("#profileBioEditor");
-const saveProfileBioButton = document.querySelector("#saveProfileBio");
 const profileLanguageText = document.querySelector("#profileLanguageText");
 const profileDisplayName = document.querySelector("#profileDisplayName");
 const profileLanguagePair = document.querySelector("#profileLanguagePair");
 const profilePieceEdition = document.querySelector("#profilePieceEdition");
 const profileImage = document.querySelector("#profileImage");
-const profileBio = document.querySelector("#profileBio");
 const saveProfileButton = document.querySelector("#saveProfile");
 const peerFeedbackType = document.querySelector("#peerFeedbackType");
 const peerFeedbackNote = document.querySelector("#peerFeedbackNote");
@@ -2059,7 +2055,6 @@ async function setPieceEdition(edition) {
           languagePair: currentUser.languagePair,
           pieceEdition: nextEdition,
           avatarUrl: currentUser.avatarUrl || "",
-          bio: currentUser.bio || "",
         },
       }),
     );
@@ -2251,6 +2246,7 @@ function trainingTutorialPath(edition = activeTrainingEdition()) {
 function renderTrainingEditionControls() {
   const edition = activeTrainingEdition();
   const korean = currentInterfaceLanguage() === "Korean";
+  trainingEditionPicker?.toggleAttribute("hidden", activeTrainingPathMode === "cheoinseong");
   if (trainingEditionLabel) trainingEditionLabel.textContent = korean ? "튜토리얼 말 디자인" : "Tutorial piece design";
   trainingEditionButtons.forEach((button) => {
     const active = button.dataset.trainingEdition === edition;
@@ -2261,16 +2257,24 @@ function renderTrainingEditionControls() {
 }
 
 function reloadOpenTrainingEdition() {
-  if (!trainingModuleOpen || activeTrainingPathMode !== "tutorial" || !howToPlayFrame?.src) return;
+  if (!trainingModuleOpen || !howToPlayFrame?.src) return;
   try {
     const url = new URL(howToPlayFrame.src, window.location.origin);
-    if (!url.pathname.includes("how-to-play")) return;
-    url.pathname = trainingTutorialPath();
-    url.searchParams.set("edition", activeTrainingEdition());
-    url.searchParams.set("v", "20260904-split-training");
+    if (activeTrainingPathMode === "tutorial") {
+      if (!url.pathname.includes("how-to-play")) return;
+      url.pathname = trainingTutorialPath();
+      url.searchParams.set("edition", activeTrainingEdition());
+      url.searchParams.set("v", "20260905-khan-knight-copy");
+    } else if (activeTrainingPathMode === "puzzle") {
+      if (!url.pathname.includes("goryeo-vs-mongol-puzzle")) return;
+      url.searchParams.set("edition", activeTrainingEdition());
+      url.searchParams.set("v", "20260905-puzzle-scenes-v2-khan-copy");
+    } else {
+      return;
+    }
     howToPlayFrame.src = `${url.pathname}${url.search}`;
   } catch {
-    // Leave the current lesson in place if its URL cannot be normalized.
+    // Leave the current training content in place if its URL cannot be normalized.
   }
 }
 
@@ -2367,8 +2371,8 @@ const puzzlePathStages = [
     iconIndex: 3,
     ko: "완장리 길목의 매복",
     en: "Ambush at the Wanjang-ri Approach",
-    koDescription: "지형을 이용해 기다리던 승병이 살리타이와 공성탑을 동시에 겨누는 이중공격을 만듭니다.",
-    enDescription: "A monk soldier waiting in ambush uses the terrain to fork Salitai and the siege tower.",
+    koDescription: "지형을 이용해 기다리던 승병이 칸과 공성탑을 동시에 겨누는 이중공격을 만듭니다.",
+    enDescription: "A monk soldier waiting in ambush uses the terrain to fork the Khan and the siege tower.",
   },
   {
     id: "cheoin-4",
@@ -2377,8 +2381,8 @@ const puzzlePathStages = [
     iconIndex: 4,
     ko: "이름을 알 수 없는 화살",
     en: "The Arrow Without a Name",
-    koDescription: "특정 영웅이 아닌 처인부곡 공동체를 상징하는 백성 폰으로 살리타이를 잡아냅니다.",
-    enDescription: "A pawn representing the Cheoin community, rather than a named hero, captures Salitai.",
+    koDescription: "특정 영웅이 아닌 처인부곡 공동체를 상징하는 백성 폰으로 칸을 잡아냅니다.",
+    enDescription: "A pawn representing the Cheoin community, rather than a named hero, captures the Khan.",
   },
   {
     id: "cheoin-5",
@@ -2387,7 +2391,7 @@ const puzzlePathStages = [
     iconIndex: 5,
     ko: "처인현으로, 의병 정신으로",
     en: "From Cheoin Bugok to Cheoin County",
-    koDescription: "처인현 승격과 훗날 의병 항쟁의 선례로 남은 공동체의 승리를 마지막 외통수로 완성합니다.",
+    koDescription: "처인현 승격과 훗날 의병 항쟁의 선례로 남은 공동체의 승리를 마지막 체크메이트로 완성합니다.",
     enDescription: "Complete the community victory later remembered in Cheoin's elevation and Korea's civilian militia tradition.",
   },
 ];
@@ -2871,6 +2875,7 @@ async function refreshTrainingState() {
 function setActiveTrainingPathMode(mode) {
   activeTrainingPathMode = mode;
   if (howToPlayView) howToPlayView.dataset.trainingMode = mode;
+  trainingEditionPicker?.toggleAttribute("hidden", mode === "cheoinseong");
   showTutorialGuideButton?.classList.toggle("active", mode === "tutorial");
   showPuzzleGuideButton?.classList.toggle("active", mode === "puzzle");
   showCheoinseongGuideButton?.classList.toggle("active", mode === "cheoinseong");
@@ -2926,7 +2931,7 @@ function openTrainingModule(moduleId) {
   trainingModuleToolbar?.removeAttribute("hidden");
   const korean = currentInterfaceLanguage() === "Korean";
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${korean ? "모듈" : "Module"} ${normalizedModuleId} · ${korean ? module.title : translateCopy(module.title)}`;
-  if (howToPlayFrame) howToPlayFrame.src = `${trainingTutorialPath()}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&lang=${korean ? "ko" : "en"}&v=20260904-split-training`;
+  if (howToPlayFrame) howToPlayFrame.src = `${trainingTutorialPath()}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&lang=${korean ? "ko" : "en"}&v=20260905-khan-knight-copy`;
   setActiveTrainingPathMode("tutorial");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -2946,7 +2951,7 @@ function openTrainingReview(moduleId) {
   trainingModuleToolbar?.removeAttribute("hidden");
   const korean = currentInterfaceLanguage() === "Korean";
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${korean ? "모듈" : "Module"} ${normalizedModuleId} · ${korean ? "복습 퀴즈" : "Review Quiz"}`;
-  if (howToPlayFrame) howToPlayFrame.src = `${trainingTutorialPath()}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&review=1&lang=${korean ? "ko" : "en"}&v=20260904-split-training`;
+  if (howToPlayFrame) howToPlayFrame.src = `${trainingTutorialPath()}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&review=1&lang=${korean ? "ko" : "en"}&v=20260905-khan-knight-copy`;
   setActiveTrainingPathMode("tutorial");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -2967,7 +2972,8 @@ function openPuzzleStage(stage, index = 0, options = {}) {
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${currentInterfaceLanguage() === "Korean" ? "퍼즐" : "Puzzle"} ${index + 1} · ${title}`;
   const player = stage.player || "/assets/goryeo-vs-mongol-puzzle.html";
   const language = currentInterfaceLanguage() === "Korean" ? "ko" : "en";
-  if (howToPlayFrame) howToPlayFrame.src = `${player}?puzzle=${encodeURIComponent(stage.id)}&lang=${language}&v=20260829-localized-puzzles`;
+  const edition = stage.series === "cheoinseong" ? "" : `&edition=${activeTrainingEdition()}`;
+  if (howToPlayFrame) howToPlayFrame.src = `${player}?puzzle=${encodeURIComponent(stage.id)}&lang=${language}${edition}&v=20260905-puzzle-scenes-v2-khan-copy`;
   setActiveTrainingPathMode(stage.series === "cheoinseong" ? "cheoinseong" : "puzzle");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -3057,12 +3063,13 @@ function setHowToPlayMode(mode) {
   const requestedPathMode = mode === "cheoinseong" ? "cheoinseong" : "puzzle";
   const pathIsAvailable = requestedPathMode === "cheoinseong" || puzzleUnlocked;
   const nextMode = ["puzzle", "cheoinseong"].includes(mode) && pathIsAvailable ? requestedPathMode : "tutorial";
-  if (nextMode === "puzzle" || nextMode === "cheoinseong") {
+  const isPuzzleMode = nextMode === "puzzle" || nextMode === "cheoinseong";
+  if (isPuzzleMode && !trainingModuleOpen) {
     showPuzzlePath(nextMode);
     return;
   } else if (trainingModuleOpen) {
-    howToPlayShell?.classList.remove("puzzle-mode");
-    howToPlayView?.classList.remove("puzzle-mode");
+    howToPlayShell?.classList.toggle("puzzle-mode", isPuzzleMode);
+    howToPlayView?.classList.toggle("puzzle-mode", isPuzzleMode);
     resetHowToPlayFrameSizing();
     trainingModuleList?.setAttribute("hidden", "");
     puzzlePathList?.setAttribute("hidden", "");
@@ -4160,15 +4167,6 @@ async function saveInlineProfileName() {
   try {
     await saveProfilePatch({ displayName: profileDisplayName?.value.trim() || currentUser?.displayName || "", displayNameSource: "user" });
     if (profileNameEditor) profileNameEditor.hidden = true;
-  } catch (error) {
-    if (profileStatus) profileStatus.textContent = error.message;
-  }
-}
-
-async function saveInlineProfileBio() {
-  try {
-    await saveProfilePatch({ bio: profileBio?.value.trim() || "" });
-    if (profileBioEditor) profileBioEditor.hidden = true;
   } catch (error) {
     if (profileStatus) profileStatus.textContent = error.message;
   }
@@ -6191,8 +6189,6 @@ function renderProfile(profile) {
   if (profilePieceEdition) profilePieceEdition.value = normalizePieceEdition(user.pieceEdition);
   updateHeaderPieceEditionToggle(user.pieceEdition);
   if (profileImage) profileImage.value = user.avatarUrl || "";
-  if (profileBio) profileBio.value = user.bio || "";
-  if (profileBioText) profileBioText.textContent = user.bio || "Easy Elo를 올리며 훈련 중입니다.";
   if (profileStreak) profileStreak.textContent = String(Number(user.streak || 0));
   if (profileEasyElo) profileEasyElo.textContent = String(Number(user.easyElo || 1000));
   if (profileSideElo) profileSideElo.textContent = String(Number(user.easyElo || 1000));
@@ -6299,8 +6295,6 @@ function clearProfile() {
   if (profileLanguagePair) profileLanguagePair.value = "English to Korean";
   if (profilePieceEdition) profilePieceEdition.value = "cheoinseong";
   if (profileImage) profileImage.value = "";
-  if (profileBio) profileBio.value = "";
-  if (profileBioText) profileBioText.textContent = "Easy Elo를 올리며 훈련 중입니다.";
   if (profileStreak) profileStreak.textContent = "0";
   if (profileEasyElo) profileEasyElo.textContent = "1000";
   if (profileSideElo) profileSideElo.textContent = "1000";
@@ -6349,7 +6343,6 @@ async function saveProfile() {
           languagePair: profileLanguagePair?.value || currentUser?.languagePair || authLanguagePair?.value || "English to Korean",
           pieceEdition: profilePieceEdition?.value,
           avatarUrl: profileImage?.value || "",
-          bio: profileBio?.value || "",
         },
       }),
     );
@@ -7057,6 +7050,14 @@ window.addEventListener("message", (event) => {
     showPuzzlePath(activeTrainingPathMode === "cheoinseong" ? "cheoinseong" : "puzzle");
   }
   if (event.data?.type === "easymate:puzzle-complete") completePuzzle(event.data);
+  if (event.data?.type === "easymate:next-puzzle") {
+    const cheoinseongStages = puzzlePathStages.filter((stage) => stage.series === "cheoinseong");
+    const currentIndex = cheoinseongStages.findIndex((stage) => stage.id === event.data.puzzleId);
+    if (currentIndex < 0) return;
+    const nextStage = cheoinseongStages[currentIndex + 1];
+    if (nextStage) openPuzzleStage(nextStage, currentIndex + 1, { allowLocked: true });
+    else showPuzzlePath("cheoinseong");
+  }
 });
 
 continueToDashboardButton.addEventListener("click", () => {
@@ -7152,11 +7153,6 @@ profileDisplayName?.addEventListener("keydown", (event) => {
     saveInlineProfileName();
   }
 });
-editProfileBioButton?.addEventListener("click", () => {
-  if (profileBioEditor) profileBioEditor.hidden = !profileBioEditor.hidden;
-  profileBio?.focus();
-});
-saveProfileBioButton?.addEventListener("click", saveInlineProfileBio);
 profileAvatarButton?.addEventListener("click", () => profileImageFile?.click());
 profileImageFile?.addEventListener("change", () => uploadProfileImage(profileImageFile.files?.[0]));
 submitPeerFeedbackButton?.addEventListener("click", submitPeerFeedback);

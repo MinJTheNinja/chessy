@@ -593,7 +593,7 @@
               <button class="button primary" id="tutorialLoginButton" type="button">로그인 화면으로 가기</button>
             </div>
 
-            <div class="training-edition-picker" role="group" aria-labelledby="trainingEditionLabel">
+            <div class="training-edition-picker" id="trainingEditionPicker" role="group" aria-labelledby="trainingEditionLabel">
               <span id="trainingEditionLabel">튜토리얼 말 디자인</span>
               <div class="training-edition-options">
                 <button id="trainingEditionOriginal" type="button" data-training-edition="original">오리지널</button>
@@ -842,20 +842,7 @@
                     <input id="profileDisplayName" type="text" placeholder="ChessLearner" />
                     <button class="button primary small" id="saveProfileName" type="button">저장</button>
                   </div>
-                  <div class="profile-hero-bio">
-                    <div class="profile-hero-bio-head">
-                      <strong>BIO</strong>
-                      <div class="profile-bio-actions">
-                        <button class="inline-edit-button" id="editProfileBio" type="button" aria-label="BIO 수정">✎</button>
-                      </div>
-                    </div>
-                    <p id="profileBioText">Easy Elo를 올리며 훈련 중입니다.</p>
-                    <div class="profile-inline-editor" id="profileBioEditor" hidden>
-                      <textarea id="profileBio" placeholder="예: 1600아 내가 간다~"></textarea>
-                      <button class="button primary small" id="saveProfileBio" type="button">저장</button>
-                    </div>
-                    <small id="profileEmail">player@example.com</small>
-                  </div>
+                  <small class="profile-email" id="profileEmail">player@example.com</small>
                 </div>
 
                 <aside class="profile-performance">

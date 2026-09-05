@@ -1010,7 +1010,7 @@ const achievementCatalog = [
   { id: "piece-commander", name: "기물 지휘관", category: "훈련장", detail: "모든 기본 훈련 모듈을 완료했습니다." },
   { id: "capture-specialist", name: "포획 전문가", category: "훈련장", detail: "기물 잡기 모듈을 완료했습니다." },
   { id: "crisis-escape", name: "위기 탈출", category: "훈련장", detail: "체크 피하기 모듈을 완료했습니다." },
-  { id: "mate-solver", name: "외통수 해결사", category: "훈련장", detail: "체크메이트 모듈을 완료했습니다." },
+  { id: "mate-solver", name: "체크메이트 해결사", category: "훈련장", detail: "체크메이트 모듈을 완료했습니다." },
   { id: "review-craftsperson", name: "복습 장인", category: "훈련장", detail: "복습 퀴즈를 다섯 번 완료했습니다." },
   { id: "gate-guardian", name: "성문 수호자", category: "퍼즐", detail: "성문 뒤의 함정 퍼즐을 세 번 해결했습니다." },
   { id: "flawless-solver", name: "무결점 풀이", category: "퍼즐", detail: "힌트 없이 퍼즐을 다섯 번 해결했습니다." },
@@ -1255,7 +1255,6 @@ function publicUser(user, db = null) {
     role: normalizedRole(user),
     pieceEdition: normalizedPieceEdition(user.pieceEdition),
     avatarUrl: user.avatarUrl || "",
-    bio: user.bio || "",
     nativeLanguage: user.nativeLanguage || "",
     learningLanguage: user.learningLanguage || "",
     streak: Number(user.streak || 0),
@@ -1535,7 +1534,6 @@ function buildProfile(user, db) {
   return {
     user: {
       ...publicUser(user, db),
-      bio: user.bio || "",
       nativeLanguage: user.nativeLanguage || "",
       learningLanguage: user.learningLanguage || "",
       training: trainingState(user),
@@ -2340,7 +2338,6 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       if (languagePair) user.languagePair = languagePair.slice(0, 80);
     }
     if (hasOwn(body, "pieceEdition")) user.pieceEdition = normalizedPieceEdition(body.pieceEdition);
-    if (hasOwn(body, "bio")) user.bio = String(body.bio || "").trim().slice(0, 280);
     if (hasOwn(body, "avatarUrl")) user.avatarUrl = String(body.avatarUrl || "").trim().slice(0, 500);
     if (hasOwn(body, "nativeLanguage")) user.nativeLanguage = String(body.nativeLanguage || "").trim().slice(0, 40);
     if (hasOwn(body, "learningLanguage")) user.learningLanguage = String(body.learningLanguage || "").trim().slice(0, 40);

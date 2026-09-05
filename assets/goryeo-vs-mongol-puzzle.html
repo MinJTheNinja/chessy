@@ -167,6 +167,8 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
   box-shadow:inset 0 0 0 2px rgba(142,59,49,.5)}
 .pc{position:absolute;inset:0% 4% 15% 4%;pointer-events:none;z-index:3;
   filter:drop-shadow(0 2px 1.5px rgba(0,0,0,.3))}
+.piece-art-original.white{filter:drop-shadow(0 2px 1px rgba(32,52,72,.28))}
+.piece-art-original.black{filter:brightness(.2) contrast(1.2) drop-shadow(0 1px 1px rgba(247,240,223,.5))}
 .pc.hint-glow{animation:hintGlow .8s ease-in-out infinite alternate}
 @keyframes hintGlow{from{filter:drop-shadow(0 0 2px var(--geum)) drop-shadow(0 2px 1.5px rgba(0,0,0,.3))}
   to{filter:drop-shadow(0 0 12px var(--geum)) drop-shadow(0 0 4px var(--geum))}}
@@ -331,22 +333,24 @@ body,body.home-mode{background-image:none!important}
 </div>
 
 <script>
-const PUZZLE_LANGUAGE=new URLSearchParams(window.location.search).get('lang')==='en'?'en':'ko';
+const puzzleParams=new URLSearchParams(window.location.search);
+const PUZZLE_LANGUAGE=puzzleParams.get('lang')==='en'?'en':'ko';
+const PUZZLE_EDITION=puzzleParams.get('edition')==='original'?'original':'cheoinseong';
 document.documentElement.lang=PUZZLE_LANGUAGE;
-/* 고려 vs 몽골 — 치비 기물 원화 (전 기물 원화) */
+document.body.classList.toggle('piece-theme-original',PUZZLE_EDITION==='original');
+const pieceArt=(name)=>{
+  if(PUZZLE_EDITION!=='original') return `<img alt="" src="/assets/tutorial-pieces/${name}.webp?v=20260905-webp" loading="lazy" decoding="async">`;
+  const type=name.split('_')[1]||'pawn';
+  const file={pawn:'p',rook:'r',knight:'n',bishop:'b',queen:'q',king:'k'}[type]||'p';
+  const side=name.startsWith('m_')?'black':'white';
+  return `<img class="piece-art-original ${side}" alt="" src="/assets/original-chess-pieces-v1/${file}.webp?v=20260905-webp" loading="lazy" decoding="async">`;
+};
+/* 선택한 디자인의 퍼즐 기물 */
 const ART = {
-g_pawn: `<img alt="" src="/assets/tutorial-pieces/g_pawn.webp?v=20260905-webp" loading="lazy" decoding="async">`,
-g_rook: `<img alt="" src="/assets/tutorial-pieces/g_rook.webp?v=20260905-webp" loading="lazy" decoding="async">`,
-g_knight: `<img alt="" src="/assets/tutorial-pieces/g_knight.webp?v=20260905-webp" loading="lazy" decoding="async">`,
-g_bishop: `<img alt="" src="/assets/tutorial-pieces/g_bishop.webp?v=20260905-webp" loading="lazy" decoding="async">`,
-g_queen: `<img alt="" src="/assets/tutorial-pieces/g_queen.webp?v=20260905-webp" loading="lazy" decoding="async">`,
-g_king: `<img alt="" src="/assets/tutorial-pieces/g_king.webp?v=20260905-webp" loading="lazy" decoding="async">`,
-m_pawn: `<img alt="" src="/assets/tutorial-pieces/m_pawn.webp?v=20260905-webp" loading="lazy" decoding="async">`,
-m_rook: `<img alt="" src="/assets/tutorial-pieces/m_rook.webp?v=20260905-webp" loading="lazy" decoding="async">`,
-m_knight: `<img alt="" src="/assets/tutorial-pieces/m_knight.webp?v=20260905-webp" loading="lazy" decoding="async">`,
-m_bishop: `<img alt="" src="/assets/tutorial-pieces/m_bishop.webp?v=20260905-webp" loading="lazy" decoding="async">`,
-m_queen: `<img alt="" src="/assets/tutorial-pieces/m_queen.webp?v=20260905-webp" loading="lazy" decoding="async">`,
-m_king: `<img alt="" src="/assets/tutorial-pieces/m_king.webp?v=20260905-webp" loading="lazy" decoding="async">`
+g_pawn:pieceArt('g_pawn'), g_rook:pieceArt('g_rook'), g_knight:pieceArt('g_knight'),
+g_bishop:pieceArt('g_bishop'), g_queen:pieceArt('g_queen'), g_king:pieceArt('g_king'),
+m_pawn:pieceArt('m_pawn'), m_rook:pieceArt('m_rook'), m_knight:pieceArt('m_knight'),
+m_bishop:pieceArt('m_bishop'), m_queen:pieceArt('m_queen'), m_king:pieceArt('m_king')
 };
 
 
