@@ -525,7 +525,7 @@ if(PUZZLE_LANGUAGE==='en'){
 function cloneBoard(board){ return board.map(row=>row.map(piece=>piece?{...piece}:null)); }
 
 function makeVariants(base){
-  const extraPawnSquares=[[5,0],[5,7],[4,0],[4,7]];
+  const extraPawnSquares=[[5,0],[5,7],[4,0],[4,7],[3,0]];
   return extraPawnSquares.map(([row,col],index)=>({
     ...base,
     id:`${base.id}-v${index+2}`,
@@ -544,7 +544,7 @@ function organisePuzzleFamilies(level, baseIds){
   level.families=baseIds.map(baseId=>{
     const base=byId.get(baseId);
     const puzzles=baseId==='s1'
-      ? ['s1','gate2','gate3','gate4','gate5'].map(id=>byId.get(id))
+      ? [...['s1','gate2','gate3','gate4','gate5'].map(id=>byId.get(id)),makeVariants(base).at(-1)]
       : [base,...makeVariants(base)];
     return {id:`${level.id}-${baseId}`,title:base.title,sub:base.sub,puzzles};
   });

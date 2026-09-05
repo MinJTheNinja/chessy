@@ -250,6 +250,7 @@ let leaderboardScope = "mine";
 let leaderboardPage = 0;
 const leaderboardPageSize = 10;
 let leagueActionMode = null;
+let latestCreatedLeagueCode = "";
 let cachedTrainingState = null;
 let trainingModuleOpen = false;
 let trainingModuleTransition = null;
@@ -2237,50 +2238,50 @@ const puzzlePathStages = [
     series: "cheoinseong",
     player: "/assets/cheoinseong-battle.html",
     iconIndex: 1,
-    ko: "관군 없이, 스스로",
-    en: "Without the royal army",
-    koDescription: "처인부곡의 백성이 성벽에 다가온 몽골 병졸을 직접 막아냅니다.",
-    enDescription: "The people of Cheoin stop a Mongol foot soldier approaching the wall.",
+    ko: "작은 토성, 결사항전을 택하다",
+    en: "A Small Fortress Chooses to Resist",
+    koDescription: "군창을 지키려 자발적으로 토성에 모인 처인부곡의 양인 백성이 몽골 병졸을 막아냅니다.",
+    enDescription: "The legally free residents of Cheoin Bugok gather voluntarily to defend the granary and stop Mongol infantry.",
   },
   {
     id: "cheoin-2",
     series: "cheoinseong",
     player: "/assets/cheoinseong-battle.html",
     iconIndex: 2,
-    ko: "몽골 기병, 성을 에워싸다",
-    en: "Mongol cavalry surrounds the fort",
-    koDescription: "나이트 포크로 적 지휘부와 공성탑을 동시에 위협합니다.",
-    enDescription: "Use a knight fork to threaten the commander and siege tower together.",
+    ko: "마음을 하나로 모으다",
+    en: "Uniting the Community",
+    koDescription: "김윤후가 백성들 곁으로 한 걸음 나아가 공동체의 방어 대열을 하나로 모읍니다.",
+    enDescription: "Kim Yun-hu steps beside the people and brings the community into one defensive line.",
   },
   {
     id: "cheoin-3",
     series: "cheoinseong",
     player: "/assets/cheoinseong-battle.html",
     iconIndex: 3,
-    ko: "승병들, 최전선에 서다",
-    en: "Monks take the front line",
-    koDescription: "승병을 상징하는 비숍이 긴 대각선에서 이중공격을 만듭니다.",
-    enDescription: "A bishop representing the warrior monks creates a double attack.",
+    ko: "완장리 길목의 매복",
+    en: "Ambush at the Wanjang-ri Approach",
+    koDescription: "지형을 이용해 기다리던 승병이 살리타이와 공성탑을 동시에 겨누는 이중공격을 만듭니다.",
+    enDescription: "A monk soldier waiting in ambush uses the terrain to fork Salitai and the siege tower.",
   },
   {
     id: "cheoin-4",
     series: "cheoinseong",
     player: "/assets/cheoinseong-battle.html",
     iconIndex: 4,
-    ko: "성벽이 버티다",
-    en: "The walls hold",
-    koDescription: "처인성 성벽을 상징하는 룩으로 왕과 기병을 함께 겨눕니다.",
-    enDescription: "Use the rook-like fortress wall to fork the king and cavalry.",
+    ko: "이름을 알 수 없는 화살",
+    en: "The Arrow Without a Name",
+    koDescription: "특정 영웅이 아닌 처인부곡 공동체를 상징하는 백성 폰으로 살리타이를 잡아냅니다.",
+    enDescription: "A pawn representing the Cheoin community, rather than a named hero, captures Salitai.",
   },
   {
     id: "cheoin-5",
     series: "cheoinseong",
     player: "/assets/cheoinseong-battle.html",
     iconIndex: 5,
-    ko: "화살, 살리타이에게 향하다",
-    en: "The arrow flies toward Sartai",
-    koDescription: "마지막 룩 수로 뒷줄 체크메이트를 완성합니다.",
-    enDescription: "Deliver the final back-rank checkmate with the rook.",
+    ko: "처인현으로, 의병 정신으로",
+    en: "From Cheoin Bugok to Cheoin County",
+    koDescription: "처인현 승격과 훗날 의병 항쟁의 선례로 남은 공동체의 승리를 마지막 외통수로 완성합니다.",
+    enDescription: "Complete the community victory later remembered in Cheoin's elevation and Korea's civilian militia tradition.",
   },
 ];
 
@@ -2597,6 +2598,12 @@ function completedPuzzleIds() {
   return ids;
 }
 
+function similarPuzzleIds(stage) {
+  if (stage.series === "cheoinseong") return [];
+  if (stage.id === "s1") return ["gate2", "gate3", "gate4", "gate5", "s1-v6"];
+  return Array.from({ length: 5 }, (_, index) => `${stage.id}-v${index + 2}`);
+}
+
 function renderPuzzleStageList(list, seriesItem) {
   if (!list) return;
   const korean = currentInterfaceLanguage() === "Korean";
@@ -2615,19 +2622,32 @@ function renderPuzzleStageList(list, seriesItem) {
     const isComplete = completed.has(stage.id);
     const isCurrent = index === currentStageIndex;
     const accessible = isComplete || index <= currentStageIndex;
+    const variants = similarPuzzleIds(stage);
     const status = isComplete
       ? korean ? "완료" : "Complete"
       : isCurrent
         ? korean ? "도전 가능" : "Ready"
         : korean ? "잠김" : "Locked";
     const row = document.createElement("article");
-    row.className = `training-module-row puzzle-stage-row ${index % 2 ? "path-right" : "path-left"}${isComplete ? " completed" : ""}${isCurrent ? " current" : ""}${accessible ? "" : " locked"}${index === seriesItem.stages.length - 1 ? " path-last" : ""}`;
+    row.className = `training-module-row puzzle-stage-row ${index % 2 ? "path-right" : "path-left"}${isComplete ? " completed" : ""}${isCurrent ? " current" : ""}${accessible ? "" : " locked"}${index === seriesItem.stages.length - 1 ? " path-last" : ""}${variants.length ? " has-variants" : ""}`;
     const tooltipId = `puzzleStageTooltip-${seriesItem.id}-${index + 1}`;
     const title = korean ? stage.ko : stage.en;
     const description = korean ? stage.koDescription : stage.enDescription;
     const icon = stage.iconIndex
       ? `<span class="puzzle-stage-icon cheoinseong-stage-icon cheoinseong-stage-icon-${stage.iconIndex}" aria-hidden="true"></span>`
       : `<span class="puzzle-stage-icon puzzle-stage-icon-${index + 1}" aria-hidden="true"></span>`;
+    const variantPath = variants.length
+      ? `<div class="puzzle-variant-path" aria-label="${korean ? "유사 퍼즐" : "Similar puzzles"}">
+          ${variants.map((variantId, variantIndex) => {
+            const variantComplete = completed.has(variantId);
+            const variantAccessible = isComplete || variantComplete;
+            const variantLabel = korean ? `유사 퍼즐 ${variantIndex + 1}` : `Similar puzzle ${variantIndex + 1}`;
+            const completedLabel = variantComplete ? korean ? ", 완료" : ", complete" : "";
+            const position = (((variantIndex + 1) / 6) * 100).toFixed(4);
+            return `<button class="puzzle-variant-node${variantComplete ? " completed" : ""}" type="button" style="--variant-position:${position}%" data-puzzle-variant="${variantId}" aria-label="${variantLabel}${completedLabel}" title="${variantLabel}"${variantAccessible ? "" : ' aria-disabled="true"'}><span aria-hidden="true">${variantComplete ? "✓" : "♟"}</span></button>`;
+          }).join("")}
+        </div>`
+      : "";
     row.innerHTML = `
       <div class="training-path-anchor">
         <button class="training-path-node" type="button" aria-describedby="${tooltipId}"${accessible ? "" : ' aria-disabled="true"'}>
@@ -2640,8 +2660,20 @@ function renderPuzzleStageList(list, seriesItem) {
           <p>${description}</p>
           <strong>${accessible ? korean ? "눌러서 퍼즐 풀기" : "Open puzzle" : korean ? "이전 퍼즐을 먼저 완료하세요" : "Complete the previous puzzle first"}</strong>
         </div>
-      </div>`;
+      </div>
+      ${variantPath}`;
     if (accessible) row.querySelector(".training-path-node")?.addEventListener("click", () => openPuzzleStage(stage, index));
+    row.querySelectorAll("[data-puzzle-variant]").forEach((button, variantIndex) => {
+      if (button.getAttribute("aria-disabled") === "true") return;
+      button.addEventListener("click", () => {
+        openPuzzleStage({
+          ...stage,
+          id: button.dataset.puzzleVariant,
+          ko: `${stage.ko} · 유사 퍼즐 ${variantIndex + 1}`,
+          en: `${stage.en} · Similar puzzle ${variantIndex + 1}`,
+        }, index);
+      });
+    });
     list.append(row);
   });
 }
@@ -2829,10 +2861,11 @@ function openPuzzleStage(stage, index = 0, options = {}) {
 }
 
 function syncOpenTrainingFrameLanguage() {
-  if (!trainingModuleOpen || !howToPlayFrame?.src || howToPlayFrame.src === "about:blank") return;
+  if (howToPlayShell?.hidden || !howToPlayFrame?.src || howToPlayFrame.src === "about:blank") return;
   try {
     const url = new URL(howToPlayFrame.src, window.location.origin);
-    url.searchParams.set("lang", currentInterfaceLanguage() === "Korean" ? "ko" : "en");
+    const language = currentInterfaceLanguage() === "Korean" ? "ko" : "en";
+    url.searchParams.set("lang", language);
     url.searchParams.set("locale", String(Date.now()));
     howToPlayFrame.src = `${url.pathname}${url.search}`;
   } catch {
@@ -5459,7 +5492,18 @@ function renderLeagueAction() {
   });
   if (createdLeagueCode) {
     const code = currentLeagueCode();
-    createdLeagueCode.textContent = code || (korean ? "코드 생성 전" : "No code yet");
+    const justCreated = Boolean(code) && latestCreatedLeagueCode === code;
+    createdLeagueCode.textContent = justCreated
+      ? korean
+        ? `새 리그 · ${code}`
+        : `New league · ${code}`
+      : code
+        ? korean
+          ? `현재 리그 · ${code}`
+          : `Current league · ${code}`
+        : korean
+          ? "코드 생성 전"
+          : "No code yet";
   }
 }
 
@@ -5488,6 +5532,7 @@ async function joinLeague() {
     if (leagueStatus) leagueStatus.textContent = "리그에 참여하는 중...";
     const data = await api("/api/leagues/join", { method: "POST", body: { code } });
     currentUser = data.user;
+    latestCreatedLeagueCode = "";
     showAchievementUnlocks(data.unlocked);
     renderDashboardSummary();
     renderLeaderboard(data.league);
@@ -5516,6 +5561,7 @@ async function leaveLeague() {
     if (leagueStatus) leagueStatus.textContent = korean ? "리그에서 나가는 중..." : "Leaving league...";
     const data = await api("/api/leagues/leave", { method: "POST" });
     currentUser = data.user;
+    latestCreatedLeagueCode = "";
     if (leagueCodeInput) leagueCodeInput.value = "";
     leagueActionMode = null;
     leaderboardPage = 0;
@@ -5538,6 +5584,7 @@ async function createLeague() {
     if (leagueStatus) leagueStatus.textContent = "리그 코드를 생성하는 중...";
     const data = await api("/api/leagues/create", { method: "POST", body: { name: "EasyMate Class League" } });
     currentUser = data.user;
+    latestCreatedLeagueCode = data.league.code;
     showAchievementUnlocks(data.unlocked);
     if (leagueCodeInput) leagueCodeInput.value = data.league.code;
     renderDashboardSummary();
@@ -5545,7 +5592,11 @@ async function createLeague() {
     renderAuthState();
     leagueActionMode = "create";
     renderLeagueAction();
-    if (leagueStatus) leagueStatus.textContent = `새 리그 코드: ${data.league.code}`;
+    if (leagueStatus) {
+      leagueStatus.textContent = currentInterfaceLanguage() === "Korean"
+        ? `리그 생성 및 참여 완료: ${data.league.code}`
+        : `League created and joined: ${data.league.code}`;
+    }
   } catch (error) {
     if (leagueStatus) leagueStatus.textContent = error.message;
   }
@@ -6374,7 +6425,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 interfaceLanguageObserver = new MutationObserver((records) => {
-  if (applyingLanguage || currentInterfaceLanguage() !== "Korean") return;
+  if (applyingLanguage) return;
   records.forEach((record) => {
     if (record.type === "characterData") {
       scheduleInterfaceLanguageApply(record.target);
@@ -6461,7 +6512,7 @@ deleteAccountConfirm?.addEventListener("input", updateDeleteAccountButtonState);
 contrastModeButton.addEventListener("click", toggleContrastMode);
 textSizeSlider.addEventListener("input", (event) => applyTextSize(event.target.value));
 
-languageSelect?.addEventListener("change", () => {
+languageSelect?.addEventListener("change", async () => {
   applyInterfaceLanguage();
   syncLegalLanguage();
   renderActiveMatchReturn();
@@ -6476,11 +6527,13 @@ languageSelect?.addEventListener("change", () => {
   if (activeView === "forum" && forumInitialized) renderForumPosts();
   if (activeView === "overview") refreshLeaderboard();
   if (activeView === "how-to-play") {
-    refreshTrainingState();
+    syncOpenTrainingFrameLanguage();
+    await refreshTrainingState();
     syncOpenTrainingFrameLanguage();
   }
   resetSubtitlePlaceholders();
   setSttStatus(sttListening);
+  applyInterfaceLanguage();
 });
 
 document.querySelectorAll("[data-profile-language]").forEach((input) => {

@@ -1466,6 +1466,12 @@ function leagueCode() {
   return crypto.randomBytes(3).toString("hex").toUpperCase();
 }
 
+function privateChallengeCode(db) {
+  let code = leagueCode();
+  while (db.challenges.some((challenge) => challenge.status === "open" && challenge.code === code)) code = leagueCode();
+  return code;
+}
+
 function leagueView(league, db, period = "weekly") {
   const members = db.users
     .filter((user) => user.leagueCode === league.code)
@@ -2012,6 +2018,8 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     };
     db.leagues.push(league);
     user.leagueCode = code;
+    user.weeklyEasyElo = Number(user.weeklyEasyElo ?? user.easyElo ?? 1000);
+    user.leagueJoined = true;
     user.leagueCreated = true;
     const unlocked = syncAchievements(user, db);
     await writeDb(db);
@@ -2810,7 +2818,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
         waitingMatch.endedAt = new Date().toISOString();
       }
     });
-    const code = crypto.randomBytes(3).toString("hex").toUpperCase();
+    const code = privateChallengeCode(db);
     const match = createMatch(db, user, {
       timeControl: body.timeControl || "10+0",
       rated: false,

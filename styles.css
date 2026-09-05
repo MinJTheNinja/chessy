@@ -8746,6 +8746,86 @@ body.is-signed-in .workspace .home-league-actions #createLeagueButton:focus-visi
   display: none;
 }
 
+.how-to-play-view .puzzle-stage-row.path-last.has-variants::after {
+  display: block;
+}
+
+.puzzle-variant-path {
+  position: absolute;
+  z-index: 2;
+  top: 64px;
+  left: calc(50% + var(--path-shift));
+  width: 330px;
+  height: 2px;
+  pointer-events: none;
+  transform: rotate(24.5deg);
+  transform-origin: 0 50%;
+}
+
+.path-right .puzzle-variant-path {
+  transform: rotate(155.5deg);
+}
+
+.puzzle-variant-node {
+  position: absolute;
+  top: 50%;
+  left: var(--variant-position);
+  display: grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: var(--theme-panel);
+  color: var(--theme-accent);
+  font: 700 0.9rem/1 "Arial Unicode MS", "Segoe UI Symbol", sans-serif;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) rotate(-24.5deg);
+}
+
+.path-right .puzzle-variant-node {
+  transform: translate(-50%, -50%) rotate(-155.5deg);
+}
+
+.puzzle-variant-node:hover,
+.puzzle-variant-node:focus-visible,
+.puzzle-variant-node.completed {
+  border-color: var(--ink);
+  background: var(--theme-accent);
+  color: var(--theme-panel);
+}
+
+.puzzle-variant-node[aria-disabled="true"] {
+  border-color: var(--line-strong);
+  background: var(--theme-panel);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+@media (max-width: 760px) {
+  .puzzle-variant-path {
+    top: 56px;
+    width: 190px;
+    transform: rotate(38deg);
+  }
+
+  .path-right .puzzle-variant-path {
+    transform: rotate(142deg);
+  }
+
+  .puzzle-variant-node {
+    width: 22px;
+    height: 22px;
+    font-size: 0.7rem;
+    transform: translate(-50%, -50%) rotate(-38deg);
+  }
+
+  .path-right .puzzle-variant-node {
+    transform: translate(-50%, -50%) rotate(-142deg);
+  }
+}
+
 .puzzle-stage-icon {
   display: block;
   width: 52px;
