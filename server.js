@@ -23,6 +23,7 @@ const nvidiaSafetyModel = process.env.NVIDIA_SAFETY_MODEL || "nvidia/nemotron-3.
 const meteredTurnApiUrl = String(process.env.METERED_TURN_API_URL || "").trim().replace(/\/$/, "");
 const meteredTurnApiKey = process.env.METERED_TURN_API_KEY;
 const googleClientId = String(process.env.GOOGLE_CLIENT_ID || "").trim();
+const teacherAccessCode = String(process.env.TEACHER_ACCESS_CODE || "easymateTR");
 const staffEmails = new Set(
   String(process.env.STAFF_EMAILS || "")
     .split(",")
@@ -990,6 +991,12 @@ function hasOwn(object, key) {
   return Object.prototype.hasOwnProperty.call(object || {}, key);
 }
 
+function secureTextEqual(first, second) {
+  const firstBuffer = Buffer.from(String(first || ""), "utf8");
+  const secondBuffer = Buffer.from(String(second || ""), "utf8");
+  return firstBuffer.length === secondBuffer.length && crypto.timingSafeEqual(firstBuffer, secondBuffer);
+}
+
 function defaultTraining() {
   return {
     completedModules: [],
@@ -1235,8 +1242,9 @@ function getSessionUser(req, db) {
   return db.users.find((user) => user.id === session.userId) || null;
 }
 
-function publicUser(user) {
+function publicUser(user, db = null) {
   if (!user) return null;
+  const ownedTeacherLeague = db ? teacherLeagueForUser(user, db) : null;
   const achievements = userAchievementEntries(user).map(achievementView).filter(Boolean);
   return {
     id: user.id,
@@ -1254,6 +1262,8 @@ function publicUser(user) {
     lastStreakAt: user.lastStreakAt || "",
     easyElo: Number(user.easyElo || 1000),
     leagueCode: user.leagueCode || "",
+    isTeacher: Boolean(ownedTeacherLeague || user.teacherLeagueId || user.teacherLeagueCode || user.leagueCreated),
+    teacherLeagueCode: ownedTeacherLeague?.code || user.teacherLeagueCode || (user.leagueCreated ? user.leagueCode || "" : ""),
     training: trainingState(user),
     achievements,
     badgeNotifications: pendingAchievementViews(user),
@@ -1524,7 +1534,7 @@ function buildProfile(user, db) {
   const matchIds = new Set(userMatches.map((match) => match.id));
   return {
     user: {
-      ...publicUser(user),
+      ...publicUser(user, db),
       bio: user.bio || "",
       nativeLanguage: user.nativeLanguage || "",
       learningLanguage: user.learningLanguage || "",
@@ -1572,6 +1582,53 @@ function leagueView(league, db, period = "weekly") {
     period,
     scope: "mine",
     resetsAt: league.resetsAt,
+    members,
+  };
+}
+
+function calendarDateKey(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (!Number.isFinite(date.getTime())) return "";
+  const parts = Object.fromEntries(
+    streakDateFormatter
+      .formatToParts(date)
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function teacherLeagueForUser(user, db) {
+  if (!user) return null;
+  const leagues = Array.isArray(db.leagues) ? db.leagues : [];
+  return leagues.find((league) => league.id === user.teacherLeagueId && league.createdBy === user.id)
+    || leagues.find((league) => league.code === user.teacherLeagueCode && league.createdBy === user.id)
+    || leagues.find((league) => league.createdBy === user.id)
+    || null;
+}
+
+function teacherLeagueView(league, db) {
+  const members = db.users
+    .filter((member) => String(member.leagueCode || "").trim().toUpperCase() === league.code)
+    .map((member) => ({
+      id: member.id,
+      displayName: publicDisplayName(member),
+      avatarUrl: member.avatarUrl || "",
+      streak: Number(member.streak || 0),
+      weeklyEasyElo: Number(member.weeklyEasyElo ?? member.easyElo ?? 1000),
+      easyElo: Number(member.easyElo || 1000),
+      isTeacher: member.id === league.createdBy,
+    }))
+    .sort((first, second) => second.weeklyEasyElo - first.weeklyEasyElo || first.displayName.localeCompare(second.displayName, "ko"))
+    .map((member, index) => ({ ...member, rank: index + 1 }));
+  const competitionEndsOn = String(league.competitionEndsOn || "");
+  return {
+    id: league.id,
+    code: league.code,
+    name: league.name || `EasyMate League ${league.code}`,
+    competitionEndsOn,
+    status: competitionEndsOn && competitionEndsOn < calendarDateKey() ? "ended" : "active",
+    createdAt: league.createdAt,
     members,
   };
 }
@@ -1945,7 +2002,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
   }
 
   if (req.method === "GET" && pathname === "/api/session") {
-    sendJson(res, 200, { user: publicUser(user), unlocked: pendingAchievementViews(user) });
+    sendJson(res, 200, { user: publicUser(user, db), unlocked: pendingAchievementViews(user) });
     return true;
   }
 
@@ -2060,6 +2117,106 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     return true;
   }
 
+  if (req.method === "GET" && pathname === "/api/leagues/teacher") {
+    if (!requireUser(user, res)) return true;
+    const league = teacherLeagueForUser(user, db);
+    if (!league) {
+      sendJson(res, 403, { error: "Teacher league access required." });
+      return true;
+    }
+    sendJson(res, 200, { league: teacherLeagueView(league, db) });
+    return true;
+  }
+
+  if (req.method === "PATCH" && pathname === "/api/leagues/teacher") {
+    if (!requireUser(user, res)) return true;
+    const league = teacherLeagueForUser(user, db);
+    if (!league) {
+      sendJson(res, 403, { error: "Teacher league access required." });
+      return true;
+    }
+    const body = await readBody(req);
+    const name = String(body.name || "").trim();
+    const competitionEndsOn = String(body.competitionEndsOn || "").trim();
+    if (!name) {
+      sendJson(res, 400, { error: "Enter a league name." });
+      return true;
+    }
+    const parsedEndDate = new Date(`${competitionEndsOn}T00:00:00.000Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(competitionEndsOn)
+      || !Number.isFinite(parsedEndDate.getTime())
+      || parsedEndDate.toISOString().slice(0, 10) !== competitionEndsOn) {
+      sendJson(res, 400, { error: "Choose a valid competition end date." });
+      return true;
+    }
+    if (competitionEndsOn < calendarDateKey()) {
+      sendJson(res, 400, { error: "Choose today or a later date." });
+      return true;
+    }
+    league.name = name.slice(0, 80);
+    league.competitionEndsOn = competitionEndsOn;
+    await writeDb(db);
+    sendJson(res, 200, { league: teacherLeagueView(league, db) });
+    return true;
+  }
+
+  const restoreTeacherMemberParams = routePattern(pathname, "/api/leagues/teacher/members/:id/restore");
+  if (req.method === "POST" && restoreTeacherMemberParams) {
+    if (!requireUser(user, res)) return true;
+    const league = teacherLeagueForUser(user, db);
+    if (!league) {
+      sendJson(res, 403, { error: "Teacher league access required." });
+      return true;
+    }
+    const member = db.users.find((item) => item.id === restoreTeacherMemberParams.id);
+    if (!member) {
+      sendJson(res, 404, { error: "League member not found." });
+      return true;
+    }
+    if (member.removedFromLeagueCode !== league.code) {
+      sendJson(res, 409, { error: "That member was not removed from this league." });
+      return true;
+    }
+    if (member.leagueCode && member.leagueCode !== league.code) {
+      sendJson(res, 409, { error: "That member has joined another league." });
+      return true;
+    }
+    member.leagueCode = league.code;
+    member.leagueJoined = member.id !== league.createdBy;
+    member.removedFromLeagueCode = "";
+    member.removedFromLeagueAt = "";
+    await writeDb(db);
+    sendJson(res, 200, { league: teacherLeagueView(league, db) });
+    return true;
+  }
+
+  const teacherMemberParams = routePattern(pathname, "/api/leagues/teacher/members/:id");
+  if (req.method === "DELETE" && teacherMemberParams) {
+    if (!requireUser(user, res)) return true;
+    const league = teacherLeagueForUser(user, db);
+    if (!league) {
+      sendJson(res, 403, { error: "Teacher league access required." });
+      return true;
+    }
+    const member = db.users.find((item) => item.id === teacherMemberParams.id && item.leagueCode === league.code);
+    if (!member) {
+      sendJson(res, 404, { error: "League member not found." });
+      return true;
+    }
+    if (member.id === league.createdBy) {
+      sendJson(res, 400, { error: "The league teacher cannot be removed." });
+      return true;
+    }
+    const removedMember = { id: member.id, displayName: publicDisplayName(member) };
+    member.leagueCode = "";
+    member.leagueJoined = false;
+    member.removedFromLeagueCode = league.code;
+    member.removedFromLeagueAt = new Date().toISOString();
+    await writeDb(db);
+    sendJson(res, 200, { league: teacherLeagueView(league, db), removedMember });
+    return true;
+  }
+
   if (req.method === "GET" && pathname === "/api/leagues/leaderboard") {
     const period = searchParams.get("period") === "alltime" ? "alltime" : "weekly";
     const scope = searchParams.get("scope") === "all" ? "all" : "mine";
@@ -2088,7 +2245,21 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
 
   if (req.method === "POST" && pathname === "/api/leagues/create") {
     if (!requireUser(user, res)) return true;
+    if (!requireRateLimit(req, res, user, "league-create", 8, 5 * 60_000)) return true;
     const body = await readBody(req);
+    if (!secureTextEqual(body.teacherCode, teacherAccessCode)) {
+      sendJson(res, 403, { error: "Teacher code is incorrect." });
+      return true;
+    }
+    const existingLeague = teacherLeagueForUser(user, db);
+    if (existingLeague) {
+      user.teacherLeagueId = existingLeague.id;
+      user.teacherLeagueCode = existingLeague.code;
+      user.leagueCreated = true;
+      await writeDb(db);
+      sendJson(res, 200, { league: leagueView(existingLeague, db, "weekly"), user: publicUser(user, db), unlocked: [] });
+      return true;
+    }
     let code = leagueCode();
     while (db.leagues.some((league) => league.code === code)) code = leagueCode();
     const league = {
@@ -2098,15 +2269,20 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       createdBy: user.id,
       createdAt: new Date().toISOString(),
       resetsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      competitionEndsOn: calendarDateKey(new Date(Date.now() + 30 * dayMs)),
     };
     db.leagues.push(league);
     user.leagueCode = code;
     user.weeklyEasyElo = Number(user.weeklyEasyElo ?? user.easyElo ?? 1000);
     user.leagueJoined = true;
+    user.removedFromLeagueCode = "";
+    user.removedFromLeagueAt = "";
     user.leagueCreated = true;
+    user.teacherLeagueId = league.id;
+    user.teacherLeagueCode = code;
     const unlocked = syncAchievements(user, db);
     await writeDb(db);
-    sendJson(res, 201, { league: leagueView(league, db, "weekly"), user: publicUser(user), unlocked });
+    sendJson(res, 201, { league: leagueView(league, db, "weekly"), user: publicUser(user, db), unlocked });
     return true;
   }
 
@@ -2119,12 +2295,18 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       sendJson(res, 404, { error: "League code not found." });
       return true;
     }
+    if (league.competitionEndsOn && league.competitionEndsOn < calendarDateKey()) {
+      sendJson(res, 409, { error: "This league competition has ended." });
+      return true;
+    }
     user.leagueCode = code;
+    user.removedFromLeagueCode = "";
+    user.removedFromLeagueAt = "";
     user.weeklyEasyElo = Number(user.weeklyEasyElo ?? user.easyElo ?? 1000);
     user.leagueJoined = true;
     const unlocked = syncAchievements(user, db);
     await writeDb(db);
-    sendJson(res, 200, { league: leagueView(league, db, "weekly"), user: publicUser(user), unlocked });
+    sendJson(res, 200, { league: leagueView(league, db, "weekly"), user: publicUser(user, db), unlocked });
     return true;
   }
 
@@ -2170,7 +2352,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
   if (req.method === "GET" && pathname === "/api/training/state") {
     if (!requireUser(user, res)) return true;
     user.training = normalizeTraining(user.training);
-    sendJson(res, 200, { state: trainingState(user), user: publicUser(user) });
+    sendJson(res, 200, { state: trainingState(user), user: publicUser(user, db) });
     return true;
   }
 
@@ -2187,7 +2369,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     applyDailyStreak(user, new Date(), "learning");
     const unlocked = syncAchievements(user, db);
     await writeDb(db);
-    sendJson(res, 200, { state, user: publicUser(user), unlocked });
+    sendJson(res, 200, { state, user: publicUser(user, db), unlocked });
     return true;
   }
 
@@ -2219,7 +2401,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     applyDailyStreak(user, new Date(), "learning");
     const unlocked = syncAchievements(user, db);
     await writeDb(db);
-    sendJson(res, 200, { state: trainingState(user), user: publicUser(user), unlocked });
+    sendJson(res, 200, { state: trainingState(user), user: publicUser(user, db), unlocked });
     return true;
   }
 
@@ -2235,7 +2417,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     applyDailyStreak(user, new Date(), "learning");
     const unlocked = syncAchievements(user, db);
     await writeDb(db);
-    sendJson(res, 200, { state: trainingState(user), user: publicUser(user), unlocked });
+    sendJson(res, 200, { state: trainingState(user), user: publicUser(user, db), unlocked });
     return true;
   }
 
@@ -2246,7 +2428,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     userAchievementEntries(user);
     user.badgeNotifications = user.badgeNotifications.filter((badge) => !ids.has(String(badge?.id || badge)));
     await writeDb(db);
-    sendJson(res, 200, { user: publicUser(user) });
+    sendJson(res, 200, { user: publicUser(user, db) });
     return true;
   }
 
@@ -2580,7 +2762,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
 
     const token = createSession(db, found.id);
     await writeDb(db);
-    sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": sessionCookie(token, req) });
+    sendJson(res, 200, { user: publicUser(found, db) }, { "set-cookie": sessionCookie(token, req) });
     return true;
   }
 
@@ -2595,7 +2777,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     }
     const token = createSession(db, found.id);
     await writeDb(db);
-    sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": sessionCookie(token, req) });
+    sendJson(res, 200, { user: publicUser(found, db) }, { "set-cookie": sessionCookie(token, req) });
     return true;
   }
 
@@ -2641,7 +2823,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       }
       const token = createSession(db, found.id);
       await writeDb(db);
-      sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": sessionCookie(token, req) });
+      sendJson(res, 200, { user: publicUser(found, db) }, { "set-cookie": sessionCookie(token, req) });
     } catch (error) {
       sendJson(res, 401, { error: error.message || "Google login failed." });
     }

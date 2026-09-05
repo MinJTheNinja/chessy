@@ -628,7 +628,7 @@ const moduleBounds = {
 };
 const [MODULE_START_SCENE, MODULE_END_SCENE] = moduleBounds[moduleId];
 
-const state = {scene:isReview ? REVIEW_SCENE : MODULE_START_SCENE, earned:{}, captures:{}, checks:{}, checkmates:{}, reviewIndex:0, reviewScore:0};
+const state = {scene:isReview ? REVIEW_SCENE : MODULE_START_SCENE, earned:{}, captures:{}, checks:{}, checkmates:{}, reviewIndex:0, reviewScore:0, reviewQuestions:null};
 let countdownTimer=null;
 let reviewQuizReported=false;
 let moduleCompletionReported=false;
@@ -863,6 +863,24 @@ function moduleDoneScene(){
     <button class="replay" id="completeModuleBtn">${isLast ? '훈련장으로 돌아가기' : '다음 모듈로 넘어가기'}</button>
     <div class="brand">EasyMate</div>`;
 }
+function shuffledCopy(items){
+  const shuffled=[...items];
+  for(let index=shuffled.length-1;index>0;index-=1){
+    const swapIndex=Math.floor(Math.random()*(index+1));
+    [shuffled[index],shuffled[swapIndex]]=[shuffled[swapIndex],shuffled[index]];
+  }
+  return shuffled;
+}
+function shuffledReviewQuestions(questions){
+  return shuffledCopy(questions).map(item=>{
+    const answers=shuffledCopy(item.answers.map((answer,index)=>({answer,correct:index===item.correct})));
+    return {
+      ...item,
+      answers:answers.map(option=>option.answer),
+      correct:answers.findIndex(option=>option.correct),
+    };
+  });
+}
 function reviewScene(){
   const questions = isEnglish ? {
     1:[
@@ -915,7 +933,8 @@ function reviewScene(){
       {question:'질식 체크메이트의 특징은?',answers:['자기 기물이 임금의 도망길을 막음','판에 폰이 없음','퀸이 두 개 있음'],correct:0},
     ],
   };
-  const set=questions[moduleId];
+  const sourceSet=questions[moduleId] || [];
+  const set=state.reviewQuestions || (state.reviewQuestions=shuffledReviewQuestions(sourceSet));
   const item=set[state.reviewIndex];
   return `<div class="eyebrow">${choose(`모듈 ${moduleId} 복습 퀴즈`,`Module ${moduleId} Review Quiz`)}</div><div class="review-status">${state.reviewIndex+1} / ${set.length}</div><h2 style="text-align:center">${item.question}</h2><div class="rule-list">${item.answers.map((answer,index)=>`<button class="rule-item review-answer" data-answer="${index}" data-correct="${index===item.correct}">${answer}</button>`).join('')}</div><p class="lesson-note" id="reviewResult">${choose('정답을 골라 보세요.','Choose an answer.')}</p><div class="nav"><button class="btn-prev" id="reviewBack">← ${choose('연습마당','Training')}</button>${progressCount(set.length,state.reviewIndex)}<button class="btn-next" id="reviewNext" disabled>${state.reviewIndex===set.length-1?choose('복습 완료','Finish Review'):choose('다음 문제 →','Next Question →')}</button></div>`;
 }
@@ -1442,7 +1461,7 @@ function bindScene(){
       };
     });
     nextButton.onclick=()=>{
-      if(state.reviewIndex<3){ state.reviewIndex+=1; render(); return; }
+      if(state.reviewIndex<state.reviewQuestions.length-1){ state.reviewIndex+=1; render(); return; }
       if(!reviewQuizReported){
         reviewQuizReported=true;
         window.parent?.postMessage({type:'easymate:review-quiz-complete',module:moduleId,score:state.reviewScore}, '*');

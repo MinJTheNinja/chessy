@@ -14,14 +14,11 @@
     <noscript>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
     </noscript>
-    <link rel="stylesheet" href="/styles.css?v=20260829-text-active-states" />
-    <script src="/app.js?v=20260829-dashboard-simplify" defer></script>
+    <link rel="stylesheet" href="/styles.css?v=20260905-teacher-league" />
+    <script src="/app.js?v=20260905-teacher-league" defer></script>
   </head>
   <body>
     <header class="site-header">
-      <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebarMenu" aria-label="메뉴 열기">
-        <span aria-hidden="true">☰</span>
-      </button>
       <a class="brand" href="#home" data-view-link="home" aria-label="EasyMate 홈">
         <img src="/assets/easymate-logo-transparent-v2.png" alt="EasyMate" decoding="async" />
       </a>
@@ -30,6 +27,7 @@
         <button type="button" data-view-link="dashboard">플레이</button>
         <button type="button" data-view-link="how-to-play">훈련장</button>
         <button type="button" data-view-link="forum">게시판</button>
+        <button class="teacher-only" type="button" data-view-link="teacher" hidden>교사용</button>
         <button type="button" data-view-link="chessboards" hidden>상점</button>
       </nav>
       <div class="header-actions">
@@ -116,6 +114,7 @@
             <button class="side-link" data-view-link="dashboard">플레이</button>
             <button class="side-link" data-view-link="how-to-play">훈련장</button>
             <button class="side-link" data-view-link="forum">게시판</button>
+            <button class="side-link teacher-only" data-view-link="teacher" hidden>교사용</button>
             <button class="side-link" data-view-link="chessboards" hidden>상점</button>
             <button class="side-link staff-only" data-view-link="staff" hidden>운영자</button>
           </div>
@@ -219,8 +218,22 @@
                         </div>
                         <div class="league-action-panel" data-league-panel="create" hidden>
                           <strong class="league-action-title">리그 만들기</strong>
-                          <div class="league-created-code" id="createdLeagueCode" aria-live="polite">코드 생성 전</div>
-                          <button class="button secondary small" id="createLeagueButton" type="button">코드 생성</button>
+                          <label class="league-access-field" for="teacherAccessCodeInput">
+                            <span>교사용 코드</span>
+                            <input
+                              id="teacherAccessCodeInput"
+                              type="password"
+                              placeholder="교사용 코드 입력"
+                              autocomplete="off"
+                              aria-describedby="teacherAccessCodeHelp"
+                            />
+                          </label>
+                          <p class="league-access-help" id="teacherAccessCodeHelp">교사에게 제공된 코드를 입력하세요.</p>
+                          <div class="league-created-result" id="leagueCreatedResult" hidden>
+                            <span>내 리그 코드</span>
+                            <strong class="league-created-code" id="createdLeagueCode" aria-live="polite">코드 생성 전</strong>
+                          </div>
+                          <button class="button secondary small" id="createLeagueButton" type="button">코드 확인</button>
                         </div>
                       </div>
                       <p class="profile-status" id="leagueStatus" aria-live="polite">아직 참여한 리그가 없습니다.</p>
@@ -847,8 +860,8 @@
 
                 <aside class="profile-performance">
                   <div class="profile-elo-display">
-                    <span>Easy Elo</span>
                     <strong id="profileEasyElo">1000</strong>
+                    <span>Easy Elo</span>
                   </div>
                   <div class="profile-stat-grid">
                     <article>
@@ -938,6 +951,59 @@
             </div>
           </section>
 
+          <section class="view teacher-view" data-view="teacher" aria-labelledby="teacherTitle">
+            <div class="view-header teacher-view-header">
+              <div>
+                <h2 id="teacherTitle">교사용 리그 관리</h2>
+                <p>참여자와 점수를 확인하고 리그 운영 기간을 정합니다.</p>
+              </div>
+              <button class="button secondary" id="refreshTeacherLeague" type="button">새로고침</button>
+            </div>
+
+            <section class="teacher-code-band" aria-labelledby="teacherLeagueCodeLabel">
+              <div>
+                <span id="teacherLeagueCodeLabel">리그 코드</span>
+                <strong id="teacherLeagueCode">—</strong>
+                <p>학생에게 이 코드를 전달하세요. 교사용 탭에서 언제든 다시 확인할 수 있습니다.</p>
+              </div>
+              <button class="button secondary" id="copyTeacherLeagueCode" type="button">코드 복사</button>
+            </section>
+
+            <div class="teacher-workbench">
+              <section class="teacher-member-panel" aria-labelledby="teacherMembersTitle">
+                <div class="teacher-section-head">
+                  <div>
+                    <h3 id="teacherMembersTitle">참여자 관리</h3>
+                    <p>현재 점수를 확인하거나 참여자를 리그에서 내보냅니다.</p>
+                  </div>
+                  <strong id="teacherMemberCount">0명</strong>
+                </div>
+                <div class="teacher-member-list" id="teacherMemberList" aria-live="polite"></div>
+              </section>
+
+              <aside class="teacher-settings-panel" aria-labelledby="teacherSettingsTitle">
+                <h3 id="teacherSettingsTitle">리그 설정</h3>
+                <form id="teacherLeagueSettingsForm">
+                  <label for="teacherLeagueName">
+                    <span>리그 이름</span>
+                    <input id="teacherLeagueName" type="text" maxlength="80" autocomplete="off" required />
+                  </label>
+                  <label for="teacherLeagueEndDate">
+                    <span>경쟁 종료일</span>
+                    <input id="teacherLeagueEndDate" type="date" required />
+                  </label>
+                  <p class="teacher-date-help">종료일은 참가자에게 같은 날짜로 표시됩니다.</p>
+                  <button class="button primary" id="saveTeacherLeagueSettings" type="submit">리그 설정 저장</button>
+                </form>
+              </aside>
+            </div>
+
+            <div class="teacher-action-status" aria-live="polite">
+              <span id="teacherLeagueStatus">리그 정보를 불러오는 중입니다.</span>
+              <button class="text-link" id="undoTeacherMemberRemoval" type="button" hidden>되돌리기</button>
+            </div>
+          </section>
+
           <section class="view" data-view="staff" aria-labelledby="adminTitle">
             <div class="view-header">
               <div>
@@ -995,7 +1061,8 @@
         <button class="active" data-view-link="overview" type="button">홈</button>
         <button data-view-link="dashboard" type="button">대국</button>
         <button data-view-link="how-to-play" type="button">훈련장</button>
-        <button data-view-link="overview" type="button">리그</button>
+        <button data-view-link="forum" type="button">게시판</button>
+        <button class="teacher-only" data-view-link="teacher" type="button" hidden>교사</button>
         <button data-view-link="profile" type="button">나</button>
       </nav>
     </main>
@@ -1073,20 +1140,28 @@
       </article>
     </dialog>
 
-    <dialog class="legal-dialog" id="aboutDialog" aria-labelledby="aboutTitle">
+    <dialog class="legal-dialog" id="aboutDialog" aria-label="About Us">
       <article>
         <button class="legal-dialog-close" type="button" data-close-dialog aria-label="닫기">x</button>
         <div data-legal-language="ko">
           <span class="eyebrow">About Us</span>
-          <h2 id="aboutTitle">체스와 대화를 함께 배우는 곳</h2>
-          <p>EasyMate는 체스 튜토리얼과 퍼즐, 실시간 대국을 통해 초보자가 한 수씩 배우고 다른 플레이어와 안전하게 대화할 수 있도록 만드는 학습 서비스입니다.</p>
-          <p>서비스 및 협업 문의: <a href="mailto:easymate.team@gmail.com">easymate.team@gmail.com</a></p>
+          <p>EasyMate는 더 많은 사람들이 체스를 쉽고 친근하게 접할 수 있도록 시작되었습니다.</p>
+          <p>체스는 어렵거나 일부 사람들만 즐기는 게임일 필요가 없습니다. 누구나 자연스럽게 배우고, 생각하고, 다른 사람과 연결될 수 있는 하나의 매개가 될 수 있다고 믿습니다.</p>
+          <p>하지만 EasyMate의 목표는 체스판에서 끝나지 않습니다.</p>
+          <p>우리는 사람들이 자신이 살아가는 고장의 문화와 역사, 그리고 그 장소가 지닌 의미를 다시 발견할 수 있기를 바랍니다. 빠르게 흘러가는 일상 속에서 우리는 매일 지나치는 거리와 동네, 그곳에 쌓인 이야기들을 돌아볼 기회를 쉽게 놓칩니다.</p>
+          <p>EasyMate는 잠시 멈추는 순간을 만들고자 합니다.</p>
+          <p>체스를 통해 사람과 사람이 연결되고, 그 경험이 다시 우리가 살아가는 지역과 그 안의 이야기를 바라보는 계기가 되기를 바랍니다.</p>
+          <p><strong>체스를 두고, 잠시 멈추고, 우리가 살아가는 곳을 다시 바라봅니다.</strong></p>
         </div>
         <div data-legal-language="en" hidden>
           <span class="eyebrow">About Us</span>
-          <h2>Learn chess and conversation together</h2>
-          <p>EasyMate helps beginners learn one move at a time through tutorials, puzzles, and live matches while practicing safe conversation with other players.</p>
-          <p>Product and partnership contact: <a href="mailto:easymate.team@gmail.com">easymate.team@gmail.com</a></p>
+          <p>EasyMate was created to make chess more approachable, enjoyable, and accessible to everyone.</p>
+          <p>We believe chess should not feel distant or intimidating. It can be a simple way to think, connect, and share time with others.</p>
+          <p>But our mission goes beyond the chessboard.</p>
+          <p>We also want people to rediscover the culture, history, and meaning of the places they call home. In a fast-moving world, we rarely stop to think about the neighborhoods, stories, and traditions that surround us every day.</p>
+          <p>EasyMate invites people to pause.</p>
+          <p>Through chess, we hope to create moments where people can connect not only with each other, but also with their local community and its stories.</p>
+          <p><strong>Play chess. Pause for a moment. Rediscover where you are.</strong></p>
         </div>
       </article>
     </dialog>

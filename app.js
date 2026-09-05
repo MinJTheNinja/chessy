@@ -1,5 +1,4 @@
 const board = document.querySelector("#chessBoard");
-const menuToggle = document.querySelector("#menuToggle");
 const languageSelect = document.querySelector("#languageSelect");
 const pieceEditionControls = document.querySelectorAll("[data-piece-edition]");
 const sidebarMenu = document.querySelector("#sidebarMenu");
@@ -146,6 +145,20 @@ const leagueActionPanels = document.querySelectorAll("[data-league-panel]");
 const leagueActionPopover = document.querySelector("#leagueActionPopover");
 const closeLeagueActionPopoverButton = document.querySelector("#closeLeagueActionPopover");
 const createdLeagueCode = document.querySelector("#createdLeagueCode");
+const teacherAccessCodeInput = document.querySelector("#teacherAccessCodeInput");
+const teacherAccessCodeHelp = document.querySelector("#teacherAccessCodeHelp");
+const leagueCreatedResult = document.querySelector("#leagueCreatedResult");
+const refreshTeacherLeagueButton = document.querySelector("#refreshTeacherLeague");
+const teacherLeagueCode = document.querySelector("#teacherLeagueCode");
+const copyTeacherLeagueCodeButton = document.querySelector("#copyTeacherLeagueCode");
+const teacherMemberCount = document.querySelector("#teacherMemberCount");
+const teacherMemberList = document.querySelector("#teacherMemberList");
+const teacherLeagueSettingsForm = document.querySelector("#teacherLeagueSettingsForm");
+const teacherLeagueName = document.querySelector("#teacherLeagueName");
+const teacherLeagueEndDate = document.querySelector("#teacherLeagueEndDate");
+const saveTeacherLeagueSettingsButton = document.querySelector("#saveTeacherLeagueSettings");
+const teacherLeagueStatus = document.querySelector("#teacherLeagueStatus");
+const undoTeacherMemberRemovalButton = document.querySelector("#undoTeacherMemberRemoval");
 const todayQuestList = document.querySelector("#todayQuestList");
 const conversationGoal = document.querySelector("#conversationGoal");
 const forumPostTitle = document.querySelector("#forumPostTitle");
@@ -251,6 +264,10 @@ let leaderboardPage = 0;
 const leaderboardPageSize = 10;
 let leagueActionMode = null;
 let latestCreatedLeagueCode = "";
+let cachedTeacherLeague = null;
+let teacherLeagueRefreshPromise = null;
+let lastRemovedTeacherMember = null;
+let teacherMemberUndoTimer = 0;
 let cachedTrainingState = null;
 let trainingModuleOpen = false;
 let trainingModuleTransition = null;
@@ -619,6 +636,37 @@ Object.assign(koreanText, {
   "How to play": "훈련장",
   "Tutorial and puzzle": "훈련장과 퍼즐",
   "EasyMate tutorial": "EasyMate 훈련장",
+  "Teacher": "교사",
+  "Teacher tools": "교사용",
+  "Teacher code": "교사용 코드",
+  "Enter teacher code": "교사용 코드 입력",
+  "Enter the code provided to teachers.": "교사에게 제공된 코드를 입력하세요.",
+  "Check code": "코드 확인",
+  "My league code": "내 리그 코드",
+  "Teacher league management": "교사용 리그 관리",
+  "Review participants and scores, then set the league schedule.": "참여자와 점수를 확인하고 리그 운영 기간을 정합니다.",
+  "Refresh": "새로고침",
+  "League code": "리그 코드",
+  "Share this code with students. It remains available in the Teacher tab.": "학생에게 이 코드를 전달하세요. 교사용 탭에서 언제든 다시 확인할 수 있습니다.",
+  "Copy code": "코드 복사",
+  "Participant management": "참여자 관리",
+  "Review current scores or remove a participant from the league.": "현재 점수를 확인하거나 참여자를 리그에서 내보냅니다.",
+  "League settings": "리그 설정",
+  "League name": "리그 이름",
+  "Competition end date": "경쟁 종료일",
+  "The same end date is shown to every participant.": "종료일은 참가자에게 같은 날짜로 표시됩니다.",
+  "Save league settings": "리그 설정 저장",
+  "Undo": "되돌리기",
+  "Teacher code is incorrect.": "교사용 코드가 올바르지 않습니다.",
+  "Teacher league access required.": "교사용 리그를 만든 계정만 접근할 수 있습니다.",
+  "Enter a league name.": "리그 이름을 입력하세요.",
+  "Choose a valid competition end date.": "올바른 경쟁 종료일을 선택하세요.",
+  "Choose today or a later date.": "오늘 또는 이후의 날짜를 선택하세요.",
+  "League member not found.": "리그 참여자를 찾을 수 없습니다.",
+  "That member was not removed from this league.": "이 리그에서 내보낸 참여자가 아닙니다.",
+  "That member has joined another league.": "해당 참여자는 이미 다른 리그에 참여했습니다.",
+  "The league teacher cannot be removed.": "리그를 만든 교사는 내보낼 수 없습니다.",
+  "This league competition has ended.": "이 리그의 경쟁 기간이 종료되었습니다.",
 });
 
 const englishText = Object.entries(koreanText).reduce((map, [english, korean]) => {
@@ -996,7 +1044,6 @@ function cheoinseongPieceSvg(pieceCode) {
   };
   const asset = assets[pieceCode] || assets.wp;
   return `<img class="cheoinseong-piece-image cheoinseong-piece-${type}" src="${asset}" alt="${pieceEditionNames.cheoinseong} ${color} ${pieceNames[type] || "piece"}" decoding="async">`;
-
   const goryeo = color === "white";
   const fill = goryeo ? "#f4ead5" : "#4b241b";
   const robe = goryeo ? "#7b9276" : "#7f3228";
@@ -1904,6 +1951,10 @@ function isStaffUser(user = currentUser) {
   return user?.role === "staff" || user?.role === "admin";
 }
 
+function isTeacherUser(user = currentUser) {
+  return Boolean(user?.isTeacher);
+}
+
 function renderStaffAccessState() {
   const canUseStaffTools = isStaffUser();
   document.querySelectorAll(".staff-only").forEach((element) => {
@@ -1967,6 +2018,7 @@ function renderAuthState() {
   authConfirmPasswordField.hidden = authMode === "login" || !authPassword.value;
   authPassword.autocomplete = authMode === "login" ? "current-password" : "new-password";
   renderStaffAccessState();
+  renderTeacherAccessState();
   renderTrainingControls();
   updateTutorialGateState();
 }
@@ -1995,6 +2047,7 @@ async function setPieceEdition(edition) {
     );
   }
   if (boardInitialized) buildBoard();
+  syncOpenTrainingFramePieceEdition();
   if (!currentUser || !backendOnline) return;
 
   try {
@@ -2078,6 +2131,18 @@ function isTutorialRoute() {
   return /^\/tutorial\/?$/.test(location.pathname);
 }
 
+function renderTeacherAccessState() {
+  const canUseTeacherTools = isTeacherUser();
+  document.body.classList.toggle("is-teacher", canUseTeacherTools);
+  document.querySelectorAll(".teacher-only").forEach((element) => {
+    element.hidden = !canUseTeacherTools;
+  });
+  if (!canUseTeacherTools) {
+    cachedTeacherLeague = null;
+    clearTeacherMemberUndo();
+  }
+}
+
 function requestedTrainingModuleId() {
   if (!isTutorialRoute()) return null;
   const moduleId = Number(new URLSearchParams(location.search).get("module"));
@@ -2095,6 +2160,10 @@ function isStaffRoute() {
   return /^\/staff\/?$/.test(location.pathname);
 }
 
+function isTeacherRoute() {
+  return /^\/teacher\/?$/.test(location.pathname);
+}
+
 function updateRouteForView(viewName) {
   if (location.protocol === "file:") return;
   if (viewName === "how-to-play") {
@@ -2105,7 +2174,11 @@ function updateRouteForView(viewName) {
     if (!isStaffRoute()) history.replaceState({ viewName }, "", "/staff");
     return;
   }
-  if (isTutorialRoute() || isStaffRoute()) history.replaceState({ viewName }, "", "/");
+  if (viewName === "teacher") {
+    if (!isTeacherRoute()) history.replaceState({ viewName }, "", "/teacher");
+    return;
+  }
+  if (isTutorialRoute() || isStaffRoute() || isTeacherRoute()) history.replaceState({ viewName }, "", "/");
 }
 
 function openAccountEntry(mode = "signup") {
@@ -2744,15 +2817,18 @@ function renderTrainingControls() {
   const korean = currentInterfaceLanguage() === "Korean";
   if (showPuzzleGuideButton) showPuzzleGuideButton.textContent = korean ? "퍼즐" : "Puzzle";
   if (showCheoinseongGuideButton) showCheoinseongGuideButton.textContent = korean ? "처인성" : "Cheoinseong";
-  [showPuzzleGuideButton, showCheoinseongGuideButton].forEach((button) => {
-    if (!button) return;
-    button.classList.toggle("locked", !puzzleUnlocked);
-    button.setAttribute("aria-disabled", puzzleUnlocked ? "false" : "true");
-  });
+  if (showPuzzleGuideButton) {
+    showPuzzleGuideButton.classList.toggle("locked", !puzzleUnlocked);
+    showPuzzleGuideButton.setAttribute("aria-disabled", puzzleUnlocked ? "false" : "true");
+  }
+  if (showCheoinseongGuideButton) {
+    showCheoinseongGuideButton.classList.remove("locked");
+    showCheoinseongGuideButton.setAttribute("aria-disabled", "false");
+  }
   if (tutorialLoginButton) tutorialLoginButton.hidden = Boolean(currentUser);
   renderTrainingEditionControls();
   if (tutorialPuzzleNote) {
-    tutorialPuzzleNote.hidden = puzzleUnlocked;
+    tutorialPuzzleNote.hidden = puzzleUnlocked || activeTrainingPathMode === "cheoinseong";
     tutorialPuzzleNote.textContent =
       currentInterfaceLanguage() === "Korean"
         ? "모든 훈련 모듈을 완료하면 퍼즐을 열 수 있습니다."
@@ -2815,11 +2891,11 @@ function showTrainingModuleHome() {
 
 function showPuzzlePath(mode = "puzzle") {
   const state = activeTrainingState();
-  if (!state.puzzleUnlocked) {
+  const nextMode = mode === "cheoinseong" ? "cheoinseong" : "puzzle";
+  if (nextMode !== "cheoinseong" && !state.puzzleUnlocked) {
     showTrainingModuleHome();
     return;
   }
-  const nextMode = mode === "cheoinseong" ? "cheoinseong" : "puzzle";
   trainingModuleOpen = false;
   howToPlayShell?.classList.add("puzzle-mode");
   howToPlayView?.classList.add("puzzle-mode");
@@ -2876,7 +2952,8 @@ function openTrainingReview(moduleId) {
 }
 
 function openPuzzleStage(stage, index = 0, options = {}) {
-  if (!stage || (!options.allowLocked && !activeTrainingState().puzzleUnlocked)) return;
+  const requiresTutorial = stage?.series !== "cheoinseong";
+  if (!stage || (!options.allowLocked && requiresTutorial && !activeTrainingState().puzzleUnlocked)) return;
   trainingModuleOpen = true;
   howToPlayShell?.classList.add("puzzle-mode");
   howToPlayView?.classList.add("puzzle-mode");
@@ -2905,6 +2982,19 @@ function syncOpenTrainingFrameLanguage() {
     howToPlayFrame.src = `${url.pathname}${url.search}`;
   } catch {
     // Keep the current training screen if its URL cannot be normalized.
+  }
+}
+
+function syncOpenTrainingFramePieceEdition() {
+  if (!trainingModuleOpen || !howToPlayFrame?.src || howToPlayFrame.src === "about:blank") return;
+  try {
+    const url = new URL(howToPlayFrame.src, window.location.origin);
+    if (!url.pathname.endsWith("/assets/how-to-play.html")) return;
+    url.searchParams.set("theme", selectedPieceEdition);
+    url.searchParams.set("pieceTheme", String(Date.now()));
+    howToPlayFrame.src = `${url.pathname}${url.search}`;
+  } catch {
+    // Keep the current tutorial screen if its URL cannot be normalized.
   }
 }
 
@@ -2965,7 +3055,8 @@ function setHowToPlayMode(mode) {
   const state = activeTrainingState();
   const puzzleUnlocked = Boolean(state.puzzleUnlocked);
   const requestedPathMode = mode === "cheoinseong" ? "cheoinseong" : "puzzle";
-  const nextMode = ["puzzle", "cheoinseong"].includes(mode) && puzzleUnlocked ? requestedPathMode : "tutorial";
+  const pathIsAvailable = requestedPathMode === "cheoinseong" || puzzleUnlocked;
+  const nextMode = ["puzzle", "cheoinseong"].includes(mode) && pathIsAvailable ? requestedPathMode : "tutorial";
   if (nextMode === "puzzle" || nextMode === "cheoinseong") {
     showPuzzlePath(nextMode);
     return;
@@ -3694,6 +3785,8 @@ async function checkBackend() {
     if (currentUser && !routedToMatch) await refreshActivePlayState();
     if (isStaffRoute()) {
       setView(isStaffUser() ? "staff" : "overview");
+    } else if (isTeacherRoute()) {
+      setView(isTeacherUser() ? "teacher" : "overview");
     } else if (isTutorialRoute()) {
       setView("how-to-play");
       openRequestedTrainingModule();
@@ -4719,6 +4812,7 @@ function setView(viewName) {
   if (viewName === "settings") viewName = "profile";
   if (viewName === "home" && currentUser) viewName = "overview";
   if (viewName === "staff" && !isStaffUser()) viewName = "dashboard";
+  if (viewName === "teacher" && !isTeacherUser()) viewName = "overview";
   updateTutorialGateState();
   const returningToActiveMatch = viewName === "dashboard" && Boolean(currentMatchId || resumableMatch || resumableChallenge || resumableOpenSeek);
   if (isStudentTutorialRequired() && viewName !== "how-to-play" && !returningToActiveMatch) {
@@ -4734,6 +4828,7 @@ function setView(viewName) {
     entryAuth.hidden = true;
     document.querySelector("#home").scrollIntoView({ behavior: "smooth", block: "start" });
     document.querySelectorAll(".side-link").forEach((link) => link.classList.remove("active"));
+    document.querySelectorAll(".mobile-tabbar [data-view-link]").forEach((link) => link.classList.remove("active"));
     closeMenu();
     closeProfileMenu();
     return;
@@ -4746,6 +4841,9 @@ function setView(viewName) {
     view.classList.toggle("active", view.dataset.view === viewName);
   });
   document.querySelectorAll(".side-link").forEach((link) => {
+    link.classList.toggle("active", link.dataset.viewLink === viewName);
+  });
+  document.querySelectorAll(".mobile-tabbar [data-view-link]").forEach((link) => {
     link.classList.toggle("active", link.dataset.viewLink === viewName);
   });
   const primaryHomeLink = document.querySelector('.desktop-header-nav [data-view-link="overview"]');
@@ -4769,6 +4867,7 @@ function setView(viewName) {
   }
   if (viewName === "stt" && !reviewInitialized) renderReview(defaultReview);
   if (viewName === "staff") refreshAdmin();
+  if (viewName === "teacher") refreshTeacherLeague();
   if (viewName === "overview") {
     renderDashboardSummary();
     refreshLeaderboard();
@@ -4779,18 +4878,9 @@ function setView(viewName) {
   closeProfileMenu();
 }
 
-function openMenu() {
-  sidebarMenu.hidden = false;
-  document.body.classList.add("menu-open");
-  menuToggle.setAttribute("aria-expanded", "true");
-  menuToggle.setAttribute("aria-label", currentInterfaceLanguage() === "Korean" ? "메뉴 닫기" : "Close menu");
-}
-
 function closeMenu() {
   sidebarMenu.hidden = true;
   document.body.classList.remove("menu-open");
-  menuToggle.setAttribute("aria-expanded", "false");
-  menuToggle.setAttribute("aria-label", currentInterfaceLanguage() === "Korean" ? "메뉴 열기" : "Open menu");
 }
 
 function closeProfileMenu() {
@@ -4805,11 +4895,6 @@ function toggleProfileMenu() {
   if (willOpen) {
     closeMenu();
   }
-}
-
-function toggleMenu() {
-  if (sidebarMenu.hidden) openMenu();
-  else closeMenu();
 }
 
 function revealAdminByCommand() {
@@ -5515,8 +5600,13 @@ function currentLeagueCode() {
   return String(currentUser?.leagueCode || "").trim().toUpperCase();
 }
 
+function currentTeacherLeagueCode() {
+  return String(currentUser?.teacherLeagueCode || cachedTeacherLeague?.code || "").trim().toUpperCase();
+}
+
 function renderLeagueAction() {
   const korean = currentInterfaceLanguage() === "Korean";
+  const hasTeacherLeague = isTeacherUser();
   const popoverOpen = leagueActionMode === "join" || leagueActionMode === "create";
   const hasLeague = Boolean(currentLeagueCode());
   if (leaveLeagueButton) leaveLeagueButton.hidden = !hasLeague;
@@ -5535,8 +5625,12 @@ function renderLeagueAction() {
         : korean ? "리그 만들기" : "Create a league";
     }
   });
+  const accessField = teacherAccessCodeInput?.closest(".league-access-field");
+  if (accessField) accessField.hidden = hasTeacherLeague;
+  if (teacherAccessCodeHelp) teacherAccessCodeHelp.hidden = hasTeacherLeague;
+  if (leagueCreatedResult) leagueCreatedResult.hidden = !hasTeacherLeague;
   if (createdLeagueCode) {
-    const code = currentLeagueCode();
+    const code = currentTeacherLeagueCode() || currentLeagueCode();
     const justCreated = Boolean(code) && latestCreatedLeagueCode === code;
     createdLeagueCode.textContent = justCreated
       ? korean
@@ -5550,6 +5644,11 @@ function renderLeagueAction() {
           ? "코드 생성 전"
           : "No code yet";
   }
+  if (createLeagueButton && !createLeagueButton.disabled) {
+    createLeagueButton.textContent = hasTeacherLeague
+      ? korean ? "교사용 탭 열기" : "Open Teacher tab"
+      : korean ? "코드 확인" : "Check code";
+  }
 }
 
 function setLeagueActionMode(mode) {
@@ -5557,7 +5656,9 @@ function setLeagueActionMode(mode) {
   leagueActionMode = nextMode === leagueActionMode ? null : nextMode;
   renderLeagueAction();
   if (leagueActionMode === "join") window.requestAnimationFrame(() => leagueCodeInput?.focus());
-  if (leagueActionMode === "create") window.requestAnimationFrame(() => createLeagueButton?.focus());
+  if (leagueActionMode === "create") {
+    window.requestAnimationFrame(() => (isTeacherUser() ? createLeagueButton : teacherAccessCodeInput)?.focus());
+  }
 }
 
 
@@ -5629,15 +5730,42 @@ async function createLeague() {
     openAccountEntry("signup");
     return;
   }
+  if (isTeacherUser()) {
+    setLeagueActionMode(null);
+    setView("teacher");
+    return;
+  }
+  const teacherCode = teacherAccessCodeInput?.value.trim() || "";
+  if (!teacherCode) {
+    teacherAccessCodeInput?.setAttribute("aria-invalid", "true");
+    if (teacherAccessCodeHelp) {
+      teacherAccessCodeHelp.dataset.state = "error";
+      teacherAccessCodeHelp.textContent = currentInterfaceLanguage() === "Korean"
+        ? "교사용 코드를 입력하세요."
+        : "Enter the teacher code.";
+    }
+    teacherAccessCodeInput?.focus();
+    return;
+  }
+  createLeagueButton.disabled = true;
+  createLeagueButton.textContent = currentInterfaceLanguage() === "Korean" ? "확인 중…" : "Checking…";
   try {
-    if (leagueStatus) leagueStatus.textContent = "리그 코드를 생성하는 중...";
+    if (leagueStatus) leagueStatus.textContent = currentInterfaceLanguage() === "Korean" ? "교사용 코드를 확인하는 중…" : "Checking the teacher code…";
     const { data, applied } = await requestCurrentUserMutation(() =>
-      api("/api/leagues/create", { method: "POST", body: { name: "EasyMate Class League" } }),
+      api("/api/leagues/create", { method: "POST", body: { name: "EasyMate Class League", teacherCode } }),
     );
     if (!applied) return;
     latestCreatedLeagueCode = data.league.code;
     showAchievementUnlocks(data.unlocked);
     if (leagueCodeInput) leagueCodeInput.value = data.league.code;
+    if (teacherAccessCodeInput) teacherAccessCodeInput.value = "";
+    teacherAccessCodeInput?.removeAttribute("aria-invalid");
+    if (teacherAccessCodeHelp) {
+      teacherAccessCodeHelp.dataset.state = "";
+      teacherAccessCodeHelp.textContent = currentInterfaceLanguage() === "Korean"
+        ? "교사에게 제공된 코드를 입력하세요."
+        : "Enter the code provided to teachers.";
+    }
     renderDashboardSummary();
     renderLeaderboard(data.league);
     renderAuthState();
@@ -5649,7 +5777,243 @@ async function createLeague() {
         : `League created and joined: ${data.league.code}`;
     }
   } catch (error) {
-    if (leagueStatus) leagueStatus.textContent = error.message;
+    teacherAccessCodeInput?.setAttribute("aria-invalid", "true");
+    if (teacherAccessCodeHelp) {
+      teacherAccessCodeHelp.dataset.state = "error";
+      teacherAccessCodeHelp.textContent = translateCopy(error.message);
+    }
+    if (leagueStatus) leagueStatus.textContent = translateCopy(error.message);
+  } finally {
+    createLeagueButton.disabled = false;
+    renderLeagueAction();
+  }
+}
+
+function localCalendarDateKey(date = new Date()) {
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 10);
+}
+
+function formatTeacherDate(dateKey) {
+  if (!dateKey) return currentInterfaceLanguage() === "Korean" ? "미정" : "Not set";
+  const date = new Date(`${dateKey}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return dateKey;
+  return new Intl.DateTimeFormat(currentInterfaceLanguage() === "Korean" ? "ko-KR" : "en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
+function setTeacherLeagueStatus(message = "", state = "") {
+  if (!teacherLeagueStatus) return;
+  teacherLeagueStatus.textContent = message;
+  teacherLeagueStatus.dataset.state = state;
+}
+
+function clearTeacherMemberUndo() {
+  if (teacherMemberUndoTimer) window.clearTimeout(teacherMemberUndoTimer);
+  teacherMemberUndoTimer = null;
+  lastRemovedTeacherMember = null;
+  if (undoTeacherMemberRemovalButton) undoTeacherMemberRemovalButton.hidden = true;
+}
+
+function appendTeacherMemberCell(row, label, value, className = "") {
+  const cell = document.createElement("td");
+  cell.dataset.label = label;
+  if (className) cell.className = className;
+  if (value instanceof Node) cell.append(value);
+  else cell.textContent = String(value ?? "");
+  row.append(cell);
+  return cell;
+}
+
+function renderTeacherLeague(league) {
+  if (!league) return;
+  cachedTeacherLeague = league;
+  const korean = currentInterfaceLanguage() === "Korean";
+  const members = Array.isArray(league.members) ? league.members : [];
+  const code = String(league.code || "").toUpperCase();
+
+  if (teacherLeagueCode) teacherLeagueCode.textContent = code || "—";
+  if (copyTeacherLeagueCodeButton) copyTeacherLeagueCodeButton.disabled = !code;
+  if (teacherLeagueName && document.activeElement !== teacherLeagueName) teacherLeagueName.value = league.name || "";
+  if (teacherLeagueEndDate && document.activeElement !== teacherLeagueEndDate) {
+    teacherLeagueEndDate.min = localCalendarDateKey();
+    teacherLeagueEndDate.value = league.competitionEndsOn || "";
+  }
+  if (teacherMemberCount) {
+    teacherMemberCount.textContent = korean ? `${members.length}명` : `${members.length} members`;
+  }
+  if (!teacherMemberList) return;
+  teacherMemberList.replaceChildren();
+
+  if (!members.length) {
+    const empty = document.createElement("p");
+    empty.className = "teacher-empty-state";
+    empty.textContent = korean ? "아직 리그 참여자가 없습니다." : "No league participants yet.";
+    teacherMemberList.append(empty);
+    return;
+  }
+
+  const table = document.createElement("table");
+  table.className = "teacher-member-table";
+  const caption = document.createElement("caption");
+  caption.className = "sr-only";
+  caption.textContent = korean ? "리그 참여자와 점수" : "League participants and scores";
+  table.append(caption);
+  const head = document.createElement("thead");
+  head.innerHTML = `<tr><th scope="col">${korean ? "참여자" : "Participant"}</th><th scope="col">${korean ? "주간 점수" : "Weekly"}</th><th scope="col">${korean ? "전체 점수" : "All-time"}</th><th scope="col">${korean ? "연속 학습" : "Streak"}</th><th scope="col">${korean ? "관리" : "Manage"}</th></tr>`;
+  table.append(head);
+  const body = document.createElement("tbody");
+
+  members.forEach((member) => {
+    const row = document.createElement("tr");
+    const identity = document.createElement("span");
+    identity.className = "teacher-member-identity";
+    const name = document.createElement("strong");
+    name.textContent = member.displayName || (korean ? "이름 없음" : "Unnamed member");
+    identity.append(name);
+    if (member.isTeacher) {
+      const badge = document.createElement("span");
+      badge.className = "teacher-role-badge";
+      badge.textContent = korean ? "교사" : "Teacher";
+      identity.append(badge);
+    }
+    appendTeacherMemberCell(row, korean ? "참여자" : "Participant", identity, "teacher-member-name");
+    appendTeacherMemberCell(row, korean ? "주간 점수" : "Weekly", Number(member.weeklyEasyElo || 0), "teacher-score-cell");
+    appendTeacherMemberCell(row, korean ? "전체 점수" : "All-time", Number(member.easyElo || 0), "teacher-score-cell");
+    appendTeacherMemberCell(row, korean ? "연속 학습" : "Streak", korean ? `${Number(member.streak || 0)}일` : `${Number(member.streak || 0)} days`, "teacher-score-cell");
+    const action = document.createElement("span");
+    if (member.isTeacher) {
+      action.className = "teacher-owner-label";
+      action.textContent = korean ? "관리자" : "Owner";
+    } else {
+      const removeButton = document.createElement("button");
+      removeButton.type = "button";
+      removeButton.className = "teacher-remove-member";
+      removeButton.textContent = korean ? "내보내기" : "Remove";
+      removeButton.setAttribute("aria-label", korean ? `${member.displayName} 내보내기` : `Remove ${member.displayName}`);
+      removeButton.addEventListener("click", () => removeTeacherMember(member));
+      action.append(removeButton);
+    }
+    appendTeacherMemberCell(row, korean ? "관리" : "Manage", action, "teacher-member-action");
+    body.append(row);
+  });
+  table.append(body);
+  teacherMemberList.append(table);
+}
+
+async function refreshTeacherLeague({ announce = false } = {}) {
+  if (!isTeacherUser()) return null;
+  if (teacherLeagueRefreshPromise) return teacherLeagueRefreshPromise;
+  const korean = currentInterfaceLanguage() === "Korean";
+  if (refreshTeacherLeagueButton) {
+    refreshTeacherLeagueButton.disabled = true;
+    refreshTeacherLeagueButton.textContent = korean ? "불러오는 중…" : "Loading…";
+  }
+  teacherLeagueRefreshPromise = api("/api/leagues/teacher")
+    .then((data) => {
+      renderTeacherLeague(data.league);
+      if (announce) {
+        setTeacherLeagueStatus(
+          korean
+            ? `최신 참여자 정보를 불러왔습니다. 경쟁 종료일은 ${formatTeacherDate(data.league.competitionEndsOn)}입니다.`
+            : `Participant data refreshed. Competition ends ${formatTeacherDate(data.league.competitionEndsOn)}.`,
+          "success",
+        );
+      }
+      return data.league;
+    })
+    .catch((error) => {
+      setTeacherLeagueStatus(translateCopy(error.message), "error");
+      return null;
+    })
+    .finally(() => {
+      teacherLeagueRefreshPromise = null;
+      if (refreshTeacherLeagueButton) {
+        refreshTeacherLeagueButton.disabled = false;
+        refreshTeacherLeagueButton.textContent = korean ? "새로고침" : "Refresh";
+      }
+    });
+  return teacherLeagueRefreshPromise;
+}
+
+async function saveTeacherLeagueSettings(event) {
+  event?.preventDefault();
+  if (!cachedTeacherLeague) await refreshTeacherLeague();
+  const korean = currentInterfaceLanguage() === "Korean";
+  const name = teacherLeagueName?.value.trim() || "";
+  const competitionEndsOn = teacherLeagueEndDate?.value || "";
+  if (!name || !competitionEndsOn) {
+    setTeacherLeagueStatus(korean ? "리그 이름과 경쟁 종료일을 모두 입력하세요." : "Enter a league name and competition end date.", "error");
+    return;
+  }
+  if (saveTeacherLeagueSettingsButton) saveTeacherLeagueSettingsButton.disabled = true;
+  setTeacherLeagueStatus(korean ? "리그 설정을 저장하는 중…" : "Saving league settings…");
+  try {
+    const data = await api("/api/leagues/teacher", {
+      method: "PATCH",
+      body: { name, competitionEndsOn },
+    });
+    renderTeacherLeague(data.league);
+    setTeacherLeagueStatus(korean ? "리그 설정을 저장했습니다." : "League settings saved.", "success");
+  } catch (error) {
+    setTeacherLeagueStatus(translateCopy(error.message), "error");
+  } finally {
+    if (saveTeacherLeagueSettingsButton) saveTeacherLeagueSettingsButton.disabled = false;
+  }
+}
+
+async function removeTeacherMember(member) {
+  if (!member?.id || !cachedTeacherLeague) return;
+  const korean = currentInterfaceLanguage() === "Korean";
+  const previousLeague = cachedTeacherLeague;
+  renderTeacherLeague({
+    ...cachedTeacherLeague,
+    members: cachedTeacherLeague.members.filter((item) => item.id !== member.id),
+  });
+  setTeacherLeagueStatus(korean ? `${member.displayName}님을 내보내는 중…` : `Removing ${member.displayName}…`);
+  try {
+    const data = await api(`/api/leagues/teacher/members/${encodeURIComponent(member.id)}`, { method: "DELETE" });
+    renderTeacherLeague(data.league);
+    clearTeacherMemberUndo();
+    lastRemovedTeacherMember = data.removedMember || member;
+    if (undoTeacherMemberRemovalButton) undoTeacherMemberRemovalButton.hidden = false;
+    setTeacherLeagueStatus(korean ? `${member.displayName}님을 리그에서 내보냈습니다.` : `${member.displayName} was removed from the league.`, "success");
+    teacherMemberUndoTimer = window.setTimeout(clearTeacherMemberUndo, 10_000);
+  } catch (error) {
+    renderTeacherLeague(previousLeague);
+    setTeacherLeagueStatus(translateCopy(error.message), "error");
+  }
+}
+
+async function restoreTeacherMember() {
+  const member = lastRemovedTeacherMember;
+  if (!member?.id) return;
+  const korean = currentInterfaceLanguage() === "Korean";
+  if (undoTeacherMemberRemovalButton) undoTeacherMemberRemovalButton.disabled = true;
+  try {
+    const data = await api(`/api/leagues/teacher/members/${encodeURIComponent(member.id)}/restore`, { method: "POST" });
+    renderTeacherLeague(data.league);
+    clearTeacherMemberUndo();
+    setTeacherLeagueStatus(korean ? `${member.displayName}님을 다시 참여자로 등록했습니다.` : `${member.displayName} was restored.`, "success");
+  } catch (error) {
+    setTeacherLeagueStatus(translateCopy(error.message), "error");
+  } finally {
+    if (undoTeacherMemberRemovalButton) undoTeacherMemberRemovalButton.disabled = false;
+  }
+}
+
+async function copyTeacherLeagueCode() {
+  const code = currentTeacherLeagueCode();
+  if (!code) return;
+  const korean = currentInterfaceLanguage() === "Korean";
+  try {
+    await navigator.clipboard.writeText(code);
+    setTeacherLeagueStatus(korean ? "리그 코드를 복사했습니다." : "League code copied.", "success");
+  } catch {
+    setTeacherLeagueStatus(korean ? `리그 코드: ${code}` : `League code: ${code}`);
   }
 }
 
@@ -6452,14 +6816,7 @@ const savedTextSize = localStorage.getItem("easyMateTextSize");
 if (savedTextSize !== null) textSizeSlider.value = savedTextSize;
 applyTextSize(textSizeSlider.value);
 
-menuToggle.addEventListener("click", (event) => {
-  event.stopPropagation();
-  closeProfileMenu();
-  toggleMenu();
-});
-
 document.addEventListener("click", (event) => {
-  if (!sidebarMenu.hidden && !sidebarMenu.contains(event.target) && !menuToggle.contains(event.target)) closeMenu();
   if (!headerProfileMenu.hidden && !headerProfile.contains(event.target)) closeProfileMenu();
 });
 
@@ -6807,6 +7164,25 @@ saveCultureGuideButton?.addEventListener("click", saveCultureGuide);
 joinLeagueButton?.addEventListener("click", joinLeague);
 leaveLeagueButton?.addEventListener("click", leaveLeague);
 createLeagueButton?.addEventListener("click", createLeague);
+refreshTeacherLeagueButton?.addEventListener("click", () => refreshTeacherLeague({ announce: true }));
+teacherLeagueSettingsForm?.addEventListener("submit", saveTeacherLeagueSettings);
+copyTeacherLeagueCodeButton?.addEventListener("click", copyTeacherLeagueCode);
+undoTeacherMemberRemovalButton?.addEventListener("click", restoreTeacherMember);
+teacherAccessCodeInput?.addEventListener("input", () => {
+  teacherAccessCodeInput.removeAttribute("aria-invalid");
+  if (teacherAccessCodeHelp) {
+    teacherAccessCodeHelp.dataset.state = "";
+    teacherAccessCodeHelp.textContent = currentInterfaceLanguage() === "Korean"
+      ? "교사에게 제공된 코드를 입력하세요."
+      : "Enter the code provided to teachers.";
+  }
+});
+teacherAccessCodeInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    createLeague();
+  }
+});
 leagueActionButtons.forEach((button) => {
   button.addEventListener("click", () => setLeagueActionMode(button.dataset.leagueAction));
 });

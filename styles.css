@@ -1,4 +1,4 @@
-/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 · genre: modern-minimal · tone: practical Korean study sheet · palette: EasyMate ink/accent · structure: Editorial Workbench + Zigzag Learning Paths · contrast: pass (40-41) · responsive: pass (34,49,50-57) */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 · macrostructure: Workbench · knobs: roster-ledger + persistent-code-band + settings-rail · genre: modern-minimal · tone: practical teacher operations · palette: EasyMate ink/accent · contrast: pass (40–41) · nav/footer: existing chrome · slop: pass (42–48) · mobile: pass (34,49–57) */
 :root {
   color-scheme: light;
   --em-green: #2f6b62;
@@ -38,6 +38,7 @@
   --font-ui: "Pretendard", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display: var(--font-ui);
   --font-brand: Georgia, "Times New Roman", serif;
+  --font-code: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
   --ink: var(--em-ink);
   --muted: var(--em-muted);
@@ -82,7 +83,7 @@
 
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
+  overflow-x: clip;
   font-size: calc(18px * var(--app-font-scale));
 }
 
@@ -94,7 +95,7 @@ body {
   color: var(--ink);
   font-size: 1rem;
   font-family: var(--font-ui);
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 html[lang="ko"] :is(h1, h2, h3, h4, h5, h6) {
@@ -316,29 +317,6 @@ a {
   border-bottom: 1px solid rgba(31, 51, 72, 0.18);
   background: var(--theme-header);
   backdrop-filter: blur(18px);
-}
-
-.menu-toggle {
-  display: none;
-  width: var(--tap-target);
-  min-height: var(--tap-target);
-  place-items: center;
-  border: 1px solid rgba(20, 20, 33, 0.18);
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.7);
-  color: var(--ink);
-  font-size: 1.18rem;
-  font-weight: 900;
-}
-
-body.is-signed-in .menu-toggle {
-  display: inline-grid;
-}
-
-.menu-toggle[aria-expanded="true"] {
-  border-color: var(--dark);
-  background: var(--dark);
-  color: white;
 }
 
 .brand,
@@ -1316,6 +1294,7 @@ body.auth-entry-open:not(.is-signed-in) .entry-auth {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   min-height: 100vh;
+  scroll-margin-top: 64px;
   border-top: 1px solid var(--line);
 }
 
@@ -4969,10 +4948,6 @@ body.is-signed-in .desktop-header-nav {
   color: var(--theme-accent);
 }
 
-body.is-signed-in .site-header > .menu-toggle {
-  display: none;
-}
-
 body.is-signed-in #headerPieceEditionToggle {
   display: none;
 }
@@ -6043,24 +6018,27 @@ body.is-signed-in .view[data-view="overview"] {
 
 .profile-elo-display {
   display: flex;
+  min-width: 0;
   align-items: baseline;
-  gap: 10px;
+  gap: clamp(10px, 1.6vw, 18px);
 }
 
 .profile-elo-display > span {
   order: 2;
   color: var(--muted);
-  font-size: 0.88rem;
-  font-weight: 700;
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  font-weight: 650;
+  white-space: nowrap;
 }
 
 .profile-elo-display > strong {
-  display: block;
+  display: inline-block;
   color: var(--ink);
   font-family: var(--font-ui);
-  font-size: clamp(2.6rem, 5.5vw, 4.25rem);
+  font-size: clamp(4.5rem, 8vw, 6.6rem);
+  font-weight: 800;
+  letter-spacing: -0.055em;
   line-height: 0.95;
-  letter-spacing: 0;
   text-shadow: none;
 }
 
@@ -6513,7 +6491,6 @@ body :is(h1, h2, h3, h4, h5, h6, button, input, select, textarea, label, .brand,
 .desktop-header-nav button,
 .mobile-tabbar button,
 .header-profile button,
-.menu-toggle,
 .notification-button {
   border: 0;
   border-radius: 0;
@@ -6911,10 +6888,6 @@ body.is-signed-in .site-header {
     display: none;
   }
 
-  body.is-signed-in .site-header > .menu-toggle {
-    display: grid;
-  }
-
   html {
     font-size: calc(17px * var(--app-font-scale));
   }
@@ -6933,7 +6906,7 @@ body.is-signed-in .site-header {
   }
 
   body.is-signed-in .workspace {
-    padding: 42px 24px 110px;
+    padding: 42px clamp(16px, 6vw, 24px) 110px;
   }
 
   body.is-signed-in .view-header {
@@ -6990,6 +6963,34 @@ body.is-signed-in .site-header {
 
   .home-theme-guide-options {
     grid-template-columns: 1fr;
+  }
+
+  .profile-dashboard {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .profile-dashboard > *,
+  .profile-hero-card > *,
+  .profile-settings-grid > *,
+  .forum-layout > *,
+  .play-layout > *,
+  .training-layout > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .profile-view .profile-hero-card,
+  .profile-view .profile-panel,
+  .profile-view .settings-card {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #profileEmail,
+  .profile-hero-bio p,
+  .forum-post :is(h3, p, small) {
+    overflow-wrap: anywhere;
   }
 }
 
@@ -9626,6 +9627,14 @@ body.piece-theme-beta {
   background-color: transparent;
 }
 
+body.is-signed-in .app-shell,
+body.is-signed-in .workspace,
+body.is-signed-in .view,
+body.is-signed-in .profile-view {
+  background-color: transparent;
+  background-image: none;
+}
+
 /* The landing logo is a true-alpha PNG; let the wallpaper continue through its panel. */
 .entry-content {
   background: rgba(255, 255, 255, 0.7);
@@ -9646,6 +9655,14 @@ body.piece-theme-beta {
 }
 
 @media (max-width: 680px) {
+  body.is-signed-in .site-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  body.is-signed-in .app-shell {
+    scroll-margin-top: 58px;
+  }
+
   body,
   body.is-signed-in,
   body.piece-theme-original,
@@ -9653,6 +9670,489 @@ body.piece-theme-beta {
   body.piece-theme-beta {
     background-size: 720px 720px;
     background-attachment: scroll;
+  }
+
+  .profile-elo-display > strong {
+    font-size: clamp(4rem, 22vw, 5.2rem);
+  }
+
+  .profile-elo-display > span {
+    font-size: clamp(0.9rem, 4.4vw, 1.1rem);
+  }
+}
+
+@media (max-width: 430px) {
+  .entry-content .entry-typewriter,
+  .entry-content .entry-typewriter-text {
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+    white-space: normal;
+  }
+
+  .how-to-play-view .training-mode-toggle {
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .how-to-play-view .training-mode-toggle button {
+    min-width: 0;
+    padding-inline: 6px;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.league-access-field {
+  display: grid;
+  gap: 5px;
+}
+
+.league-access-field > span,
+.league-created-result > span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.league-access-help {
+  min-height: 1.45em;
+  margin: -4px 0 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.league-access-help[data-state="error"] {
+  color: var(--red);
+}
+
+.league-access-field input[aria-invalid="true"] {
+  border-bottom-color: var(--red) !important;
+}
+
+.league-created-result {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.league-created-result .league-created-code {
+  display: block;
+  min-height: auto;
+  padding: 0 0 8px;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-family: var(--font-code);
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+.teacher-view {
+  width: min(100%, 1180px);
+  margin-inline: auto;
+}
+
+.teacher-view-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space);
+}
+
+.teacher-view-header > div,
+.teacher-view-header h2 {
+  min-width: 0;
+}
+
+.teacher-view-header h2 {
+  overflow-wrap: anywhere;
+}
+
+.teacher-view-header .button,
+.teacher-code-band .button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.teacher-code-band {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md) 0;
+  border-block: 1px solid var(--line-strong);
+}
+
+.teacher-code-band > div {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.teacher-code-band span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.teacher-code-band strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-family: var(--font-code);
+  font-size: clamp(1.65rem, 8vw, 2.8rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+  letter-spacing: 0.1em;
+}
+
+.teacher-code-band p,
+.teacher-section-head p,
+.teacher-date-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 620;
+  line-height: 1.55;
+}
+
+.teacher-workbench {
+  border-block: 1px solid var(--line-strong);
+}
+
+.teacher-member-panel,
+.teacher-settings-panel {
+  min-width: 0;
+  padding-block: var(--space-md);
+}
+
+.teacher-settings-panel {
+  border-top: 1px solid var(--line-strong);
+}
+
+.teacher-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space);
+  margin-bottom: var(--space);
+}
+
+.teacher-section-head h3,
+.teacher-settings-panel h3 {
+  margin: 0 0 4px;
+  color: var(--ink);
+  font-size: 1.05rem;
+}
+
+.teacher-section-head > strong {
+  flex: 0 0 auto;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.teacher-member-list {
+  min-height: 112px;
+}
+
+.teacher-empty-state {
+  margin: 0;
+  padding: var(--space-md) 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.teacher-member-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.teacher-member-table caption {
+  caption-side: top;
+}
+
+.teacher-member-table thead {
+  display: none;
+}
+
+.teacher-member-table tbody,
+.teacher-member-table tr,
+.teacher-member-table td {
+  display: block;
+  width: 100%;
+}
+
+.teacher-member-table tr {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px var(--space);
+  padding: var(--space) 0;
+  border-top: 1px solid var(--line);
+}
+
+.teacher-member-table td {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  padding: 0;
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.teacher-member-table td::before {
+  content: attr(data-label);
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.teacher-member-table .teacher-member-name,
+.teacher-member-table .teacher-member-action {
+  grid-column: 1 / -1;
+}
+
+.teacher-member-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.teacher-member-identity strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teacher-role-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--line-strong);
+  color: var(--green);
+  font-size: 0.64rem;
+  font-weight: 800;
+}
+
+.teacher-owner-label {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.teacher-remove-member {
+  width: fit-content;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--red);
+  background: transparent;
+  color: var(--red);
+  font: inherit;
+  font-weight: 760;
+}
+
+.teacher-remove-member:hover,
+.teacher-remove-member:focus-visible {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+.teacher-remove-member:focus-visible {
+  outline: 2px solid var(--green) !important;
+  outline-offset: 2px;
+}
+
+.teacher-remove-member:active {
+  color: var(--green-dark);
+  border-bottom-color: var(--green-dark);
+}
+
+.teacher-remove-member:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  border-bottom-color: var(--line-strong);
+  color: var(--muted);
+}
+
+.teacher-settings-panel form {
+  display: grid;
+  gap: var(--space);
+  margin-top: var(--space);
+}
+
+.teacher-settings-panel label {
+  display: grid;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-weight: 780;
+}
+
+.teacher-settings-panel input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: var(--theme-panel-soft);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.86rem;
+}
+
+.teacher-settings-panel input:focus-visible,
+.league-access-field input:focus-visible {
+  outline: 2px solid var(--green) !important;
+  outline-offset: 1px;
+}
+
+.teacher-settings-panel input:disabled,
+.league-access-field input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  background: var(--soft);
+}
+
+.teacher-settings-panel .button {
+  width: 100%;
+  min-height: 44px;
+}
+
+.teacher-action-status {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space);
+  padding-block: 10px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.teacher-action-status [data-state="success"] {
+  color: var(--green-dark);
+}
+
+.teacher-action-status [data-state="error"] {
+  color: var(--red);
+}
+
+.teacher-action-status .text-link {
+  flex: 0 0 auto;
+  min-height: 36px;
+}
+
+body.is-teacher .mobile-tabbar {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+@media (min-width: 48rem) {
+  .teacher-member-table {
+    table-layout: auto;
+  }
+
+  .teacher-member-table thead {
+    display: table-header-group;
+  }
+
+  .teacher-member-table tbody {
+    display: table-row-group;
+  }
+
+  .teacher-member-table tr {
+    display: table-row;
+    padding: 0;
+    border: 0;
+  }
+
+  .teacher-member-table th,
+  .teacher-member-table td {
+    display: table-cell;
+    width: auto;
+    padding: 12px 8px;
+    border-top: 1px solid var(--line);
+    vertical-align: middle;
+  }
+
+  .teacher-member-table th {
+    padding-block: 10px;
+    color: var(--muted);
+    font-size: 0.68rem;
+    text-align: left;
+  }
+
+  .teacher-member-table th:first-child,
+  .teacher-member-table td:first-child {
+    padding-left: 0;
+  }
+
+  .teacher-member-table th:last-child,
+  .teacher-member-table td:last-child {
+    padding-right: 0;
+    text-align: right;
+  }
+
+  .teacher-member-table td::before {
+    content: none;
+  }
+}
+
+@media (min-width: 60rem) {
+  .teacher-workbench {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(260px, 0.72fr);
+  }
+
+  .teacher-member-panel {
+    padding-right: var(--space-lg);
+  }
+
+  .teacher-settings-panel {
+    padding-left: var(--space-lg);
+    border-top: 0;
+    border-left: 1px solid var(--line-strong);
+  }
+}
+
+@media (max-width: 34rem) {
+  .teacher-view-header,
+  .teacher-code-band {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .teacher-view-header .button,
+  .teacher-code-band .button {
+    width: 100%;
+  }
+
+  body.is-teacher .mobile-tabbar button {
+    padding-inline: 2px;
+    font-size: 0.7rem;
   }
 }
 
