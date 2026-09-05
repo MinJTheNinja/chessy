@@ -1158,6 +1158,38 @@ let missionIndex = 0;
 let currentManner = 42.8;
 let backendOnline = false;
 let currentUser = null;
+let currentUserRevision = 0;
+
+function replaceCurrentUser(user) {
+  currentUser = user;
+  currentUserRevision += 1;
+  return user;
+}
+
+function captureCurrentUserRevision() {
+  return currentUserRevision;
+}
+
+function applyCurrentUserSnapshot(user, revision) {
+  if (revision !== currentUserRevision) return false;
+  currentUser = user;
+  return true;
+}
+
+async function requestCurrentUserMutation(request, selectUser = (data) => data?.user) {
+  const revision = ++currentUserRevision;
+  try {
+    const data = await request();
+    if (revision !== currentUserRevision) return { data, applied: false };
+    const user = selectUser(data);
+    if (user !== undefined) currentUser = user;
+    currentUserRevision += 1;
+    return { data, applied: true };
+  } catch (error) {
+    if (revision === currentUserRevision) currentUserRevision += 1;
+    throw error;
+  }
+}
 let selectedPieceEdition = "cheoinseong";
 let currentMatchPlayers = [];
 let currentMatchId = null;
@@ -1956,7 +1988,7 @@ async function setPieceEdition(edition) {
   writeLocalSetting(pieceEditionStorageKey, nextEdition);
   updateHeaderPieceEditionToggle(nextEdition);
   if (profilePieceEdition) profilePieceEdition.value = nextEdition;
-  if (currentUser) currentUser = { ...currentUser, pieceEdition: nextEdition };
+  if (currentUser) replaceCurrentUser({ ...currentUser, pieceEdition: nextEdition });
   if (currentMatchPlayers.length) {
     currentMatchPlayers = currentMatchPlayers.map((player) =>
       player.userId === currentUser?.id ? { ...player, pieceEdition: nextEdition } : player,
@@ -1966,17 +1998,19 @@ async function setPieceEdition(edition) {
   if (!currentUser || !backendOnline) return;
 
   try {
-    const profile = await api("/api/profile", {
-      method: "PUT",
-      body: {
-        displayName: currentUser.displayName,
-        languagePair: currentUser.languagePair,
-        pieceEdition: nextEdition,
-        avatarUrl: currentUser.avatarUrl || "",
-        bio: currentUser.bio || "",
-      },
-    });
-    currentUser = profile.user;
+    const { data: profile, applied } = await requestCurrentUserMutation(() =>
+      api("/api/profile", {
+        method: "PUT",
+        body: {
+          displayName: currentUser.displayName,
+          languagePair: currentUser.languagePair,
+          pieceEdition: nextEdition,
+          avatarUrl: currentUser.avatarUrl || "",
+          bio: currentUser.bio || "",
+        },
+      }),
+    );
+    if (!applied) return;
     renderProfile(profile);
     updateHeaderPieceEditionToggle(currentUser.pieceEdition);
   } catch (error) {
@@ -2746,10 +2780,11 @@ async function refreshTrainingState() {
     renderTrainingControls();
     return cachedTrainingState;
   }
+  const userRevision = captureCurrentUserRevision();
   try {
     const data = await api("/api/training/state");
+    if (!applyCurrentUserSnapshot(data.user || currentUser, userRevision)) return cachedTrainingState;
     cachedTrainingState = data.state;
-    currentUser = data.user || currentUser;
   } catch {
     cachedTrainingState = currentUser.training || localTrainingState();
   }
@@ -2988,12 +3023,14 @@ async function completeStudentTutorial(module, advance = false) {
     }
     if (currentUser && backendOnline) {
       try {
-        const data = await api("/api/training/tutorial-complete", {
-          method: "POST",
-          body: { module: moduleId },
-        });
+        const { data, applied } = await requestCurrentUserMutation(() =>
+          api("/api/training/tutorial-complete", {
+            method: "POST",
+            body: { module: moduleId },
+          }),
+        );
+        if (!applied) return;
         cachedTrainingState = data.state;
-        currentUser = data.user || currentUser;
         showAchievementUnlocks(data.unlocked);
       } catch (error) {
         if (tutorialPuzzleNote) tutorialPuzzleNote.textContent = error.message;
@@ -3044,23 +3081,25 @@ async function completePuzzle(payload = {}) {
     return;
   }
   try {
-    const data = await api("/api/training/puzzle-complete", {
-      method: "POST",
-      body: {
-        puzzleId: payload.puzzleId || "goryeo-vs-mongol",
-        stars: payload.stars || 0,
-        title: payload.title,
-        theme: payload.theme,
-        family: payload.family,
-        level: payload.level,
-        hintsUsed: payload.hintsUsed,
-        durationMs: payload.durationMs,
-        familyTotal: payload.familyTotal,
-        levelTotal: payload.levelTotal,
-      },
-    });
+    const { data, applied } = await requestCurrentUserMutation(() =>
+      api("/api/training/puzzle-complete", {
+        method: "POST",
+        body: {
+          puzzleId: payload.puzzleId || "goryeo-vs-mongol",
+          stars: payload.stars || 0,
+          title: payload.title,
+          theme: payload.theme,
+          family: payload.family,
+          level: payload.level,
+          hintsUsed: payload.hintsUsed,
+          durationMs: payload.durationMs,
+          familyTotal: payload.familyTotal,
+          levelTotal: payload.levelTotal,
+        },
+      }),
+    );
+    if (!applied) return;
     cachedTrainingState = data.state;
-    currentUser = data.user || currentUser;
     showAchievementUnlocks(data.unlocked);
     bumpDailyQuest("puzzles", 1);
     renderAuthState();
@@ -3636,11 +3675,12 @@ async function refreshLobby() {
 }
 
 async function checkBackend() {
+  const userRevision = captureCurrentUserRevision();
   try {
     const [health, session] = await Promise.all([api("/api/health"), api("/api/session")]);
     backendOnline = Boolean(health.ok);
     setServerStatus(currentInterfaceLanguage() === "Korean" ? "서버 연결됨" : "Backend online", true);
-    currentUser = session.user;
+    if (!applyCurrentUserSnapshot(session.user, userRevision)) return;
     cachedTrainingState = currentUser?.training || cachedTrainingState;
     if (currentUser) {
       authStatus.textContent =
@@ -3743,16 +3783,18 @@ async function signInOrRegister() {
   authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "계정을 확인하는 중..." : "Checking your account...";
 
   try {
-    const data = await api(authMode === "login" ? "/api/auth/login" : "/api/auth/signup", {
-      method: "POST",
-      body: {
-        email,
-        displayName,
-        password,
-        languagePair: authLanguagePair.value,
-      },
-    });
-    currentUser = data.user;
+    const { data, applied } = await requestCurrentUserMutation(() =>
+      api(authMode === "login" ? "/api/auth/login" : "/api/auth/signup", {
+        method: "POST",
+        body: {
+          email,
+          displayName,
+          password,
+          languagePair: authLanguagePair.value,
+        },
+      }),
+    );
+    if (!applied) return;
     authStatus.textContent =
       currentInterfaceLanguage() === "Korean"
         ? `${currentUser.displayName}님으로 로그인되었습니다. 대국을 시작하세요.`
@@ -3772,7 +3814,7 @@ async function signInOrRegister() {
 
 async function signOut() {
   if (!backendOnline) {
-    currentUser = null;
+    replaceCurrentUser(null);
     clearCurrentMatch();
     clearProfile();
     renderAuthState();
@@ -3785,7 +3827,7 @@ async function signOut() {
   } catch {
     // The visible account state can still reset if the server logout response is missed.
   }
-  currentUser = null;
+  replaceCurrentUser(null);
   clearCurrentMatch();
   authEmail.disabled = false;
   authPassword.disabled = false;
@@ -3819,15 +3861,17 @@ async function finishGoogleLogin(credential) {
   authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "Google 계정을 확인하는 중..." : "Checking your Google account...";
   googleSignInButton.disabled = true;
   try {
-    const data = await api("/api/auth/google", {
-      method: "POST",
-      body: {
-        credential,
-        languagePair: authLanguagePair.value,
-        pieceEdition: selectedPieceEdition,
-      },
-    });
-    currentUser = data.user;
+    const { data, applied } = await requestCurrentUserMutation(() =>
+      api("/api/auth/google", {
+        method: "POST",
+        body: {
+          credential,
+          languagePair: authLanguagePair.value,
+          pieceEdition: selectedPieceEdition,
+        },
+      }),
+    );
+    if (!applied) return;
     authStatus.textContent =
       currentInterfaceLanguage() === "Korean"
         ? `${currentUser.displayName}님으로 Google 로그인되었습니다.`
@@ -3900,7 +3944,7 @@ async function deleteAccount() {
   if (!confirmed) return;
 
   if (!backendOnline) {
-    currentUser = null;
+    replaceCurrentUser(null);
     clearCurrentMatch();
     clearProfile();
     renderAuthState();
@@ -3916,7 +3960,7 @@ async function deleteAccount() {
   deleteAccountButton.textContent = currentInterfaceLanguage() === "Korean" ? "삭제 중..." : "Deleting...";
   try {
     await api("/api/auth/delete", { method: "DELETE" });
-    currentUser = null;
+    replaceCurrentUser(null);
     clearCurrentMatch();
     clearProfile();
     renderAuthState();
@@ -3985,7 +4029,7 @@ async function deleteAccountWithTypedConfirmation() {
     return;
   }
   if (!backendOnline) {
-    currentUser = null;
+    replaceCurrentUser(null);
     clearCurrentMatch();
     clearProfile();
     renderAuthState();
@@ -4002,7 +4046,7 @@ async function deleteAccountWithTypedConfirmation() {
   deleteAccountButton.textContent = currentInterfaceLanguage() === "Korean" ? "삭제 중..." : "Deleting...";
   try {
     await api("/api/auth/delete", { method: "DELETE" });
-    currentUser = null;
+    replaceCurrentUser(null);
     clearCurrentMatch();
     clearProfile();
     renderAuthState();
@@ -4313,12 +4357,14 @@ function renderForumPosts() {
 async function completeReviewQuiz(payload = {}) {
   if (!currentUser || !backendOnline) return;
   try {
-    const data = await api("/api/training/review-quiz", {
-      method: "POST",
-      body: { module: Number(payload.module) || 1, score: Number(payload.score) || 0 },
-    });
+    const { data, applied } = await requestCurrentUserMutation(() =>
+      api("/api/training/review-quiz", {
+        method: "POST",
+        body: { module: Number(payload.module) || 1, score: Number(payload.score) || 0 },
+      }),
+    );
+    if (!applied) return;
     cachedTrainingState = data.state;
-    currentUser = data.user || currentUser;
     showAchievementUnlocks(data.unlocked);
     renderAuthState();
     renderDashboardSummary();
@@ -4384,11 +4430,10 @@ function showAchievementUnlocks(unlocked = []) {
   });
 
   if (!acknowledged.length || !backendOnline) return;
-  api("/api/achievements/acknowledge", { method: "POST", body: { ids: acknowledged } })
-    .then((data) => {
-      if (data?.user) currentUser = { ...currentUser, ...data.user };
-    })
-    .catch(() => {});
+  requestCurrentUserMutation(
+    () => api("/api/achievements/acknowledge", { method: "POST", body: { ids: acknowledged } }),
+    (data) => (data?.user ? { ...currentUser, ...data.user } : currentUser),
+  ).catch(() => {});
 }
 
 function renderHomeForumPreview() {
@@ -5530,8 +5575,10 @@ async function joinLeague() {
   }
   try {
     if (leagueStatus) leagueStatus.textContent = "리그에 참여하는 중...";
-    const data = await api("/api/leagues/join", { method: "POST", body: { code } });
-    currentUser = data.user;
+    const { data, applied } = await requestCurrentUserMutation(() =>
+      api("/api/leagues/join", { method: "POST", body: { code } }),
+    );
+    if (!applied) return;
     latestCreatedLeagueCode = "";
     showAchievementUnlocks(data.unlocked);
     renderDashboardSummary();
@@ -5559,8 +5606,10 @@ async function leaveLeague() {
   if (!confirmed) return;
   try {
     if (leagueStatus) leagueStatus.textContent = korean ? "리그에서 나가는 중..." : "Leaving league...";
-    const data = await api("/api/leagues/leave", { method: "POST" });
-    currentUser = data.user;
+    const { data, applied } = await requestCurrentUserMutation(() =>
+      api("/api/leagues/leave", { method: "POST" }),
+    );
+    if (!applied) return;
     latestCreatedLeagueCode = "";
     if (leagueCodeInput) leagueCodeInput.value = "";
     leagueActionMode = null;
@@ -5582,8 +5631,10 @@ async function createLeague() {
   }
   try {
     if (leagueStatus) leagueStatus.textContent = "리그 코드를 생성하는 중...";
-    const data = await api("/api/leagues/create", { method: "POST", body: { name: "EasyMate Class League" } });
-    currentUser = data.user;
+    const { data, applied } = await requestCurrentUserMutation(() =>
+      api("/api/leagues/create", { method: "POST", body: { name: "EasyMate Class League" } }),
+    );
+    if (!applied) return;
     latestCreatedLeagueCode = data.league.code;
     showAchievementUnlocks(data.unlocked);
     if (leagueCodeInput) leagueCodeInput.value = data.league.code;
@@ -5910,9 +5961,10 @@ async function refreshProfile() {
   }
 
   profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "프로필을 불러오는 중..." : "Loading profile...";
+  const userRevision = captureCurrentUserRevision();
   try {
     const profile = await api("/api/profile");
-    currentUser = profile.user;
+    if (!applyCurrentUserSnapshot(profile.user, userRevision)) return;
     renderProfile(profile);
     showAchievementUnlocks(profile.unlocked);
     renderAuthState();
@@ -5924,18 +5976,20 @@ async function refreshProfile() {
 async function saveProfile() {
   try {
     profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "프로필을 저장하는 중..." : "Saving profile...";
-    const profile = await api("/api/profile", {
-      method: "PUT",
-      body: {
-        displayName: profileDisplayName.value,
-        displayNameSource: "user",
-        languagePair: profileLanguagePair?.value || currentUser?.languagePair || authLanguagePair?.value || "English to Korean",
-        pieceEdition: profilePieceEdition?.value,
-        avatarUrl: profileImage?.value || "",
-        bio: profileBio?.value || "",
-      },
-    });
-    currentUser = profile.user;
+    const { data: profile, applied } = await requestCurrentUserMutation(() =>
+      api("/api/profile", {
+        method: "PUT",
+        body: {
+          displayName: profileDisplayName.value,
+          displayNameSource: "user",
+          languagePair: profileLanguagePair?.value || currentUser?.languagePair || authLanguagePair?.value || "English to Korean",
+          pieceEdition: profilePieceEdition?.value,
+          avatarUrl: profileImage?.value || "",
+          bio: profileBio?.value || "",
+        },
+      }),
+    );
+    if (!applied) return;
     renderProfile(profile);
     authStatus.textContent =
       currentInterfaceLanguage() === "Korean" ? `${currentUser.displayName}님으로 로그인됨` : `Signed in as ${currentUser.displayName}`;
@@ -6713,11 +6767,13 @@ async function saveProfilePatch(patch = {}) {
   if (profileStatus) {
     profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "프로필을 저장하는 중..." : "Saving profile...";
   }
-  const profile = await api("/api/profile", {
-    method: "PUT",
-    body: { ...patch },
-  });
-  currentUser = profile.user;
+  const { data: profile, applied } = await requestCurrentUserMutation(() =>
+    api("/api/profile", {
+      method: "PUT",
+      body: { ...patch },
+    }),
+  );
+  if (!applied) return null;
   cachedTrainingState = profile.user?.training || cachedTrainingState;
   renderProfile(profile);
   renderAuthState();

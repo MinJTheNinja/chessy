@@ -4,6 +4,7 @@ const path = require("path");
 const crypto = require("crypto");
 const zlib = require("zlib");
 const util = require("util");
+const { AsyncLocalStorage } = require("async_hooks");
 const { URL } = require("url");
 const { Chess } = require("chess.js");
 const { Pool } = require("pg");
@@ -94,6 +95,8 @@ const brotliAsync = util.promisify(zlib.brotliCompress);
 const staticTextCache = new Map();
 let localDbCache = null;
 let localDbWriteQueue = Promise.resolve();
+let localMutationQueue = Promise.resolve();
+const dbTransactionContext = new AsyncLocalStorage();
 
 const sampleTranscript = [
   {
@@ -254,12 +257,16 @@ function ensureJsonDb() {
   }
 }
 
+function cloneDb(db) {
+  return normalizeDb(JSON.parse(JSON.stringify(db)));
+}
+
 async function readJsonDb() {
   ensureJsonDb();
-  if (localDbCache) return localDbCache;
+  if (localDbCache) return cloneDb(localDbCache);
   const source = await fs.promises.readFile(dbPath, "utf8");
   localDbCache = normalizeDb(JSON.parse(source));
-  return localDbCache;
+  return cloneDb(localDbCache);
 }
 
 async function writeJsonDb(db) {
@@ -328,7 +335,8 @@ function initializeStorage() {
 async function readDb() {
   if (!pgPool) return readJsonDb();
   await ensurePostgresDb();
-  const result = await pgPool.query("SELECT data FROM app_state WHERE id = $1", ["main"]);
+  const queryable = dbTransactionContext.getStore()?.client || pgPool;
+  const result = await queryable.query("SELECT data FROM app_state WHERE id = $1", ["main"]);
   return normalizeDb(result.rows[0]?.data || defaultDb());
 }
 
@@ -338,7 +346,8 @@ async function writeDb(db) {
     return;
   }
   await ensurePostgresDb();
-  await pgPool.query(
+  const queryable = dbTransactionContext.getStore()?.client || pgPool;
+  await queryable.query(
     `
       INSERT INTO app_state (id, data, updated_at)
       VALUES ($1, $2::jsonb, NOW())
@@ -349,6 +358,57 @@ async function writeDb(db) {
   );
 }
 
+function flushDeferredJsonResponse(context) {
+  if (!context?.response) return;
+  const { res, status, headers, payload } = context.response;
+  res.writeHead(status, {
+    "content-type": "application/json; charset=utf-8",
+    ...headers,
+  });
+  res.end(payload);
+}
+
+async function withDbStateTransaction(task) {
+  if (!pgPool) {
+    const run = async () => {
+      const context = { client: null, response: null };
+      const result = await dbTransactionContext.run(context, task);
+      flushDeferredJsonResponse(context);
+      return result;
+    };
+    const queued = localMutationQueue.then(run, run);
+    localMutationQueue = queued.catch(() => {});
+    return queued;
+  }
+
+  await ensurePostgresDb();
+  const client = await pgPool.connect();
+  const context = { client, response: null };
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT id FROM app_state WHERE id = $1 FOR UPDATE", ["main"]);
+    const result = await dbTransactionContext.run(context, task);
+    await client.query("COMMIT");
+    flushDeferredJsonResponse(context);
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+function shouldExpirePrivateRooms(method, pathname) {
+  if (method === "GET") return pathname === "/api/matches/active";
+  return pathname === "/api/challenges" || (pathname.startsWith("/api/challenges/") && pathname.endsWith("/accept"));
+}
+
+function apiRequestNeedsStateTransaction(method, pathname) {
+  if (shouldExpirePrivateRooms(method, pathname)) return true;
+  if (!["POST", "PUT", "PATCH", "DELETE"].includes(method)) return false;
+  return pathname !== "/api/translate" && pathname !== "/api/moderate";
+}
 async function redisCommand(command) {
   if (!redisEnabled) return null;
   try {
@@ -413,13 +473,19 @@ function verifyPassword(password, stored) {
 }
 
 function sendJson(res, status, data, headers = {}) {
+  const context = dbTransactionContext.getStore();
+  const payload = JSON.stringify(data);
+  if (context) {
+    if (context.response) throw new Error("API route attempted to send more than one response.");
+    context.response = { res, status, headers, payload };
+    return;
+  }
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     ...headers,
   });
-  res.end(JSON.stringify(data));
+  res.end(payload);
 }
-
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -712,58 +778,70 @@ function transcriptSpeakerUser(match, item, db) {
 }
 
 async function moderateTranscriptItem(matchId, transcriptItemId) {
-  const db = await readDb();
-  const match = db.matches.find((item) => item.id === matchId);
-  if (!match) return;
-  const transcriptItem = (match.transcript || []).find((item) => item.id === transcriptItemId);
-  if (!transcriptItem || transcriptItem.safetyCheckedAt) return;
+  const snapshot = await readDb();
+  const snapshotMatch = snapshot.matches.find((item) => item.id === matchId);
+  const snapshotItem = (snapshotMatch?.transcript || []).find((item) => item.id === transcriptItemId);
+  if (!snapshotItem || snapshotItem.safetyCheckedAt) return;
 
-  const safety = await detectUnsafeText(transcriptItem.text);
-  transcriptItem.safetyCheckedAt = new Date().toISOString();
-  transcriptItem.safety = safety;
+  const safety = await detectUnsafeText(snapshotItem.text);
+  let notification = null;
 
-  if (safety.flagged) {
-    const target = transcriptSpeakerUser(match, transcriptItem, db);
-    if (target) {
-      target.warnings = target.warnings || [];
-      target.warnings.push({
-        id: id("warning"),
-        reason: safety.reason || "Possible disrespectful speech detected.",
-        by: "ai-moderation",
-        createdAt: new Date().toISOString(),
+  await withDbStateTransaction(async () => {
+    const db = await readDb();
+    const match = db.matches.find((item) => item.id === matchId);
+    const transcriptItem = (match?.transcript || []).find((item) => item.id === transcriptItemId);
+    if (!match || !transcriptItem || transcriptItem.safetyCheckedAt) return;
+
+    transcriptItem.safetyCheckedAt = new Date().toISOString();
+    transcriptItem.safety = safety;
+
+    if (safety.flagged) {
+      const target = transcriptSpeakerUser(match, transcriptItem, db);
+      if (target) {
+        target.warnings = target.warnings || [];
+        target.warnings.push({
+          id: id("warning"),
+          reason: safety.reason || "Possible disrespectful speech detected.",
+          by: "ai-moderation",
+          createdAt: new Date().toISOString(),
+          matchId: match.id,
+          source: safety.source,
+        });
+        const penalty = safety.severity === "high" ? 2 : 1;
+        target.mannerTemperature = Math.max(0, Number(target.mannerTemperature ?? 42.8) - penalty);
+      }
+
+      db.reports.push({
+        id: id("report"),
         matchId: match.id,
+        userId: target?.id || null,
+        reason: "AI moderation detected possible profanity or disrespectful speech.",
+        detail: safety.reason,
+        status: "open",
         source: safety.source,
+        categories: safety.categories,
+        createdAt: new Date().toISOString(),
       });
-      const penalty = safety.severity === "high" ? 2 : 1;
-      target.mannerTemperature = Math.max(0, Number(target.mannerTemperature ?? 42.8) - penalty);
+
+      notification = {
+        matchId: match.id,
+        userId: target?.id || null,
+      };
     }
 
-    db.reports.push({
-      id: id("report"),
-      matchId: match.id,
-      userId: target?.id || null,
-      reason: "AI moderation detected possible profanity or disrespectful speech.",
-      detail: safety.reason,
-      status: "open",
-      source: safety.source,
-      categories: safety.categories,
-      createdAt: new Date().toISOString(),
-    });
+    await writeDb(db);
+  });
 
-  }
-
-  await writeDb(db);
-  if (safety.flagged) {
-    broadcast(match.id, {
+  if (notification) {
+    broadcast(notification.matchId, {
       type: "notification",
       category: "warning",
-      userId: transcriptSpeakerUser(match, transcriptItem, db)?.id || null,
+      userId: notification.userId,
       title: "Safety warning",
       body: safety.reason || "Possible disrespectful speech detected.",
     });
   }
 }
-
 function getCookie(req, name) {
   const cookie = req.headers.cookie || "";
   return cookie
@@ -1169,6 +1247,9 @@ function publicUser(user) {
     role: normalizedRole(user),
     pieceEdition: normalizedPieceEdition(user.pieceEdition),
     avatarUrl: user.avatarUrl || "",
+    bio: user.bio || "",
+    nativeLanguage: user.nativeLanguage || "",
+    learningLanguage: user.learningLanguage || "",
     streak: Number(user.streak || 0),
     lastStreakAt: user.lastStreakAt || "",
     easyElo: Number(user.easyElo || 1000),
@@ -1817,7 +1898,9 @@ function routePattern(pathname, pattern) {
 async function handleApi(req, res, pathname, searchParams = new URLSearchParams()) {
   const db = await readDb();
   const user = getSessionUser(req, db);
-  await expireStalePrivateRooms(db);
+  if (shouldExpirePrivateRooms(req.method, pathname)) {
+    await expireStalePrivateRooms(db);
+  }
 
   if (req.method === "GET" && pathname === "/api/config") {
     sendJson(res, 200, {
@@ -3579,7 +3662,10 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (requestUrl.pathname.startsWith("/api/")) {
-      const handled = await handleApi(req, res, requestUrl.pathname, requestUrl.searchParams);
+      const runApi = () => handleApi(req, res, requestUrl.pathname, requestUrl.searchParams);
+      const handled = apiRequestNeedsStateTransaction(req.method, requestUrl.pathname)
+        ? await withDbStateTransaction(runApi)
+        : await runApi();
       if (!handled) sendJson(res, 404, { error: "API route not found." });
       return;
     }
