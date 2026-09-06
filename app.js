@@ -6092,6 +6092,15 @@ async function refreshTeacherLeague({ announce = false } = {}) {
       return data.league;
     })
     .catch((error) => {
+      if (error.status === 403) {
+        latestCreatedLeagueCode = "";
+        cachedTeacherLeague = null;
+        if (currentUser) {
+          replaceCurrentUser({ ...currentUser, isTeacher: false, teacherLeagueCode: "" });
+          renderAuthState();
+        }
+        if (document.querySelector(".view.active")?.dataset.view === "teacher") setView("overview");
+      }
       setTeacherLeagueStatus(translateCopy(error.message), "error");
       return null;
     })
@@ -6122,6 +6131,7 @@ async function saveTeacherLeagueSettings(event) {
       method: "PATCH",
       body: { name, competitionEndsOn },
     });
+    latestCreatedLeagueCode = "";
     renderTeacherLeague(data.league);
     setTeacherLeagueStatus(korean ? "리그 설정을 저장했습니다." : "League settings saved.", "success");
   } catch (error) {

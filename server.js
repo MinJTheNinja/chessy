@@ -2108,7 +2108,8 @@ function teacherLeagueForUser(user, db) {
 
 function teacherLeagueView(league, db) {
   const members = db.users
-    .filter((member) => String(member.leagueCode || "").trim().toUpperCase() === league.code)
+    .filter((member) => member.id === league.createdBy
+      || String(member.leagueCode || "").trim().toUpperCase() === league.code)
     .map((member) => ({
       id: member.id,
       displayName: publicDisplayName(member),
@@ -2897,6 +2898,7 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     member.leagueJoined = member.id !== league.createdBy;
     member.removedFromLeagueCode = "";
     member.removedFromLeagueAt = "";
+    await saveUser(member);
     await writeDb(db);
     sendJson(res, 200, { league: teacherLeagueView(league, db) });
     return true;
@@ -2924,6 +2926,7 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     member.leagueJoined = false;
     member.removedFromLeagueCode = league.code;
     member.removedFromLeagueAt = new Date().toISOString();
+    await saveUser(member);
     await writeDb(db);
     sendJson(res, 200, { league: teacherLeagueView(league, db), removedMember });
     return true;
@@ -2968,6 +2971,12 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
       user.teacherLeagueId = existingLeague.id;
       user.teacherLeagueCode = existingLeague.code;
       user.leagueCreated = true;
+      user.leagueCode = existingLeague.code;
+      user.leagueJoined = true;
+      user.removedFromLeagueCode = "";
+      user.removedFromLeagueAt = "";
+      user.weeklyEasyElo = Number(user.weeklyEasyElo ?? user.easyElo ?? 1000);
+      await saveUser(user);
       await writeDb(db);
       sendJson(res, 200, { league: leagueView(existingLeague, db, "weekly"), user: publicUser(user, db), unlocked: [] });
       return true;
@@ -3034,6 +3043,7 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     user.leagueCode = "";
     user.leagueJoined = false;
     delete user.weeklyEasyElo;
+    await saveUser(user);
     await writeDb(db);
     sendJson(res, 200, { leftLeagueCode: code, user: publicUser(user, db) });
     return true;
