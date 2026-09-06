@@ -3545,7 +3545,8 @@ function serveStatic(req, res, pathname) {
   const matchRoute = routePattern(pathname, "/match/:id");
   const tutorialRoute = pathname === "/tutorial" || pathname === "/tutorial/";
   const staffRoute = pathname === "/staff" || pathname === "/staff/";
-  const requested = pathname === "/" || matchRoute || tutorialRoute || staffRoute ? "/index.html" : decodeURIComponent(pathname);
+  const teacherRoute = pathname === "/teacher" || pathname === "/teacher/";
+  const requested = pathname === "/" || matchRoute || tutorialRoute || staffRoute || teacherRoute ? "/index.html" : decodeURIComponent(pathname);
   const filePath = path.normalize(path.join(rootDir, requested));
   const relative = path.relative(rootDir, filePath);
   if (relative.startsWith("..") || path.isAbsolute(relative)) {

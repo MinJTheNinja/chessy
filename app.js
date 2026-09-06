@@ -7027,7 +7027,7 @@ showPuzzleGuideButton?.addEventListener("click", async () => {
 
 showCheoinseongGuideButton?.addEventListener("click", async () => {
   await refreshTrainingState();
-  setHowToPlayMode("cheoinseong");
+  showPuzzlePath("cheoinseong");
 });
 
 howToPlayFrame?.addEventListener("load", watchPuzzleFrameHeight);

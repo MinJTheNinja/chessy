@@ -2,6 +2,12 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "outputDirectory": ".",
+  "rewrites": [
+    { "source": "/tutorial", "destination": "/index.html" },
+    { "source": "/staff", "destination": "/index.html" },
+    { "source": "/teacher", "destination": "/index.html" },
+    { "source": "/match/:id", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
