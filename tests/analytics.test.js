@@ -263,3 +263,53 @@ test("HTTP analytics is consent gated, size limited, identity safe, reconstructa
     await fs.promises.rm(dataDir, { recursive: true, force: true });
   }
 });
+
+test("auth config stays available and health fails clearly while PostgreSQL reconnects", async () => {
+  const dataDir = await temporaryDirectory("easymate-auth-config-");
+  const port = await freePort();
+  const googleClientId = "123456789-test.apps.googleusercontent.com";
+  const child = spawn(process.execPath, ["server.js"], {
+    cwd: path.join(__dirname, ".."),
+    env: {
+      ...process.env,
+      PORT: String(port),
+      NODE_ENV: "test",
+      EASYMATE_DATA_DIR: dataDir,
+      DATABASE_URL: "postgresql://test:test@127.0.0.1:1/test?sslmode=disable",
+      GOOGLE_CLIENT_ID: googleClientId,
+      PG_CONNECT_TIMEOUT_MS: "200",
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  const baseUrl = `http://127.0.0.1:${port}`;
+  try {
+    await waitForServer(child);
+
+    const configResponse = await fetch(`${baseUrl}/api/config`);
+    assert.equal(configResponse.status, 200);
+    assert.deepEqual(await configResponse.json(), {
+      googleClientId,
+      googleLoginConfigured: true,
+    });
+
+    const healthResponse = await fetch(`${baseUrl}/api/health`);
+    assert.equal(healthResponse.status, 503);
+    const health = await healthResponse.json();
+    assert.equal(health.ok, false);
+    assert.equal(health.googleLogin, "configured");
+
+    const signupResponse = await fetch(`${baseUrl}/api/auth/signup`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: "blocked@easymate.test", displayName: "Blocked", password: "safe-test-password" }),
+    });
+    assert.equal(signupResponse.status, 503);
+    assert.deepEqual(await signupResponse.json(), {
+      error: "Account storage is temporarily unavailable. Please try again shortly.",
+    });
+  } finally {
+    child.kill();
+    await new Promise((resolve) => child.once("exit", resolve));
+    await fs.promises.rm(dataDir, { recursive: true, force: true });
+  }
+});

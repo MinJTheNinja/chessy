@@ -73,7 +73,7 @@ const trainingModules = [
 const pgPool = databaseUrl
   ? new Pool({
       connectionString: databaseUrl,
-      ssl: /sslmode=require|ssl=true/i.test(databaseUrl) || process.env.PGSSLMODE === "require" ? { rejectUnauthorized: false } : false,
+      ssl: postgresSslOptions(databaseUrl),
       connectionTimeoutMillis: Number(process.env.PG_CONNECT_TIMEOUT_MS || 10000),
     })
   : null;
@@ -107,6 +107,21 @@ let localDbCache = null;
 let localDbWriteQueue = Promise.resolve();
 let localMutationQueue = Promise.resolve();
 const dbTransactionContext = new AsyncLocalStorage();
+
+function postgresSslOptions(connectionString) {
+  if (!connectionString) return false;
+  try {
+    const parsed = new URL(connectionString);
+    const sslMode = String(parsed.searchParams.get("sslmode") || "").toLowerCase();
+    if (sslMode === "disable") return false;
+    if (sslMode || /(^|\.)supabase\.(com|co)$/i.test(parsed.hostname)) {
+      return { rejectUnauthorized: false };
+    }
+  } catch {
+    // Let pg report malformed connection strings with its normal error message.
+  }
+  return process.env.PGSSLMODE === "require" ? { rejectUnauthorized: false } : false;
+}
 
 const sampleTranscript = [
   {
@@ -2001,6 +2016,14 @@ function routePattern(pathname, pattern) {
 }
 
 async function handleApi(req, res, pathname, searchParams = new URLSearchParams()) {
+  if (req.method === "GET" && pathname === "/api/config") {
+    sendJson(res, 200, {
+      googleClientId,
+      googleLoginConfigured: Boolean(googleClientId),
+    });
+    return true;
+  }
+
   const db = await readDb();
   const user = getSessionUser(req, db);
   if (shouldExpirePrivateRooms(req.method, pathname)) {
@@ -2060,14 +2083,6 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     if (!requireStaff(user, res)) return true;
     const summary = await analyticsStore.summary(searchParams.get("days"));
     sendJson(res, 200, summary, { "cache-control": "no-store" });
-    return true;
-  }
-
-  if (req.method === "GET" && pathname === "/api/config") {
-    sendJson(res, 200, {
-      googleClientId,
-      googleLoginConfigured: Boolean(googleClientId),
-    });
     return true;
   }
 
@@ -3991,8 +4006,9 @@ const server = http.createServer(async (req, res) => {
 
   try {
     if (req.method === "GET" && requestUrl.pathname === "/api/health") {
-      sendJson(res, 200, {
-        ok: true,
+      const healthy = !pgPool || storageReady;
+      sendJson(res, healthy ? 200 : 503, {
+        ok: healthy,
         app: "Live Chess",
         storage: pgPool ? "postgres" : "local-json",
         storageStatus: storageReady ? "ready" : "connecting",
@@ -4003,6 +4019,7 @@ const server = http.createServer(async (req, res) => {
         nvidia: nvidiaEnabled ? "configured" : "not-configured",
         safetyModel: nvidiaEnabled ? nvidiaSafetyModel : "local-fallback",
         translatorEmail: myMemoryEmail ? "configured" : "anonymous",
+        googleLogin: googleClientId ? "configured" : "not-configured",
         streakTimeZone,
         now: new Date().toISOString(),
       });
@@ -4018,7 +4035,10 @@ const server = http.createServer(async (req, res) => {
     }
     serveStatic(req, res, requestUrl.pathname);
   } catch (error) {
-    sendJson(res, error.statusCode || 500, { error: error.message || "Server error." });
+    const storageUnavailable = Boolean(pgPool && !storageReady);
+    sendJson(res, error.statusCode || (storageUnavailable ? 503 : 500), {
+      error: storageUnavailable ? "Account storage is temporarily unavailable. Please try again shortly." : error.message || "Server error.",
+    });
   }
 });
 
