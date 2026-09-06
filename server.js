@@ -10,7 +10,9 @@ const { Chess } = require("chess.js");
 const { Pool } = require("pg");
 
 const rootDir = __dirname;
-const dataDir = path.join(rootDir, ".localappdata", "live-chess");
+const dataDir = process.env.LOCAL_DATA_DIR
+  ? path.resolve(process.env.LOCAL_DATA_DIR)
+  : path.join(rootDir, ".localappdata", "live-chess");
 const dbPath = path.join(dataDir, "db.json");
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
@@ -1261,8 +1263,8 @@ function publicUser(user, db = null) {
     lastStreakAt: user.lastStreakAt || "",
     easyElo: Number(user.easyElo || 1000),
     leagueCode: user.leagueCode || "",
-    isTeacher: Boolean(ownedTeacherLeague || user.teacherLeagueId || user.teacherLeagueCode || user.leagueCreated),
-    teacherLeagueCode: ownedTeacherLeague?.code || user.teacherLeagueCode || (user.leagueCreated ? user.leagueCode || "" : ""),
+    isTeacher: Boolean(ownedTeacherLeague),
+    teacherLeagueCode: ownedTeacherLeague?.code || "",
     training: trainingState(user),
     achievements,
     badgeNotifications: pendingAchievementViews(user),
@@ -2319,7 +2321,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     user.leagueJoined = false;
     delete user.weeklyEasyElo;
     await writeDb(db);
-    sendJson(res, 200, { leftLeagueCode: code, user: publicUser(user) });
+    sendJson(res, 200, { leftLeagueCode: code, user: publicUser(user, db) });
     return true;
   }
 

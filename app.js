@@ -5599,7 +5599,7 @@ function currentLeagueCode() {
 }
 
 function currentTeacherLeagueCode() {
-  return String(currentUser?.teacherLeagueCode || cachedTeacherLeague?.code || "").trim().toUpperCase();
+  return String(cachedTeacherLeague?.code || latestCreatedLeagueCode || currentUser?.teacherLeagueCode || "").trim().toUpperCase();
 }
 
 function renderLeagueAction() {
@@ -5754,6 +5754,7 @@ async function createLeague() {
     );
     if (!applied) return;
     latestCreatedLeagueCode = data.league.code;
+    cachedTeacherLeague = data.league;
     showAchievementUnlocks(data.unlocked);
     if (leagueCodeInput) leagueCodeInput.value = data.league.code;
     if (teacherAccessCodeInput) teacherAccessCodeInput.value = "";
