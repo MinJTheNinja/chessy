@@ -8,8 +8,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "build": "node --check server.js && node --check analytics.js && node --check analytics-client.js && node --check app.js",
-    "test": "node --test tests/*.test.js"
+    "build": "node --check server.js && node --check storage-migration.js && node --check analytics.js && node --check analytics-client.js && node --check app.js",
+    "migrate": "node scripts/migrate-normalized-storage.js",
+    "test": "node --test \"tests/*.test.js\" \"test/*.test.js\""
   },
   "dependencies": {
     "chess.js": "^1.4.0",
