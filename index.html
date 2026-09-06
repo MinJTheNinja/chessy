@@ -14,8 +14,9 @@
     <noscript>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
     </noscript>
-    <link rel="stylesheet" href="/styles.css?v=20260905-teacher-league" />
-    <script src="/app.js?v=20260905-teacher-league" defer></script>
+    <link rel="stylesheet" href="/styles.css?v=20260906-product-analytics" />
+    <script src="/analytics-client.js?v=20260906-product-analytics" defer></script>
+    <script src="/app.js?v=20260906-product-analytics" defer></script>
   </head>
   <body>
     <header class="site-header">
@@ -1053,6 +1054,16 @@
         <button data-view-link="profile" type="button">나</button>
       </nav>
     </main>
+    <aside class="analytics-consent" id="analyticsConsentBanner" aria-labelledby="analyticsConsentTitle" hidden>
+      <div>
+        <strong id="analyticsConsentTitle">EasyMate 개선을 도와주세요</strong>
+        <p>선택적으로 익명화된 기능 사용 및 성능 이벤트를 수집합니다. 입력 내용, 대화, 비밀번호, 정확한 위치는 수집하지 않습니다.</p>
+      </div>
+      <div class="analytics-consent-actions">
+        <button class="button secondary" type="button" data-analytics-consent="declined">거부</button>
+        <button class="button primary" type="button" data-analytics-consent="granted">허용</button>
+      </div>
+    </aside>
 
     <footer class="site-footer">
       <div class="site-footer-inner">
@@ -1106,6 +1117,13 @@
           <h2 id="privacyTitle">개인정보 처리방침</h2>
           <h3>수집 정보와 목적</h3>
           <p>계정 생성 시 이메일, 표시 이름과 비밀번호 해시를 처리합니다. 서비스 이용 중 대국 기록, 퍼즐·튜토리얼 진행도, 리그·배지, 게시물·답글, 신고와 세션 정보가 저장될 수 있습니다. 이 정보는 계정 운영, 학습 진행 저장, 대국 연결, 안전 관리와 서비스 개선에 사용됩니다.</p>
+          <h3>선택적 사용 분석</h3>
+          <p>허용한 경우 EasyMate는 무작위 익명 식별자, 세션 식별자, 방문 화면, 선택한 주요 기능, 완료·취소·오류 여부, 처리 시간을 저장합니다. 게시물 내용, 입력 내용, 대화·자막, 비밀번호, 인증 토큰, 정확한 위치는 분석 이벤트에 저장하지 않습니다.</p>
+          <div class="analytics-privacy-control">
+            <span id="analyticsConsentStatus">선택하지 않음</span>
+            <button class="button secondary" type="button" data-analytics-consent="declined">사용 분석 끄기</button>
+            <button class="button primary" type="button" data-analytics-consent="granted">사용 분석 허용</button>
+          </div>
           <h3>음성 및 자막</h3>
           <p>마이크는 사용자가 켠 경우에만 사용합니다. 실시간 음성은 대국 상대와 연결되며, 자막 또는 대국 기록으로 전송한 텍스트는 복습과 안전 기능을 위해 저장될 수 있습니다.</p>
           <h3>보유와 삭제</h3>
@@ -1119,6 +1137,7 @@
           <span class="eyebrow">Privacy and child protection</span>
           <h2>Privacy Notice</h2>
           <h3>Data and purposes</h3><p>We process email, display name, and password-hash information for accounts. Match history, tutorial and puzzle progress, leagues, badges, posts, replies, reports, and session data may be stored to operate accounts, save learning progress, connect matches, protect users, and improve the service.</p>
+          <h3>Optional usage analytics</h3><p>When you allow it, EasyMate stores a random anonymous identifier, session identifier, pages visited, meaningful feature choices, completion or cancellation outcomes, technical errors, and timing data. Analytics events do not contain post text, form contents, conversations, captions, passwords, authentication tokens, or precise location.</p>
           <h3>Voice and captions</h3><p>The microphone is used only when you turn it on. Live audio connects to your opponent. Caption text or transcript text you send may be stored for review and safety features.</p>
           <h3>Retention and deletion</h3><p>Account data is kept until account deletion, except where law or dispute handling requires longer retention. Use profile settings or contact us to request access, correction, or deletion.</p>
           <h3>Children under 14</h3><p>Personal data for a child under 14 requires consent from a legal guardian. EasyMate verifies that guardian consent before processing the child's personal data. A guardian may contact us to request access, correction, or deletion.</p>

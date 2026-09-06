@@ -248,6 +248,22 @@ const cultureGuideList = document.querySelector("#cultureGuideList");
 const cultureGuideInput = document.querySelector("#cultureGuideInput");
 const saveCultureGuideButton = document.querySelector("#saveCultureGuide");
 const demoAuthAllowed = ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
+const analytics = window.EasyMateAnalytics;
+const analyticsCultureImpressions = new Set();
+const analyticsOpenedPosts = new Set();
+const analyticsStartedMatches = new Set();
+let analyticsMatchmakingStartedAt = 0;
+let analyticsPuzzleStartedAt = 0;
+let analyticsPuzzleId = "";
+let analyticsReviewStartedAt = 0;
+
+function trackEvent(eventName, properties = {}, options = {}) {
+  analytics?.track(eventName, properties, options);
+}
+
+function analyticsElapsed(startedAt) {
+  return startedAt ? Math.max(0, Math.round(performance.now() - startedAt)) : 0;
+}
 const studentTutorialRequiredKey = "easyMateStudentTutorialRequired";
 const studentTutorialCompleteKey = "easyMateStudentTutorialComplete";
 const completedTrainingModulesKey = "easyMateCompletedTrainingModules";
@@ -2969,6 +2985,26 @@ function openPuzzleStage(stage, index = 0, options = {}) {
   howToPlayShell?.removeAttribute("hidden");
   trainingModuleToolbar?.removeAttribute("hidden");
   const title = currentInterfaceLanguage() === "Korean" ? stage.ko : stage.en;
+  if (analyticsPuzzleId && analyticsPuzzleId !== stage.id) {
+    trackEvent("puzzle_abandoned", {
+      puzzle_id: analyticsPuzzleId,
+      duration_ms: analyticsElapsed(analyticsPuzzleStartedAt),
+    }, { page: "/training" });
+  }
+  analyticsPuzzleId = String(stage.id || "goryeo-vs-mongol");
+  analyticsPuzzleStartedAt = performance.now();
+  trackEvent("puzzle_started", {
+    puzzle_id: analyticsPuzzleId,
+    difficulty: String(stage.level || index + 1),
+  }, { page: "/training" });
+  if (stage.series === "cheoinseong") {
+    trackEvent("culture_content_opened", {
+      content_id: analyticsPuzzleId,
+      content_type: "history_puzzle",
+      region: "Cheoinseong",
+      source_feature: "training",
+    }, { page: "/training" });
+  }
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${currentInterfaceLanguage() === "Korean" ? "퍼즐" : "Puzzle"} ${index + 1} · ${title}`;
   const player = stage.player || "/assets/goryeo-vs-mongol-puzzle.html";
   const language = currentInterfaceLanguage() === "Korean" ? "ko" : "en";
@@ -3164,7 +3200,32 @@ async function completeStudentTutorial(module, advance = false) {
 }
 
 async function completePuzzle(payload = {}) {
+  const completedPuzzleId = String(payload.puzzleId || analyticsPuzzleId || "goryeo-vs-mongol");
+  const completionDuration = Number(payload.durationMs || analyticsElapsed(analyticsPuzzleStartedAt));
+  trackEvent("puzzle_attempted", {
+    puzzle_id: completedPuzzleId,
+    attempt_count: Number(payload.attemptCount || 1),
+    duration_ms: completionDuration,
+  }, { page: "/training" });
+  if (/cheoin|goryeo|mongol/i.test(completedPuzzleId)) {
+    trackEvent("culture_content_completed", {
+      content_id: completedPuzzleId,
+      content_type: "history_puzzle",
+      region: "Cheoinseong",
+      source_feature: "training",
+      duration_ms: completionDuration,
+    }, { page: "/training" });
+  }
+  // The player completed the puzzle even when persistence is skipped, rejected as
+  // a duplicate, or temporarily unavailable. Clear the active attempt before the
+  // async save so a later navigation is not mislabeled as an abandonment.
+  analyticsPuzzleId = "";
+  analyticsPuzzleStartedAt = 0;
   if (!currentUser || !backendOnline) {
+    trackEvent("puzzle_completed", {
+      puzzle_id: completedPuzzleId,
+      duration_ms: completionDuration,
+    }, { page: "/training" });
     const completed = completedPuzzleIds();
     if (payload.puzzleId) completed.add(String(payload.puzzleId));
     writeLocalSetting(completedPuzzleStagesKey, JSON.stringify(Array.from(completed)));
@@ -3215,18 +3276,40 @@ async function api(path, options = {}) {
   if (location.protocol === "file:") {
     throw new Error("Backend is offline. Start the local server to use app features.");
   }
-
-  const response = await fetch(path, {
-    credentials: "include",
-    headers: {
-      "content-type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  const startedAt = performance.now();
+  let response;
+  try {
+    response = await fetch(path, {
+      credentials: "include",
+      headers: {
+        "content-type": "application/json",
+        ...(analytics?.headers() || {}),
+        ...(options.headers || {}),
+      },
+      ...options,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+  } catch (error) {
+    trackEvent("api_error", {
+      error_code: "network_error",
+      operation: path,
+      duration_ms: analyticsElapsed(startedAt),
+    });
+    throw error;
+  }
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || "Request failed.");
+  if (!response.ok) {
+    trackEvent("api_error", {
+      error_code: `http_${response.status}`,
+      operation: path,
+      http_status: response.status,
+      duration_ms: analyticsElapsed(startedAt),
+    });
+    const error = new Error(data.error || "Request failed.");
+    error.status = response.status;
+    error.code = `http_${response.status}`;
+    throw error;
+  }
   return data;
 }
 
@@ -3265,6 +3348,7 @@ async function copyRoomLink() {
       matchRoomLink.select();
       document.execCommand("copy");
     }
+    trackEvent("invite_shared", { join_method: "link" }, { page: "/play" });
     setVoiceStatus(currentInterfaceLanguage() === "Korean" ? "방 링크를 복사했습니다." : "Match room link copied.");
   } catch {
     matchRoomLink.select();
@@ -3845,6 +3929,9 @@ function connectSocket(matchId) {
     if (message.type === "lobby:updated") refreshLobby();
   });
   socket.addEventListener("close", () => {
+    if (currentMatchId) {
+      trackEvent("game_connection_error", { error_code: "websocket_closed" }, { page: "/play" });
+    }
     syncState.textContent = currentInterfaceLanguage() === "Korean" ? "실시간 연결이 끊겼습니다" : "Live socket disconnected";
   });
 }
@@ -3874,6 +3961,10 @@ async function signInOrRegister() {
     authConfirmPassword.focus();
     return;
   }
+
+  trackEvent(authMode === "login" ? "login_started" : "signup_started", { provider: "password" }, {
+    page: authMode === "login" ? "/login" : "/signup",
+  });
 
   authSubmit.disabled = true;
   authSubmit.textContent =
@@ -3959,6 +4050,7 @@ async function finishGoogleLogin(credential) {
     return;
   }
   authStatus.textContent = currentInterfaceLanguage() === "Korean" ? "Google 계정을 확인하는 중..." : "Checking your Google account...";
+  trackEvent("login_started", { provider: "google" }, { page: "/login" });
   googleSignInButton.disabled = true;
   try {
     const { data, applied } = await requestCurrentUserMutation(() =>
@@ -4351,6 +4443,10 @@ function renderForumPosts() {
     summary.append(titleLine);
     summary.addEventListener("click", () => {
       expandedForumPostId = expandedForumPostId === post.id ? null : post.id;
+      if (expandedForumPostId && !analyticsOpenedPosts.has(post.id)) {
+        analyticsOpenedPosts.add(post.id);
+        trackEvent("post_opened", { post_id: post.id, category: post.category }, { page: "/community" });
+      }
       renderForumPosts();
     });
 
@@ -4816,6 +4912,21 @@ function setView(viewName) {
   if (isStudentTutorialRequired() && viewName !== "how-to-play" && !returningToActiveMatch) {
     viewName = "how-to-play";
   }
+  if (analyticsPuzzleId && viewName !== "how-to-play") {
+    trackEvent("puzzle_abandoned", {
+      puzzle_id: analyticsPuzzleId,
+      duration_ms: analyticsElapsed(analyticsPuzzleStartedAt),
+    }, { page: "/training" });
+    analyticsPuzzleId = "";
+    analyticsPuzzleStartedAt = 0;
+  }
+  if (analyticsReviewStartedAt && viewName !== "dashboard") {
+    trackEvent("review_abandoned", {
+      duration_ms: analyticsElapsed(analyticsReviewStartedAt),
+    }, { page: "/play" });
+    analyticsReviewStartedAt = 0;
+  }
+  analytics?.pageView(viewName);
   if (viewName === "how-to-play") showTrainingModuleHome();
   setForumPolling(viewName === "forum");
   if (viewName === "home") {
@@ -5032,6 +5143,25 @@ function buildBoard() {
 
 function renderMatch(match) {
   if (!match) return;
+  if (match.id && match.status !== "waiting" && !analyticsStartedMatches.has(match.id)) {
+    analyticsStartedMatches.add(match.id);
+    const matchType = match.pairingType === "quick-pool" ? "quick" : match.pairingType === "private-challenge" ? "private" : "match";
+    const properties = {
+      match_type: matchType,
+      rated: Boolean(match.rated),
+      time_control: match.timeControl,
+    };
+    if (matchType === "quick") {
+      trackEvent("match_found", {
+        ...properties,
+        matchmaking_duration_ms: analyticsElapsed(analyticsMatchmakingStartedAt),
+      }, { page: "/play" });
+      trackEvent("match_started", properties, { page: "/play" });
+    } else if (matchType === "private") {
+      trackEvent("game_started", properties, { page: "/play" });
+    }
+    analyticsMatchmakingStartedAt = 0;
+  }
   clearInterval(queuePollInterval);
   clearInterval(queueInterval);
   currentMatchId = match.id;
@@ -5339,6 +5469,11 @@ async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안
       await refreshStats();
       await refreshLobby();
     } catch (error) {
+      trackEvent("matchmaking_error", {
+        error_code: error.code || "matchmaking_failed",
+        http_status: error.status,
+        duration_ms: analyticsElapsed(analyticsMatchmakingStartedAt),
+      }, { page: "/play" });
       queuePrompt.textContent = error.message;
       setMatchState("idle");
     }
@@ -5353,6 +5488,11 @@ async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안
 }
 
 async function cancelMatchSearch() {
+  trackEvent("matchmaking_cancelled", {
+    match_type: "quick",
+    matchmaking_duration_ms: analyticsElapsed(analyticsMatchmakingStartedAt),
+  }, { page: "/play" });
+  analyticsMatchmakingStartedAt = 0;
   clearInterval(queueInterval);
   clearInterval(queuePollInterval);
   if (backendOnline && currentUser) {
@@ -5402,6 +5542,17 @@ async function queueNewMatch() {
 
 async function quickPairFromSelectedPool() {
   const pool = selectedPool();
+  analyticsMatchmakingStartedAt = performance.now();
+  trackEvent("quick_match_clicked", {
+    match_type: "quick",
+    rated: Boolean(pool.rated),
+    time_control: pool.timeControl,
+  }, { page: "/play" });
+  trackEvent("matchmaking_started", {
+    match_type: "quick",
+    rated: Boolean(pool.rated),
+    time_control: pool.timeControl,
+  }, { page: "/play" });
   seekComposer.hidden = true;
   await startQueue(
     currentInterfaceLanguage() === "Korean"
@@ -5481,6 +5632,11 @@ async function createOpenSeek() {
 
 async function createPrivateChallenge() {
   const pool = selectedPool();
+  const roomCreationStartedAt = performance.now();
+  trackEvent("room_create_clicked", {
+    match_type: "private",
+    time_control: pool.timeControl,
+  }, { page: "/play" });
   if (!backendOnline) {
     privateChallengeCode.textContent = "LOCAL";
     queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? "비공개 방 미리보기를 만들었습니다. 공유 코드는 서버를 시작하면 사용할 수 있습니다." : "Private challenge preview created. Start the backend for shareable codes.";
@@ -5505,6 +5661,11 @@ async function createPrivateChallenge() {
       : "Room created. Send the code or link below to your friend.";
     renderActiveMatchReturn();
   } catch (error) {
+    trackEvent("room_creation_error", {
+      error_code: error.code || "room_creation_failed",
+      http_status: error.status,
+      duration_ms: analyticsElapsed(roomCreationStartedAt),
+    }, { page: "/play" });
     queuePrompt.textContent = error.message;
     friendRoomStatus.textContent = error.message;
   }
@@ -5533,6 +5694,7 @@ async function joinPrivateChallenge() {
     return;
   }
 
+  trackEvent("room_join_attempted", { join_method: "code" }, { page: "/play" });
   try {
     queuePrompt.textContent = currentInterfaceLanguage() === "Korean" ? `${code} 방에 참여하는 중입니다.` : `Joining private challenge ${code}.`;
     const data = await api(`/api/challenges/${encodeURIComponent(code)}/accept`, { method: "POST" });
@@ -5543,6 +5705,11 @@ async function joinPrivateChallenge() {
     await refreshStats();
     await refreshLobby();
   } catch (error) {
+    trackEvent("room_join_error", {
+      error_code: error.code || "room_join_failed",
+      http_status: error.status,
+      join_method: "code",
+    }, { page: "/play" });
     queuePrompt.textContent = error.message;
     friendRoomStatus.textContent = error.message;
   }
@@ -6733,6 +6900,15 @@ function startBrowserStt() {
 function renderReview(review) {
   if (!reviewStatus || !pronunciationStatus || !vocabList || !culturalTitle || !culturalBody || !culturalPrompt) return;
   if (!review) return;
+  const cultureContentId = String(review.id || "review-culture-insight");
+  if (!analyticsCultureImpressions.has(cultureContentId)) {
+    analyticsCultureImpressions.add(cultureContentId);
+    trackEvent("culture_content_impression", {
+      content_id: cultureContentId,
+      content_type: "review_insight",
+      source_feature: "game_review",
+    }, { page: "/play" });
+  }
   reviewInitialized = true;
   reviewStatus.textContent =
     currentInterfaceLanguage() === "Korean"
@@ -6787,10 +6963,20 @@ async function requestReview(source = "the completed match") {
     return;
   }
 
+  analyticsReviewStartedAt = performance.now();
+  trackEvent("review_opened", { source_feature: "completed_match" }, { page: "/play" });
+  trackEvent("review_started", { source_feature: "completed_match" }, { page: "/play" });
   try {
     const data = await api(`/api/matches/${currentMatchId}/review`, { method: "POST" });
     renderReview(data.review);
+    analyticsReviewStartedAt = 0;
   } catch (error) {
+    trackEvent("review_generation_error", {
+      error_code: error.code || "review_generation_failed",
+      http_status: error.status,
+      review_generation_duration_ms: analyticsElapsed(analyticsReviewStartedAt),
+    }, { page: "/play" });
+    analyticsReviewStartedAt = 0;
     pronunciationStatus.textContent = error.message;
   }
 }
@@ -7027,6 +7213,12 @@ showPuzzleGuideButton?.addEventListener("click", async () => {
 });
 
 showCheoinseongGuideButton?.addEventListener("click", async () => {
+  trackEvent("culture_content_impression", {
+    content_id: "cheoinseong-puzzle-path",
+    content_type: "history_collection",
+    region: "Cheoinseong",
+    source_feature: "training",
+  }, { page: "/training" });
   await refreshTrainingState();
   showPuzzlePath("cheoinseong");
 });
