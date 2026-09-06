@@ -9,6 +9,12 @@ const { URL } = require("url");
 const { Chess } = require("chess.js");
 const { Pool } = require("pg");
 const { AnalyticsStore } = require("./analytics");
+const {
+  migrateLegacyState,
+  sessionTtlMs,
+  splitLegacyUser,
+  tokenHash,
+} = require("./storage-migration");
 
 const rootDir = __dirname;
 const dataDirOverride = process.env.EASYMATE_DATA_DIR || process.env.LOCAL_DATA_DIR;
@@ -16,6 +22,8 @@ const dataDir = dataDirOverride
   ? path.resolve(dataDirOverride)
   : path.join(rootDir, ".localappdata", "live-chess");
 const dbPath = path.join(dataDir, "db.json");
+const authDbPath = path.join(dataDir, "identity.json");
+const legacyBackupPath = path.join(dataDir, "db.pre-normalization.json");
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
 const upstashRedisRestUrl = process.env.UPSTASH_REDIS_REST_URL;
@@ -103,10 +111,9 @@ const compressibleExtensions = new Set([".html", ".css", ".js", ".json", ".svg"]
 const gzipAsync = util.promisify(zlib.gzip);
 const brotliAsync = util.promisify(zlib.brotliCompress);
 const staticTextCache = new Map();
-let localDbCache = null;
 let localDbWriteQueue = Promise.resolve();
-let localMutationQueue = Promise.resolve();
-const dbTransactionContext = new AsyncLocalStorage();
+let localIdentityWriteQueue = Promise.resolve();
+const appStateContext = new AsyncLocalStorage();
 
 function postgresSslOptions(connectionString) {
   if (!connectionString) return false;
@@ -241,8 +248,6 @@ const vocabularyTemplates = [
 
 function defaultDb() {
   return {
-    users: [],
-    sessions: [],
     queue: [],
     seeks: [],
     challenges: [],
@@ -257,22 +262,51 @@ function defaultDb() {
 }
 
 function normalizeDb(db = {}) {
+  const { users, sessions, training, ...appState } = db || {};
   return {
     ...defaultDb(),
-    ...db,
-    users: db.users || [],
-    sessions: db.sessions || [],
-    queue: db.queue || [],
-    seeks: db.seeks || [],
-    challenges: db.challenges || [],
-    matches: db.matches || [],
-    voiceLetters: db.voiceLetters || [],
-    reviews: db.reviews || [],
-    reports: db.reports || [],
-    shopInterests: db.shopInterests || [],
-    leagues: db.leagues || [],
-    forumPosts: Array.isArray(db.forumPosts) ? db.forumPosts : [],
+    ...appState,
+    queue: appState.queue || [],
+    seeks: appState.seeks || [],
+    challenges: appState.challenges || [],
+    matches: appState.matches || [],
+    voiceLetters: appState.voiceLetters || [],
+    reviews: appState.reviews || [],
+    reports: appState.reports || [],
+    shopInterests: appState.shopInterests || [],
+    leagues: appState.leagues || [],
+    forumPosts: Array.isArray(appState.forumPosts) ? appState.forumPosts : [],
   };
+}
+
+function clone(value) {
+  return structuredClone(value);
+}
+
+function defaultIdentityDb() {
+  return { schemaVersion: 1, users: [], sessions: [], tutorialProgress: [] };
+}
+
+function normalizedIdentityDb(value = {}) {
+  return {
+    ...defaultIdentityDb(),
+    ...value,
+    users: Array.isArray(value.users) ? value.users : [],
+    sessions: Array.isArray(value.sessions) ? value.sessions : [],
+    tutorialProgress: Array.isArray(value.tutorialProgress) ? value.tutorialProgress : [],
+  };
+}
+
+function atomicWriteJsonSync(filePath, value) {
+  const temporaryPath = `${filePath}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`;
+  fs.writeFileSync(temporaryPath, JSON.stringify(value, null, 2), "utf8");
+  fs.renameSync(temporaryPath, filePath);
+}
+
+async function atomicWriteJson(filePath, value) {
+  const temporaryPath = `${filePath}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`;
+  await fs.promises.writeFile(temporaryPath, JSON.stringify(value, null, 2), "utf8");
+  await fs.promises.rename(temporaryPath, filePath);
 }
 
 function ensureJsonDb() {
@@ -280,6 +314,40 @@ function ensureJsonDb() {
   if (!fs.existsSync(dbPath)) {
     fs.writeFileSync(dbPath, JSON.stringify(normalizeDb(defaultDb()), null, 2), "utf8");
   }
+  const legacy = JSON.parse(fs.readFileSync(dbPath, "utf8"));
+  if (!fs.existsSync(authDbPath)) {
+    const now = Date.now();
+    const users = (Array.isArray(legacy.users) ? legacy.users : []).map((item) => splitLegacyUser(item));
+    const tutorialProgress = users.flatMap((user) => user.completedModules.map((moduleId) => ({
+      userId: user.id,
+      moduleId,
+      completedAt: user.updatedAt,
+    })));
+    const identity = {
+      schemaVersion: 1,
+      users: users.map(({ completedModules, ...user }) => user),
+      sessions: (Array.isArray(legacy.sessions) ? legacy.sessions : [])
+        .filter((session) => session?.token && session?.userId)
+        .map((session) => ({
+          tokenHash: tokenHash(session.token),
+          userId: session.userId,
+          createdAt: session.createdAt || new Date(now).toISOString(),
+          expiresAt: new Date(now + sessionTtlMs).toISOString(),
+        })),
+      tutorialProgress,
+    };
+    atomicWriteJsonSync(authDbPath, identity);
+  }
+  if (legacy.users || legacy.sessions || legacy.training) {
+    if (!fs.existsSync(legacyBackupPath)) atomicWriteJsonSync(legacyBackupPath, legacy);
+    atomicWriteJsonSync(dbPath, normalizeDb(legacy));
+  }
+}
+
+async function readJsonDbRaw() {
+  ensureJsonDb();
+  const source = await fs.promises.readFile(dbPath, "utf8");
+  return clone(normalizeDb(JSON.parse(source)));
 }
 
 function cloneDb(db) {
@@ -287,22 +355,19 @@ function cloneDb(db) {
 }
 
 async function readJsonDb() {
-  ensureJsonDb();
-  if (localDbCache) return cloneDb(localDbCache);
-  const source = await fs.promises.readFile(dbPath, "utf8");
-  localDbCache = normalizeDb(JSON.parse(source));
-  return cloneDb(localDbCache);
+  await localDbWriteQueue.catch(() => {});
+  return readJsonDbRaw();
 }
 
 async function writeJsonDb(db) {
   const normalized = normalizeDb(db);
-  const payload = JSON.stringify(normalized, null, 2);
-  localDbCache = normalized;
-  localDbWriteQueue = localDbWriteQueue.catch(() => {}).then(async () => {
-    await fs.promises.mkdir(dataDir, { recursive: true });
-    await fs.promises.writeFile(dbPath, payload, "utf8");
-  });
-  await localDbWriteQueue;
+  const context = appStateContext.getStore();
+  if (context?.kind === "local") {
+    context.db = clone(normalized);
+    context.dirty = true;
+    return;
+  }
+  throw new Error("app_state writes must run inside withAppStateMutation().");
 }
 
 async function ensurePostgresDb() {
@@ -324,6 +389,13 @@ async function ensurePostgresDb() {
         `,
         ["main", JSON.stringify(defaultDb())],
       );
+      const client = await pgPool.connect();
+      try {
+        const result = await migrateLegacyState(client);
+        console.log(`Normalized storage ready (${result.after.users} users, ${result.after.sessions} sessions).`);
+      } finally {
+        client.release();
+      }
     })().catch((error) => {
       pgReady = null;
       throw error;
@@ -340,42 +412,27 @@ async function ensureDb() {
   ensureJsonDb();
 }
 
-function initializeStorage() {
-  ensureDb()
-    .then(() => {
-      storageReady = true;
-      storageError = null;
-      console.log(`Storage ready (${pgPool ? "postgres" : "local-json"}).`);
-    })
-    .catch((error) => {
-      storageReady = false;
-      storageError = error;
-      console.error("Storage initialization failed; retrying in 10 seconds:", error.message || error);
-      clearTimeout(storageRetryTimer);
-      storageRetryTimer = setTimeout(initializeStorage, 10000);
-      storageRetryTimer.unref?.();
-    });
-  analyticsStore.initialize().catch((error) => {
-    console.warn(`Analytics storage unavailable; core product remains active: ${error.message}`);
-  });
-}
-
 async function readDb() {
-  if (!pgPool) return readJsonDb();
+  if (!pgPool) {
+    const [db, users] = await Promise.all([readJsonDb(), loadAllUsers()]);
+    return { ...db, users };
+  }
   await ensurePostgresDb();
-  const queryable = dbTransactionContext.getStore()?.client || pgPool;
-  const result = await queryable.query("SELECT data FROM app_state WHERE id = $1", ["main"]);
-  return normalizeDb(result.rows[0]?.data || defaultDb());
+  const context = appStateContext.getStore();
+  const queryable = context?.client || pgPool;
+  const [result, users] = await Promise.all([
+    queryable.query("SELECT data FROM app_state WHERE id = $1", ["main"]),
+    loadAllUsers(queryable),
+  ]);
+  return { ...normalizeDb(result.rows[0]?.data || defaultDb()), users };
 }
 
 async function writeDb(db) {
-  if (!pgPool) {
-    await writeJsonDb(db);
-    return;
-  }
+  if (!pgPool) return writeJsonDb(db);
   await ensurePostgresDb();
-  const queryable = dbTransactionContext.getStore()?.client || pgPool;
-  await queryable.query(
+  const context = appStateContext.getStore();
+  if (!context?.client) throw new Error("app_state writes must run inside withAppStateMutation().");
+  await context.client.query(
     `
       INSERT INTO app_state (id, data, updated_at)
       VALUES ($1, $2::jsonb, NOW())
@@ -386,39 +443,30 @@ async function writeDb(db) {
   );
 }
 
-function flushDeferredJsonResponse(context) {
-  if (!context?.response) return;
-  const { res, status, headers, payload } = context.response;
-  res.writeHead(status, {
-    "content-type": "application/json; charset=utf-8",
-    ...headers,
-  });
-  res.end(payload);
-}
-
-async function withDbStateTransaction(task) {
+async function withAppStateMutation(callback) {
   if (!pgPool) {
-    const run = async () => {
-      const context = { client: null, response: null };
-      const result = await dbTransactionContext.run(context, task);
-      flushDeferredJsonResponse(context);
+    const operation = localDbWriteQueue.catch(() => {}).then(async () => {
+      ensureJsonDb();
+      const raw = JSON.parse(await fs.promises.readFile(dbPath, "utf8"));
+      const users = await loadAllUsers();
+      const context = { kind: "local", db: normalizeDb(raw), dirty: false };
+      const result = await appStateContext.run(context, () => callback({ ...clone(context.db), users }));
+      if (context.dirty) await atomicWriteJson(dbPath, normalizeDb(context.db));
       return result;
-    };
-    const queued = localMutationQueue.then(run, run);
-    localMutationQueue = queued.catch(() => {});
-    return queued;
+    });
+    localDbWriteQueue = operation.then(() => undefined, () => undefined);
+    return operation;
   }
-
   await ensurePostgresDb();
   const client = await pgPool.connect();
-  const context = { client, response: null };
   try {
     await client.query("BEGIN");
-    await client.query("SELECT id FROM app_state WHERE id = $1 FOR UPDATE", ["main"]);
-    const result = await dbTransactionContext.run(context, task);
+    const result = await client.query("SELECT data FROM app_state WHERE id = $1 FOR UPDATE", ["main"]);
+    const users = await loadAllUsers(client);
+    const db = { ...normalizeDb(result.rows[0]?.data || defaultDb()), users };
+    const value = await appStateContext.run({ kind: "postgres", client }, () => callback(db));
     await client.query("COMMIT");
-    flushDeferredJsonResponse(context);
-    return result;
+    return value;
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});
     throw error;
@@ -437,6 +485,388 @@ function apiRequestNeedsStateTransaction(method, pathname) {
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(method)) return false;
   return pathname !== "/api/translate" && pathname !== "/api/moderate" && !pathname.startsWith("/api/analytics/");
 }
+
+function storedUserToUser(stored, completedModules = []) {
+  const profile = stored?.profile && typeof stored.profile === "object" ? clone(stored.profile) : {};
+  const trainingProfile = profile.training && typeof profile.training === "object" ? profile.training : {};
+  delete profile.training;
+  const user = {
+    ...profile,
+    id: stored.id,
+    email: stored.email,
+    passwordHash: stored.passwordHash || "",
+    displayName: stored.displayName,
+    authProvider: stored.authProvider || "password",
+    googleSub: stored.googleSub || null,
+    createdAt: stored.createdAt,
+    updatedAt: stored.updatedAt,
+    training: { ...trainingProfile, completedModules: [...completedModules].map(Number).sort((a, b) => a - b) },
+  };
+  Object.defineProperty(user, "__originalStored", {
+    value: clone(stored),
+    writable: true,
+    enumerable: false,
+  });
+  return user;
+}
+
+function userToStoredUser(user) {
+  const normalized = splitLegacyUser(user);
+  const { completedModules, ...stored } = normalized;
+  return stored;
+}
+
+function rowToStoredUser(row) {
+  return {
+    id: row.id,
+    email: row.email,
+    passwordHash: row.password_hash,
+    displayName: row.display_name,
+    authProvider: row.auth_provider,
+    googleSub: row.google_sub,
+    profile: row.profile || {},
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+    updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
+  };
+}
+
+async function readLocalIdentityRaw() {
+  if (!fs.existsSync(authDbPath)) throw new Error("Identity storage is not initialized.");
+  return normalizedIdentityDb(JSON.parse(await fs.promises.readFile(authDbPath, "utf8")));
+}
+
+async function readLocalIdentity() {
+  await localIdentityWriteQueue.catch(() => {});
+  return readLocalIdentityRaw();
+}
+
+async function withLocalIdentityMutation(callback) {
+  const operation = localIdentityWriteQueue.catch(() => {}).then(async () => {
+    const identity = await readLocalIdentityRaw();
+    const result = await callback(identity);
+    await atomicWriteJson(authDbPath, normalizedIdentityDb(identity));
+    return result;
+  });
+  localIdentityWriteQueue = operation.then(() => undefined, () => undefined);
+  return operation;
+}
+
+function localHydratedUser(identity, stored) {
+  if (!stored) return null;
+  const modules = identity.tutorialProgress
+    .filter((item) => item.userId === stored.id)
+    .map((item) => item.moduleId);
+  return storedUserToUser(stored, modules);
+}
+
+async function loadAllUsers(queryable = pgPool) {
+  if (!pgPool) {
+    const identity = await readLocalIdentity();
+    return identity.users.map((stored) => localHydratedUser(identity, stored));
+  }
+  const result = await queryable.query(`
+    SELECT u.*, COALESCE(
+      ARRAY_AGG(tp.module_id ORDER BY tp.module_id) FILTER (WHERE tp.module_id IS NOT NULL),
+      ARRAY[]::integer[]
+    ) AS completed_modules
+    FROM users u
+    LEFT JOIN tutorial_progress tp ON tp.user_id = u.id
+    GROUP BY u.id
+    ORDER BY u.created_at
+  `);
+  return result.rows.map((row) => storedUserToUser(rowToStoredUser(row), row.completed_modules));
+}
+
+async function findUserByEmail(email, queryable = pgPool, options = {}) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  if (!pgPool) {
+    const identity = await readLocalIdentity();
+    return localHydratedUser(identity, identity.users.find((item) => item.email.toLowerCase() === normalizedEmail));
+  }
+  if (options.forUpdate) {
+    const userResult = await queryable.query("SELECT * FROM users WHERE LOWER(email) = LOWER($1) FOR UPDATE", [normalizedEmail]);
+    if (!userResult.rows[0]) return null;
+    const progressResult = await queryable.query(
+      "SELECT module_id FROM tutorial_progress WHERE user_id = $1 ORDER BY module_id",
+      [userResult.rows[0].id],
+    );
+    return storedUserToUser(rowToStoredUser(userResult.rows[0]), progressResult.rows.map((row) => row.module_id));
+  }
+  const result = await queryable.query(
+    `SELECT u.*, COALESCE(
+       ARRAY_AGG(tp.module_id ORDER BY tp.module_id) FILTER (WHERE tp.module_id IS NOT NULL),
+       ARRAY[]::integer[]
+     ) AS completed_modules
+     FROM users u
+     LEFT JOIN tutorial_progress tp ON tp.user_id = u.id
+     WHERE LOWER(u.email) = LOWER($1)
+     GROUP BY u.id`,
+    [normalizedEmail],
+  );
+  const row = result.rows[0];
+  return row ? storedUserToUser(rowToStoredUser(row), row.completed_modules) : null;
+}
+
+async function findUserById(userId, queryable = pgPool, options = {}) {
+  if (!pgPool) {
+    const identity = await readLocalIdentity();
+    return localHydratedUser(identity, identity.users.find((item) => item.id === userId));
+  }
+  if (options.forUpdate) {
+    const userResult = await queryable.query("SELECT * FROM users WHERE id = $1 FOR UPDATE", [userId]);
+    if (!userResult.rows[0]) return null;
+    const progressResult = await queryable.query(
+      "SELECT module_id FROM tutorial_progress WHERE user_id = $1 ORDER BY module_id",
+      [userId],
+    );
+    return storedUserToUser(rowToStoredUser(userResult.rows[0]), progressResult.rows.map((row) => row.module_id));
+  }
+  const result = await queryable.query(
+    `SELECT u.*, COALESCE(
+       ARRAY_AGG(tp.module_id ORDER BY tp.module_id) FILTER (WHERE tp.module_id IS NOT NULL),
+       ARRAY[]::integer[]
+     ) AS completed_modules
+     FROM users u
+     LEFT JOIN tutorial_progress tp ON tp.user_id = u.id
+     WHERE u.id = $1
+     GROUP BY u.id`,
+    [userId],
+  );
+  const row = result.rows[0];
+  return row ? storedUserToUser(rowToStoredUser(row), row.completed_modules) : null;
+}
+
+async function insertUser(user, queryable = pgPool) {
+  const stored = userToStoredUser(user);
+  if (!pgPool) {
+    return withLocalIdentityMutation(async (identity) => {
+      if (identity.users.some((item) => item.email.toLowerCase() === stored.email.toLowerCase())) {
+        const error = new Error("Email already exists.");
+        error.code = "23505";
+        throw error;
+      }
+      identity.users.push(stored);
+      return storedUserToUser(stored, []);
+    });
+  }
+  const result = await queryable.query(
+    `INSERT INTO users
+       (id, email, password_hash, display_name, auth_provider, google_sub, profile, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9)
+     RETURNING *`,
+    [stored.id, stored.email, stored.passwordHash, stored.displayName, stored.authProvider, stored.googleSub, JSON.stringify(stored.profile), stored.createdAt, stored.updatedAt],
+  );
+  return storedUserToUser(rowToStoredUser(result.rows[0]), []);
+}
+
+async function saveUser(user, queryable = appStateContext.getStore()?.client || pgPool) {
+  const stored = userToStoredUser(user);
+  const original = user.__originalStored || null;
+  const originalProfile = original?.profile || {};
+  const profilePatch = Object.fromEntries(
+    Object.entries(stored.profile).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(originalProfile[key])),
+  );
+  const changed = (key) => !original || stored[key] !== original[key];
+  stored.updatedAt = new Date().toISOString();
+  user.updatedAt = stored.updatedAt;
+  if (!pgPool) {
+    return withLocalIdentityMutation(async (identity) => {
+      const index = identity.users.findIndex((item) => item.id === stored.id);
+      if (index === -1) throw new Error("User not found.");
+      const current = identity.users[index];
+      identity.users[index] = {
+        ...current,
+        email: changed("email") ? stored.email : current.email,
+        passwordHash: changed("passwordHash") ? stored.passwordHash : current.passwordHash,
+        displayName: changed("displayName") ? stored.displayName : current.displayName,
+        authProvider: changed("authProvider") ? stored.authProvider : current.authProvider,
+        googleSub: changed("googleSub") ? stored.googleSub : current.googleSub,
+        profile: { ...(current.profile || {}), ...profilePatch },
+        updatedAt: stored.updatedAt,
+      };
+      return localHydratedUser(identity, identity.users[index]);
+    });
+  }
+  await queryable.query(
+    `UPDATE users
+     SET email = CASE WHEN $9 THEN $2 ELSE email END,
+         password_hash = CASE WHEN $10 THEN $3 ELSE password_hash END,
+         display_name = CASE WHEN $11 THEN $4 ELSE display_name END,
+         auth_provider = CASE WHEN $12 THEN $5 ELSE auth_provider END,
+         google_sub = CASE WHEN $13 THEN $6 ELSE google_sub END,
+         profile = profile || $7::jsonb,
+         updated_at = $8
+     WHERE id = $1`,
+    [
+      stored.id,
+      stored.email,
+      stored.passwordHash,
+      stored.displayName,
+      stored.authProvider,
+      stored.googleSub,
+      JSON.stringify(profilePatch),
+      stored.updatedAt,
+      changed("email"),
+      changed("passwordHash"),
+      changed("displayName"),
+      changed("authProvider"),
+      changed("googleSub"),
+    ],
+  );
+  user.__originalStored = stored;
+  return user;
+}
+
+async function mutateUser(userId, callback) {
+  if (!pgPool) {
+    return withLocalIdentityMutation(async (identity) => {
+      const index = identity.users.findIndex((item) => item.id === userId);
+      if (index === -1) return null;
+      const user = localHydratedUser(identity, identity.users[index]);
+      const result = await callback(user, identity);
+      identity.users[index] = userToStoredUser(user);
+      return result === undefined ? user : result;
+    });
+  }
+  await ensurePostgresDb();
+  const client = await pgPool.connect();
+  try {
+    await client.query("BEGIN");
+    const user = await findUserById(userId, client, { forUpdate: true });
+    if (!user) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+    const result = await callback(user, client);
+    await saveUser(user, client);
+    await client.query("COMMIT");
+    return result === undefined ? user : result;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function createStoredSession(userId) {
+  const token = crypto.randomBytes(24).toString("hex");
+  const createdAt = new Date();
+  const expiresAt = new Date(createdAt.getTime() + sessionTtlMs);
+  const hashed = tokenHash(token);
+  if (!pgPool) {
+    await withLocalIdentityMutation(async (identity) => {
+      identity.sessions.push({ tokenHash: hashed, userId, createdAt: createdAt.toISOString(), expiresAt: expiresAt.toISOString() });
+    });
+  } else {
+    await ensurePostgresDb();
+    await pgPool.query(
+      "INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES ($1, $2, $3, $4)",
+      [hashed, userId, createdAt, expiresAt],
+    );
+  }
+  return token;
+}
+
+async function deleteStoredSession(token) {
+  if (!token) return;
+  const hashed = tokenHash(token);
+  if (!pgPool) {
+    await withLocalIdentityMutation(async (identity) => {
+      identity.sessions = identity.sessions.filter((session) => session.tokenHash !== hashed);
+    });
+  } else {
+    await ensurePostgresDb();
+    await pgPool.query("DELETE FROM sessions WHERE token_hash = $1", [hashed]);
+  }
+}
+
+async function deleteStoredUser(userId) {
+  if (!pgPool) {
+    await withLocalIdentityMutation(async (identity) => {
+      identity.users = identity.users.filter((user) => user.id !== userId);
+      identity.sessions = identity.sessions.filter((session) => session.userId !== userId);
+      identity.tutorialProgress = identity.tutorialProgress.filter((progress) => progress.userId !== userId);
+    });
+  } else {
+    await ensurePostgresDb();
+    await pgPool.query("DELETE FROM users WHERE id = $1", [userId]);
+  }
+}
+
+async function cleanupExpiredSessions() {
+  const now = new Date();
+  if (!pgPool) {
+    await withLocalIdentityMutation(async (identity) => {
+      identity.sessions = identity.sessions.filter((session) => Date.parse(session.expiresAt) > now.getTime());
+    });
+  } else {
+    await ensurePostgresDb();
+    await pgPool.query("DELETE FROM sessions WHERE expires_at <= $1", [now]);
+  }
+}
+
+async function getSessionUser(req) {
+  const token = getCookie(req, "lc_session") || (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+  if (!token) return null;
+  const hashed = tokenHash(token);
+  if (!pgPool) {
+    const identity = await readLocalIdentity();
+    const session = identity.sessions.find((item) => item.tokenHash === hashed && Date.parse(item.expiresAt) > Date.now());
+    return session ? localHydratedUser(identity, identity.users.find((item) => item.id === session.userId)) : null;
+  }
+  await ensurePostgresDb();
+  const result = await pgPool.query(
+    `SELECT u.*, COALESCE(
+       ARRAY_AGG(tp.module_id ORDER BY tp.module_id) FILTER (WHERE tp.module_id IS NOT NULL),
+       ARRAY[]::integer[]
+     ) AS completed_modules
+     FROM sessions s
+     JOIN users u ON u.id = s.user_id
+     LEFT JOIN tutorial_progress tp ON tp.user_id = u.id
+     WHERE s.token_hash = $1 AND s.expires_at > NOW()
+     GROUP BY u.id`,
+    [hashed],
+  );
+  const row = result.rows[0];
+  return row ? storedUserToUser(rowToStoredUser(row), row.completed_modules) : null;
+}
+
+async function completeTutorialProgress(userId, requestedModule) {
+  return mutateUser(userId, async (user, identityOrClient) => {
+    const state = trainingState(user);
+    const moduleId = Number(requestedModule);
+    if (moduleId && state.completedModules.includes(moduleId)) {
+      return { state, user, unlocked: [] };
+    }
+    const nextModule = state.nextModule;
+    if (!nextModule) return { state, user, unlocked: [] };
+    if (moduleId && moduleId !== nextModule.id) {
+      const error = new Error("Complete the current training module first.");
+      error.statusCode = 409;
+      error.state = state;
+      throw error;
+    }
+    const completedAt = new Date();
+    if (!pgPool) {
+      if (!identityOrClient.tutorialProgress.some((item) => item.userId === userId && item.moduleId === nextModule.id)) {
+        identityOrClient.tutorialProgress.push({ userId, moduleId: nextModule.id, completedAt: completedAt.toISOString() });
+      }
+    } else {
+      await identityOrClient.query(
+        `INSERT INTO tutorial_progress (user_id, module_id, completed_at)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (user_id, module_id) DO NOTHING`,
+        [userId, nextModule.id, completedAt],
+      );
+    }
+    user.training = normalizeTraining({ ...user.training, completedModules: [...user.training.completedModules, nextModule.id] });
+    applyDailyStreak(user, completedAt, "learning");
+    const unlocked = syncAchievements(user, { users: [user], matches: [], reports: [] });
+    return { state: trainingState(user), user, unlocked };
+  });
+}
+
 async function redisCommand(command) {
   if (!redisEnabled) return null;
   try {
@@ -489,31 +919,60 @@ function id(prefix) {
   return `${prefix}_${crypto.randomBytes(8).toString("hex")}`;
 }
 
-function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
-  const hash = crypto.pbkdf2Sync(password, salt, 120000, 32, "sha256").toString("hex");
-  return `${salt}:${hash}`;
+async function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
+  const hash = await new Promise((resolve, reject) => {
+    crypto.pbkdf2(password, salt, 120000, 32, "sha256", (error, derivedKey) => {
+      if (error) reject(error);
+      else resolve(derivedKey);
+    });
+  });
+  return `${salt}:${hash.toString("hex")}`;
 }
 
-function verifyPassword(password, stored) {
+async function verifyPassword(password, stored) {
   if (!stored) return false;
-  const [salt] = stored.split(":");
-  return hashPassword(password, salt) === stored;
+  const [salt, expectedHex] = String(stored).split(":");
+  if (!salt || !expectedHex || !/^[a-f0-9]{64}$/i.test(expectedHex)) return false;
+  const actual = await new Promise((resolve, reject) => {
+    crypto.pbkdf2(password, salt, 120000, 32, "sha256", (error, derivedKey) => {
+      if (error) reject(error);
+      else resolve(derivedKey);
+    });
+  });
+  const expected = Buffer.from(expectedHex, "hex");
+  return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
 }
 
 function sendJson(res, status, data, headers = {}) {
-  const context = dbTransactionContext.getStore();
   const payload = JSON.stringify(data);
-  if (context) {
-    if (context.response) throw new Error("API route attempted to send more than one response.");
-    context.response = { res, status, headers, payload };
-    return;
-  }
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     ...headers,
   });
   res.end(payload);
 }
+
+function deferredResponse() {
+  let statusCode = 200;
+  let headers = {};
+  let body = "";
+  return {
+    response: {
+      writeHead(status, nextHeaders = {}) {
+        statusCode = status;
+        headers = { ...headers, ...nextHeaders };
+      },
+      end(value = "") {
+        body = value;
+      },
+    },
+    flush(res) {
+      res.writeHead(statusCode, headers);
+      res.end(body);
+    },
+  };
+}
+
 function readBody(req, maxBytes = 1_000_000) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -820,19 +1279,14 @@ async function moderateTranscriptItem(matchId, transcriptItemId) {
   const snapshotMatch = snapshot.matches.find((item) => item.id === matchId);
   const snapshotItem = (snapshotMatch?.transcript || []).find((item) => item.id === transcriptItemId);
   if (!snapshotItem || snapshotItem.safetyCheckedAt) return;
-
   const safety = await detectUnsafeText(snapshotItem.text);
   let notification = null;
-
-  await withDbStateTransaction(async () => {
-    const db = await readDb();
+  await withAppStateMutation(async (db) => {
     const match = db.matches.find((item) => item.id === matchId);
     const transcriptItem = (match?.transcript || []).find((item) => item.id === transcriptItemId);
     if (!match || !transcriptItem || transcriptItem.safetyCheckedAt) return;
-
     transcriptItem.safetyCheckedAt = new Date().toISOString();
     transcriptItem.safety = safety;
-
     if (safety.flagged) {
       const target = transcriptSpeakerUser(match, transcriptItem, db);
       if (target) {
@@ -847,8 +1301,8 @@ async function moderateTranscriptItem(matchId, transcriptItemId) {
         });
         const penalty = safety.severity === "high" ? 2 : 1;
         target.mannerTemperature = Math.max(0, Number(target.mannerTemperature ?? 42.8) - penalty);
+        await saveUser(target);
       }
-
       db.reports.push({
         id: id("report"),
         matchId: match.id,
@@ -860,16 +1314,13 @@ async function moderateTranscriptItem(matchId, transcriptItemId) {
         categories: safety.categories,
         createdAt: new Date().toISOString(),
       });
-
       notification = {
         matchId: match.id,
         userId: target?.id || null,
       };
     }
-
     await writeDb(db);
   });
-
   if (notification) {
     broadcast(notification.matchId, {
       type: "notification",
@@ -895,8 +1346,8 @@ function isSecureRequest(req) {
 
 function sessionCookie(token, req, options = {}) {
   const secure = isSecureRequest(req) ? "; Secure" : "";
-  const maxAge = options.clear ? "; Max-Age=0" : "";
-  return `lc_session=${token || ""}; Path=/${maxAge}; HttpOnly; SameSite=Lax${secure}`;
+  const maxAge = options.clear ? 0 : Math.floor(sessionTtlMs / 1000);
+  return `lc_session=${token || ""}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure}`;
 }
 
 function base64UrlDecode(value) {
@@ -1196,19 +1647,6 @@ function trainingState(user) {
   };
 }
 
-function markTutorialComplete(user, requestedModule) {
-  user.training = normalizeTraining(user.training);
-  const nextModule = trainingModules.find((module) => !user.training.completedModules.includes(module.id));
-  if (!nextModule) return trainingState(user);
-  const moduleId = Number(requestedModule);
-  if (moduleId && moduleId !== nextModule.id) {
-    throw new Error("Complete the current training module first.");
-  }
-  user.training.completedModules.push(nextModule.id);
-  user.training.completedModules.sort((first, second) => first - second);
-  return trainingState(user);
-}
-
 function calendarDayNumber(value) {
   const date = value instanceof Date ? value : new Date(value);
   if (!Number.isFinite(date.getTime())) return null;
@@ -1254,6 +1692,11 @@ function recordMatchCompletionStreak(match, db) {
   return unlocked;
 }
 
+async function saveMatchParticipantUsers(match, db) {
+  const participantIds = new Set((match.players || []).map((player) => player.userId).filter(Boolean));
+  await Promise.all(db.users.filter((user) => participantIds.has(user.id)).map((user) => saveUser(user)));
+}
+
 function maskEmailMiddle(email) {
   const normalized = String(email || "").trim().toLowerCase();
   const [localPart, domain] = normalized.split("@");
@@ -1269,14 +1712,6 @@ function publicDisplayName(user, fallback = "Player") {
   if (displayName && user?.displayNameSource !== "google") return displayName;
   if (user?.authProvider === "google" && user?.email) return maskEmailMiddle(user.email);
   return displayName || fallback;
-}
-
-function getSessionUser(req, db) {
-  const token = getCookie(req, "lc_session") || (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
-  if (!token) return null;
-  const session = db.sessions.find((item) => item.token === token);
-  if (!session) return null;
-  return db.users.find((user) => user.id === session.userId) || null;
 }
 
 function publicUser(user, db = null) {
@@ -1599,6 +2034,7 @@ function buildProfile(user, db) {
   return {
     user: {
       ...publicUser(user, db),
+      bio: user.bio || "",
       nativeLanguage: user.nativeLanguage || "",
       learningLanguage: user.learningLanguage || "",
       training: trainingState(user),
@@ -1733,17 +2169,6 @@ function decorateSeek(db, seek) {
     status: seek.status || "open",
     createdAt: seek.createdAt,
   };
-}
-
-function createSession(db, userId) {
-  const token = crypto.randomBytes(24).toString("hex");
-  db.sessions.push({
-    id: id("session"),
-    token,
-    userId,
-    createdAt: new Date().toISOString(),
-  });
-  return token;
 }
 
 function serializeGame(fen) {
@@ -2015,7 +2440,7 @@ function routePattern(pathname, pattern) {
   return params;
 }
 
-async function handleApi(req, res, pathname, searchParams = new URLSearchParams()) {
+async function handleFastApi(req, res, pathname, searchParams = new URLSearchParams()) {
   if (req.method === "GET" && pathname === "/api/config") {
     sendJson(res, 200, {
       googleClientId,
@@ -2023,12 +2448,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     });
     return true;
   }
-
-  const db = await readDb();
-  const user = getSessionUser(req, db);
-  if (shouldExpirePrivateRooms(req.method, pathname)) {
-    await expireStalePrivateRooms(db);
-  }
+  const user = await getSessionUser(req);
 
   if (req.method === "POST" && pathname === "/api/analytics/session") {
     if (!analyticsConsentGranted(req)) {
@@ -2115,14 +2535,186 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       sendJson(res, 400, { error: "Moderation text is too long." });
       return true;
     }
-    const safety = await detectUnsafeText(body.text);
-    sendJson(res, 200, { safety });
+    sendJson(res, 200, { safety: await detectUnsafeText(body.text) });
     return true;
   }
 
   if (req.method === "GET" && pathname === "/api/session") {
+    const db = user ? await readDb() : null;
     sendJson(res, 200, { user: publicUser(user, db), unlocked: pendingAchievementViews(user) });
     return true;
+  }
+
+  if (req.method === "GET" && pathname === "/api/training/state") {
+    if (!requireUser(user, res)) return true;
+    sendJson(res, 200, { state: trainingState(user), user: publicUser(user) });
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/training/tutorial-complete") {
+    if (!requireUser(user, res)) return true;
+    const body = await readBody(req);
+    try {
+      const result = await completeTutorialProgress(user.id, body.module);
+      sendJson(res, 200, { state: result.state, user: publicUser(result.user), unlocked: result.unlocked });
+    } catch (error) {
+      sendJson(res, error.statusCode || 409, { error: error.message, state: error.state || trainingState(user) });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/signup") {
+    const body = await readBody(req);
+    const email = String(body.email || "").trim().toLowerCase();
+    const password = String(body.password || "");
+    const displayName = String(body.displayName || "").trim().slice(0, 40);
+    if (!email || !password) {
+      recordAnalytics(req, null, "signup_failed", { failure_reason: "missing_credentials" }, { page: "/signup" });
+      sendJson(res, 400, { error: "Email and password are required." });
+      return true;
+    }
+    if (!displayName) {
+      recordAnalytics(req, null, "signup_failed", { failure_reason: "missing_display_name" }, { page: "/signup" });
+      sendJson(res, 400, { error: "Display name is required." });
+      return true;
+    }
+    let found = await findUserByEmail(email);
+    if (found && !(await verifyPassword(password, found.passwordHash))) {
+      recordAnalytics(req, null, "signup_failed", { failure_reason: "account_exists" }, { page: "/signup" });
+      sendJson(res, 409, { error: "Account exists. Use the existing password to log in." });
+      return true;
+    }
+    if (!found) {
+      const now = new Date().toISOString();
+      const candidate = {
+        id: id("user"),
+        email,
+        displayName,
+        displayNameSource: "user",
+        languagePair: body.languagePair || "English to Korean",
+        pieceEdition: normalizedPieceEdition(body.pieceEdition),
+        passwordHash: await hashPassword(password),
+        authProvider: "password",
+        mannerTemperature: 42.8,
+        streak: 0,
+        lastStreakAt: "",
+        easyElo: 1000,
+        weeklyEasyElo: 1000,
+        leagueBadges: [],
+        training: defaultTraining(),
+        role: signupRole(email, { users: await loadAllUsers() }),
+        createdAt: now,
+        updatedAt: now,
+      };
+      try {
+        found = await insertUser(candidate);
+      } catch (error) {
+        if (error.code !== "23505") throw error;
+        found = await findUserByEmail(email);
+        if (!found || !(await verifyPassword(password, found.passwordHash))) {
+          recordAnalytics(req, null, "signup_failed", { failure_reason: "account_exists" }, { page: "/signup" });
+          sendJson(res, 409, { error: "Account exists. Use the existing password to log in." });
+          return true;
+        }
+      }
+    }
+    const token = await createStoredSession(found.id);
+    recordAnalytics(req, found, "signup_completed", { provider: "password" }, { page: "/signup" });
+    sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": sessionCookie(token, req) });
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/login") {
+    const body = await readBody(req);
+    const found = await findUserByEmail(body.email);
+    if (!found || !(await verifyPassword(String(body.password || ""), found.passwordHash))) {
+      recordAnalytics(req, null, "login_failed", { failure_reason: "invalid_credentials", provider: "password" }, { page: "/login" });
+      sendJson(res, 401, { error: "Invalid email or password." });
+      return true;
+    }
+    const token = await createStoredSession(found.id);
+    recordAnalytics(req, found, "login_completed", { provider: "password" }, { page: "/login" });
+    sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": sessionCookie(token, req) });
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/google") {
+    if (!requireRateLimit(req, res, user, "auth-google", 20)) return true;
+    const body = await readBody(req);
+    try {
+      const googleProfile = await verifyGoogleCredential(body.credential);
+      let found = await findUserByEmail(googleProfile.email);
+      if (!found) {
+        const now = new Date().toISOString();
+        try {
+          found = await insertUser({
+            id: id("user"),
+            email: googleProfile.email,
+            displayName: googleProfile.displayName,
+            displayNameSource: "google",
+            languagePair: body.languagePair || "English to Korean",
+            pieceEdition: normalizedPieceEdition(body.pieceEdition),
+            passwordHash: "",
+            authProvider: "google",
+            googleSub: googleProfile.googleSub,
+            avatarUrl: googleProfile.picture,
+            mannerTemperature: 42.8,
+            streak: 0,
+            lastStreakAt: "",
+            easyElo: 1000,
+            weeklyEasyElo: 1000,
+            leagueBadges: [],
+            training: defaultTraining(),
+            role: signupRole(googleProfile.email, { users: await loadAllUsers() }),
+            createdAt: now,
+            updatedAt: now,
+          });
+        } catch (error) {
+          if (error.code !== "23505") throw error;
+          found = await findUserByEmail(googleProfile.email);
+        }
+      }
+      found = await mutateUser(found.id, (current) => {
+        current.authProvider = current.authProvider || "google";
+        current.googleSub = current.googleSub || googleProfile.googleSub;
+        current.avatarUrl = googleProfile.picture || current.avatarUrl;
+        if (!current.displayName) {
+          current.displayName = googleProfile.displayName;
+          current.displayNameSource = "google";
+        }
+        if (!current.displayNameSource && !current.passwordHash) current.displayNameSource = "google";
+        current.pieceEdition = normalizedPieceEdition(current.pieceEdition);
+      });
+      const token = await createStoredSession(found.id);
+      recordAnalytics(req, found, "login_completed", { provider: "google" }, { page: "/login" });
+      sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": sessionCookie(token, req) });
+    } catch (error) {
+      recordAnalytics(req, null, "login_failed", { failure_reason: "google_auth_failed", provider: "google" }, { page: "/login" });
+      sendJson(res, 401, { error: error.message || "Google login failed." });
+    }
+    return true;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/logout") {
+    await deleteStoredSession(getCookie(req, "lc_session"));
+    recordAnalytics(req, user, "logout_completed", {}, { page: "/" });
+    sendJson(res, 200, { ok: true }, { "set-cookie": sessionCookie("", req, { clear: true }) });
+    return true;
+  }
+
+  if (req.method === "DELETE" && pathname === "/api/auth/delete") {
+    if (!requireUser(user, res)) return true;
+    await deleteStoredUser(user.id);
+    sendJson(res, 200, { ok: true }, { "set-cookie": sessionCookie("", req, { clear: true }) });
+    return true;
+  }
+
+  return false;
+}
+
+async function handleApi(req, res, pathname, searchParams, db, user) {
+  if (shouldExpirePrivateRooms(req.method, pathname)) {
+    await expireStalePrivateRooms(db);
   }
 
   if (req.method === "GET" && pathname === "/api/voice/ice-servers") {
@@ -2401,6 +2993,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     user.teacherLeagueId = league.id;
     user.teacherLeagueCode = code;
     const unlocked = syncAchievements(user, db);
+    await saveUser(user);
     await writeDb(db);
     sendJson(res, 201, { league: leagueView(league, db, "weekly"), user: publicUser(user, db), unlocked });
     return true;
@@ -2425,6 +3018,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     user.weeklyEasyElo = Number(user.weeklyEasyElo ?? user.easyElo ?? 1000);
     user.leagueJoined = true;
     const unlocked = syncAchievements(user, db);
+    await saveUser(user);
     await writeDb(db);
     sendJson(res, 200, { league: leagueView(league, db, "weekly"), user: publicUser(user, db), unlocked });
     return true;
@@ -2460,35 +3054,13 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       if (languagePair) user.languagePair = languagePair.slice(0, 80);
     }
     if (hasOwn(body, "pieceEdition")) user.pieceEdition = normalizedPieceEdition(body.pieceEdition);
+    if (hasOwn(body, "bio")) user.bio = String(body.bio || "").trim().slice(0, 280);
     if (hasOwn(body, "avatarUrl")) user.avatarUrl = String(body.avatarUrl || "").trim().slice(0, 500);
     if (hasOwn(body, "nativeLanguage")) user.nativeLanguage = String(body.nativeLanguage || "").trim().slice(0, 40);
     if (hasOwn(body, "learningLanguage")) user.learningLanguage = String(body.learningLanguage || "").trim().slice(0, 40);
+    await saveUser(user);
     await writeDb(db);
     sendJson(res, 200, buildProfile(user, db));
-    return true;
-  }
-
-  if (req.method === "GET" && pathname === "/api/training/state") {
-    if (!requireUser(user, res)) return true;
-    user.training = normalizeTraining(user.training);
-    sendJson(res, 200, { state: trainingState(user), user: publicUser(user, db) });
-    return true;
-  }
-
-  if (req.method === "POST" && pathname === "/api/training/tutorial-complete") {
-    if (!requireUser(user, res)) return true;
-    const body = await readBody(req);
-    let state;
-    try {
-      state = markTutorialComplete(user, body.module);
-    } catch (error) {
-      sendJson(res, 409, { error: error.message, state: trainingState(user) });
-      return true;
-    }
-    applyDailyStreak(user, new Date(), "learning");
-    const unlocked = syncAchievements(user, db);
-    await writeDb(db);
-    sendJson(res, 200, { state, user: publicUser(user, db), unlocked });
     return true;
   }
 
@@ -2519,6 +3091,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     else user.training.completedPuzzles.push(puzzle);
     applyDailyStreak(user, new Date(), "learning");
     const unlocked = syncAchievements(user, db);
+    await saveUser(user);
     await writeDb(db);
     recordAnalytics(req, user, "puzzle_completed", {
       puzzle_id: puzzle.id,
@@ -2539,6 +3112,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     });
     applyDailyStreak(user, new Date(), "learning");
     const unlocked = syncAchievements(user, db);
+    await saveUser(user);
     await writeDb(db);
     sendJson(res, 200, { state: trainingState(user), user: publicUser(user, db), unlocked });
     return true;
@@ -2550,6 +3124,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     const ids = new Set(Array.isArray(body.ids) ? body.ids.map(String) : []);
     userAchievementEntries(user);
     user.badgeNotifications = user.badgeNotifications.filter((badge) => !ids.has(String(badge?.id || badge)));
+    await saveUser(user);
     await writeDb(db);
     sendJson(res, 200, { user: publicUser(user, db) });
     return true;
@@ -2600,6 +3175,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       matchId: match.id,
       createdAt: new Date().toISOString(),
     });
+    await saveUser(target);
     await writeDb(db);
     sendJson(res, 200, { profile: buildProfile(user, db), target: playerUser(target) });
     return true;
@@ -2620,6 +3196,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       source: body.source || "Profile",
       createdAt: new Date().toISOString(),
     });
+    await saveUser(user);
     await writeDb(db);
     recordAnalytics(req, user, "culture_content_completed", {
       content_type: "culture_note",
@@ -2736,6 +3313,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       createdAt: new Date().toISOString(),
     });
     target.mannerTemperature = Math.max(0, Number(target.mannerTemperature ?? 42.8) - 2);
+    await saveUser(target);
     await writeDb(db);
     broadcast(null, {
       type: "notification",
@@ -2759,6 +3337,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     target.warnings = target.warnings || [];
     if (target.warnings.length) target.warnings.pop();
     target.mannerTemperature = Math.min(42.8, Number(target.mannerTemperature ?? 42.8) + 2);
+    await saveUser(target);
     await writeDb(db);
     sendJson(res, 200, { user: adminUser(target) });
     return true;
@@ -2778,6 +3357,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     match.result = body.result || "Ended by staff";
     match.endedAt = new Date().toISOString();
     if (!wasEnded) recordMatchCompletionStreak(match, db);
+    if (!wasEnded) await saveMatchParticipantUsers(match, db);
     await writeDb(db);
     await syncRedisRoom(match);
     broadcast(match.id, { type: "match:ended", matchId: match.id, result: match.result, match: decorateMatch(match) });
@@ -2842,173 +3422,6 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     await writeDb(db);
     broadcast(null, { type: "lobby:updated", openSeeks: db.seeks.filter((item) => item.status === "open").length });
     sendJson(res, 200, { ok: true });
-    return true;
-  }
-
-  if (req.method === "POST" && pathname === "/api/auth/signup") {
-    const body = await readBody(req);
-    const email = String(body.email || "").trim().toLowerCase();
-    const password = String(body.password || "");
-    const displayName = String(body.displayName || "").trim().slice(0, 40);
-    if (!email || !password) {
-      recordAnalytics(req, null, "signup_failed", { failure_reason: "missing_credentials" }, { page: "/signup" });
-      sendJson(res, 400, { error: "Email and password are required." });
-      return true;
-    }
-    if (!displayName) {
-      recordAnalytics(req, null, "signup_failed", { failure_reason: "missing_display_name" }, { page: "/signup" });
-      sendJson(res, 400, { error: "Display name is required." });
-      return true;
-    }
-
-    let found = db.users.find((item) => item.email === email);
-    if (found && !verifyPassword(password, found.passwordHash)) {
-      recordAnalytics(req, null, "signup_failed", { failure_reason: "account_exists" }, { page: "/signup" });
-      sendJson(res, 409, { error: "Account exists. Use the existing password to log in." });
-      return true;
-    }
-
-    if (!found) {
-      found = {
-        id: id("user"),
-        email,
-        displayName,
-        displayNameSource: "user",
-        languagePair: body.languagePair || "English to Korean",
-        pieceEdition: normalizedPieceEdition(body.pieceEdition),
-        passwordHash: hashPassword(password),
-        mannerTemperature: 42.8,
-        streak: 0,
-        lastStreakAt: "",
-        easyElo: 1000,
-        weeklyEasyElo: 1000,
-        leagueBadges: [],
-        training: defaultTraining(),
-        role: signupRole(email, db),
-        createdAt: new Date().toISOString(),
-      };
-      db.users.push(found);
-    }
-
-    const token = createSession(db, found.id);
-    await writeDb(db);
-    recordAnalytics(req, found, "signup_completed", { provider: "password" }, { page: "/signup" });
-    sendJson(res, 200, { user: publicUser(found, db) }, { "set-cookie": sessionCookie(token, req) });
-    return true;
-  }
-
-  if (req.method === "POST" && pathname === "/api/auth/login") {
-    const body = await readBody(req);
-    const email = String(body.email || "").trim().toLowerCase();
-    const password = String(body.password || "");
-    const found = db.users.find((item) => item.email === email);
-    if (!found || !verifyPassword(password, found.passwordHash)) {
-      recordAnalytics(req, null, "login_failed", { failure_reason: "invalid_credentials", provider: "password" }, { page: "/login" });
-      sendJson(res, 401, { error: "Invalid email or password." });
-      return true;
-    }
-    const token = createSession(db, found.id);
-    await writeDb(db);
-    recordAnalytics(req, found, "login_completed", { provider: "password" }, { page: "/login" });
-    sendJson(res, 200, { user: publicUser(found, db) }, { "set-cookie": sessionCookie(token, req) });
-    return true;
-  }
-
-  if (req.method === "POST" && pathname === "/api/auth/google") {
-    if (!requireRateLimit(req, res, user, "auth-google", 20)) return true;
-    const body = await readBody(req);
-    try {
-      const googleProfile = await verifyGoogleCredential(body.credential);
-      let found = db.users.find((item) => item.email === googleProfile.email);
-      if (!found) {
-        found = {
-          id: id("user"),
-          email: googleProfile.email,
-          displayName: googleProfile.displayName,
-          displayNameSource: "google",
-          languagePair: body.languagePair || "English to Korean",
-          pieceEdition: normalizedPieceEdition(body.pieceEdition),
-          passwordHash: "",
-          authProvider: "google",
-          googleSub: googleProfile.googleSub,
-          avatarUrl: googleProfile.picture,
-          mannerTemperature: 42.8,
-          streak: 0,
-          lastStreakAt: "",
-          easyElo: 1000,
-          weeklyEasyElo: 1000,
-          leagueBadges: [],
-          training: defaultTraining(),
-          role: signupRole(googleProfile.email, db),
-          createdAt: new Date().toISOString(),
-        };
-        db.users.push(found);
-      } else {
-        found.authProvider = found.authProvider || "google";
-        found.googleSub = found.googleSub || googleProfile.googleSub;
-        found.avatarUrl = googleProfile.picture || found.avatarUrl;
-        if (!found.displayName) {
-          found.displayName = googleProfile.displayName;
-          found.displayNameSource = "google";
-        }
-        if (!found.displayNameSource && !found.passwordHash) found.displayNameSource = "google";
-        found.pieceEdition = normalizedPieceEdition(found.pieceEdition);
-      }
-      const token = createSession(db, found.id);
-      await writeDb(db);
-      recordAnalytics(req, found, "login_completed", { provider: "google" }, { page: "/login" });
-      sendJson(res, 200, { user: publicUser(found, db) }, { "set-cookie": sessionCookie(token, req) });
-    } catch (error) {
-      recordAnalytics(req, null, "login_failed", { failure_reason: "google_auth_failed", provider: "google" }, { page: "/login" });
-      sendJson(res, 401, { error: error.message || "Google login failed." });
-    }
-    return true;
-  }
-
-  if (req.method === "POST" && pathname === "/api/auth/logout") {
-    const token = getCookie(req, "lc_session");
-    const nextDb = {
-      ...db,
-      sessions: db.sessions.filter((session) => session.token !== token),
-    };
-    await writeDb(nextDb);
-    recordAnalytics(req, user, "logout_completed", {}, { page: "/" });
-    sendJson(res, 200, { ok: true }, { "set-cookie": sessionCookie("", req, { clear: true }) });
-    return true;
-  }
-
-  if (req.method === "DELETE" && pathname === "/api/auth/delete") {
-    if (!requireUser(user, res)) return true;
-    const userId = user.id;
-    const nextDb = {
-      ...db,
-      users: db.users.filter((item) => item.id !== userId),
-      sessions: db.sessions.filter((session) => session.userId !== userId),
-      queue: db.queue.filter((entry) => entry.userId !== userId),
-      seeks: db.seeks.filter((seek) => seek.userId !== userId),
-      challenges: db.challenges.filter((challenge) => challenge.userId !== userId),
-      matches: db.matches.map((match) => {
-        const includesDeletedUser = (match.players || []).some((player) => player.userId === userId);
-        if (!includesDeletedUser) return match;
-        return {
-          ...match,
-          userId: match.userId === userId ? null : match.userId,
-          status: match.status === "ended" ? match.status : "ended",
-          result: match.status === "ended" ? match.result : "Account deleted",
-          endedAt: match.endedAt || new Date().toISOString(),
-          players: (match.players || []).map((player) =>
-            player.userId === userId ? { ...player, userId: null, displayName: "Deleted account" } : player
-          ),
-          partnerName: match.partnerName === user.displayName ? "Deleted account" : match.partnerName,
-        };
-      }),
-      voiceLetters: db.voiceLetters.filter(
-        (letter) => letter.fromUserId !== userId && letter.toUserId !== userId && letter.userId !== userId
-      ),
-      reports: db.reports.filter((report) => report.reporterId !== userId && report.targetUserId !== userId),
-    };
-    await writeDb(nextDb);
-    sendJson(res, 200, { ok: true }, { "set-cookie": sessionCookie("", req, { clear: true }) });
     return true;
   }
 
@@ -3504,6 +3917,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       userId: user?.id || null,
       at: move.at,
     });
+    if (!wasEndedBeforeMove && match.status === "ended") await saveMatchParticipantUsers(match, db);
     await writeDb(db);
     if (!wasEndedBeforeMove && match.status === "ended") {
       const completionProperties = {
@@ -3583,6 +3997,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
       match.clocks.lastUpdatedAt = match.endedAt;
     }
     const unlocked = !wasEnded ? recordMatchCompletionStreak(match, db) : [];
+    if (!wasEnded) await saveMatchParticipantUsers(match, db);
     await writeDb(db);
     await syncRedisRoom(match);
     if (!wasEnded) {
@@ -3835,7 +4250,7 @@ async function acceptWebSocket(req, socket) {
     return;
   }
   const db = await readDb();
-  const user = getSessionUser(req, db);
+  const user = await getSessionUser(req);
   if (!user) {
     socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
     socket.destroy();
@@ -4026,10 +4441,20 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (requestUrl.pathname.startsWith("/api/")) {
-      const runApi = () => handleApi(req, res, requestUrl.pathname, requestUrl.searchParams);
-      const handled = apiRequestNeedsStateTransaction(req.method, requestUrl.pathname)
-        ? await withDbStateTransaction(runApi)
-        : await runApi();
+      const fastHandled = await handleFastApi(req, res, requestUrl.pathname, requestUrl.searchParams);
+      if (fastHandled) return;
+      const run = async (db, targetResponse = res) => {
+        const user = await getSessionUser(req);
+        return handleApi(req, targetResponse, requestUrl.pathname, requestUrl.searchParams, db, user);
+      };
+      let handled;
+      if (apiRequestNeedsStateTransaction(req.method, requestUrl.pathname)) {
+        const deferred = deferredResponse();
+        handled = await withAppStateMutation((db) => run(db, deferred.response));
+        if (handled) deferred.flush(res);
+      } else {
+        handled = await run(await readDb());
+      }
       if (!handled) sendJson(res, 404, { error: "API route not found." });
       return;
     }
@@ -4054,7 +4479,71 @@ server.on("upgrade", (req, socket) => {
   });
 });
 
-server.listen(port, "0.0.0.0", () => {
-  console.log(`Live Chess app running at http://localhost:${port}`);
-  initializeStorage();
-});
+async function startServer() {
+  if (!pgPool) {
+    await ensureDb();
+    storageReady = true;
+    storageError = null;
+    await cleanupExpiredSessions();
+    await analyticsStore.initialize().catch((error) => {
+      console.warn(`Analytics storage unavailable; core product remains active: ${error.message}`);
+    });
+    console.log("Storage ready (local-json).");
+  }
+  return new Promise((resolve, reject) => {
+    const onError = (error) => reject(error);
+    server.once("error", onError);
+    server.listen(port, "0.0.0.0", () => {
+      server.off("error", onError);
+      const address = server.address();
+      console.log(`Live Chess app running at http://localhost:${address.port}`);
+      if (pgPool) initializeStorage();
+      resolve(server);
+    });
+  });
+}
+
+async function initializeStorage() {
+  try {
+    await ensureDb();
+    await cleanupExpiredSessions();
+    storageReady = true;
+    storageError = null;
+    await analyticsStore.initialize().catch((error) => {
+      console.warn(`Analytics storage unavailable; core product remains active: ${error.message}`);
+    });
+    console.log("Storage ready (postgres).");
+  } catch (error) {
+    storageReady = false;
+    storageError = error;
+    console.error("Storage initialization failed; retrying in 10 seconds:", error.message || error);
+    clearTimeout(storageRetryTimer);
+    storageRetryTimer = setTimeout(initializeStorage, 10000);
+    storageRetryTimer.unref?.();
+  }
+}
+
+if (require.main === module) {
+  startServer()
+    .then(() => {
+      const sessionCleanupTimer = setInterval(() => {
+        cleanupExpiredSessions().catch((error) => console.warn(`Session cleanup failed: ${error.message}`));
+      }, 60 * 60 * 1000);
+      sessionCleanupTimer.unref();
+    })
+    .catch((error) => {
+      console.error(`Storage/server startup failed: ${error.message || error}`);
+      process.exitCode = 1;
+    });
+}
+
+module.exports = {
+  completeTutorialProgress,
+  hashPassword,
+  normalizeDb,
+  server,
+  startServer,
+  tokenHash,
+  verifyPassword,
+  withAppStateMutation,
+};
