@@ -9835,6 +9835,170 @@ body.is-signed-in .profile-view {
   }
 }
 
+/* Match surface: align the live board with the site's light editorial system. */
+.match-optional-communications[hidden],
+.match-layout.paired .match-optional-communications[hidden] {
+  display: none !important;
+}
+
+.match-game-panel {
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--theme-panel) 94%, transparent);
+  box-shadow: none;
+}
+
+.player-clock-card {
+  gap: 7px;
+  padding: 16px 18px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+
+.opponent-clock-card {
+  border-bottom: 1px solid var(--line);
+}
+
+.self-clock-card {
+  border-top: 1px solid var(--line);
+}
+
+.player-clock-card strong {
+  color: var(--ink);
+  font-size: clamp(2rem, 4.5vw, 3.25rem);
+  font-weight: 620;
+}
+
+.player-clock-card small {
+  color: var(--muted);
+}
+
+.player-clock-card.active {
+  padding-left: 15px;
+  border-left: 3px solid var(--theme-accent);
+  background: color-mix(in srgb, var(--theme-accent) 9%, var(--theme-panel));
+  color: var(--ink);
+}
+
+.player-clock-card.active strong {
+  color: var(--theme-accent);
+}
+
+.player-clock-card.low-time strong,
+.player-clock-card.active.low-time strong {
+  color: var(--em-danger);
+}
+
+.match-safety-promise {
+  gap: 5px;
+  padding: 15px 18px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--em-geum) 9%, transparent);
+  color: var(--ink);
+}
+
+.match-safety-promise .label {
+  color: var(--theme-accent);
+}
+
+.match-safety-promise strong {
+  color: var(--ink);
+  font-family: var(--font-display);
+}
+
+.match-safety-promise p {
+  color: var(--muted);
+}
+
+.match-action-strip {
+  gap: 22px;
+  padding: 15px 16px;
+  border: 0;
+  background: transparent;
+}
+
+.icon-action {
+  width: 42px;
+  min-height: 38px;
+  border-radius: 0;
+  color: var(--muted);
+}
+
+.icon-action:hover,
+.icon-action:focus-visible {
+  background: color-mix(in srgb, var(--theme-accent) 10%, transparent);
+  color: var(--ink);
+}
+
+.icon-action.danger:hover,
+.icon-action.danger:focus-visible {
+  color: var(--em-danger);
+}
+
+.chess-board,
+body.piece-theme-cheoinseong .chess-board,
+body.piece-theme-beta .chess-board {
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.square {
+  contain: layout paint;
+  isolation: isolate;
+  aspect-ratio: 1;
+}
+
+.piece {
+  position: absolute;
+  inset: 9%;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  transform-origin: center;
+}
+
+.piece-p {
+  inset: 16%;
+  width: auto;
+  height: auto;
+}
+
+.piece-n,
+.piece-b {
+  inset: 12%;
+  width: auto;
+  height: auto;
+}
+
+@media (max-width: 620px) {
+  .match-play-grid,
+  .board-stage {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .chess-board,
+  body.piece-theme-cheoinseong .chess-board,
+  body.piece-theme-beta .chess-board {
+    width: min(100%, calc(100vw - 24px));
+    border-width: 1px;
+  }
+
+  .player-clock-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .player-clock-card strong {
+    font-size: 2rem;
+  }
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

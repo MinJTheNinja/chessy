@@ -3821,12 +3821,16 @@ function clockValue(color) {
 function updateClockDisplay() {
   const whiteMs = clockValue("white");
   const blackMs = clockValue("black");
-  whiteClock.textContent = whiteMs === null ? translateCopy("Ready") : formatClock(whiteMs);
-  blackClock.textContent = blackMs === null ? translateCopy("Ready") : formatClock(blackMs);
-  whiteClockCard.classList.toggle("active", clockSnapshot?.running && clockSnapshot.activeColor === "white");
-  blackClockCard.classList.toggle("active", clockSnapshot?.running && clockSnapshot.activeColor === "black");
-  whiteClockCard.classList.toggle("low-time", whiteMs !== null && whiteMs <= 30_000);
-  blackClockCard.classList.toggle("low-time", blackMs !== null && blackMs <= 30_000);
+  const selfColor = currentPlayerColor({ players: currentMatchPlayers });
+  const opponentColor = selfColor === "white" ? "black" : "white";
+  const selfMs = selfColor === "white" ? whiteMs : blackMs;
+  const opponentMs = opponentColor === "white" ? whiteMs : blackMs;
+  whiteClock.textContent = selfMs === null ? translateCopy("Ready") : formatClock(selfMs);
+  blackClock.textContent = opponentMs === null ? translateCopy("Ready") : formatClock(opponentMs);
+  whiteClockCard.classList.toggle("active", clockSnapshot?.running && clockSnapshot.activeColor === selfColor);
+  blackClockCard.classList.toggle("active", clockSnapshot?.running && clockSnapshot.activeColor === opponentColor);
+  whiteClockCard.classList.toggle("low-time", selfMs !== null && selfMs <= 30_000);
+  blackClockCard.classList.toggle("low-time", opponentMs !== null && opponentMs <= 30_000);
 
   if (clockSnapshot?.running && clockSnapshot.activeColor) {
     const activeMs = clockSnapshot.activeColor === "white" ? whiteMs : blackMs;
