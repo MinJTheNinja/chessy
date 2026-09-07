@@ -678,6 +678,8 @@ Object.assign(koreanText, {
   "That member was not removed from this league.": "이 리그에서 내보낸 참여자가 아닙니다.",
   "That member has joined another league.": "해당 참여자는 이미 다른 리그에 참여했습니다.",
   "The league teacher cannot be removed.": "리그를 만든 교사는 내보낼 수 없습니다.",
+  "League owners cannot join another league.": "리그를 만든 교사는 다른 리그에 참여할 수 없습니다.",
+  "League owners cannot leave their own league.": "리그를 만든 교사는 자신의 리그에서 나갈 수 없습니다.",
   "This league competition has ended.": "이 리그의 경쟁 기간이 종료되었습니다.",
 });
 
@@ -5774,7 +5776,8 @@ function renderLeagueAction() {
   const hasTeacherLeague = isTeacherUser();
   const popoverOpen = leagueActionMode === "join" || leagueActionMode === "create";
   const hasLeague = Boolean(currentLeagueCode());
-  if (leaveLeagueButton) leaveLeagueButton.hidden = !hasLeague;
+  const ownsCurrentLeague = hasTeacherLeague && currentTeacherLeagueCode() === currentLeagueCode();
+  if (leaveLeagueButton) leaveLeagueButton.hidden = !hasLeague || ownsCurrentLeague;
   if (leagueActionPopover) leagueActionPopover.hidden = !popoverOpen;
   leagueActionButtons.forEach((button) => {
     button.classList.remove("active");

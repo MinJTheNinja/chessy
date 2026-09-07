@@ -1732,7 +1732,7 @@ function publicUser(user, db = null) {
     streak: Number(user.streak || 0),
     lastStreakAt: user.lastStreakAt || "",
     easyElo: Number(user.easyElo || 1000),
-    leagueCode: user.leagueCode || "",
+    leagueCode: ownedTeacherLeague?.code || user.leagueCode || "",
     isTeacher: Boolean(ownedTeacherLeague),
     teacherLeagueCode: ownedTeacherLeague?.code || "",
     training: trainingState(user),
@@ -2064,7 +2064,8 @@ function privateChallengeCode(db) {
 
 function leagueView(league, db, period = "weekly") {
   const members = db.users
-    .filter((user) => user.leagueCode === league.code)
+    .filter((user) => user.id === league.createdBy
+      || String(user.leagueCode || "").trim().toUpperCase() === league.code)
     .map((user) => ({
       id: user.id,
       displayName: publicDisplayName(user),
@@ -2104,6 +2105,27 @@ function teacherLeagueForUser(user, db) {
     || leagues.find((league) => league.code === user.teacherLeagueCode && league.createdBy === user.id)
     || leagues.find((league) => league.createdBy === user.id)
     || null;
+}
+
+function ensureTeacherLeagueMembership(user, league) {
+  if (!user || !league || league.createdBy !== user.id) return false;
+  const expected = {
+    teacherLeagueId: league.id,
+    teacherLeagueCode: league.code,
+    leagueCreated: true,
+    leagueCode: league.code,
+    leagueJoined: true,
+    removedFromLeagueCode: "",
+    removedFromLeagueAt: "",
+    weeklyEasyElo: Number(user.weeklyEasyElo ?? user.easyElo ?? 1000),
+  };
+  let changed = false;
+  Object.entries(expected).forEach(([key, value]) => {
+    if (user[key] === value) return;
+    user[key] = value;
+    changed = true;
+  });
+  return changed;
 }
 
 function teacherLeagueView(league, db) {
@@ -2868,6 +2890,7 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     }
     league.name = name.slice(0, 80);
     league.competitionEndsOn = competitionEndsOn;
+    if (ensureTeacherLeagueMembership(user, league)) await saveUser(user);
     await writeDb(db);
     sendJson(res, 200, { league: teacherLeagueView(league, db) });
     return true;
@@ -2939,7 +2962,8 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
       sendJson(res, 200, defaultLeaderboard(db, period));
       return true;
     }
-    const code = String(searchParams.get("code") || user?.leagueCode || "").trim().toUpperCase();
+    const ownedTeacherLeague = user ? teacherLeagueForUser(user, db) : null;
+    const code = String(searchParams.get("code") || ownedTeacherLeague?.code || user?.leagueCode || "").trim().toUpperCase();
     const league = code ? db.leagues.find((item) => item.code === code) : null;
     sendJson(
       res,
@@ -3017,6 +3041,11 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
       sendJson(res, 404, { error: "League code not found." });
       return true;
     }
+    const ownedTeacherLeague = teacherLeagueForUser(user, db);
+    if (ownedTeacherLeague && ownedTeacherLeague.code !== code) {
+      sendJson(res, 409, { error: "League owners cannot join another league." });
+      return true;
+    }
     if (league.competitionEndsOn && league.competitionEndsOn < calendarDateKey()) {
       sendJson(res, 409, { error: "This league competition has ended." });
       return true;
@@ -3035,6 +3064,10 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
 
   if (req.method === "POST" && pathname === "/api/leagues/leave") {
     if (!requireUser(user, res)) return true;
+    if (teacherLeagueForUser(user, db)) {
+      sendJson(res, 409, { error: "League owners cannot leave their own league." });
+      return true;
+    }
     const code = String(user.leagueCode || "").trim().toUpperCase();
     if (!code) {
       sendJson(res, 409, { error: "You are not currently in a league." });

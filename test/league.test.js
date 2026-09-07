@@ -122,6 +122,27 @@ test("league membership, teacher access, codes, and owner rows remain stable", {
   assert.ok(teacherRow, "the league owner must appear on the teacher leaderboard");
   assert.equal(teacherRow.isTeacher, true);
 
+  const identityPath = path.join(dataDir, "identity.json");
+  const identity = JSON.parse(fs.readFileSync(identityPath, "utf8"));
+  const storedTeacher = identity.users.find((user) => user.id === teacherA.data.user.id);
+  storedTeacher.profile.leagueCode = "";
+  storedTeacher.profile.leagueJoined = false;
+  fs.writeFileSync(identityPath, JSON.stringify(identity, null, 2));
+
+  const recoveredTeacherSession = await request(runtime.baseUrl, "/api/session", { cookie: teacherA.cookie });
+  assert.equal(recoveredTeacherSession.data.user.leagueCode, codeA, "league ownership must recover a stale owner membership");
+  const recoveredTeacherLeaderboard = await request(runtime.baseUrl, "/api/leagues/leaderboard?scope=mine", { cookie: teacherA.cookie });
+  assert.equal(recoveredTeacherLeaderboard.data.code, codeA);
+  assert.ok(recoveredTeacherLeaderboard.data.members.some((member) => member.id === teacherA.data.user.id));
+  const ownerLeave = await request(runtime.baseUrl, "/api/leagues/leave", { method: "POST", cookie: teacherA.cookie });
+  assert.equal(ownerLeave.status, 409);
+  const ownerJoinAnother = await request(runtime.baseUrl, "/api/leagues/join", {
+    method: "POST",
+    cookie: teacherA.cookie,
+    body: { code: codeB },
+  });
+  assert.equal(ownerJoinAnother.status, 409);
+
   let membership = await request(runtime.baseUrl, "/api/leagues/join", {
     method: "POST",
     cookie: student.cookie,
@@ -161,6 +182,8 @@ test("league membership, teacher access, codes, and owner rows remain stable", {
   });
   assert.equal(savedSettings.status, 200);
   assert.equal(savedSettings.data.league.code, codeA, "saving settings must retain the league code");
+  const repairedTeacherSession = await request(runtime.baseUrl, "/api/session", { cookie: teacherA.cookie });
+  assert.equal(repairedTeacherSession.data.user.leagueCode, codeA, "saving settings must persistently repair owner membership");
   const appState = JSON.parse(fs.readFileSync(path.join(dataDir, "db.json"), "utf8"));
   assert.equal(appState.leagues.length, 2);
   assert.deepEqual(new Set(appState.leagues.map((league) => league.code)), new Set([codeA, codeB]));
