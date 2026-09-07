@@ -90,6 +90,66 @@ async function createLeague(baseUrl, cookie, name) {
   return result;
 }
 
+test("forum preserves staff and teacher notices while blocking league students from creating posts", { timeout: 60_000 }, async (t) => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "easymate-forum-roles-"));
+  const runtime = await startServer(dataDir);
+  t.after(async () => {
+    await stopServer(runtime.child);
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  });
+
+  const staff = await signup(runtime.baseUrl, "forum-staff@example.test", "Forum Staff");
+  const teacher = await signup(runtime.baseUrl, "forum-teacher@example.test", "Forum Teacher");
+  const student = await signup(runtime.baseUrl, "forum-student@example.test", "Forum Student");
+  const outsider = await signup(runtime.baseUrl, "forum-outsider@example.test", "Forum Outsider");
+
+  const createdLeague = await createLeague(runtime.baseUrl, teacher.cookie, "Forum Class");
+  const joined = await request(runtime.baseUrl, "/api/leagues/join", {
+    method: "POST",
+    cookie: student.cookie,
+    body: { code: createdLeague.data.league.code },
+  });
+  assert.equal(joined.status, 200);
+
+  const staffNotice = await request(runtime.baseUrl, "/api/forum/posts", {
+    method: "POST",
+    cookie: staff.cookie,
+    body: { title: "Staff notice", body: "Staff announcement", category: "Notice" },
+  });
+  assert.equal(staffNotice.status, 201);
+  assert.equal(staffNotice.data.post.category, "Notice");
+
+  const teacherNotice = await request(runtime.baseUrl, "/api/forum/posts", {
+    method: "POST",
+    cookie: teacher.cookie,
+    body: { title: "Teacher notice", body: "Class announcement", category: "Notice" },
+  });
+  assert.equal(teacherNotice.status, 201);
+  assert.equal(teacherNotice.data.post.category, "Notice");
+
+  const studentPost = await request(runtime.baseUrl, "/api/forum/posts", {
+    method: "POST",
+    cookie: student.cookie,
+    body: { title: "Student post", body: "Should be blocked", category: "Question" },
+  });
+  assert.equal(studentPost.status, 403);
+
+  const outsiderPost = await request(runtime.baseUrl, "/api/forum/posts", {
+    method: "POST",
+    cookie: outsider.cookie,
+    body: { title: "Outside post", body: "Allowed outside a league", category: "Free" },
+  });
+  assert.equal(outsiderPost.status, 201);
+  assert.equal(outsiderPost.data.post.category, "Free");
+
+  const pinned = await request(runtime.baseUrl, `/api/forum/posts/${staffNotice.data.post.id}/pin`, {
+    method: "PATCH",
+    cookie: staff.cookie,
+  });
+  assert.equal(pinned.status, 200);
+  assert.equal(pinned.data.post.pinned, true);
+});
+
 test("league membership, teacher access, codes, and owner rows remain stable", { timeout: 60_000 }, async (t) => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "easymate-leagues-"));
   let runtime = await startServer(dataDir);

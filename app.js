@@ -2167,17 +2167,31 @@ function isTeacherUser(user = currentUser) {
   return Boolean(user?.isTeacher);
 }
 
+function isLeagueStudent(user = currentUser) {
+  return Boolean(user?.leagueCode) && !isTeacherUser(user) && !isStaffUser(user);
+}
+
+function renderForumPostingAccessState() {
+  const blocked = isLeagueStudent();
+  if (showForumComposerButton) {
+    showForumComposerButton.hidden = blocked;
+    showForumComposerButton.disabled = blocked;
+  }
+  if (blocked && forumComposer) forumComposer.hidden = true;
+}
+
 function renderStaffAccessState() {
   const canUseStaffTools = isStaffUser();
+  const canPostNotice = canUseStaffTools || isTeacherUser();
   document.querySelectorAll(".staff-only").forEach((element) => {
     element.hidden = !canUseStaffTools;
   });
   if (forumNoticeOption) {
-    forumNoticeOption.disabled = !canUseStaffTools;
-    forumNoticeOption.hidden = !canUseStaffTools;
-    forumNoticeOption.textContent = canUseStaffTools ? "Notice" : "Notice (staff only)";
+    forumNoticeOption.disabled = !canPostNotice;
+    forumNoticeOption.hidden = !canPostNotice;
+    forumNoticeOption.textContent = canPostNotice ? "Notice" : "Notice (teachers and staff only)";
   }
-  if (forumPostCategory?.value === "Notice" && !canUseStaffTools) {
+  if (forumPostCategory?.value === "Notice" && !canPostNotice) {
     forumPostCategory.value = "Question";
   }
   if (staffProductStatus) {
@@ -2230,6 +2244,7 @@ function renderAuthState() {
   authConfirmPasswordField.hidden = authMode === "login" || !authPassword.value;
   authPassword.autocomplete = authMode === "login" ? "current-password" : "new-password";
   renderStaffAccessState();
+  renderForumPostingAccessState();
   renderTeacherAccessState();
   renderTrainingControls();
   updateTutorialGateState();
@@ -4884,7 +4899,8 @@ function renderHomeForumPreview() {
 async function publishForumPost() {
   const title = forumPostTitle.value.trim();
   const body = forumPostBody.value.trim();
-  if (forumPostCategory.value === "Notice" && !isStaffUser()) {
+  if (isLeagueStudent()) return;
+  if (forumPostCategory.value === "Notice" && !isStaffUser() && !isTeacherUser()) {
     forumPostCategory.value = "Question";
     forumPostBody.focus();
     return;
@@ -4905,7 +4921,8 @@ async function publishForumPost() {
       method: "POST",
       body: { title, body, category: forumPostCategory.value },
     });
-    expandedForumPostId = data.post?.id || null;
+    expandedForumPostId = null;
+    if (data.post?.category) forumFilter = data.post.category;
     forumPostTitle.value = "";
     forumPostBody.value = "";
     forumComposer.hidden = true;
@@ -4916,6 +4933,7 @@ async function publishForumPost() {
 }
 
 function toggleForumComposer() {
+  if (isLeagueStudent()) return;
   renderStaffAccessState();
   forumComposer.hidden = !forumComposer.hidden;
   if (!forumComposer.hidden) forumPostTitle.focus();
@@ -7744,7 +7762,7 @@ leaderboardScopeButtons.forEach((button) => {
 showForumComposerButton.addEventListener("click", toggleForumComposer);
 publishForumPostButton.addEventListener("click", publishForumPost);
 forumPostCategory.addEventListener("change", () => {
-  if (forumPostCategory.value === "Notice" && !isStaffUser()) forumPostCategory.value = "Question";
+  if (forumPostCategory.value === "Notice" && !isStaffUser() && !isTeacherUser()) forumPostCategory.value = "Question";
 });
 forumFilterButtons.forEach((button) => {
   button.addEventListener("click", () => {

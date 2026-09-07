@@ -2147,6 +2147,12 @@ function teacherLeagueForUser(user, db) {
     || null;
 }
 
+function isLeagueStudent(user, db) {
+  if (!user || normalizedRole(user) === "staff" || teacherLeagueForUser(user, db)) return false;
+  const leagueCode = String(user.leagueCode || "").trim().toUpperCase();
+  return Boolean(leagueCode && (db.leagues || []).some((league) => league.code === leagueCode));
+}
+
 function ensureTeacherLeagueMembership(user, league) {
   if (!user || !league || league.createdBy !== user.id) return false;
   const expected = {
@@ -2826,11 +2832,16 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
 
   if (req.method === "POST" && pathname === "/api/forum/posts") {
     if (!requireUser(user, res)) return true;
+    if (isLeagueStudent(user, db)) {
+      sendJson(res, 403, { error: "League students cannot create forum posts." });
+      return true;
+    }
     const body = await readBody(req);
     const title = String(body.title || "").trim().slice(0, 80);
     const postBody = String(body.body || "").trim().slice(0, 2000);
     let category = ["Notice", "Question", "Free"].includes(body.category) ? body.category : "Question";
-    if (category === "Notice" && user.role !== "admin") category = "Question";
+    const canPostNotice = normalizedRole(user) === "staff" || Boolean(teacherLeagueForUser(user, db));
+    if (category === "Notice" && !canPostNotice) category = "Question";
     if (!title || !postBody) {
       sendJson(res, 400, { error: "Title and body are required." });
       return true;
@@ -2884,8 +2895,7 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
 
   const forumPinParams = routePattern(pathname, "/api/forum/posts/:id/pin");
   if (req.method === "PATCH" && forumPinParams) {
-    if (!requireUser(user, res)) return true;
-    if (user.role !== "admin") { sendJson(res, 403, { error: "Staff access required." }); return true; }
+    if (!requireStaff(user, res)) return true;
     const post = db.forumPosts.find((item) => item.id === forumPinParams.id);
     if (!post) { sendJson(res, 404, { error: "Forum post not found." }); return true; }
     post.pinned = !post.pinned;

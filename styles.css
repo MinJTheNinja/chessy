@@ -8403,9 +8403,23 @@ button[aria-pressed="true"]:not(.training-path-node) {
   visibility: hidden;
 }
 
+.training-path-tooltip::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 100%;
+  width: 20px;
+  height: 100%;
+}
+
 .path-right .training-path-tooltip {
   right: calc(100% + 20px);
   left: auto;
+}
+
+.path-right .training-path-tooltip::before {
+  right: auto;
+  left: 100%;
 }
 
 .training-path-anchor:hover .training-path-tooltip {
@@ -8511,6 +8525,16 @@ button[aria-pressed="true"]:not(.training-path-node) {
     left: 50%;
     width: min(260px, calc(100vw - 32px));
     transform: translateX(-50%);
+  }
+
+  .training-path-tooltip::before,
+  .path-right .training-path-tooltip::before {
+    top: auto;
+    right: 0;
+    bottom: 100%;
+    left: 0;
+    width: 100%;
+    height: 10px;
   }
 
   .training-review-row {

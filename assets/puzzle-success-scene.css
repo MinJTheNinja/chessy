@@ -7,6 +7,14 @@
   z-index: 1;
 }
 
+.puzzle-scene-host > .frame {
+  z-index: 2;
+}
+
+.puzzle-scene-host > .banner-tag {
+  z-index: 3;
+}
+
 .puzzle-scene-host > .ranks,
 .puzzle-scene-host > .files {
   position: relative;
