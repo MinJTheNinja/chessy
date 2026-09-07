@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="/assets/puzzle-success-scene.css?v=20260907">
 
 <style>
   :root{
@@ -196,6 +197,21 @@
   }
   @keyframes capturedShadow{ to{ opacity:0; transform:scale(.35); } }
 
+  .capture-tray{
+    display:flex; align-items:center; justify-content:flex-end; gap:4px;
+    width:100%; max-width:380px; min-height:34px; margin-top:8px;
+  }
+  .capture-tray:empty{ display:none; }
+  .captured-piece{
+    width:32px; height:32px; flex:none;
+    animation:captureStack .52s cubic-bezier(.16,1.45,.45,1) both;
+  }
+  .captured-piece img{ display:block; width:100%; height:100%; object-fit:contain; }
+  @keyframes captureStack{
+    from{ opacity:0; transform:translateY(-54px) translateX(30px) rotate(18deg) scale(.58); }
+    to{ opacity:1; transform:none; }
+  }
+
   .scene-illustration{
     display:block; width:100%; aspect-ratio:16/9; object-fit:cover; margin:16px 0 0;
     border:1px solid var(--border); border-radius:8px;
@@ -222,7 +238,7 @@
   .result .arrow-note{ margin-top:8px; padding-top:8px; border-top:1px dashed var(--jade); color:var(--ink-soft); font-size:0.84rem; }
   .result-next{ display:block; margin:14px auto 0; }
   @media (prefers-reduced-motion:reduce){
-    .piece.is-captured,.piece.is-captured::before{ animation-duration:.01ms; }
+    .piece.is-captured,.piece.is-captured::before,.captured-piece{ animation-duration:.01ms; }
   }
 
   .epilogue p{ color:var(--ink-soft); margin:12px 0 0; }
@@ -337,6 +353,7 @@
 
 </div>
 
+<script src="/assets/puzzle-success-scene.js?v=20260907"></script>
 <script>
 (function(){
   "use strict";
@@ -730,6 +747,11 @@
     bottomChip.textContent = tx('고려군 (나)');
     boardCol.appendChild(bottomChip);
 
+    var captureTray = document.createElement('div');
+    captureTray.className = 'capture-tray';
+    captureTray.setAttribute('aria-label', language==='en' ? 'Captured opposing pieces' : '잡은 상대 기물');
+    boardCol.appendChild(captureTray);
+
     var controls = document.createElement('div');
     controls.className = 'board-controls';
     var hintBtn = document.createElement('button');
@@ -778,7 +800,7 @@
     scene.appendChild(body);
     scenesEl.appendChild(scene);
 
-    initBoard(idx, puzzle, boardEl, feedback, resultEl, scene, seg, row, hintBtn, revealBtn, resetBtn);
+    initBoard(idx, puzzle, boardEl, captureTray, feedback, resultEl, scene, seg, row, hintBtn, revealBtn, resetBtn);
   });
 
   function updatePathStates(){
@@ -795,11 +817,14 @@
     finalBanner.classList.toggle('show', allDone);
   }
 
-  function initBoard(idx, puzzle, boardEl, feedback, resultEl, sceneEl, segEl, pathRow, hintBtn, revealBtn, resetBtn){
+  function initBoard(idx, puzzle, boardEl, captureTray, feedback, resultEl, sceneEl, segEl, pathRow, hintBtn, revealBtn, resetBtn){
     var board, selected, solved, animating;
     var hintsUsed = 0;
     var revealed = false;
     var startedAt = Date.now();
+    var sceneController = window.EasyMatePuzzleScene
+      ? window.EasyMatePuzzleScene.create({ host: boardEl.parentElement, captureRegion: captureTray })
+      : null;
 
     function cloneBoard(){ return puzzle.board.map(function(row){ return row.slice(); }); }
 
@@ -825,6 +850,21 @@
           levelTotal: PUZZLES.length
         }, '*');
       }catch(e){}
+      if(sceneController){
+        sceneController.reveal(puzzle.winner === 'mongol' ? 'mongol' : 'goryeo');
+      }
+    }
+
+    function stackCapturedPiece(pieceCode){
+      if(!pieceCode || !captureTray) return;
+      var collected = document.createElement('div');
+      collected.className = 'captured-piece';
+      var art = document.createElement('img');
+      art.src = PIECE_ART[pieceCode];
+      art.alt = '';
+      art.decoding = 'async';
+      collected.appendChild(art);
+      captureTray.appendChild(collected);
     }
 
     function render(){
@@ -896,7 +936,8 @@
       }
     }
 
-    function commitMove(from, to, movingPiece, isSolution){
+    function commitMove(from, to, movingPiece, isSolution, capturedCode){
+      if(capturedCode) stackCapturedPiece(capturedCode);
       board[to[0]][to[1]] = movingPiece;
       board[from[0]][from[1]] = null;
       selected = null;
@@ -928,6 +969,7 @@
       var isSolution = from[0]===puzzle.solution.from[0] && from[1]===puzzle.solution.from[1] &&
                         to[0]===puzzle.solution.to[0] && to[1]===puzzle.solution.to[1];
       var movingPiece = board[from[0]][from[1]];
+      var capturedCode = board[to[0]][to[1]];
       var targetSq = boardEl.querySelector('[data-r="'+to[0]+'"][data-c="'+to[1]+'"]');
       var capturedPiece = targetSq && targetSq.querySelector('.piece');
       var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -939,13 +981,13 @@
         var finishCapture = function(){
           if(finished) return;
           finished = true;
-          commitMove(from, to, movingPiece, isSolution);
+          commitMove(from, to, movingPiece, isSolution, capturedCode);
         };
         capturedPiece.addEventListener('animationend', finishCapture, { once:true });
         window.setTimeout(finishCapture, 520);
         return;
       }
-      commitMove(from, to, movingPiece, isSolution);
+      commitMove(from, to, movingPiece, isSolution, capturedCode);
     }
 
     hintBtn.addEventListener('click', function(){
@@ -977,6 +1019,8 @@
       feedback.textContent = '';
       feedback.className = 'feedback';
       resultEl.classList.remove('show');
+      captureTray.innerHTML = '';
+      if(sceneController) sceneController.reset();
       segEl.classList.remove('done');
       solvedFlags[idx] = false;
       saveProgress();

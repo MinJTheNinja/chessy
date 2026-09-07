@@ -1,0 +1,50 @@
+.puzzle-scene-host {
+  position: relative;
+  isolation: isolate;
+}
+
+.puzzle-scene-host > :not(.puzzle-success-scene) {
+  z-index: 1;
+}
+
+.puzzle-scene-host > .ranks,
+.puzzle-scene-host > .files {
+  position: relative;
+}
+
+.puzzle-success-scene {
+  position: absolute;
+  z-index: 0;
+  inset: -27% -19% -16%;
+  width: 138%;
+  height: 143%;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transform: translateY(8%) scaleY(0.04);
+  transform-origin: 50% 100%;
+  transition: opacity 180ms linear, transform 520ms cubic-bezier(.2,.82,.25,1);
+  will-change: opacity, transform;
+}
+
+.puzzle-success-scene.is-visible {
+  opacity: 1;
+  transform: translateY(0) scaleY(1);
+}
+
+@media (max-width: 620px) {
+  .puzzle-success-scene {
+    inset: -22% -12% -12%;
+    width: 124%;
+    height: 134%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .puzzle-success-scene {
+    transition: none;
+    transform: none;
+  }
+}

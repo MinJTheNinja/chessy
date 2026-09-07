@@ -1252,10 +1252,6 @@ function renderPieceGuide() {
         ["Pawn promotion", "A pawn that reaches the last rank changes into another piece—usually a queen."],
         ["En passant · advanced", "If an enemy pawn moves two squares on its first move and lands beside yours, your pawn may capture it diagonally on the very next move."],
       ];
-  const tips = korean
-    ? ["킹을 안전하게 지켜요.", "중앙 네 칸을 먼저 살펴요.", "나이트와 비숍을 일찍 꺼내요.", "퀸을 너무 빨리 혼자 보내지 마세요.", "상대가 다음에 잡으려는 말을 확인해요."]
-    : ["Keep your king safe.", "Look toward the four center squares.", "Develop knights and bishops early.", "Do not send the queen out alone too soon.", "Check what your opponent is attacking next."];
-
   pieceGuideContent.innerHTML = `
     <section class="piece-guide-section" aria-labelledby="pieceGuidePiecesHeading">
       <div class="piece-guide-section-heading">
@@ -1269,10 +1265,6 @@ function renderPieceGuide() {
       <div class="piece-guide-section-heading"><span>02</span><div><h3 id="pieceGuideRulesHeading">${korean ? "기본 규칙" : "Basic Rules"}</h3><p>${korean ? "각 편은 16개의 말로 시작해요. 내 킹이 체크가 되는 수는 둘 수 없어요." : "Each side starts with 16 pieces. You may never make a move that leaves your king in check."}</p></div></div>
       <dl class="piece-guide-rules">${rules.map(([term, description]) => `<div><dt>${term}</dt><dd>${description}</dd></div>`).join("")}</dl>
       <div class="piece-guide-special-rules">${specialRules.map(([title, description]) => `<article><h4>${title}</h4><p>${description}</p></article>`).join("")}</div>
-    </section>
-    <section class="piece-guide-section piece-guide-tips" aria-labelledby="pieceGuideTipsHeading">
-      <div class="piece-guide-section-heading"><span>03</span><div><h3 id="pieceGuideTipsHeading">${korean ? "첫 대국 팁" : "First-game tips"}</h3></div></div>
-      <ul>${tips.map((tip) => `<li>${tip}</li>`).join("")}</ul>
     </section>`;
 }
 

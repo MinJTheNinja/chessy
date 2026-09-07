@@ -6,6 +6,7 @@
 <title>강화도의 결전 · 체크메이트 퍼즐 · EasyMate</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+<link rel="stylesheet" href="/assets/puzzle-success-scene.css?v=20260907">
 <style>
 :root{
   --meok:#1F3348;
@@ -343,6 +344,7 @@ body,body.home-mode{background-image:none!important}
   </div>
 </div>
 
+<script src="/assets/puzzle-success-scene.js?v=20260907"></script>
 <script>
 const puzzleParams=new URLSearchParams(window.location.search);
 const PUZZLE_LANGUAGE=puzzleParams.get('lang')==='en'?'en':'ko';
@@ -693,6 +695,9 @@ const hintLine=document.getElementById('hintLine');
 const hintBtn=document.getElementById('hintBtn');
 const captureTray=document.getElementById('captureTray');
 const overlay=document.getElementById('overlay');
+const sceneController=window.EasyMatePuzzleScene
+  ? window.EasyMatePuzzleScene.create({host:document.querySelector('.frame-outer'),captureRegion:captureTray})
+  : null;
 
 function starSum(){ return ALL_PUZZLES.reduce((a,p)=>a+(stars[p.id]||0),0); }
 function starsHtml(n){
@@ -784,6 +789,7 @@ function resetPuzzle(){
   hintBtn.textContent=PUZZLE_LANGUAGE==='en'?'💡 Show Hint':'💡 힌트 보기';
   hintBtn.hidden=false;
   captureTray.innerHTML='';
+  sceneController?.reset();
   setBanner(firstBannerText(),'');
   drawBoard();
 }
@@ -939,7 +945,10 @@ function winPuzzle(){
   }, '*');
   setBanner(PUZZLE_LANGUAGE==='en'?'Checkmate! Goryeo wins!':'체크메이트! 고려의 승리!','win');
   SFX.win();
-  setTimeout(()=>{
+  const revealPromise=sceneController
+    ? sceneController.reveal(cur.winner==='mongol'?'mongol':'goryeo')
+    : Promise.resolve();
+  revealPromise.then(()=>setTimeout(()=>{
     document.getElementById('winArt').innerHTML=ART[cur.art];
     document.getElementById('winStars').innerHTML=starsHtml(earned);
     document.getElementById('winText').innerHTML=PUZZLE_LANGUAGE==='en'
@@ -948,7 +957,7 @@ function winPuzzle(){
         : earned===2 ? '해냈어요! 몽골 칸이 도망갈 곳이 없어요.<br>다시 풀면 별 3개에 도전할 수 있어요.'
         : '승리! 연습하면 별을 더 모을 수 있어요.<br>다시 도전해볼까요?');
     overlay.classList.add('show');
-  },650);
+  },120));
 }
 
 /* ───────── 버튼 ───────── */
