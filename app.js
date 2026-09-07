@@ -256,6 +256,7 @@ const analyticsStartedMatches = new Set();
 let analyticsMatchmakingStartedAt = 0;
 let analyticsPuzzleStartedAt = 0;
 let analyticsPuzzleId = "";
+const puzzleCompletionRequests = new Map();
 let analyticsReviewStartedAt = 0;
 
 function trackEvent(eventName, properties = {}, options = {}) {
@@ -680,6 +681,7 @@ Object.assign(koreanText, {
   "That member has joined another league.": "해당 참여자는 이미 다른 리그에 참여했습니다.",
   "The league teacher cannot be removed.": "리그를 만든 교사는 내보낼 수 없습니다.",
   "This league competition has ended.": "이 리그의 경쟁 기간이 종료되었습니다.",
+  "Complete the previous Cheoinseong puzzle first.": "이전 처인성 퍼즐을 먼저 완료하세요.",
 });
 
 const englishText = Object.entries(koreanText).reduce((map, [english, korean]) => {
@@ -943,7 +945,7 @@ function syncLocalizedControls() {
   setText(document.querySelector('[data-league-action="create"]'), korean ? "리그 만들기" : "Create league");
   setText(joinLeagueButton, korean ? "참여" : "Join");
   setText(leaveLeagueButton, korean ? "나가기" : "Leave");
-  setText(leaveTeacherLeagueButton, korean ? "리그 나가기" : "Leave league");
+  setText(leaveTeacherLeagueButton, korean ? "리그 삭제" : "Delete league");
   setText(createLeagueButton, korean ? "코드 생성" : "Generate code");
   closeLeagueActionPopoverButton?.setAttribute("aria-label", korean ? "리그 코드 창 닫기" : "Close league code dialog");
   setText(mainTutorialButton, korean ? "훈련장으로 가기" : "Go to training");
@@ -2718,6 +2720,7 @@ function completedPuzzleIds() {
       .filter(Boolean)
       .map(String),
   );
+  if (currentUser && backendOnline) return ids;
   try {
     const localIds = JSON.parse(readLocalSetting(completedPuzzleStagesKey) || "[]");
     if (Array.isArray(localIds)) localIds.filter(Boolean).forEach((id) => ids.add(String(id)));
@@ -2725,6 +2728,35 @@ function completedPuzzleIds() {
     // Ignore malformed local progress and keep server-backed progress intact.
   }
   return ids;
+}
+
+function contiguousCompletedStageCount(stages, completed = completedPuzzleIds()) {
+  const firstIncompleteIndex = stages.findIndex((stage) => !completed.has(stage.id));
+  return firstIncompleteIndex < 0 ? stages.length : firstIncompleteIndex;
+}
+
+function canOpenPuzzleStage(stage) {
+  if (stage?.series !== "cheoinseong") return true;
+  const stages = puzzlePathStages.filter((candidate) => candidate.series === "cheoinseong");
+  const stageIndex = stages.findIndex((candidate) => candidate.id === stage.id);
+  if (stageIndex < 0) return false;
+  return stageIndex <= contiguousCompletedStageCount(stages);
+}
+
+function recordSequentialPuzzleCompletion(completed, puzzleId) {
+  const stages = puzzlePathStages.filter((stage) => stage.series === "cheoinseong");
+  const stageIndex = stages.findIndex((stage) => stage.id === puzzleId);
+  if (stageIndex < 0) {
+    completed.add(puzzleId);
+    return true;
+  }
+  const completedStageCount = contiguousCompletedStageCount(stages, completed);
+  if (stageIndex > completedStageCount) return false;
+  if (stageIndex === completedStageCount) {
+    stages.slice(stageIndex + 1).forEach((stage) => completed.delete(stage.id));
+  }
+  completed.add(puzzleId);
+  return true;
 }
 
 function similarPuzzleIds(stage) {
@@ -2744,13 +2776,13 @@ function renderPuzzleStageList(list, seriesItem) {
   heading.innerHTML = `<span>${korean ? seriesItem.koLabel : seriesItem.enLabel}</span><h2>${korean ? seriesItem.ko : seriesItem.en}</h2>`;
   list.append(heading);
 
-  const nextStageIndex = seriesItem.stages.findIndex((stage) => !completed.has(stage.id));
-  const currentStageIndex = nextStageIndex === -1 ? seriesItem.stages.length - 1 : nextStageIndex;
+  const completedStageCount = contiguousCompletedStageCount(seriesItem.stages, completed);
+  const currentStageIndex = Math.min(completedStageCount, seriesItem.stages.length - 1);
 
   seriesItem.stages.forEach((stage, index) => {
-    const isComplete = completed.has(stage.id);
+    const isComplete = index < completedStageCount;
     const isCurrent = index === currentStageIndex;
-    const accessible = isComplete || index <= currentStageIndex;
+    const accessible = isComplete || isCurrent;
     const variants = similarPuzzleIds(stage);
     const status = isComplete
       ? korean ? "완료" : "Complete"
@@ -2974,9 +3006,9 @@ function openTrainingReview(moduleId) {
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function openPuzzleStage(stage, index = 0, options = {}) {
+function openPuzzleStage(stage, index = 0) {
   const requiresTutorial = stage?.series !== "cheoinseong";
-  if (!stage || (!options.allowLocked && requiresTutorial && !activeTrainingState().puzzleUnlocked)) return;
+  if (!stage || (requiresTutorial && !activeTrainingState().puzzleUnlocked) || !canOpenPuzzleStage(stage)) return;
   trainingModuleOpen = true;
   howToPlayShell?.classList.add("puzzle-mode");
   howToPlayView?.classList.add("puzzle-mode");
@@ -3203,6 +3235,16 @@ async function completeStudentTutorial(module, advance = false) {
 
 async function completePuzzle(payload = {}) {
   const completedPuzzleId = String(payload.puzzleId || analyticsPuzzleId || "goryeo-vs-mongol");
+  const completedStage = puzzlePathStages.find((stage) => stage.id === completedPuzzleId);
+  if (completedStage?.series === "cheoinseong" && !canOpenPuzzleStage(completedStage)) {
+    if (tutorialPuzzleNote) {
+      tutorialPuzzleNote.hidden = false;
+      tutorialPuzzleNote.textContent = currentInterfaceLanguage() === "Korean"
+        ? "이전 처인성 퍼즐을 먼저 완료하세요."
+        : "Complete the previous Cheoinseong puzzle first.";
+    }
+    return false;
+  }
   const completionDuration = Number(payload.durationMs || analyticsElapsed(analyticsPuzzleStartedAt));
   trackEvent("puzzle_attempted", {
     puzzle_id: completedPuzzleId,
@@ -3229,7 +3271,7 @@ async function completePuzzle(payload = {}) {
       duration_ms: completionDuration,
     }, { page: "/training" });
     const completed = completedPuzzleIds();
-    if (payload.puzzleId) completed.add(String(payload.puzzleId));
+    if (payload.puzzleId && !recordSequentialPuzzleCompletion(completed, String(payload.puzzleId))) return false;
     writeLocalSetting(completedPuzzleStagesKey, JSON.stringify(Array.from(completed)));
     bumpDailyQuest("puzzles", 1);
     if (tutorialPuzzleNote) {
@@ -3239,7 +3281,7 @@ async function completePuzzle(payload = {}) {
           ? "퍼즐 완료가 기록되었습니다. 로그인하면 streak가 저장됩니다."
           : "Puzzle completion recorded locally. Sign in to save streak.";
     }
-    return;
+    return true;
   }
   try {
     const { data, applied } = await requestCurrentUserMutation(() =>
@@ -3259,18 +3301,20 @@ async function completePuzzle(payload = {}) {
         },
       }),
     );
-    if (!applied) return;
+    if (!applied) return false;
     cachedTrainingState = data.state;
     showAchievementUnlocks(data.unlocked);
     bumpDailyQuest("puzzles", 1);
     renderAuthState();
     renderDashboardSummary();
     await refreshLeaderboard();
+    return true;
   } catch (error) {
     if (tutorialPuzzleNote) {
       tutorialPuzzleNote.hidden = false;
       tutorialPuzzleNote.textContent = error.message;
     }
+    return false;
   }
 }
 
@@ -5894,36 +5938,38 @@ async function leaveLeague() {
 
 async function leaveTeacherLeague() {
   const code = currentTeacherLeagueCode();
-  if (!currentUser || !code || currentLeagueCode() !== code) {
+  if (!currentUser || !code) {
     await refreshTeacherLeague();
     return;
   }
   const korean = currentInterfaceLanguage() === "Korean";
   const confirmed = window.confirm(
     korean
-      ? "리그 " + code + "의 참가자 명단에서 나갈까요? 리그 관리 권한과 코드는 유지됩니다."
-      : "Leave the participant list for league " + code + "? Your management access and league code will remain.",
+      ? "리그 " + code + "를 삭제할까요? 모든 참가자가 리그에서 나가며 삭제한 리그는 복구할 수 없습니다."
+      : "Delete league " + code + "? Every participant will leave the league, and the deleted league cannot be restored.",
   );
   if (!confirmed) return;
   if (leaveTeacherLeagueButton) leaveTeacherLeagueButton.disabled = true;
-  setTeacherLeagueStatus(korean ? "리그에서 나가는 중…" : "Leaving league…");
+  setTeacherLeagueStatus(korean ? "리그를 삭제하는 중…" : "Deleting league…");
   try {
-    const { applied } = await requestCurrentUserMutation(() =>
-      api("/api/leagues/leave", { method: "POST" }),
+    const { data, applied } = await requestCurrentUserMutation(() =>
+      api("/api/leagues/teacher", { method: "DELETE" }),
     );
     if (!applied) return;
     latestCreatedLeagueCode = "";
+    cachedTeacherLeague = null;
+    clearTeacherMemberUndo();
     if (leagueCodeInput) leagueCodeInput.value = "";
     leaderboardPage = 0;
     renderDashboardSummary();
     renderAuthState();
-    await Promise.all([refreshLeaderboard(), refreshTeacherLeague()]);
-    setTeacherLeagueStatus(
-      korean
-        ? "참가자 명단에서 나왔습니다. 리그 관리 권한과 코드는 유지됩니다."
-        : "You left the participant list. Management access and the league code remain.",
-      "success",
-    );
+    await refreshLeaderboard();
+    setView("overview");
+    if (leagueStatus) {
+      leagueStatus.textContent = korean
+        ? `리그 ${data.deletedLeagueCode}를 삭제했습니다.`
+        : `League ${data.deletedLeagueCode} was deleted.`;
+    }
   } catch (error) {
     setTeacherLeagueStatus(translateCopy(error.message), "error");
   } finally {
@@ -6045,7 +6091,7 @@ function renderTeacherLeague(league) {
 
   if (teacherLeagueCode) teacherLeagueCode.textContent = code || "—";
   if (copyTeacherLeagueCodeButton) copyTeacherLeagueCodeButton.disabled = !code;
-  if (leaveTeacherLeagueButton) leaveTeacherLeagueButton.hidden = !league.ownerIsMember;
+  if (leaveTeacherLeagueButton) leaveTeacherLeagueButton.hidden = false;
   if (teacherLeagueName && document.activeElement !== teacherLeagueName) teacherLeagueName.value = league.name || "";
   if (teacherLeagueEndDate && document.activeElement !== teacherLeagueEndDate) {
     teacherLeagueEndDate.min = localCalendarDateKey();
@@ -7295,14 +7341,29 @@ window.addEventListener("message", (event) => {
     setView("how-to-play");
     showPuzzlePath(activeTrainingPathMode === "cheoinseong" ? "cheoinseong" : "puzzle");
   }
-  if (event.data?.type === "easymate:puzzle-complete") completePuzzle(event.data);
+  if (event.data?.type === "easymate:puzzle-complete") {
+    const puzzleId = String(event.data.puzzleId || "");
+    const completion = completePuzzle(event.data);
+    puzzleCompletionRequests.set(puzzleId, completion);
+    completion.finally(() => {
+      if (puzzleCompletionRequests.get(puzzleId) === completion) puzzleCompletionRequests.delete(puzzleId);
+    });
+  }
   if (event.data?.type === "easymate:next-puzzle") {
     const cheoinseongStages = puzzlePathStages.filter((stage) => stage.series === "cheoinseong");
     const currentIndex = cheoinseongStages.findIndex((stage) => stage.id === event.data.puzzleId);
     if (currentIndex < 0) return;
-    const nextStage = cheoinseongStages[currentIndex + 1];
-    if (nextStage) openPuzzleStage(nextStage, currentIndex + 1, { allowLocked: true });
-    else showPuzzlePath("cheoinseong");
+    const currentStage = cheoinseongStages[currentIndex];
+    const completion = puzzleCompletionRequests.get(currentStage.id);
+    Promise.resolve(completion ?? completedPuzzleIds().has(currentStage.id)).then((saved) => {
+      if (!saved || !completedPuzzleIds().has(currentStage.id)) {
+        showPuzzlePath("cheoinseong");
+        return;
+      }
+      const nextStage = cheoinseongStages[currentIndex + 1];
+      if (nextStage && canOpenPuzzleStage(nextStage)) openPuzzleStage(nextStage, currentIndex + 1);
+      else showPuzzlePath("cheoinseong");
+    });
   }
 });
 

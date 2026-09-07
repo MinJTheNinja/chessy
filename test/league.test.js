@@ -225,3 +225,194 @@ test("league membership, teacher access, codes, and owner rows remain stable", {
   assert.equal(teacherSessionAfterRestart.data.user.leagueCode, "");
   assert.equal(teacherSessionAfterRestart.data.user.isTeacher, true);
 });
+
+test("deleting a teacher league removes the league and every membership permanently", { timeout: 60_000 }, async (t) => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "easymate-league-delete-"));
+  let runtime = await startServer(dataDir);
+  t.after(async () => {
+    await stopServer(runtime.child);
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  });
+
+  const teacher = await signup(runtime.baseUrl, "delete-teacher@example.test", "Delete Teacher");
+  const student = await signup(runtime.baseUrl, "delete-student@example.test", "Delete Student");
+  const removedStudent = await signup(runtime.baseUrl, "removed-student@example.test", "Removed Student");
+  const created = await createLeague(runtime.baseUrl, teacher.cookie, "Delete This League");
+  const code = created.data.league.code;
+
+  for (const account of [student, removedStudent]) {
+    const joined = await request(runtime.baseUrl, "/api/leagues/join", {
+      method: "POST",
+      cookie: account.cookie,
+      body: { code },
+    });
+    assert.equal(joined.status, 200);
+  }
+
+  const removed = await request(runtime.baseUrl, `/api/leagues/teacher/members/${removedStudent.data.user.id}`, {
+    method: "DELETE",
+    cookie: teacher.cookie,
+  });
+  assert.equal(removed.status, 200);
+
+  const deleted = await request(runtime.baseUrl, "/api/leagues/teacher", {
+    method: "DELETE",
+    cookie: teacher.cookie,
+  });
+  assert.equal(deleted.status, 200);
+  assert.equal(deleted.data.deletedLeagueCode, code);
+  assert.equal(deleted.data.removedMemberCount, 2, "the owner and active student should be removed");
+  assert.equal(deleted.data.user.isTeacher, false);
+  assert.equal(deleted.data.user.teacherLeagueCode, "");
+  assert.equal(deleted.data.user.leagueCode, "");
+
+  for (const account of [teacher, student, removedStudent]) {
+    const session = await request(runtime.baseUrl, "/api/session", { cookie: account.cookie });
+    assert.equal(session.data.user.leagueCode, "");
+    assert.equal(session.data.user.teacherLeagueCode, "");
+  }
+
+  const teacherPage = await request(runtime.baseUrl, "/api/leagues/teacher", { cookie: teacher.cookie });
+  assert.equal(teacherPage.status, 403);
+  const oldCodeJoin = await request(runtime.baseUrl, "/api/leagues/join", {
+    method: "POST",
+    cookie: student.cookie,
+    body: { code },
+  });
+  assert.equal(oldCodeJoin.status, 404);
+  const leaderboard = await request(runtime.baseUrl, "/api/leagues/leaderboard?scope=mine", { cookie: student.cookie });
+  assert.equal(leaderboard.data.emptyReason, "no-league");
+
+  const state = JSON.parse(fs.readFileSync(path.join(dataDir, "db.json"), "utf8"));
+  assert.equal(state.leagues.some((league) => league.code === code), false);
+  const identity = JSON.parse(fs.readFileSync(path.join(dataDir, "identity.json"), "utf8"));
+  const removedProfile = identity.users.find((item) => item.id === removedStudent.data.user.id).profile;
+  assert.equal(removedProfile.removedFromLeagueCode, "");
+
+  await stopServer(runtime.child);
+  runtime = await startServer(dataDir);
+  const sessionAfterRestart = await request(runtime.baseUrl, "/api/session", { cookie: student.cookie });
+  assert.equal(sessionAfterRestart.data.user.leagueCode, "");
+  const deletedLeagueAfterRestart = await request(runtime.baseUrl, "/api/leagues/join", {
+    method: "POST",
+    cookie: student.cookie,
+    body: { code },
+  });
+  assert.equal(deletedLeagueAfterRestart.status, 404);
+});
+
+test("Cheoinseong puzzles unlock strictly in sequence and repair skipped progress", { timeout: 30_000 }, async (t) => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "easymate-cheoinseong-"));
+  const runtime = await startServer(dataDir);
+  t.after(async () => {
+    await stopServer(runtime.child);
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  });
+
+  const student = await signup(runtime.baseUrl, "cheoinseong-student@example.test", "History Student");
+  const completeStage = (puzzleId) => request(runtime.baseUrl, "/api/training/puzzle-complete", {
+    method: "POST",
+    cookie: student.cookie,
+    body: {
+      puzzleId,
+      title: puzzleId,
+      theme: "처인성 전투",
+      family: "처인성의 마지막 화살",
+      level: 4,
+      hintsUsed: 0,
+      durationMs: 1_000,
+      familyTotal: 5,
+      levelTotal: 5,
+    },
+  });
+
+  assert.equal((await completeStage("cheoin-1")).status, 200, "the first history puzzle must not require tutorial completion");
+  const skipped = await completeStage("cheoin-3");
+  assert.equal(skipped.status, 409);
+  assert.equal(skipped.data.error, "Complete the previous Cheoinseong puzzle first.");
+
+  const identityPath = path.join(dataDir, "identity.json");
+  const identity = JSON.parse(fs.readFileSync(identityPath, "utf8"));
+  const storedStudent = identity.users.find((user) => user.id === student.data.user.id);
+  storedStudent.profile.training.completedPuzzles.push({
+    id: "cheoin-3",
+    stars: 3,
+    completedAt: new Date().toISOString(),
+  });
+  fs.writeFileSync(identityPath, JSON.stringify(identity, null, 2));
+
+  assert.equal((await completeStage("cheoin-2")).status, 200);
+  let session = await request(runtime.baseUrl, "/api/session", { cookie: student.cookie });
+  const repairedIds = session.data.user.training.completedPuzzles
+    .map((puzzle) => puzzle.id)
+    .filter((id) => id.startsWith("cheoin-"));
+  assert.deepEqual(repairedIds, ["cheoin-1", "cheoin-2"]);
+  assert.equal((await completeStage("cheoin-3")).status, 200);
+  session = await request(runtime.baseUrl, "/api/session", { cookie: student.cookie });
+  assert.deepEqual(
+    session.data.user.training.completedPuzzles
+      .map((puzzle) => puzzle.id)
+      .filter((id) => id.startsWith("cheoin-")),
+    ["cheoin-1", "cheoin-2", "cheoin-3"],
+  );
+});
+
+test("badge awards remain persisted, visible in profiles, and acknowledgeable", { timeout: 30_000 }, async (t) => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "easymate-badges-"));
+  let runtime = await startServer(dataDir);
+  t.after(async () => {
+    await stopServer(runtime.child);
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  });
+
+  const student = await signup(runtime.baseUrl, "badge-student@example.test", "Badge Student");
+  for (let moduleId = 1; moduleId <= 4; moduleId += 1) {
+    const completion = await request(runtime.baseUrl, "/api/training/tutorial-complete", {
+      method: "POST",
+      cookie: student.cookie,
+      body: { module: moduleId },
+    });
+    assert.equal(completion.status, 200);
+  }
+  for (let index = 1; index <= 5; index += 1) {
+    const completion = await request(runtime.baseUrl, "/api/training/puzzle-complete", {
+      method: "POST",
+      cookie: student.cookie,
+      body: {
+        puzzleId: "badge-puzzle-" + index,
+        title: "Badge puzzle " + index,
+        theme: "theme-" + index,
+        hintsUsed: 0,
+        durationMs: 1_000,
+      },
+    });
+    assert.equal(completion.status, 200);
+  }
+
+  let session = await request(runtime.baseUrl, "/api/session", { cookie: student.cookie });
+  const earnedIds = new Set(session.data.user.achievements.map((badge) => badge.id));
+  ["first-step", "piece-commander", "capture-specialist", "crisis-escape", "mate-solver", "flawless-solver", "lightning-move", "puzzle-explorer"]
+    .forEach((id) => assert.ok(earnedIds.has(id), "missing earned badge: " + id));
+
+  const profile = await request(runtime.baseUrl, "/api/profile", { cookie: student.cookie });
+  assert.equal(profile.status, 200);
+  assert.ok(profile.data.badges.length >= earnedIds.size);
+  profile.data.badges.forEach((badge) => assert.ok(badge.imageUrl, "badge artwork must be available"));
+
+  const pendingIds = session.data.user.badgeNotifications.map((badge) => badge.id);
+  assert.ok(pendingIds.length > 0);
+  const acknowledged = await request(runtime.baseUrl, "/api/achievements/acknowledge", {
+    method: "POST",
+    cookie: student.cookie,
+    body: { ids: pendingIds },
+  });
+  assert.equal(acknowledged.status, 200);
+  session = await request(runtime.baseUrl, "/api/session", { cookie: student.cookie });
+  assert.deepEqual(session.data.user.badgeNotifications, []);
+  assert.deepEqual(new Set(session.data.user.achievements.map((badge) => badge.id)), earnedIds);
+
+  await stopServer(runtime.child);
+  runtime = await startServer(dataDir);
+  session = await request(runtime.baseUrl, "/api/session", { cookie: student.cookie });
+  assert.deepEqual(new Set(session.data.user.achievements.map((badge) => badge.id)), earnedIds);
+});

@@ -1559,6 +1559,8 @@ const achievementArtwork = {
   "returning-warrior": "/assets/badges/returning-warrior.png",
 };
 
+const cheoinseongPuzzleIds = ["cheoin-1", "cheoin-2", "cheoin-3", "cheoin-4", "cheoin-5"];
+
 const achievementById = new Map(achievementCatalog.map((achievement) => [
   achievement.id,
   { ...achievement, imageUrl: achievementArtwork[achievement.id] },
@@ -2901,6 +2903,50 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     return true;
   }
 
+  if (req.method === "DELETE" && pathname === "/api/leagues/teacher") {
+    if (!requireUser(user, res)) return true;
+    const league = teacherLeagueForUser(user, db);
+    if (!league) {
+      sendJson(res, 403, { error: "Teacher league access required." });
+      return true;
+    }
+
+    const deletedLeagueCode = league.code;
+    let removedMemberCount = 0;
+    for (const member of db.users) {
+      let changed = false;
+      if (String(member.leagueCode || "").trim().toUpperCase() === deletedLeagueCode) {
+        member.leagueCode = "";
+        member.leagueJoined = false;
+        removedMemberCount += 1;
+        changed = true;
+      }
+      if (String(member.removedFromLeagueCode || "").trim().toUpperCase() === deletedLeagueCode) {
+        member.removedFromLeagueCode = "";
+        member.removedFromLeagueAt = "";
+        changed = true;
+      }
+      if (member.id === league.createdBy) {
+        member.leagueCreated = false;
+        member.teacherLeagueId = "";
+        member.teacherLeagueCode = "";
+        member.teacherLeagueOptedOut = false;
+        changed = true;
+      }
+      if (changed) await saveUser(member);
+    }
+
+    db.leagues = db.leagues.filter((item) => item.id !== league.id);
+    await writeDb(db);
+    const updatedOwner = db.users.find((member) => member.id === user.id) || user;
+    sendJson(res, 200, {
+      deletedLeagueCode,
+      removedMemberCount,
+      user: publicUser(updatedOwner, db),
+    });
+    return true;
+  }
+
   const restoreTeacherMemberParams = routePattern(pathname, "/api/leagues/teacher/members/:id/restore");
   if (req.method === "POST" && restoreTeacherMemberParams) {
     if (!requireUser(user, res)) return true;
@@ -3114,12 +3160,26 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     if (!requireUser(user, res)) return true;
     user.training = normalizeTraining(user.training);
     const state = trainingState(user);
-    if (!state.puzzleUnlocked) {
+    const body = await readBody(req);
+    const puzzleId = String(body.puzzleId || "goryeo-vs-mongol").slice(0, 80);
+    const cheoinseongStageIndex = cheoinseongPuzzleIds.indexOf(puzzleId);
+    if (cheoinseongStageIndex < 0 && !state.puzzleUnlocked) {
       sendJson(res, 409, { error: "Finish every training module before opening puzzles.", state });
       return true;
     }
-    const body = await readBody(req);
-    const puzzleId = String(body.puzzleId || "goryeo-vs-mongol").slice(0, 80);
+    if (cheoinseongStageIndex >= 0) {
+      const completedIds = new Set(user.training.completedPuzzles.map((puzzle) => String(puzzle?.id || "")));
+      const firstIncompleteStageIndex = cheoinseongPuzzleIds.findIndex((id) => !completedIds.has(id));
+      if (firstIncompleteStageIndex >= 0 && cheoinseongStageIndex > firstIncompleteStageIndex) {
+        sendJson(res, 409, { error: "Complete the previous Cheoinseong puzzle first.", state });
+        return true;
+      }
+      if (firstIncompleteStageIndex === cheoinseongStageIndex) {
+        const invalidFutureIds = new Set(cheoinseongPuzzleIds.slice(cheoinseongStageIndex + 1));
+        user.training.completedPuzzles = user.training.completedPuzzles
+          .filter((puzzle) => !invalidFutureIds.has(String(puzzle?.id || "")));
+      }
+    }
     const puzzle = {
       id: puzzleId,
       stars: Math.max(0, Math.min(3, Number(body.stars || 0))),
