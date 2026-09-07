@@ -1,8 +1,9 @@
 services:
   - type: web
-    name: live-chess-global-matching
+    name: chessy-singapore
     runtime: node
-    plan: free
+    region: singapore
+    plan: 0.5c-512mb
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
@@ -17,7 +18,7 @@ services:
         sync: false
       - key: UPSTASH_REDIS_REST_TOKEN
         sync: false
-      - key: ADMIN_EMAILS
+      - key: STAFF_EMAILS
         sync: false
       - key: METERED_TURN_API_URL
         sync: false

@@ -404,8 +404,11 @@ body{background-image:none!important}
 .dots{display:none}
 .lesson-board-panel .mission{text-align:center}
 .capture-case-legend{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-.capture-case-card{border-top:2px solid var(--blue);padding:10px 8px;color:var(--meok);font-size:13px;font-weight:700;text-align:center}
-.capture-case-card.blocked{border-top-color:var(--red)}
+.capture-case-card{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;border:1px solid rgba(31,51,72,.14);border-left:4px solid var(--blue);padding:9px 8px;color:var(--meok);font-size:13px;font-weight:700;text-align:left;background:rgba(97,151,208,.05)}
+.capture-case-card.blocked{border-left-color:var(--red);background:rgba(180,72,60,.05)}
+.capture-case-mark{display:inline-block;width:18px;height:18px;box-sizing:border-box;flex:none}
+.capture-case-mark.circle{border-radius:50%;background:var(--easyblue);box-shadow:0 0 0 3px rgba(97,151,208,.18)}
+.capture-case-mark.square{border-radius:3px;border:3px solid var(--red);background:rgba(180,72,60,.12)}
 .review-status{display:flex;justify-content:center;gap:7px;margin:12px 0 4px;color:rgba(31,51,72,.55);font-size:13px;font-weight:700}
 .piece-art-original.black{filter:brightness(.2) contrast(1.18) drop-shadow(0 2px 1px rgba(247,240,223,.45))}
 .piece-art-original.white{filter:drop-shadow(0 2px 1px rgba(32,52,72,.24))}
@@ -415,6 +418,23 @@ body{background-image:none!important}
   .nav .btn-prev,
   .nav .btn-next{min-height:40px;padding:8px 10px;font-size:13px}
   .step-counter{font-size:13px;line-height:40px}
+}
+
+/* Desktop lesson scale. */
+@media (min-width:900px){
+  .scene{padding:clamp(28px,3vw,48px) clamp(32px,4vw,72px)}
+  h1{font-size:44px}
+  h2{font-size:34px}
+  .title-art{width:440px;grid-template-columns:1fr 58px 1fr}
+  .title-art>div{height:246px}
+  .title-art>div>img{width:190px;height:210px;flex-basis:210px}
+  .title-sub{font-size:18px}
+  .lesson-layout{width:min(1240px,100%);grid-template-columns:minmax(330px,420px) minmax(0,1fr);gap:clamp(44px,6vw,96px)}
+  .lesson-board-label,.lesson-board-panel .board,.lesson-board-panel .mission,.lesson-board-panel .capture-shelf{width:min(420px,100%)}
+  .lesson-copy-panel{min-height:500px}
+  .lesson-piece-brief{grid-template-columns:104px minmax(0,1fr)}
+  .lesson-piece-brief .char-art{width:100px;height:100px}
+  .lesson-piece-brief .speech{font-size:16px;padding:18px 20px}
 }
 </style>
 </head>
@@ -604,7 +624,7 @@ const CHECKMATE_START_SCENE = CHECK_START_SCENE + CHECK_LESSONS.length;
 const CHECKMATE_LESSONS = [
   { id:'back-rank', title:'뒷줄 체크메이트', attacker:'g_rook', text:'룩을 파란 점으로 보내 상대 킹을 꼼짝 못 하게 하자!', note:'맨 윗줄은 룩이 노리고, 아래 칸은 우리 킹이 지켜요.', guardLabel:'킹이 지키는 칸', dangerLabel:'룩이 노리는 칸' },
   { id:'defended', title:'보호받는 기물의 체크메이트', attacker:'g_queen', text:'우리 퀸이 상대 킹을 공격하고 있어요. 퀸은 우리 킹이 보호하는 칸에 있어서 상대 킹이 잡을 수 없어요!', speech:'우리 퀸이 상대 킹을 공격하고 있어요. 퀸은 우리 킹이 보호하는 칸에 있어서 상대 킹이 잡을 수 없어요!', note:'공격한 퀸을 잡으려 해도 킹이 지키고 있어서 체크를 해결할 수 없어요.', guardLabel:'킹이 지키는 기물', dangerLabel:'퀸이 노리는 칸' },
-  { id:'smothered', title:'질식 체크메이트', attacker:'g_knight', text:'상대 킹이 자기 편에 둘러싸인 완성 포지션을 살펴보자!', note:'도망길이 자기 기물로 막힌 체크메이트를 질식 체크메이트라고 해요.', guardLabel:'상대 기물이 막은 칸', dangerLabel:'나이트가 노리는 칸' },
+  { id:'smothered', title:'질식 체크메이트', attacker:'g_knight', text:'나이트를 파란 점으로 보내 상대 킹의 마지막 도망길을 막아보자!', note:'도망길이 자기 기물로 막힌 체크메이트를 질식 체크메이트라고 해요.', guardLabel:'상대 기물이 막은 칸', dangerLabel:'나이트가 노리는 칸' },
 ];
 if(isEnglish){
   Object.assign(CHECK_LESSONS[0],{title:'Escape to Safety',text:'Move the king to a safe blue square.',note:'Leaving the attacked file makes the king safe.',speech:'The opposing rook is attacking the king. Practice <b>escaping to a safe square</b>.'});
@@ -612,7 +632,7 @@ if(isEnglish){
   Object.assign(CHECK_LESSONS[2],{title:'Capture the Attacker',text:'Use the knight to capture the attacking rook.',note:'Capturing the attacking piece can end check.',speech:'The opposing rook is attacking the king. End check by <b>capturing the attacker</b>.'});
   Object.assign(CHECKMATE_LESSONS[0],{title:'Back-Rank Checkmate',text:'Move the rook to the blue square and trap the opposing king.',note:'The rook controls the top rank while our king covers the lower squares.',guardLabel:'Squares protected by the king',dangerLabel:'Squares attacked by the rook'});
   Object.assign(CHECKMATE_LESSONS[1],{title:'Protected-Piece Checkmate',text:'The queen attacks the Khan while our king protects the queen.',speech:'The queen attacks the Khan from a square protected by our king, so the Khan cannot capture it.',note:'The attacking queen cannot be captured because the king protects it.',guardLabel:'Protected piece',dangerLabel:'Squares attacked by the queen'});
-  Object.assign(CHECKMATE_LESSONS[2],{title:'Smothered Checkmate',text:'Study the completed position where the opposing king is boxed in by its own pieces.',note:'A checkmate where friendly pieces block every escape square is called smothered mate.',guardLabel:'Squares blocked by opposing pieces',dangerLabel:'Squares attacked by the knight'});
+  Object.assign(CHECKMATE_LESSONS[2],{title:'Smothered Checkmate',text:'Move the knight to the blue square and close the opposing king\'s final escape.',note:'A checkmate where friendly pieces block every escape square is called smothered mate.',guardLabel:'Squares blocked by opposing pieces',dangerLabel:'Squares attacked by the knight'});
 }
 const RECAP_SCENE = CHECKMATE_START_SCENE + CHECKMATE_LESSONS.length;
 const MODULE_DONE_SCENE = -1;
@@ -825,7 +845,7 @@ function captureScene(c, idx){
     ? (c.enemy==='m_rook'?'rook':c.enemy==='m_bishop'?'bishop':c.enemy==='m_knight'?'knight':c.enemy==='m_queen'?'queen':c.enemy==='m_king'?'king':'pawn')
     : (c.enemy==='m_rook'?'룩':c.enemy==='m_bishop'?'비숍':c.enemy==='m_knight'?'나이트':c.enemy==='m_queen'?'퀸':c.enemy==='m_king'?'킹':'폰');
   const caseLegend = c.id==='kingCapture'
-    ? `<div class="capture-case-legend"><div class="capture-case-card blocked">${choose('공격받는 칸<br>움직일 수 없어요','Attacked square<br>Cannot move')}</div><div class="capture-case-card">${choose('안전한 칸<br>움직일 수 있어요','Safe square<br>Can move')}</div></div>`
+    ? `<div class="capture-case-legend"><div class="capture-case-card blocked"><span class="capture-case-mark square" aria-hidden="true"></span><span>${choose('공격받는 칸<br>움직일 수 없어요','Attacked square<br>Cannot move')}</span></div><div class="capture-case-card"><span class="capture-case-mark circle" aria-hidden="true"></span><span>${choose('안전한 칸<br>움직일 수 있어요','Safe square<br>Can move')}</span></div></div>`
     : '';
   return lessonLayout({
     goryeo:c.piece, mongol:c.enemy, label:`${choose('용사','Defender')} ${idx+1}: ${c.name}`,
@@ -1400,18 +1420,31 @@ function setupCheckmate(lesson){
 
   if(lesson.id==='smothered'){
     const enemyKing=addToken(board,ART.m_king,[0,4],'enemy-token');
-    const knight=addToken(board,ART.g_knight,[2,3]);
+    const knightStart=[4,2];
+    const knightTarget=[2,3];
+    const knight=addToken(board,ART.g_knight,knightStart);
     const blockedSquares=[[0,3],[1,3],[1,4]];
     blockedSquares.forEach((position)=>addToken(board,ART.m_pawn,position,'enemy-token'));
     enemyKing.classList.add('king-danger');
-    addLabel(knight);
-    mark(blockedSquares, [[0,4]]);
-    mission.textContent=choose('완성된 질식 체크메이트 포지션입니다. 상대 킹의 도망길은 자기 편 기물이 모두 막고 있어요.','This is smothered mate. The opposing king’s own pieces block every escape square.');
-    if(note) note.innerHTML=choose('파란 테두리는 <b>상대 기물이 막은 칸</b>, 빨간 테두리는 <b>나이트가 체크하는 칸</b>이에요.','Blue marks squares <b>blocked by opposing pieces</b>; red marks the knight’s attack.');
-    document.getElementById('nextBtn').disabled=false;
+    const target=sqAt(board,knightTarget[0],knightTarget[1]);
+    target.classList.add('hint');
+    mission.textContent=choose('나이트를 파란 점으로 움직여 질식 체크메이트를 완성해 보세요.','Move the knight to the blue square to complete smothered mate.');
+    if(note) note.innerHTML=choose('파란 점은 <b>나이트가 체크하는 칸</b>이에요. 이동 후 파란 테두리는 상대 기물이 막은 칸을 보여줘요.','The blue dot is the knight\'s checking square. After the move, blue outlines show squares blocked by opposing pieces.');
+    board.addEventListener('click',event=>{
+      const sq=event.target.closest('.sq'); if(!sq) return;
+      if(sq!==target){ flashWrong(sq,choose('나이트를 파란 점으로 보내 체크메이트를 완성해 보세요.','Move the knight to the blue square to complete checkmate.')); return; }
+      target.classList.remove('hint');
+      animateKnight(board,knight,knightStart,knightTarget,mission,()=>{
+        addLabel(knight);
+        mark(blockedSquares, [[0,4]]);
+        mission.textContent=choose('체크메이트! 상대 킹의 도망길은 자기 편 기물이 모두 막고 있어요.','Checkmate. The opposing king\'s own pieces block every escape square.');
+        mission.classList.add('done');
+        state.checkmates[lesson.id]=true;
+        document.getElementById('nextBtn').disabled=false;
+      });
+    });
     return;
   }
-
   const enemyKing=addToken(board,ART.m_king,[0,4],'enemy-token');
   addToken(board,ART.g_king,[2,3]);
   const rook=addToken(board,ART.g_rook,[3,0]);

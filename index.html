@@ -338,14 +338,7 @@
                         <option value="Japanese">일본어</option>
                       </select>
                     </label>
-                    <label>
-                      대화 목표
-                      <select id="conversationGoal">
-                        <option>Explain chess moves</option>
-                        <option>Practice daily conversation</option>
-                        <option>Learn sports phrases</option>
-                      </select>
-                    </label>
+
                     <button class="button secondary full" id="createSeek">게임 만들기</button>
                   </div>
 
@@ -622,6 +615,7 @@
             <div class="how-to-play-shell" id="howToPlayShell" hidden>
               <div class="training-module-toolbar" id="trainingModuleToolbar">
                 <strong id="activeTrainingModuleTitle">튜토리얼</strong>
+                <button class="piece-guide-toolbar-trigger" type="button" data-open-piece-guide hidden>말 한눈에 보기</button>
               </div>
               <iframe
                 class="how-to-play-frame"
@@ -1057,6 +1051,21 @@
         <button data-view-link="profile" type="button">나</button>
       </nav>
     </main>
+
+    <dialog class="piece-guide-dialog" id="pieceGuideDialog" aria-labelledby="pieceGuideTitle" aria-describedby="pieceGuideIntro">
+      <article class="piece-guide-sheet">
+        <header class="piece-guide-header">
+          <div>
+            <span class="eyebrow" id="pieceGuideEyebrow">처인성 체스 빠른 안내</span>
+            <h2 id="pieceGuideTitle">말 한눈에 보기</h2>
+            <p id="pieceGuideIntro">고려·몽골 캐릭터가 어떤 체스 말인지, 어디로 움직이는지 한 장으로 확인하세요.</p>
+          </div>
+          <button class="piece-guide-close" id="closePieceGuide" type="button" aria-label="말 안내 닫기">×</button>
+        </header>
+        <div class="piece-guide-content" id="pieceGuideContent"></div>
+      </article>
+    </dialog>
+
     <aside class="analytics-consent" id="analyticsConsentBanner" aria-labelledby="analyticsConsentTitle" hidden>
       <div>
         <strong id="analyticsConsentTitle">EasyMate 개선을 도와주세요</strong>

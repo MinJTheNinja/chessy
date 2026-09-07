@@ -56,12 +56,18 @@ const privateRoomTtlMs = 5 * 60 * 1000;
 const dayMs = 24 * 60 * 60 * 1000;
 let streakTimeZone = String(process.env.STREAK_TIME_ZONE || "Asia/Seoul").trim() || "Asia/Seoul";
 let streakDateFormatter;
+let streakHourFormatter;
 try {
   streakDateFormatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: streakTimeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
+  });
+  streakHourFormatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: streakTimeZone,
+    hour: "2-digit",
+    hourCycle: "h23",
   });
 } catch {
   streakTimeZone = "Asia/Seoul";
@@ -70,6 +76,11 @@ try {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
+  });
+  streakHourFormatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: streakTimeZone,
+    hour: "2-digit",
+    hourCycle: "h23",
   });
 }
 const trainingModules = [
@@ -1661,6 +1672,28 @@ function calendarDayNumber(value) {
   return Math.floor(Date.UTC(parts.year, parts.month - 1, parts.day) / dayMs);
 }
 
+function learningActivityHour(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  const hour = Number(
+    streakHourFormatter
+      .formatToParts(date)
+      .find((part) => part.type === "hour")?.value,
+  );
+  return Number.isFinite(hour) ? hour : null;
+}
+
+function storedLearningActivityHour(entry) {
+  if (entry && typeof entry === "object") {
+    const hour = Number(entry.hour);
+    return Number.isFinite(hour) ? hour : null;
+  }
+  const hour = Number(entry);
+  if (!Number.isFinite(hour)) return null;
+  const shiftedHour = learningActivityHour(new Date(Date.UTC(2026, 0, 1, hour)));
+  return shiftedHour === null ? hour : shiftedHour;
+}
+
 function applyDailyStreak(user, completedAt = new Date(), activityType = "match") {
   if (!user) return false;
   const completedTime = completedAt.getTime();
@@ -1668,8 +1701,9 @@ function applyDailyStreak(user, completedAt = new Date(), activityType = "match"
   const completedDay = calendarDayNumber(completedAt);
   const previousDay = calendarDayNumber(user.lastStreakAt);
   if (activityType === "learning") {
-    const hour = completedAt.getHours();
-    user.learningActivityHours = [...(Array.isArray(user.learningActivityHours) ? user.learningActivityHours : []), hour].slice(-120);
+    const hour = learningActivityHour(completedAt);
+    const nextHour = hour === null ? [] : [{ hour, timeZone: streakTimeZone, at: completedAt.toISOString() }];
+    user.learningActivityHours = [...(Array.isArray(user.learningActivityHours) ? user.learningActivityHours : []), ...nextHour].slice(-120);
     if (Number.isFinite(previousLearningTime) && completedTime - previousLearningTime >= dayMs * 7) {
       user.returnedAfterBreak = true;
     }
@@ -2010,7 +2044,9 @@ function syncAchievements(user, db) {
   if (streak >= 30 && earnedIds.has("march-7")) candidateIds.push("march-30");
   else if (streak >= 7 && earnedIds.has("march-3")) candidateIds.push("march-7");
   else if (streak >= 3) candidateIds.push("march-3");
-  const learningHours = Array.isArray(user.learningActivityHours) ? user.learningActivityHours : [];
+  const learningHours = Array.isArray(user.learningActivityHours)
+    ? user.learningActivityHours.map(storedLearningActivityHour).filter((hour) => hour !== null)
+    : [];
   if (learningHours.filter((hour) => Number(hour) >= 5 && Number(hour) < 12).length >= 3) candidateIds.push("morning-strategist");
   if (learningHours.filter((hour) => Number(hour) >= 20 || Number(hour) < 5).length >= 3) candidateIds.push("night-strategist");
   if (user.returnedAfterBreak) candidateIds.push("returning-warrior");

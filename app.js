@@ -102,6 +102,13 @@ const puzzlePathList = document.querySelector("#puzzlePathList");
 const cheoinseongPathList = document.querySelector("#cheoinseongPathList");
 const trainingModuleToolbar = document.querySelector("#trainingModuleToolbar");
 const activeTrainingModuleTitle = document.querySelector("#activeTrainingModuleTitle");
+const pieceGuideDialog = document.querySelector("#pieceGuideDialog");
+const pieceGuideContent = document.querySelector("#pieceGuideContent");
+const pieceGuideTitle = document.querySelector("#pieceGuideTitle");
+const pieceGuideIntro = document.querySelector("#pieceGuideIntro");
+const pieceGuideEyebrow = document.querySelector("#pieceGuideEyebrow");
+const closePieceGuideButton = document.querySelector("#closePieceGuide");
+const pieceGuideTriggers = document.querySelectorAll("[data-open-piece-guide]");
 const headerProfile = document.querySelector("#headerProfile");
 const headerProfileButton = document.querySelector("#headerProfileButton");
 const headerProfileMenu = document.querySelector("#headerProfileMenu");
@@ -162,7 +169,7 @@ const saveTeacherLeagueSettingsButton = document.querySelector("#saveTeacherLeag
 const teacherLeagueStatus = document.querySelector("#teacherLeagueStatus");
 const undoTeacherMemberRemovalButton = document.querySelector("#undoTeacherMemberRemoval");
 const todayQuestList = document.querySelector("#todayQuestList");
-const conversationGoal = document.querySelector("#conversationGoal");
+
 const forumPostTitle = document.querySelector("#forumPostTitle");
 const forumPostCategory = document.querySelector("#forumPostCategory");
 const forumPostBody = document.querySelector("#forumPostBody");
@@ -272,6 +279,7 @@ const completedTrainingModulesKey = "easyMateCompletedTrainingModules";
 const completedPuzzleStagesKey = "easyMateCompletedPuzzleStages";
 const dailyQuestStorageKey = "easyMateDailyQuestProgress";
 const pieceEditionStorageKey = "easyMatePieceEdition";
+const pieceGuideSeenStorageKey = "easyMatePieceGuideSeen";
 let leaderboardPeriod = "weekly";
 let leaderboardScope = "mine";
 let leaderboardPage = 0;
@@ -1018,6 +1026,21 @@ const pieceEditionNames = {
   beta: "Beta Edition",
 };
 
+const cheoinseongPieceAssets = {
+  wp: "/assets/cheoinseong/pieces/goryeo-people-pawn.png?v=20260904-board-grounding",
+  wn: "/assets/cheoinseong/pieces/goryeo-cavalry-knight.png?v=20260904-board-grounding",
+  wb: "/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png?v=20260904-board-grounding",
+  wr: "/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png?v=20260904-board-grounding",
+  wq: "/assets/tutorial-pieces/g_queen.webp?v=20260905-webp",
+  wk: "/assets/cheoinseong/pieces/goryeo-king.png?v=20260904-board-grounding",
+  bp: "/assets/cheoinseong/pieces/mongol-infantry-pawn.png?v=20260904-board-grounding",
+  bn: "/assets/cheoinseong/pieces/mongol-cavalry-knight.png?v=20260904-board-grounding",
+  bb: "/assets/cheoinseong/pieces/mongol-adviser-bishop.png?v=20260904-board-grounding",
+  br: "/assets/cheoinseong/pieces/mongol-siege-tower-rook.png?v=20260904-board-grounding",
+  bq: "/assets/tutorial-pieces/m_queen.webp?v=20260905-webp",
+  bk: "/assets/cheoinseong/pieces/mongol-salitai-king-v2.png?v=20260904-board-grounding",
+};
+
 function normalizePieceEdition(edition) {
   return Object.prototype.hasOwnProperty.call(pieceEditionNames, edition) ? edition : "cheoinseong";
 }
@@ -1043,23 +1066,12 @@ function betaPieceSvg(pieceCode) {
   return `<svg viewBox="0 0 100 100" role="img" aria-label="${color} ${pieceNames[type] || "piece"}">${details[type] || details.p}</svg>`;
 }
 
-function cheoinseongPieceSvg(pieceCode) {
+function cheoinseongPieceSvg(pieceCode, { decorative = false } = {}) {
   const color = pieceCode?.[0] === "w" ? "white" : "black";
   const type = pieceCode?.[1] || "p";
-  const assets = {
-    wp: "/assets/cheoinseong/pieces/goryeo-people-pawn.png?v=20260904-board-grounding",
-    wn: "/assets/cheoinseong/pieces/goryeo-cavalry-knight.png?v=20260904-board-grounding",
-    wb: "/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png?v=20260904-board-grounding",
-    wr: "/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png?v=20260904-board-grounding",
-    wk: "/assets/cheoinseong/pieces/goryeo-king.png?v=20260904-board-grounding",
-    bp: "/assets/cheoinseong/pieces/mongol-infantry-pawn.png?v=20260904-board-grounding",
-    bn: "/assets/cheoinseong/pieces/mongol-cavalry-knight.png?v=20260904-board-grounding",
-    bb: "/assets/cheoinseong/pieces/mongol-adviser-bishop.png?v=20260904-board-grounding",
-    br: "/assets/cheoinseong/pieces/mongol-siege-tower-rook.png?v=20260904-board-grounding",
-    bk: "/assets/cheoinseong/pieces/mongol-salitai-king-v2.png?v=20260904-board-grounding",
-  };
-  const asset = assets[pieceCode] || assets.wp;
-  return `<img class="cheoinseong-piece-image cheoinseong-piece-${type}" src="${asset}" alt="${pieceEditionNames.cheoinseong} ${color} ${pieceNames[type] || "piece"}" decoding="async">`;
+  const asset = cheoinseongPieceAssets[pieceCode] || cheoinseongPieceAssets.wp;
+  const alt = decorative ? "" : `${pieceEditionNames.cheoinseong} ${color} ${pieceNames[type] || "piece"}`;
+  return `<img class="cheoinseong-piece-image cheoinseong-piece-${type}" src="${asset}" alt="${alt}" decoding="async">`;
   const goryeo = color === "white";
   const fill = goryeo ? "#f4ead5" : "#4b241b";
   const robe = goryeo ? "#7b9276" : "#7f3228";
@@ -1100,6 +1112,198 @@ function pieceSvg(pieceCode, edition = "beta") {
   const normalizedEdition = normalizePieceEdition(edition);
   if (normalizedEdition === "original") return originalPieceSprite(pieceCode);
   return normalizedEdition === "cheoinseong" ? cheoinseongPieceSvg(pieceCode) : betaPieceSvg(pieceCode);
+}
+
+const pieceGuidePieces = [
+  {
+    type: "k",
+    standard: { ko: "킹", en: "King" },
+    custom: { ko: "고려 임금 · 몽골 장수 살리타이", en: "Goryeo king · Mongol commander Salitai" },
+    role: { ko: "반드시 지켜야 하는 가장 중요한 말", en: "The piece you must protect" },
+    movement: { ko: "어느 방향으로든 한 칸 움직여요. 공격받는 칸으로는 갈 수 없어요.", en: "Moves one square in any direction. It cannot move into an attacked square." },
+  },
+  {
+    type: "q",
+    standard: { ko: "퀸", en: "Queen" },
+    custom: { ko: "고려 퀸 · 몽골 친위장", en: "Goryeo queen · Khan's guard" },
+    role: { ko: "가장 넓게 움직이는 강력한 말", en: "The most mobile and powerful piece" },
+    movement: { ko: "직선과 대각선으로 원하는 만큼 움직여요.", en: "Moves any number of squares in a straight line or diagonally." },
+  },
+  {
+    type: "r",
+    standard: { ko: "룩", en: "Rook" },
+    custom: { ko: "처인성 성벽 · 몽골 공성탑", en: "Cheoinseong wall · Mongol siege tower" },
+    role: { ko: "가로줄과 세로줄을 지키는 말", en: "Controls ranks and files" },
+    movement: { ko: "가로 또는 세로로 원하는 만큼 움직여요.", en: "Moves any number of squares horizontally or vertically." },
+  },
+  {
+    type: "b",
+    standard: { ko: "비숍", en: "Bishop" },
+    custom: { ko: "고려 승병 · 몽골 책사", en: "Goryeo monk-soldier · Mongol adviser" },
+    role: { ko: "대각선 길을 멀리 내다보는 말", en: "Controls long diagonals" },
+    movement: { ko: "대각선으로 원하는 만큼 움직여요.", en: "Moves any number of squares diagonally." },
+  },
+  {
+    type: "n",
+    standard: { ko: "나이트", en: "Knight" },
+    custom: { ko: "고려 기병 · 몽골 기병", en: "Goryeo cavalry · Mongol cavalry" },
+    role: { ko: "다른 말을 뛰어넘는 기습의 말", en: "A jumping piece that creates surprises" },
+    movement: { ko: "두 칸 간 뒤 옆으로 한 칸, L자로 움직여요. 다른 말을 뛰어넘을 수 있어요.", en: "Moves in an L shape: two squares, then one sideways. It can jump over pieces." },
+  },
+  {
+    type: "p",
+    standard: { ko: "폰", en: "Pawn" },
+    custom: { ko: "고려 백성 병사 · 몽골 보병", en: "Goryeo people’s soldier · Mongol infantry" },
+    role: { ko: "한 걸음씩 전진해 길을 만드는 말", en: "Advances to claim space" },
+    movement: { ko: "앞으로 한 칸, 첫 수에는 두 칸도 갈 수 있어요. 잡을 때는 대각선 앞으로 가며, 끝 줄에 닿으면 승진해요.", en: "Moves one square forward, or two on its first move. It captures diagonally and promotes on the last rank." },
+  },
+];
+
+function pieceGuideMoveSquares(type) {
+  const center = [2, 2];
+  const squares = [];
+  const addRay = (rowStep, columnStep) => {
+    for (let step = 1; step <= 2; step += 1) squares.push([center[0] + rowStep * step, center[1] + columnStep * step, "move"]);
+  };
+  if (["r", "q"].includes(type)) [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([row, column]) => addRay(row, column));
+  if (["b", "q"].includes(type)) [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach(([row, column]) => addRay(row, column));
+  if (type === "k") {
+    for (let row = -1; row <= 1; row += 1) {
+      for (let column = -1; column <= 1; column += 1) {
+        if (row || column) squares.push([center[0] + row, center[1] + column, "move"]);
+      }
+    }
+  }
+  if (type === "n") [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]].forEach(([row, column]) => squares.push([center[0] + row, center[1] + column, "move"]));
+  if (type === "p") squares.push([1, 2, "move"], [0, 2, "first"], [1, 1, "capture"], [1, 3, "capture"]);
+  return squares;
+}
+
+function renderPieceGuideDiagram(type, label) {
+  const targets = new Map(pieceGuideMoveSquares(type).map(([row, column, kind]) => [`${row}-${column}`, kind]));
+  const markers = { p: "P", n: "N", b: "B", r: "R", q: "Q", k: "K" };
+  const cells = [];
+  for (let row = 0; row < 5; row += 1) {
+    for (let column = 0; column < 5; column += 1) {
+      const isPiece = row === 2 && column === 2;
+      const kind = targets.get(`${row}-${column}`);
+      cells.push(`<span class="piece-guide-square${kind ? ` is-${kind}` : ""}${isPiece ? " is-piece" : ""}">${isPiece ? markers[type] : ""}</span>`);
+    }
+  }
+  return `<div class="piece-guide-mini-board" role="img" aria-label="${label}">${cells.join("")}</div>`;
+}
+
+function renderPieceGuide() {
+  if (!pieceGuideContent) return;
+  const korean = currentInterfaceLanguage() === "Korean";
+  const copy = (value) => value[korean ? "ko" : "en"];
+  pieceGuideEyebrow.textContent = korean ? "처인성 체스 빠른 안내" : "Cheoinseong chess quick guide";
+  pieceGuideTitle.textContent = korean ? "말 한눈에 보기" : "Meet the Pieces";
+  pieceGuideIntro.textContent = korean
+    ? "고려·몽골 캐릭터가 어떤 체스 말인지, 어디로 움직이는지 한 장으로 확인하세요."
+    : "See which chess piece each Goryeo–Mongol character represents and how it moves.";
+  closePieceGuideButton?.setAttribute("aria-label", korean ? "말 안내 닫기" : "Close piece guide");
+  pieceGuideTriggers.forEach((button) => { button.textContent = korean ? "말 한눈에 보기" : "Piece Guide"; });
+
+  const pieceCards = pieceGuidePieces.map((piece) => {
+    const standard = copy(piece.standard);
+    const diagramLabel = korean ? `${standard}가 움직일 수 있는 칸` : `Squares the ${standard.toLowerCase()} can move to`;
+    return `
+      <article class="piece-guide-card">
+        <div class="piece-guide-piece-pair" role="group" aria-label="${copy(piece.custom)}">
+          <span>${cheoinseongPieceSvg(`w${piece.type}`, { decorative: true })}</span>
+          <span>${cheoinseongPieceSvg(`b${piece.type}`, { decorative: true })}</span>
+        </div>
+        <div class="piece-guide-piece-copy">
+          <span class="piece-guide-custom-name">${copy(piece.custom)}</span>
+          <h4>${standard}</h4>
+          <strong>${copy(piece.role)}</strong>
+          <p>${copy(piece.movement)}</p>
+        </div>
+        ${renderPieceGuideDiagram(piece.type, diagramLabel)}
+      </article>`;
+  }).join("");
+
+  const rules = korean
+    ? [
+        ["목표", "상대 킹을 체크메이트하면 이겨요."],
+        ["차례", "백이 먼저 시작하고, 한 번에 한 사람씩 한 수를 둬요."],
+        ["잡기", "내 말을 상대 말이 있는 칸으로 옮기면 그 말을 잡아요."],
+        ["체크", "킹이 다음 수에 잡힐 위험에 놓인 상태예요. 반드시 바로 피해야 해요."],
+        ["체크메이트", "체크를 피할 방법이 하나도 없는 상태예요. 대국이 끝나요."],
+        ["스테일메이트", "체크는 아니지만 둘 수 있는 합법적인 수가 없으면 무승부예요."],
+      ]
+    : [
+        ["Goal", "Checkmate the opponent’s king to win."],
+        ["Turns", "White moves first, then players take one move at a time."],
+        ["Capture", "Land on an opponent’s piece to capture it."],
+        ["Check", "Your king could be captured next move. You must respond immediately."],
+        ["Checkmate", "The king is in check and has no legal escape. The game ends."],
+        ["Stalemate", "The king is not in check, but its side has no legal move. The game is a draw."],
+      ];
+  const specialRules = korean
+    ? [
+        ["캐슬링", "킹과 룩을 함께 움직여 킹을 지켜요. 둘 다 움직인 적이 없고, 사이가 비어 있으며, 킹이 위험한 칸을 지나지 않을 때만 가능해요."],
+        ["폰 승진", "폰이 반대편 끝 줄에 닿으면 보통 퀸으로 바꿔요."],
+        ["앙파상 · 조금 어려워요", "상대 폰이 첫 수에 두 칸 전진해 내 폰 옆에 오면, 바로 다음 수에 한 칸만 온 것처럼 대각선으로 잡을 수 있어요."],
+      ]
+    : [
+        ["Castling", "Move the king and a rook together to shelter the king. Neither may have moved, the path must be clear, and the king cannot cross an attacked square."],
+        ["Pawn promotion", "A pawn that reaches the last rank changes into another piece—usually a queen."],
+        ["En passant · advanced", "If an enemy pawn moves two squares on its first move and lands beside yours, your pawn may capture it diagonally on the very next move."],
+      ];
+  const tips = korean
+    ? ["킹을 안전하게 지켜요.", "중앙 네 칸을 먼저 살펴요.", "나이트와 비숍을 일찍 꺼내요.", "퀸을 너무 빨리 혼자 보내지 마세요.", "상대가 다음에 잡으려는 말을 확인해요."]
+    : ["Keep your king safe.", "Look toward the four center squares.", "Develop knights and bishops early.", "Do not send the queen out alone too soon.", "Check what your opponent is attacking next."];
+
+  pieceGuideContent.innerHTML = `
+    <section class="piece-guide-section" aria-labelledby="pieceGuidePiecesHeading">
+      <div class="piece-guide-section-heading">
+        <span>01</span>
+        <div><h3 id="pieceGuidePiecesHeading">${korean ? "여섯 말을 만나봐요" : "Meet the six pieces"}</h3><p>${korean ? "그림은 고려 진영과 몽골 진영을 함께 보여줘요." : "Each card shows both the Goryeo and Mongol versions."}</p></div>
+      </div>
+      <div class="piece-guide-grid">${pieceCards}</div>
+      <div class="piece-guide-legend"><span><i class="is-move"></i>${korean ? "이동" : "Move"}</span><span><i class="is-first"></i>${korean ? "폰의 첫 두 칸" : "Pawn's first two-square move"}</span><span><i class="is-capture"></i>${korean ? "폰이 잡는 칸" : "Pawn capture"}</span></div>
+    </section>
+    <section class="piece-guide-section" aria-labelledby="pieceGuideRulesHeading">
+      <div class="piece-guide-section-heading"><span>02</span><div><h3 id="pieceGuideRulesHeading">${korean ? "기본 규칙" : "Basic Rules"}</h3><p>${korean ? "각 편은 16개의 말로 시작해요. 내 킹이 체크가 되는 수는 둘 수 없어요." : "Each side starts with 16 pieces. You may never make a move that leaves your king in check."}</p></div></div>
+      <dl class="piece-guide-rules">${rules.map(([term, description]) => `<div><dt>${term}</dt><dd>${description}</dd></div>`).join("")}</dl>
+      <div class="piece-guide-special-rules">${specialRules.map(([title, description]) => `<article><h4>${title}</h4><p>${description}</p></article>`).join("")}</div>
+    </section>
+    <section class="piece-guide-section piece-guide-tips" aria-labelledby="pieceGuideTipsHeading">
+      <div class="piece-guide-section-heading"><span>03</span><div><h3 id="pieceGuideTipsHeading">${korean ? "첫 대국 팁" : "First-game tips"}</h3></div></div>
+      <ul>${tips.map((tip) => `<li>${tip}</li>`).join("")}</ul>
+    </section>`;
+}
+
+function openPieceGuide({ source = "manual" } = {}) {
+  if (!(pieceGuideDialog instanceof HTMLDialogElement) || pieceGuideDialog.open) return;
+  renderPieceGuide();
+  pieceGuideDialog.dataset.openSource = source;
+  pieceGuideDialog.showModal();
+  closePieceGuideButton?.focus();
+  trackEvent("piece_guide_opened", { source, mode: activeTrainingPathMode });
+  if (source === "automatic") trackEvent("piece_guide_auto_opened", { mode: activeTrainingPathMode });
+}
+
+function maybeAutoOpenPieceGuide(mode) {
+  if (!["puzzle", "cheoinseong"].includes(mode) || readLocalSetting(pieceGuideSeenStorageKey) === "true") return;
+  window.setTimeout(() => {
+    if (activeTrainingPathMode === mode && howToPlayView?.classList.contains("active")) openPieceGuide({ source: "automatic" });
+  }, 180);
+}
+
+function trapPieceGuideFocus(event) {
+  if (event.key !== "Tab" || !pieceGuideDialog?.open) return;
+  const focusable = [...pieceGuideDialog.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+    .filter((element) => !element.hidden);
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable.at(-1);
+  if (focusable.length === 1 || (!event.shiftKey && document.activeElement === last) || (event.shiftKey && document.activeElement === first)) {
+    event.preventDefault();
+    (event.shiftKey ? last : first).focus();
+  }
 }
 
 const initialPieces = {
@@ -2765,6 +2969,12 @@ function similarPuzzleIds(stage) {
   return Array.from({ length: 5 }, (_, index) => `${stage.id}-v${index + 2}`);
 }
 
+function nextSimilarPuzzleId(stage, completed = completedPuzzleIds()) {
+  const variants = similarPuzzleIds(stage);
+  if (!variants.length) return "";
+  return variants.find((id) => !completed.has(id)) || variants[0];
+}
+
 function renderPuzzleStageList(list, seriesItem) {
   if (!list) return;
   const korean = currentInterfaceLanguage() === "Korean";
@@ -2790,24 +3000,16 @@ function renderPuzzleStageList(list, seriesItem) {
         ? korean ? "도전 가능" : "Ready"
         : korean ? "잠김" : "Locked";
     const row = document.createElement("article");
-    row.className = `training-module-row puzzle-stage-row ${index % 2 ? "path-right" : "path-left"}${isComplete ? " completed" : ""}${isCurrent ? " current" : ""}${accessible ? "" : " locked"}${index === seriesItem.stages.length - 1 ? " path-last" : ""}${variants.length ? " has-variants" : ""}`;
+    row.className = `training-module-row puzzle-stage-row ${index % 2 ? "path-right" : "path-left"}${isComplete ? " completed" : ""}${isCurrent ? " current" : ""}${accessible ? "" : " locked"}${index === seriesItem.stages.length - 1 ? " path-last" : ""}`;
     const tooltipId = `puzzleStageTooltip-${seriesItem.id}-${index + 1}`;
     const title = korean ? stage.ko : stage.en;
     const description = korean ? stage.koDescription : stage.enDescription;
     const icon = stage.iconIndex
       ? `<span class="puzzle-stage-icon cheoinseong-stage-icon cheoinseong-stage-icon-${stage.iconIndex}" aria-hidden="true"></span>`
       : `<span class="puzzle-stage-icon puzzle-stage-icon-${index + 1}" aria-hidden="true"></span>`;
-    const variantPath = variants.length
-      ? `<div class="puzzle-variant-path" aria-label="${korean ? "유사 퍼즐" : "Similar puzzles"}">
-          ${variants.map((variantId, variantIndex) => {
-            const variantComplete = completed.has(variantId);
-            const variantAccessible = isComplete || variantComplete;
-            const variantLabel = korean ? `유사 퍼즐 ${variantIndex + 1}` : `Similar puzzle ${variantIndex + 1}`;
-            const completedLabel = variantComplete ? korean ? ", 완료" : ", complete" : "";
-            const position = (((variantIndex + 1) / 6) * 100).toFixed(4);
-            return `<button class="puzzle-variant-node${variantComplete ? " completed" : ""}" type="button" style="--variant-position:${position}%" data-puzzle-variant="${variantId}" aria-label="${variantLabel}${completedLabel}" title="${variantLabel}"${variantAccessible ? "" : ' aria-disabled="true"'}><span aria-hidden="true">${variantComplete ? "✓" : "♟"}</span></button>`;
-          }).join("")}
-        </div>`
+    const similarPuzzleId = isComplete ? nextSimilarPuzzleId(stage, completed) : "";
+    const similarAction = similarPuzzleId
+      ? `<button class="puzzle-similar-button" type="button" data-similar-puzzle="${similarPuzzleId}">${korean ? "유사문제 풀기" : "Practice similar puzzle"}</button>`
       : "";
     row.innerHTML = `
       <div class="training-path-anchor">
@@ -2820,20 +3022,21 @@ function renderPuzzleStageList(list, seriesItem) {
           <h3>${title}</h3>
           <p>${description}</p>
           <strong>${accessible ? korean ? "눌러서 퍼즐 풀기" : "Open puzzle" : korean ? "이전 퍼즐을 먼저 완료하세요" : "Complete the previous puzzle first"}</strong>
+          ${similarAction}
         </div>
-      </div>
-      ${variantPath}`;
+      </div>`;
     if (accessible) row.querySelector(".training-path-node")?.addEventListener("click", () => openPuzzleStage(stage, index));
-    row.querySelectorAll("[data-puzzle-variant]").forEach((button, variantIndex) => {
-      if (button.getAttribute("aria-disabled") === "true") return;
-      button.addEventListener("click", () => {
-        openPuzzleStage({
-          ...stage,
-          id: button.dataset.puzzleVariant,
-          ko: `${stage.ko} · 유사 퍼즐 ${variantIndex + 1}`,
-          en: `${stage.en} · Similar puzzle ${variantIndex + 1}`,
-        }, index);
-      });
+    row.querySelector("[data-similar-puzzle]")?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const button = event.currentTarget;
+      const variantId = button.dataset.similarPuzzle;
+      const variantIndex = Math.max(0, variants.indexOf(variantId));
+      openPuzzleStage({
+        ...stage,
+        id: variantId,
+        ko: `${stage.ko} · 유사 퍼즐 ${variantIndex + 1}`,
+        en: `${stage.en} · Similar puzzle ${variantIndex + 1}`,
+      }, index);
     });
     list.append(row);
   });
@@ -2929,6 +3132,7 @@ function setActiveTrainingPathMode(mode) {
   showTutorialGuideButton?.classList.toggle("active", mode === "tutorial");
   showPuzzleGuideButton?.classList.toggle("active", mode === "puzzle");
   showCheoinseongGuideButton?.classList.toggle("active", mode === "cheoinseong");
+  pieceGuideTriggers.forEach((button) => { button.hidden = !["puzzle", "cheoinseong"].includes(mode); });
 }
 
 function showTrainingModuleHome() {
@@ -2961,6 +3165,7 @@ function showPuzzlePath(mode = "puzzle") {
   howToPlayShell?.setAttribute("hidden", "");
   setActiveTrainingPathMode(nextMode);
   renderTrainingControls();
+  maybeAutoOpenPieceGuide(nextMode);
 }
 
 function openTrainingModule(moduleId) {
@@ -3042,10 +3247,12 @@ function openPuzzleStage(stage, index = 0) {
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${currentInterfaceLanguage() === "Korean" ? "퍼즐" : "Puzzle"} ${index + 1} · ${title}`;
   const player = stage.player || "/assets/goryeo-vs-mongol-puzzle.html";
   const language = currentInterfaceLanguage() === "Korean" ? "ko" : "en";
+  const nextMode = stage.series === "cheoinseong" ? "cheoinseong" : "puzzle";
   const edition = stage.series === "cheoinseong" ? "" : `&edition=${activeTrainingEdition()}`;
   if (howToPlayFrame) howToPlayFrame.src = `${player}?puzzle=${encodeURIComponent(stage.id)}&lang=${language}${edition}&v=20260905-puzzle-scenes-v2-khan-copy`;
-  setActiveTrainingPathMode(stage.series === "cheoinseong" ? "cheoinseong" : "puzzle");
+  setActiveTrainingPathMode(nextMode);
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
+  maybeAutoOpenPieceGuide(nextMode);
 }
 
 function syncOpenTrainingFrameLanguage() {
@@ -3550,8 +3757,7 @@ function matchClockLabel(match) {
   const type = match.rated
     ? currentInterfaceLanguage() === "Korean" ? "기록" : "Rated"
     : currentInterfaceLanguage() === "Korean" ? "친선" : "Casual";
-  const goal = match.goal || "Explain chess moves";
-  return `${clock} - ${type} - ${translateCopy(goal)}`;
+  return `${clock} - ${type}`;
 }
 
 function currentPlayerColor(match) {
@@ -3628,8 +3834,6 @@ function renderLobby(lobby = {}) {
     language.textContent = translateCopy(seek.partnerLanguage || "English");
     meta.append(type, language);
 
-    const goal = document.createElement("p");
-    goal.textContent = translateCopy(seek.goal || "Explain chess moves");
 
     const joinButton = document.createElement("button");
     joinButton.className = "button secondary full small";
@@ -3637,7 +3841,7 @@ function renderLobby(lobby = {}) {
     joinButton.textContent = currentInterfaceLanguage() === "Korean" ? "참여하기" : "Join game";
     joinButton.addEventListener("click", () => acceptSeek(seek));
 
-    card.append(header, meta, goal, joinButton);
+    card.append(header, meta, joinButton);
     openSeeksList.append(card);
   });
 }
@@ -5450,7 +5654,7 @@ function startPassiveWaitingDisplay({ pollActive = true } = {}) {
   }, 5000);
 }
 
-async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안전하게 대화할 수 있는 파트너를 찾는 중입니다." : "Searching for a safe partner with matching goals.", liveQueue = false, overrides = {}) {
+async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안전하게 대국할 수 있는 파트너를 찾는 중입니다." : "Searching for a safe opponent.", liveQueue = false, overrides = {}) {
   clearInterval(queueInterval);
   clearInterval(queuePollInterval);
   queuePollBusy = false;
@@ -5475,7 +5679,6 @@ async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안
         timeControl: pool.timeControl,
         rated: gameType.rated || pool.rated,
         partnerLanguage: partnerLanguage.value,
-        goal: conversationGoal.value,
         ...(overrides.body || {}),
       };
       const data = await api(endpoint, {
@@ -5653,7 +5856,6 @@ async function createOpenSeek() {
         timeControl: seekTimeControl.value,
         rated: gameType.rated,
         partnerLanguage: partnerLanguage.value,
-        goal: conversationGoal.value,
       },
     });
     if (data.match) {
@@ -5668,8 +5870,8 @@ async function createOpenSeek() {
     startPassiveWaitingDisplay();
     queuePrompt.textContent =
       currentInterfaceLanguage() === "Korean"
-        ? `게임을 만들었습니다. ${data.seek.timeControl}, ${translateCopy(data.seek.partnerLanguage)}, ${translateCopy(data.seek.goal)} 조건의 상대를 기다립니다.`
-        : `Game created. Waiting for ${data.seek.timeControl}, ${data.seek.partnerLanguage}, ${data.seek.goal}.`;
+        ? `게임을 만들었습니다. ${data.seek.timeControl}, ${translateCopy(data.seek.partnerLanguage)} 조건의 상대를 기다립니다.`
+        : `Game created. Waiting for ${data.seek.timeControl}, ${data.seek.partnerLanguage}.`;
     await refreshLobby();
   } catch (error) {
     queuePrompt.textContent = error.message;
@@ -5695,7 +5897,6 @@ async function createPrivateChallenge() {
       body: {
         timeControl: pool.timeControl,
         partnerLanguage: partnerLanguage.value,
-        goal: conversationGoal.value,
       },
     });
     resumableChallenge = data.challenge;
@@ -7177,7 +7378,7 @@ document.querySelectorAll(".pool-button").forEach((button) => {
         : `${pool.label} ${pool.name} selected.`;
     timeControlBadge.textContent = `${pool.timeControl} - ${
       pool.rated ? currentInterfaceLanguage() === "Korean" ? "기록" : "Rated" : currentInterfaceLanguage() === "Korean" ? "친선" : "Casual"
-    } - ${translateCopy(conversationGoal.value)}`;
+    }`;
   });
 });
 
@@ -7320,6 +7521,23 @@ showCheoinseongGuideButton?.addEventListener("click", async () => {
   }, { page: "/training" });
   await refreshTrainingState();
   showPuzzlePath("cheoinseong");
+});
+
+pieceGuideTriggers.forEach((button) => button.addEventListener("click", () => {
+  openPieceGuide({ source: button.classList.contains("piece-guide-toolbar-trigger") ? "puzzle_toolbar" : "puzzle_header" });
+}));
+closePieceGuideButton?.addEventListener("click", () => pieceGuideDialog?.close());
+pieceGuideDialog?.addEventListener("click", (event) => {
+  if (event.target === pieceGuideDialog) pieceGuideDialog.close();
+});
+pieceGuideDialog?.addEventListener("keydown", trapPieceGuideFocus);
+pieceGuideDialog?.addEventListener("close", () => {
+  trackEvent("piece_guide_closed", {
+    source: pieceGuideDialog.dataset.openSource || "manual",
+    mode: activeTrainingPathMode,
+  });
+  writeLocalSetting(pieceGuideSeenStorageKey, "true");
+  delete pieceGuideDialog.dataset.openSource;
 });
 
 howToPlayFrame?.addEventListener("load", watchPuzzleFrameHeight);

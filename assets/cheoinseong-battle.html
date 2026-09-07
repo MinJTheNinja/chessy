@@ -130,8 +130,6 @@
 
   /* ---- scene ---- */
   .scene{ margin-top:56px; padding-top:24px; border-top:2px solid var(--rule); scroll-margin-top:76px; }
-  .scene-meta{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:6px; }
-  .scene-date{ font-size:0.78rem; color:var(--ink-faint); font-weight:700; }
   .scene h2{ font-size:1.5rem; width:100%; margin-top:4px; }
 
   .scene-body{ margin-top:18px; display:grid; grid-template-columns:1fr 1fr; gap:32px; align-items:start; }
@@ -669,20 +667,9 @@
     scene.id = 'scene-' + idx;
     if(directMode && idx === requestedPuzzleIndex) scene.classList.add('direct-scene');
 
-    var meta = document.createElement('div');
-    meta.className = 'scene-meta';
-    var dateEl = document.createElement('span');
-    dateEl.className = 'scene-date';
-    dateEl.textContent = puzzle.date;
-    var tagEl = document.createElement('span');
-    tagEl.className = 'tag ' + (puzzle.tag==='fact' ? 'fact' : 'recon');
-    tagEl.textContent = puzzle.tag==='fact' ? tx('정사 기반') : tx('재구성');
-    meta.appendChild(dateEl);
-    meta.appendChild(tagEl);
     var h2 = document.createElement('h2');
     h2.textContent = puzzle.title;
-    meta.appendChild(h2);
-    scene.appendChild(meta);
+    scene.appendChild(h2);
 
     var body = document.createElement('div');
     body.className = 'scene-body';
