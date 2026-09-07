@@ -152,6 +152,7 @@ const leagueCreatedResult = document.querySelector("#leagueCreatedResult");
 const refreshTeacherLeagueButton = document.querySelector("#refreshTeacherLeague");
 const teacherLeagueCode = document.querySelector("#teacherLeagueCode");
 const copyTeacherLeagueCodeButton = document.querySelector("#copyTeacherLeagueCode");
+const leaveTeacherLeagueButton = document.querySelector("#leaveTeacherLeague");
 const teacherMemberCount = document.querySelector("#teacherMemberCount");
 const teacherMemberList = document.querySelector("#teacherMemberList");
 const teacherLeagueSettingsForm = document.querySelector("#teacherLeagueSettingsForm");
@@ -678,8 +679,6 @@ Object.assign(koreanText, {
   "That member was not removed from this league.": "이 리그에서 내보낸 참여자가 아닙니다.",
   "That member has joined another league.": "해당 참여자는 이미 다른 리그에 참여했습니다.",
   "The league teacher cannot be removed.": "리그를 만든 교사는 내보낼 수 없습니다.",
-  "League owners cannot join another league.": "리그를 만든 교사는 다른 리그에 참여할 수 없습니다.",
-  "League owners cannot leave their own league.": "리그를 만든 교사는 자신의 리그에서 나갈 수 없습니다.",
   "This league competition has ended.": "이 리그의 경쟁 기간이 종료되었습니다.",
 });
 
@@ -944,6 +943,7 @@ function syncLocalizedControls() {
   setText(document.querySelector('[data-league-action="create"]'), korean ? "리그 만들기" : "Create league");
   setText(joinLeagueButton, korean ? "참여" : "Join");
   setText(leaveLeagueButton, korean ? "나가기" : "Leave");
+  setText(leaveTeacherLeagueButton, korean ? "리그 나가기" : "Leave league");
   setText(createLeagueButton, korean ? "코드 생성" : "Generate code");
   closeLeagueActionPopoverButton?.setAttribute("aria-label", korean ? "리그 코드 창 닫기" : "Close league code dialog");
   setText(mainTutorialButton, korean ? "훈련장으로 가기" : "Go to training");
@@ -5892,6 +5892,45 @@ async function leaveLeague() {
   }
 }
 
+async function leaveTeacherLeague() {
+  const code = currentTeacherLeagueCode();
+  if (!currentUser || !code || currentLeagueCode() !== code) {
+    await refreshTeacherLeague();
+    return;
+  }
+  const korean = currentInterfaceLanguage() === "Korean";
+  const confirmed = window.confirm(
+    korean
+      ? "리그 " + code + "의 참가자 명단에서 나갈까요? 리그 관리 권한과 코드는 유지됩니다."
+      : "Leave the participant list for league " + code + "? Your management access and league code will remain.",
+  );
+  if (!confirmed) return;
+  if (leaveTeacherLeagueButton) leaveTeacherLeagueButton.disabled = true;
+  setTeacherLeagueStatus(korean ? "리그에서 나가는 중…" : "Leaving league…");
+  try {
+    const { applied } = await requestCurrentUserMutation(() =>
+      api("/api/leagues/leave", { method: "POST" }),
+    );
+    if (!applied) return;
+    latestCreatedLeagueCode = "";
+    if (leagueCodeInput) leagueCodeInput.value = "";
+    leaderboardPage = 0;
+    renderDashboardSummary();
+    renderAuthState();
+    await Promise.all([refreshLeaderboard(), refreshTeacherLeague()]);
+    setTeacherLeagueStatus(
+      korean
+        ? "참가자 명단에서 나왔습니다. 리그 관리 권한과 코드는 유지됩니다."
+        : "You left the participant list. Management access and the league code remain.",
+      "success",
+    );
+  } catch (error) {
+    setTeacherLeagueStatus(translateCopy(error.message), "error");
+  } finally {
+    if (leaveTeacherLeagueButton) leaveTeacherLeagueButton.disabled = false;
+  }
+}
+
 async function createLeague() {
   if (!currentUser) {
     if (leagueStatus) leagueStatus.textContent = "리그 코드를 만들려면 먼저 로그인하세요.";
@@ -6006,6 +6045,7 @@ function renderTeacherLeague(league) {
 
   if (teacherLeagueCode) teacherLeagueCode.textContent = code || "—";
   if (copyTeacherLeagueCodeButton) copyTeacherLeagueCodeButton.disabled = !code;
+  if (leaveTeacherLeagueButton) leaveTeacherLeagueButton.hidden = !league.ownerIsMember;
   if (teacherLeagueName && document.activeElement !== teacherLeagueName) teacherLeagueName.value = league.name || "";
   if (teacherLeagueEndDate && document.activeElement !== teacherLeagueEndDate) {
     teacherLeagueEndDate.min = localCalendarDateKey();
@@ -7369,6 +7409,7 @@ createLeagueButton?.addEventListener("click", createLeague);
 refreshTeacherLeagueButton?.addEventListener("click", () => refreshTeacherLeague({ announce: true }));
 teacherLeagueSettingsForm?.addEventListener("submit", saveTeacherLeagueSettings);
 copyTeacherLeagueCodeButton?.addEventListener("click", copyTeacherLeagueCode);
+leaveTeacherLeagueButton?.addEventListener("click", leaveTeacherLeague);
 undoTeacherMemberRemovalButton?.addEventListener("click", restoreTeacherMember);
 teacherAccessCodeInput?.addEventListener("input", () => {
   teacherAccessCodeInput.removeAttribute("aria-invalid");

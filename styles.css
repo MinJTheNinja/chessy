@@ -9823,6 +9823,12 @@ body.is-signed-in .profile-view {
   gap: 4px;
 }
 
+.teacher-code-band > .teacher-code-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .teacher-code-band span {
   color: var(--muted);
   font-size: 0.72rem;

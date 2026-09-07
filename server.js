@@ -1732,7 +1732,9 @@ function publicUser(user, db = null) {
     streak: Number(user.streak || 0),
     lastStreakAt: user.lastStreakAt || "",
     easyElo: Number(user.easyElo || 1000),
-    leagueCode: ownedTeacherLeague?.code || user.leagueCode || "",
+    leagueCode: ownedTeacherLeague && !user.teacherLeagueOptedOut
+      ? ownedTeacherLeague.code
+      : user.leagueCode || "",
     isTeacher: Boolean(ownedTeacherLeague),
     teacherLeagueCode: ownedTeacherLeague?.code || "",
     training: trainingState(user),
@@ -2064,7 +2066,7 @@ function privateChallengeCode(db) {
 
 function leagueView(league, db, period = "weekly") {
   const members = db.users
-    .filter((user) => user.id === league.createdBy
+    .filter((user) => (user.id === league.createdBy && !user.teacherLeagueOptedOut)
       || String(user.leagueCode || "").trim().toUpperCase() === league.code)
     .map((user) => ({
       id: user.id,
@@ -2113,12 +2115,14 @@ function ensureTeacherLeagueMembership(user, league) {
     teacherLeagueId: league.id,
     teacherLeagueCode: league.code,
     leagueCreated: true,
-    leagueCode: league.code,
-    leagueJoined: true,
     removedFromLeagueCode: "",
     removedFromLeagueAt: "",
-    weeklyEasyElo: Number(user.weeklyEasyElo ?? user.easyElo ?? 1000),
   };
+  if (!user.teacherLeagueOptedOut) {
+    expected.leagueCode = league.code;
+    expected.leagueJoined = true;
+    expected.weeklyEasyElo = Number(user.weeklyEasyElo ?? user.easyElo ?? 1000);
+  }
   let changed = false;
   Object.entries(expected).forEach(([key, value]) => {
     if (user[key] === value) return;
@@ -2130,7 +2134,7 @@ function ensureTeacherLeagueMembership(user, league) {
 
 function teacherLeagueView(league, db) {
   const members = db.users
-    .filter((member) => member.id === league.createdBy
+    .filter((member) => (member.id === league.createdBy && !member.teacherLeagueOptedOut)
       || String(member.leagueCode || "").trim().toUpperCase() === league.code)
     .map((member) => ({
       id: member.id,
@@ -2151,6 +2155,7 @@ function teacherLeagueView(league, db) {
     competitionEndsOn,
     status: competitionEndsOn && competitionEndsOn < calendarDateKey() ? "ended" : "active",
     createdAt: league.createdAt,
+    ownerIsMember: members.some((member) => member.id === league.createdBy),
     members,
   };
 }
@@ -2999,6 +3004,7 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
       user.leagueJoined = true;
       user.removedFromLeagueCode = "";
       user.removedFromLeagueAt = "";
+      user.teacherLeagueOptedOut = false;
       user.weeklyEasyElo = Number(user.weeklyEasyElo ?? user.easyElo ?? 1000);
       await saveUser(user);
       await writeDb(db);
@@ -3025,6 +3031,7 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     user.leagueCreated = true;
     user.teacherLeagueId = league.id;
     user.teacherLeagueCode = code;
+    user.teacherLeagueOptedOut = false;
     const unlocked = syncAchievements(user, db);
     await saveUser(user);
     await writeDb(db);
@@ -3042,10 +3049,6 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
       return true;
     }
     const ownedTeacherLeague = teacherLeagueForUser(user, db);
-    if (ownedTeacherLeague && ownedTeacherLeague.code !== code) {
-      sendJson(res, 409, { error: "League owners cannot join another league." });
-      return true;
-    }
     if (league.competitionEndsOn && league.competitionEndsOn < calendarDateKey()) {
       sendJson(res, 409, { error: "This league competition has ended." });
       return true;
@@ -3055,6 +3058,7 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     user.removedFromLeagueAt = "";
     user.weeklyEasyElo = Number(user.weeklyEasyElo ?? user.easyElo ?? 1000);
     user.leagueJoined = true;
+    if (ownedTeacherLeague) user.teacherLeagueOptedOut = ownedTeacherLeague.code !== code;
     const unlocked = syncAchievements(user, db);
     await saveUser(user);
     await writeDb(db);
@@ -3064,17 +3068,16 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
 
   if (req.method === "POST" && pathname === "/api/leagues/leave") {
     if (!requireUser(user, res)) return true;
-    if (teacherLeagueForUser(user, db)) {
-      sendJson(res, 409, { error: "League owners cannot leave their own league." });
-      return true;
-    }
-    const code = String(user.leagueCode || "").trim().toUpperCase();
+    const ownedTeacherLeague = teacherLeagueForUser(user, db);
+    const code = String(user.leagueCode
+      || (ownedTeacherLeague && !user.teacherLeagueOptedOut ? ownedTeacherLeague.code : "")).trim().toUpperCase();
     if (!code) {
       sendJson(res, 409, { error: "You are not currently in a league." });
       return true;
     }
     user.leagueCode = "";
     user.leagueJoined = false;
+    if (ownedTeacherLeague?.code === code) user.teacherLeagueOptedOut = true;
     delete user.weeklyEasyElo;
     await saveUser(user);
     await writeDb(db);

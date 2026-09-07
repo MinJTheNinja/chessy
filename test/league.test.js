@@ -134,14 +134,6 @@ test("league membership, teacher access, codes, and owner rows remain stable", {
   const recoveredTeacherLeaderboard = await request(runtime.baseUrl, "/api/leagues/leaderboard?scope=mine", { cookie: teacherA.cookie });
   assert.equal(recoveredTeacherLeaderboard.data.code, codeA);
   assert.ok(recoveredTeacherLeaderboard.data.members.some((member) => member.id === teacherA.data.user.id));
-  const ownerLeave = await request(runtime.baseUrl, "/api/leagues/leave", { method: "POST", cookie: teacherA.cookie });
-  assert.equal(ownerLeave.status, 409);
-  const ownerJoinAnother = await request(runtime.baseUrl, "/api/leagues/join", {
-    method: "POST",
-    cookie: teacherA.cookie,
-    body: { code: codeB },
-  });
-  assert.equal(ownerJoinAnother.status, 409);
 
   let membership = await request(runtime.baseUrl, "/api/leagues/join", {
     method: "POST",
@@ -188,6 +180,23 @@ test("league membership, teacher access, codes, and owner rows remain stable", {
   assert.equal(appState.leagues.length, 2);
   assert.deepEqual(new Set(appState.leagues.map((league) => league.code)), new Set([codeA, codeB]));
 
+  const ownerLeave = await request(runtime.baseUrl, "/api/leagues/leave", { method: "POST", cookie: teacherA.cookie });
+  assert.equal(ownerLeave.status, 200);
+  assert.equal(ownerLeave.data.user.leagueCode, "");
+  assert.equal(ownerLeave.data.user.isTeacher, true, "leaving membership must retain teacher management access");
+  teacherViewA = await request(runtime.baseUrl, "/api/leagues/teacher", { cookie: teacherA.cookie });
+  assert.equal(teacherViewA.status, 200);
+  assert.equal(teacherViewA.data.league.ownerIsMember, false);
+  assert.equal(teacherViewA.data.league.members.some((member) => member.id === teacherA.data.user.id), false);
+  const settingsAfterLeaving = await request(runtime.baseUrl, "/api/leagues/teacher", {
+    method: "PATCH",
+    cookie: teacherA.cookie,
+    body: { name: "Class A After Leaving", competitionEndsOn },
+  });
+  assert.equal(settingsAfterLeaving.status, 200);
+  const ownerSessionAfterSettings = await request(runtime.baseUrl, "/api/session", { cookie: teacherA.cookie });
+  assert.equal(ownerSessionAfterSettings.data.user.leagueCode, "", "saving settings must not rejoin an owner who intentionally left");
+
   const removed = await request(runtime.baseUrl, `/api/leagues/teacher/members/${student.data.user.id}`, {
     method: "DELETE",
     cookie: teacherB.cookie,
@@ -210,5 +219,9 @@ test("league membership, teacher access, codes, and owner rows remain stable", {
   assert.equal(studentSession.data.user.leagueCode, codeB, "membership must survive a server restart");
   teacherViewA = await request(runtime.baseUrl, "/api/leagues/teacher", { cookie: teacherA.cookie });
   assert.equal(teacherViewA.data.league.code, codeA);
-  assert.ok(teacherViewA.data.league.members.some((member) => member.id === teacherA.data.user.id && member.isTeacher));
+  assert.equal(teacherViewA.data.league.ownerIsMember, false);
+  assert.equal(teacherViewA.data.league.members.some((member) => member.id === teacherA.data.user.id), false);
+  const teacherSessionAfterRestart = await request(runtime.baseUrl, "/api/session", { cookie: teacherA.cookie });
+  assert.equal(teacherSessionAfterRestart.data.user.leagueCode, "");
+  assert.equal(teacherSessionAfterRestart.data.user.isTeacher, true);
 });
