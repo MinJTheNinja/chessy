@@ -417,6 +417,40 @@ test("Cheoinseong puzzles unlock strictly in sequence and repair skipped progres
   );
 });
 
+test("training modules five and six gate mate-in-two and mate-in-three tiers", { timeout: 30_000 }, async (t) => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "easymate-puzzle-tiers-"));
+  const runtime = await startServer(dataDir);
+  t.after(async () => {
+    await stopServer(runtime.child);
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  });
+
+  const student = await signup(runtime.baseUrl, "tier-student@example.test", "Tier Student");
+  const completePuzzle = (puzzleId) => request(runtime.baseUrl, "/api/training/puzzle-complete", {
+    method: "POST",
+    cookie: student.cookie,
+    body: { puzzleId, stars: 3, durationMs: 500 },
+  });
+
+  assert.equal((await completePuzzle("s1")).status, 409);
+  for (let moduleId = 1; moduleId <= 6; moduleId += 1) {
+    const completion = await request(runtime.baseUrl, "/api/training/tutorial-complete", {
+      method: "POST",
+      cookie: student.cookie,
+      body: { module: moduleId },
+    });
+    assert.equal(completion.status, 200);
+    if (moduleId === 4) assert.equal(completion.data.state.puzzleUnlocked, false);
+  }
+
+  assert.equal((await completePuzzle("m1")).status, 409);
+  for (const puzzleId of ["s1", "s2", "s3"]) assert.equal((await completePuzzle(puzzleId)).status, 200);
+  assert.equal((await completePuzzle("m1")).status, 200);
+  assert.equal((await completePuzzle("a1")).status, 409);
+  for (const puzzleId of ["m2", "m3", "h1", "h2"]) assert.equal((await completePuzzle(puzzleId)).status, 200);
+  assert.equal((await completePuzzle("a1")).status, 200);
+});
+
 test("badge awards remain persisted, visible in profiles, and acknowledgeable", { timeout: 30_000 }, async (t) => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "easymate-badges-"));
   let runtime = await startServer(dataDir);
@@ -426,7 +460,7 @@ test("badge awards remain persisted, visible in profiles, and acknowledgeable", 
   });
 
   const student = await signup(runtime.baseUrl, "badge-student@example.test", "Badge Student");
-  for (let moduleId = 1; moduleId <= 4; moduleId += 1) {
+  for (let moduleId = 1; moduleId <= 6; moduleId += 1) {
     const completion = await request(runtime.baseUrl, "/api/training/tutorial-complete", {
       method: "POST",
       cookie: student.cookie,

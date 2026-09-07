@@ -731,6 +731,8 @@ Object.assign(englishText, {
   "기물의 움직임": "Piece Movement",
   "체크에서 벗어나기": "Escaping Check",
   "체크메이트": "Checkmate",
+  "핀과 스큐어": "Pins and Skewers",
+  "숨은 공격과 메이트": "Hidden Attacks and Mates",
   "복습할 모듈을 골라 한 문제로 확인해 볼까요?": "Choose a completed module for a review quiz.",
   "복습할 모듈을 골라 네 문제로 확인해 볼까요?": "Choose a completed module for a four-question review.",
   "복습 퀴즈 시작": "Start Review Quiz",
@@ -2372,7 +2374,7 @@ function renderTeacherAccessState() {
 function requestedTrainingModuleId() {
   if (!isTutorialRoute()) return null;
   const moduleId = Number(new URLSearchParams(location.search).get("module"));
-  return Number.isInteger(moduleId) && moduleId >= 1 && moduleId <= 4 ? moduleId : null;
+  return Number.isInteger(moduleId) && moduleId >= 1 && moduleId <= 6 ? moduleId : null;
 }
 
 function clearRequestedTrainingModule() {
@@ -2427,18 +2429,20 @@ function localTrainingState() {
   }
   if (!Array.isArray(completedModules)) completedModules = [];
   if (isStudentTutorialComplete() && !completedModules.includes(1)) completedModules.push(1);
-  completedModules = [...new Set(completedModules.map(Number).filter((module) => module >= 1 && module <= 4))].sort((a, b) => a - b);
+  completedModules = [...new Set(completedModules.map(Number).filter((module) => module >= 1 && module <= 6))].sort((a, b) => a - b);
   const modules = [
     { id: 1, title: "기물의 움직임" },
     { id: 2, title: "기물 잡기" },
     { id: 3, title: "체크에서 벗어나기" },
     { id: 4, title: "체크메이트" },
+    { id: 5, title: "핀과 스큐어" },
+    { id: 6, title: "숨은 공격과 메이트" },
   ];
   const nextModule = modules.find((module) => !completedModules.includes(module.id)) || null;
   return {
     hasTutorial: Boolean(nextModule),
     nextModule,
-    tutorialSrc: nextModule ? `/assets/how-to-play.html?module=${nextModule.id}&v=20260904-continuous-page` : "",
+    tutorialSrc: nextModule ? `${nextModule.id >= 5 ? "/assets/advanced-tactics.html" : "/assets/how-to-play.html"}?module=${nextModule.id}&v=20260907-advanced-tactics` : "",
     puzzleUnlocked: !nextModule,
     completedModules,
     completedPuzzles: [],
@@ -2457,6 +2461,8 @@ const trainingModuleDescriptions = {
   2: "각 기물이 상대 기물을 잡는 방법을 연습해요.",
   3: "체크를 피하고, 막고, 공격한 기물을 잡아봐요.",
   4: "여러 체크메이트 모양과 승리 조건을 배워요.",
+  5: "봉수대의 저격처럼 한 줄에 선 기물을 묶는 핀과 스큐어를 배워요.",
+  6: "매복을 걷어 숨은 공격을 열고, 질식·사다리·뒷줄 메이트를 구분해요.",
 };
 
 const trainingModuleArt = {
@@ -2464,6 +2470,8 @@ const trainingModuleArt = {
   2: { src: "/assets/tutorial-pieces/g_bishop.webp?v=20260905-webp", alt: "고려 승병" },
   3: { src: "/assets/tutorial-pieces/g_king.webp?v=20260905-webp", alt: "고려 임금님" },
   4: { src: "/assets/tutorial-pieces/g_knight.webp?v=20260905-webp", alt: "고려 백마 기수" },
+  5: { src: "/assets/tutorial-pieces/g_rook.webp?v=20260905-webp", alt: "고려 돌탑 수문장" },
+  6: { src: "/assets/tutorial-pieces/g_bishop.webp?v=20260905-webp", alt: "고려 승병" },
 };
 
 function activeTrainingEdition() {
@@ -2492,8 +2500,9 @@ function reloadOpenTrainingEdition() {
   try {
     const url = new URL(howToPlayFrame.src, window.location.origin);
     if (activeTrainingPathMode === "tutorial") {
-      if (!url.pathname.includes("how-to-play")) return;
-      url.pathname = trainingTutorialPath();
+      if (!url.pathname.includes("how-to-play") && !url.pathname.includes("advanced-tactics")) return;
+      const moduleId = Number(url.searchParams.get("module") || 1);
+      url.pathname = moduleId >= 5 ? "/assets/advanced-tactics.html" : trainingTutorialPath();
       url.searchParams.set("edition", activeTrainingEdition());
       url.searchParams.set("v", "20260905-khan-knight-copy");
     } else if (activeTrainingPathMode === "puzzle") {
@@ -2514,6 +2523,8 @@ const trainingStageIconNames = {
   2: "capture",
   3: "defense",
   4: "mate",
+  5: "defense",
+  6: "mate",
   puzzle: "puzzle",
   review: "review",
 };
@@ -2521,6 +2532,7 @@ const trainingStageIconNames = {
 const puzzlePathStages = [
   {
     id: "s1",
+    tier: 1,
     ko: "성문 뒤의 함정",
     en: "The gate behind the king",
     koDescription: "룩으로 비어 있는 뒷줄을 단숨에 장악합니다.",
@@ -2528,6 +2540,7 @@ const puzzlePathStages = [
   },
   {
     id: "s2",
+    tier: 1,
     ko: "질식하는 칸",
     en: "Smothered king",
     koDescription: "나이트가 병사들에 갇힌 왕의 마지막 칸을 막습니다.",
@@ -2535,6 +2548,7 @@ const puzzlePathStages = [
   },
   {
     id: "s3",
+    tier: 1,
     ko: "네 수 만의 기습",
     en: "Early queen attack",
     koDescription: "퀸과 비숍의 대각선 협공으로 약한 칸을 찾습니다.",
@@ -2542,6 +2556,7 @@ const puzzlePathStages = [
   },
   {
     id: "m1",
+    tier: 2,
     ko: "두 돌탑의 사다리",
     en: "Rook ladder",
     koDescription: "두 룩을 번갈아 전진시켜 왕의 공간을 줄입니다.",
@@ -2549,6 +2564,7 @@ const puzzlePathStages = [
   },
   {
     id: "m2",
+    tier: 2,
     ko: "임금님의 진군",
     en: "The king steps in",
     koDescription: "체크보다 먼저 왕을 전진시켜 도망길을 막습니다.",
@@ -2556,6 +2572,7 @@ const puzzlePathStages = [
   },
   {
     id: "m3",
+    tier: 2,
     ko: "졸병의 꿈",
     en: "The pawn's dream",
     koDescription: "승격을 계산해 폰을 결정적인 퀸으로 바꿉니다.",
@@ -2563,6 +2580,7 @@ const puzzlePathStages = [
   },
   {
     id: "h1",
+    tier: 2,
     ko: "칸의 질식",
     en: "Sacrifice and smother",
     koDescription: "퀸을 희생해 나이트의 마지막 체크메이트를 만듭니다.",
@@ -2570,10 +2588,38 @@ const puzzlePathStages = [
   },
   {
     id: "h2",
+    tier: 2,
     ko: "겹쳐진 돌탑",
     en: "Stacked rooks",
     koDescription: "앞 룩을 내어주고 뒤 룩으로 성문을 돌파합니다.",
     enDescription: "Offer the front rook so the rook behind can break through.",
+  },
+  {
+    id: "a1",
+    tier: 3,
+    noVariants: true,
+    ko: "성벽을 좁히는 임금",
+    en: "The King Closes the Wall",
+    koDescription: "임금이 먼저 길목을 차지해 세 수 뒤 퀸의 포위망을 완성합니다.",
+    enDescription: "Move the king first and complete the queen's mating net three moves later.",
+  },
+  {
+    id: "a2",
+    tier: 3,
+    noVariants: true,
+    ko: "서쪽 봉쇄선",
+    en: "The Western Blockade",
+    koDescription: "반대편에서 임금과 퀸의 간격을 맞춰 칸의 도주로를 하나씩 지웁니다.",
+    enDescription: "Coordinate king and queen from the opposite wing to erase every escape route.",
+  },
+  {
+    id: "a3",
+    tier: 3,
+    noVariants: true,
+    ko: "북문 끝의 포위",
+    en: "The Net at the North Gate",
+    koDescription: "위쪽 성문에서 임금이 전진해 정확한 세 수 메이트를 강제합니다.",
+    enDescription: "Advance the king at the north gate to force an exact mate in three.",
   },
   {
     id: "cheoin-1",
@@ -2829,7 +2875,7 @@ function renderTrainingModuleList() {
   const puzzleCompleted = readDailyQuestProgress().puzzles > 0 || (Array.isArray(completedPuzzles) && completedPuzzles.length > 0);
   const puzzleCard = document.createElement("article");
   puzzleCard.className = `training-module-row training-puzzle-row path-left${puzzleCompleted ? " completed" : ""}${puzzleUnlocked ? " current" : " locked"}`;
-  puzzleCard.dataset.pathStep = "5";
+  puzzleCard.dataset.pathStep = "7";
   puzzleCard.innerHTML = `
     <div class="training-path-anchor">
       <button class="training-path-node" type="button" aria-describedby="trainingPuzzleTooltip"${puzzleUnlocked ? "" : ' aria-disabled="true"'}>
@@ -2946,8 +2992,15 @@ function contiguousCompletedStageCount(stages, completed = completedPuzzleIds())
   return firstIncompleteIndex < 0 ? stages.length : firstIncompleteIndex;
 }
 
-function canOpenPuzzleStage(stage) {
-  if (stage?.series !== "cheoinseong") return true;
+function canOpenPuzzleStage(stage, completed = completedPuzzleIds()) {
+  if (!stage) return false;
+  if (stage.series !== "cheoinseong") {
+    const tier = Math.max(1, Number(stage.tier || 1));
+    if (tier === 1) return true;
+    return puzzlePathStages
+      .filter((candidate) => candidate.series !== "cheoinseong" && Number(candidate.tier || 1) < tier)
+      .every((candidate) => completed.has(candidate.id));
+  }
   const stages = puzzlePathStages.filter((candidate) => candidate.series === "cheoinseong");
   const stageIndex = stages.findIndex((candidate) => candidate.id === stage.id);
   if (stageIndex < 0) return false;
@@ -2955,6 +3008,11 @@ function canOpenPuzzleStage(stage) {
 }
 
 function recordSequentialPuzzleCompletion(completed, puzzleId) {
+  const basePuzzleId = ["gate2", "gate3", "gate4", "gate5"].includes(puzzleId)
+    ? "s1"
+    : String(puzzleId).replace(/-v[2-6]$/, "");
+  const goryeoStage = puzzlePathStages.find((stage) => stage.series !== "cheoinseong" && stage.id === basePuzzleId);
+  if (goryeoStage && !canOpenPuzzleStage(goryeoStage, completed)) return false;
   const stages = puzzlePathStages.filter((stage) => stage.series === "cheoinseong");
   const stageIndex = stages.findIndex((stage) => stage.id === puzzleId);
   if (stageIndex < 0) {
@@ -2971,7 +3029,7 @@ function recordSequentialPuzzleCompletion(completed, puzzleId) {
 }
 
 function similarPuzzleIds(stage) {
-  if (stage.series === "cheoinseong") return [];
+  if (stage.series === "cheoinseong" || stage.noVariants) return [];
   if (stage.id === "s1") return ["gate2", "gate3", "gate4", "gate5", "s1-v6"];
   return Array.from({ length: 5 }, (_, index) => `${stage.id}-v${index + 2}`);
 }
@@ -2993,13 +3051,41 @@ function renderPuzzleStageList(list, seriesItem) {
   heading.innerHTML = `<span>${korean ? seriesItem.koLabel : seriesItem.enLabel}</span><h2>${korean ? seriesItem.ko : seriesItem.en}</h2>`;
   list.append(heading);
 
-  const completedStageCount = contiguousCompletedStageCount(seriesItem.stages, completed);
-  const currentStageIndex = Math.min(completedStageCount, seriesItem.stages.length - 1);
+  const isTiered = seriesItem.id === "goryeo";
+  const completedStageCount = isTiered ? 0 : contiguousCompletedStageCount(seriesItem.stages, completed);
+  const currentStageIndex = isTiered ? -1 : Math.min(completedStageCount, seriesItem.stages.length - 1);
+  if (isTiered) {
+    const unlockedTier = maxUnlockedPuzzleTier(completed);
+    const rush = document.createElement("section");
+    rush.className = "puzzle-rush-card";
+    rush.innerHTML = `
+      <div><span>${korean ? "90초 무작위 도전" : "90-second random run"}</span><h3>${korean ? "퍼즐 러시" : "Puzzle Rush"}</h3><p>${korean ? `현재 열린 메이트 인 ${unlockedTier}까지 무작위로 이어서 풉니다.` : `Race through random puzzles up to Mate in ${unlockedTier}.`}</p></div>
+      <button type="button" data-puzzle-rush>${korean ? "러시 시작" : "Start Rush"}</button>`;
+    rush.querySelector("[data-puzzle-rush]")?.addEventListener("click", () => openPuzzleRush(unlockedTier));
+    list.append(rush);
+  }
 
+  let lastTier = 0;
   seriesItem.stages.forEach((stage, index) => {
-    const isComplete = index < completedStageCount;
-    const isCurrent = index === currentStageIndex;
-    const accessible = isComplete || isCurrent;
+    const tier = Math.max(1, Number(stage.tier || 1));
+    if (isTiered && tier !== lastTier) {
+      if (lastTier) {
+        const previousTierStages = seriesItem.stages.filter((candidate) => Number(candidate.tier || 1) === lastTier);
+        const gateOpen = previousTierStages.every((candidate) => completed.has(candidate.id));
+        const gate = document.createElement("div");
+        gate.className = `puzzle-tier-gate${gateOpen ? " open" : " locked"}`;
+        gate.innerHTML = `<span aria-hidden="true">${gateOpen ? "✓" : "🔒"}</span><strong>${gateOpen ? (korean ? `메이트 인 ${tier} 해제` : `Mate in ${tier} unlocked`) : (korean ? `메이트 인 ${lastTier}을 모두 완료하면 해제` : `Clear every Mate in ${lastTier} stage to unlock`)}</strong>`;
+        list.append(gate);
+      }
+      const tierHeading = document.createElement("div");
+      tierHeading.className = "puzzle-tier-heading";
+      tierHeading.innerHTML = `<span>${korean ? `난이도 ${tier}` : `Tier ${tier}`}</span><h3>${korean ? `메이트 인 ${tier}` : `Mate in ${tier}`}</h3>`;
+      list.append(tierHeading);
+      lastTier = tier;
+    }
+    const isComplete = isTiered ? completed.has(stage.id) : index < completedStageCount;
+    const isCurrent = isTiered ? canOpenPuzzleStage(stage, completed) && !isComplete : index === currentStageIndex;
+    const accessible = isTiered ? canOpenPuzzleStage(stage, completed) : isComplete || isCurrent;
     const variants = similarPuzzleIds(stage);
     const status = isComplete
       ? korean ? "완료" : "Complete"
@@ -3013,7 +3099,9 @@ function renderPuzzleStageList(list, seriesItem) {
     const description = korean ? stage.koDescription : stage.enDescription;
     const icon = stage.iconIndex
       ? `<span class="puzzle-stage-icon cheoinseong-stage-icon cheoinseong-stage-icon-${stage.iconIndex}" aria-hidden="true"></span>`
-      : `<span class="puzzle-stage-icon puzzle-stage-icon-${index + 1}" aria-hidden="true"></span>`;
+      : index < 8
+        ? `<span class="puzzle-stage-icon puzzle-stage-icon-${index + 1}" aria-hidden="true"></span>`
+        : `<span class="puzzle-stage-glyph" aria-hidden="true">♛</span>`;
     const similarPuzzleId = isComplete ? nextSimilarPuzzleId(stage, completed) : "";
     const similarAction = similarPuzzleId
       ? `<button class="puzzle-similar-button" type="button" data-similar-puzzle="${similarPuzzleId}">${korean ? "유사문제 풀기" : "Practice similar puzzle"}</button>`
@@ -3028,7 +3116,7 @@ function renderPuzzleStageList(list, seriesItem) {
           <span class="training-module-index">${korean ? "퍼즐" : "Puzzle"} ${index + 1} · ${status}</span>
           <h3>${title}</h3>
           <p>${description}</p>
-          <strong>${accessible ? korean ? "눌러서 퍼즐 풀기" : "Open puzzle" : korean ? "이전 퍼즐을 먼저 완료하세요" : "Complete the previous puzzle first"}</strong>
+          <strong>${accessible ? korean ? "눌러서 퍼즐 풀기" : "Open puzzle" : korean ? "이전 난이도를 모두 완료하세요" : "Complete the previous tier first"}</strong>
           ${similarAction}
         </div>
       </div>`;
@@ -3047,6 +3135,16 @@ function renderPuzzleStageList(list, seriesItem) {
     });
     list.append(row);
   });
+}
+
+function maxUnlockedPuzzleTier(completed = completedPuzzleIds()) {
+  const stages = puzzlePathStages.filter((stage) => stage.series !== "cheoinseong");
+  let unlocked = 1;
+  for (let tier = 1; tier < 3; tier += 1) {
+    if (!stages.filter((stage) => Number(stage.tier || 1) === tier).every((stage) => completed.has(stage.id))) break;
+    unlocked = tier + 1;
+  }
+  return unlocked;
 }
 
 function renderPuzzlePath() {
@@ -3176,7 +3274,7 @@ function showPuzzlePath(mode = "puzzle") {
 }
 
 function openTrainingModule(moduleId) {
-  const normalizedModuleId = Math.min(4, Math.max(1, Number(moduleId) || 1));
+  const normalizedModuleId = Math.min(6, Math.max(1, Number(moduleId) || 1));
   const state = activeTrainingState();
   const module = (state.modules || []).find((item) => Number(item.id) === normalizedModuleId);
   const completed = Boolean(module?.completed) || (state.completedModules || []).map(Number).includes(normalizedModuleId);
@@ -3193,13 +3291,14 @@ function openTrainingModule(moduleId) {
   trainingModuleToolbar?.removeAttribute("hidden");
   const korean = currentInterfaceLanguage() === "Korean";
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${korean ? "모듈" : "Module"} ${normalizedModuleId} · ${korean ? module.title : translateCopy(module.title)}`;
-  if (howToPlayFrame) howToPlayFrame.src = `${trainingTutorialPath()}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&lang=${korean ? "ko" : "en"}&v=20260905-khan-knight-copy`;
+  const tutorialPath = normalizedModuleId >= 5 ? "/assets/advanced-tactics.html" : trainingTutorialPath();
+  if (howToPlayFrame) howToPlayFrame.src = `${tutorialPath}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&lang=${korean ? "ko" : "en"}&v=20260907-advanced-tactics`;
   setActiveTrainingPathMode("tutorial");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function openTrainingReview(moduleId) {
-  const normalizedModuleId = Math.min(4, Math.max(1, Number(moduleId) || 1));
+  const normalizedModuleId = Math.min(6, Math.max(1, Number(moduleId) || 1));
   const state = activeTrainingState();
   if (!(state.completedModules || []).map(Number).includes(normalizedModuleId)) return;
   trainingModuleOpen = true;
@@ -3213,7 +3312,8 @@ function openTrainingReview(moduleId) {
   trainingModuleToolbar?.removeAttribute("hidden");
   const korean = currentInterfaceLanguage() === "Korean";
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${korean ? "모듈" : "Module"} ${normalizedModuleId} · ${korean ? "복습 퀴즈" : "Review Quiz"}`;
-  if (howToPlayFrame) howToPlayFrame.src = `${trainingTutorialPath()}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&review=1&lang=${korean ? "ko" : "en"}&v=20260905-khan-knight-copy`;
+  const tutorialPath = normalizedModuleId >= 5 ? "/assets/advanced-tactics.html" : trainingTutorialPath();
+  if (howToPlayFrame) howToPlayFrame.src = `${tutorialPath}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&review=1&lang=${korean ? "ko" : "en"}&v=20260907-advanced-tactics`;
   setActiveTrainingPathMode("tutorial");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -3260,6 +3360,29 @@ function openPuzzleStage(stage, index = 0) {
   setActiveTrainingPathMode(nextMode);
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
   maybeAutoOpenPieceGuide(nextMode);
+}
+
+function openPuzzleRush(maxTier = maxUnlockedPuzzleTier()) {
+  if (!activeTrainingState().puzzleUnlocked) return;
+  trainingModuleOpen = true;
+  howToPlayShell?.classList.add("puzzle-mode");
+  howToPlayView?.classList.add("puzzle-mode");
+  resetHowToPlayFrameSizing();
+  trainingModuleList?.setAttribute("hidden", "");
+  puzzlePathList?.setAttribute("hidden", "");
+  cheoinseongPathList?.setAttribute("hidden", "");
+  howToPlayShell?.removeAttribute("hidden");
+  trainingModuleToolbar?.removeAttribute("hidden");
+  const korean = currentInterfaceLanguage() === "Korean";
+  if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = korean ? "퍼즐 러시 · 90초" : "Puzzle Rush · 90 seconds";
+  const language = korean ? "ko" : "en";
+  if (howToPlayFrame) howToPlayFrame.src = `/assets/goryeo-vs-mongol-puzzle.html?mode=rush&maxTier=${Math.max(1, Math.min(3, Number(maxTier) || 1))}&lang=${language}&edition=${activeTrainingEdition()}&v=20260907-puzzle-rush`;
+  analyticsPuzzleId = "puzzle-rush";
+  analyticsPuzzleStartedAt = performance.now();
+  trackEvent("puzzle_started", { puzzle_id: "puzzle-rush", difficulty: String(maxTier) }, { page: "/training" });
+  setActiveTrainingPathMode("puzzle");
+  howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
+  maybeAutoOpenPieceGuide("puzzle");
 }
 
 function syncOpenTrainingFrameLanguage() {
@@ -3395,10 +3518,11 @@ async function completeStudentTutorial(module, advance = false) {
   }
   const moduleId = Number(module) || activeTrainingState().nextModule?.id;
   trainingModuleTransition = (async () => {
+    const moduleCount = Math.max(1, activeTrainingState().modules?.length || 6);
     const wasAlreadyCompleted = activeTrainingState().completedModules?.includes(moduleId);
     if (wasAlreadyCompleted) {
       if (advance) {
-        if (moduleId < 4) openTrainingModule(moduleId + 1);
+        if (moduleId < moduleCount) openTrainingModule(moduleId + 1);
         else showTrainingModuleHome();
       }
       return;
@@ -3428,7 +3552,7 @@ async function completeStudentTutorial(module, advance = false) {
       const completed = [...(state.completedModules || []), nextModule].filter(Boolean);
       writeLocalSetting(completedTrainingModulesKey, JSON.stringify([...new Set(completed)]));
       if (nextModule === 1) writeLocalSetting(studentTutorialCompleteKey, "true");
-      if (nextModule === 4) removeLocalSetting(studentTutorialRequiredKey);
+      if (nextModule === moduleCount) removeLocalSetting(studentTutorialRequiredKey);
       cachedTrainingState = localTrainingState();
     }
 
@@ -3437,7 +3561,7 @@ async function completeStudentTutorial(module, advance = false) {
     trainingModuleOpen = true;
     updateTutorialGateState();
     if (advance) {
-      if (moduleId < 4) openTrainingModule(moduleId + 1);
+      if (moduleId < moduleCount) openTrainingModule(moduleId + 1);
       else showTrainingModuleHome();
     }
     renderTrainingControls();
@@ -4766,12 +4890,33 @@ function renderForumPosts() {
         form.className = "forum-reply-form";
         const input = document.createElement("textarea");
         input.maxLength = 1000;
-        input.rows = 2;
-        input.placeholder = currentInterfaceLanguage() === "Korean" ? "답글 입력" : "Write a reply";
+        input.rows = 1;
+        input.placeholder = currentInterfaceLanguage() === "Korean" ? "댓글 쓰기" : "Write a comment";
+        input.setAttribute("aria-label", currentInterfaceLanguage() === "Korean" ? "댓글 쓰기" : "Write a comment");
         const submit = document.createElement("button");
         submit.type = "submit";
-        submit.className = "button primary";
-        submit.textContent = currentInterfaceLanguage() === "Korean" ? "답글 등록" : "Post reply";
+        submit.className = "forum-reply-send";
+        submit.hidden = true;
+        submit.disabled = true;
+        submit.setAttribute("aria-label", currentInterfaceLanguage() === "Korean" ? "댓글 보내기" : "Send comment");
+        submit.innerHTML = `
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M3.4 4.2 21 12 3.4 19.8l1.5-6.1 8.3-1.7-8.3-1.7-1.5-6.1Z"></path>
+          </svg>`;
+        const syncReplyComposer = () => {
+          const hasValue = Boolean(input.value.trim());
+          form.classList.toggle("has-value", hasValue);
+          submit.hidden = !hasValue;
+          submit.disabled = !hasValue;
+          input.style.height = "auto";
+          input.style.height = `${Math.min(input.scrollHeight, 120)}px`;
+        };
+        input.addEventListener("input", syncReplyComposer);
+        input.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" || event.shiftKey || event.isComposing) return;
+          event.preventDefault();
+          if (input.value.trim()) form.requestSubmit();
+        });
         form.addEventListener("submit", async (event) => {
           event.preventDefault();
           const value = input.value.trim();
@@ -4785,6 +4930,7 @@ function renderForumPosts() {
           }
         });
         form.append(input, submit);
+        syncReplyComposer();
         detail.append(form);
       }
       main.append(detail);

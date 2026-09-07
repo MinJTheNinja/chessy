@@ -88,6 +88,8 @@ const trainingModules = [
   { id: 2, title: "기물 잡기", src: "/assets/how-to-play.html?module=2&v=20260829-tutorial-fixes" },
   { id: 3, title: "체크에서 벗어나기", src: "/assets/how-to-play.html?module=3&v=20260829-tutorial-fixes" },
   { id: 4, title: "체크메이트", src: "/assets/how-to-play.html?module=4&v=20260829-tutorial-fixes" },
+  { id: 5, title: "핀과 스큐어", src: "/assets/advanced-tactics.html?module=5&v=20260907-advanced-tactics" },
+  { id: 6, title: "숨은 공격과 메이트", src: "/assets/advanced-tactics.html?module=6&v=20260907-advanced-tactics" },
 ];
 const pgPool = databaseUrl
   ? new Pool({
@@ -1571,6 +1573,16 @@ const achievementArtwork = {
 };
 
 const cheoinseongPuzzleIds = ["cheoin-1", "cheoin-2", "cheoin-3", "cheoin-4", "cheoin-5"];
+const goryeoPuzzleTiers = [
+  ["s1", "s2", "s3"],
+  ["m1", "m2", "m3", "h1", "h2"],
+  ["a1", "a2", "a3"],
+];
+
+function baseGoryeoPuzzleId(puzzleId) {
+  if (["gate2", "gate3", "gate4", "gate5"].includes(puzzleId)) return "s1";
+  return String(puzzleId || "").replace(/-v[2-6]$/, "");
+}
 
 const achievementById = new Map(achievementCatalog.map((achievement) => [
   achievement.id,
@@ -3212,6 +3224,21 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     if (cheoinseongStageIndex < 0 && !state.puzzleUnlocked) {
       sendJson(res, 409, { error: "Finish every training module before opening puzzles.", state });
       return true;
+    }
+    if (cheoinseongStageIndex < 0) {
+      const basePuzzleId = baseGoryeoPuzzleId(puzzleId);
+      const tierIndex = goryeoPuzzleTiers.findIndex((tier) => tier.includes(basePuzzleId));
+      if (tierIndex > 0) {
+        const completedIds = new Set(user.training.completedPuzzles.map((puzzle) => String(puzzle?.id || "")));
+        const previousTiersComplete = goryeoPuzzleTiers
+          .slice(0, tierIndex)
+          .flat()
+          .every((id) => completedIds.has(id));
+        if (!previousTiersComplete) {
+          sendJson(res, 409, { error: `Complete every Mate in ${tierIndex} puzzle before opening this tier.`, state });
+          return true;
+        }
+      }
     }
     if (cheoinseongStageIndex >= 0) {
       const completedIds = new Set(user.training.completedPuzzles.map((puzzle) => String(puzzle?.id || "")));

@@ -7855,20 +7855,84 @@ body.is-signed-in .workspace .button.primary:focus-visible {
 }
 
 .forum-reply-form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  margin-top: 16px;
+  display: flex;
+  min-height: 42px;
+  margin-top: 14px;
+  padding: 1px 2px 3px;
+  align-items: flex-end;
+  gap: 7px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 28%, transparent);
+  background: transparent;
+  transition: border-color 140ms ease;
 }
 
 .forum-reply-form textarea {
-  min-height: 72px;
-  resize: vertical;
+  width: 100%;
+  min-height: 36px;
+  max-height: 120px;
+  margin: 0;
+  padding: 8px 2px 6px;
+  overflow-y: auto;
+  resize: none;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.94rem;
+  line-height: 1.45;
 }
 
-.forum-reply-form .button {
-  align-self: end;
-  min-height: 42px;
+.forum-reply-form textarea::placeholder {
+  color: color-mix(in srgb, var(--muted) 82%, transparent);
+  opacity: 1;
+}
+
+.forum-reply-form:focus-within,
+.forum-reply-form.has-value {
+  border-bottom-color: var(--theme-accent);
+}
+
+.forum-reply-send {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  margin: 0 0 2px;
+  padding: 7px;
+  flex: 0 0 34px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--theme-accent);
+  cursor: pointer;
+  transition: color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+
+.forum-reply-send[hidden] {
+  display: none;
+}
+
+.forum-reply-send svg {
+  width: 20px;
+  height: 20px;
+  overflow: visible;
+  fill: currentColor;
+}
+
+.forum-reply-send:hover,
+.forum-reply-send:focus-visible {
+  background: color-mix(in srgb, var(--theme-accent) 12%, transparent);
+  color: var(--ink);
+}
+
+.forum-reply-send:active {
+  transform: translate(1px, -1px);
+}
+
+.forum-reply-send:disabled {
+  cursor: default;
+  opacity: 0.45;
 }
 
 .forum-post-side {
@@ -8784,6 +8848,94 @@ body.is-signed-in .workspace .home-league-actions #createLeagueButton:focus-visi
   color: var(--ink);
   font-size: 1.12rem;
   line-height: 1.3;
+}
+
+.puzzle-rush-card {
+  display: flex;
+  width: min(100%, 680px);
+  margin: 0 auto 28px;
+  padding: 18px 20px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border: 1px solid var(--ink);
+  background: var(--theme-panel);
+}
+
+.puzzle-rush-card span,
+.puzzle-tier-heading span {
+  color: var(--theme-accent);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.puzzle-rush-card h3,
+.puzzle-tier-heading h3 {
+  margin: 3px 0 0;
+  color: var(--ink);
+}
+
+.puzzle-rush-card p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.puzzle-rush-card button {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--theme-panel);
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.puzzle-rush-card button:hover,
+.puzzle-rush-card button:focus-visible {
+  border-color: var(--theme-accent);
+  background: var(--theme-accent);
+}
+
+.puzzle-tier-heading {
+  width: min(100%, 680px);
+  margin: 12px auto 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.puzzle-tier-gate {
+  display: flex;
+  width: min(100%, 360px);
+  min-height: 56px;
+  margin: 14px auto 28px;
+  padding: 10px 16px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--theme-panel);
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.78rem;
+}
+
+.puzzle-tier-gate span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+
+.puzzle-tier-gate.open {
+  border-color: var(--theme-accent);
+  color: var(--theme-accent);
 }
 
 .how-to-play-view .puzzle-stage-row.path-last::after {
