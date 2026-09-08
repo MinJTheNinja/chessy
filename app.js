@@ -3940,14 +3940,6 @@ function currentPlayerColor(match) {
   return match.players.find((player) => player.userId === null)?.color || "white";
 }
 
-function pieceEditionForColor(color) {
-  if (!currentMatchPlayers.length) return selectedPieceEdition;
-  if (currentPlayerColor({ players: currentMatchPlayers }) === color) return selectedPieceEdition;
-  const player = currentMatchPlayers.find((item) => item.color === color);
-  if (player?.pieceEdition) return normalizePieceEdition(player.pieceEdition);
-  return selectedPieceEdition;
-}
-
 async function refreshStats() {
   if (!backendOnline) return;
   try {
@@ -5577,7 +5569,7 @@ function buildBoard() {
       if (pieces[id]) {
         const piece = document.createElement("span");
         const pieceColor = pieces[id].startsWith("w") ? "white" : "black";
-        const pieceEdition = pieceEditionForColor(pieceColor);
+        const pieceEdition = selectedPieceEdition;
         piece.className = `piece ${pieceColor}-piece piece-${pieces[id][1]} piece-edition-${pieceEdition}`;
         piece.innerHTML = pieceSvg(pieces[id], pieceEdition);
         square.append(piece);
