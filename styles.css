@@ -11088,3 +11088,118 @@ body.show-how-to-play .workspace {
     padding-inline: clamp(48px, 5.5vw, 104px);
   }
 }
+
+/* Mobile play surface: every text block owns its row instead of competing for
+   the narrow board width. Long player names and live status copy may wrap. */
+@media (max-width: 620px) {
+  body.is-signed-in .view[data-view="dashboard"] .view-header {
+    margin-bottom: 18px;
+  }
+
+  .view[data-view="dashboard"] .match-layout,
+  .view[data-view="dashboard"] .lobby-panel,
+  .view[data-view="dashboard"] .lobby-main-panel,
+  .view[data-view="dashboard"] .match-options-panel,
+  .view[data-view="dashboard"] .board-panel,
+  .view[data-view="dashboard"] .board-toolbar,
+  .view[data-view="dashboard"] .match-play-grid,
+  .view[data-view="dashboard"] .board-stage,
+  .view[data-view="dashboard"] .match-game-panel {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .view[data-view="dashboard"] .lobby-panel,
+  .match-layout[data-state="idle"] .lobby-panel,
+  .match-layout.paired .match-play-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .view[data-view="dashboard"] .lobby-main-panel {
+    padding: 16px;
+  }
+
+  .view[data-view="dashboard"] .board-panel {
+    gap: 12px;
+    padding: 0;
+  }
+
+  .view[data-view="dashboard"] .board-toolbar > div,
+  .view[data-view="dashboard"] .queue-status-head > *,
+  .view[data-view="dashboard"] .panel-heading > * {
+    min-width: 0;
+  }
+
+  .view[data-view="dashboard"] :is(.board-toolbar strong, .board-meta, .queue-box p, .quick-match-intro p, .match-safety-promise strong, .match-safety-promise p, .match-result strong, .match-result span) {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .view[data-view="dashboard"] .chess-board,
+  body.piece-theme-cheoinseong .view[data-view="dashboard"] .chess-board,
+  body.piece-theme-beta .view[data-view="dashboard"] .chess-board {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .view[data-view="dashboard"] .player-clock-card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  .view[data-view="dashboard"] .player-clock-card div {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  .view[data-view="dashboard"] .player-clock-card span:not(.online-dot) {
+    flex: 1 1 calc(100% - 20px);
+    min-width: 0;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .view[data-view="dashboard"] .player-clock-card small {
+    flex: 1 1 100%;
+    margin-left: 17px;
+    overflow-wrap: anywhere;
+  }
+
+  .view[data-view="dashboard"] .player-clock-card strong {
+    min-width: 0;
+    font-size: clamp(1.65rem, 9vw, 2rem);
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+
+  .view[data-view="dashboard"] .match-result {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+  }
+
+  .view[data-view="dashboard"] .match-result-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .view[data-view="dashboard"] .match-result-actions .button {
+    flex: 1 1 140px;
+    white-space: normal;
+  }
+
+  .view[data-view="dashboard"] .match-action-strip {
+    justify-content: space-evenly;
+    gap: 10px;
+  }
+}
+
+/* The training HTML is same-origin and is sized to its content in app.js.
+   Keeping the iframe itself non-scrollable leaves the document as the only
+   vertical scroll surface on desktop and mobile. */
+.how-to-play-frame {
+  overflow: hidden;
+}

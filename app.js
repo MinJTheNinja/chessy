@@ -294,6 +294,7 @@ let cachedTrainingState = null;
 let trainingModuleOpen = false;
 let trainingModuleTransition = null;
 let howToPlayResizeObserver = null;
+let howToPlayMutationObserver = null;
 let howToPlayResizeFrame = 0;
 
 const koreanText = {
@@ -3419,24 +3420,40 @@ function openRequestedTrainingModule() {
 function resetHowToPlayFrameSizing() {
   howToPlayResizeObserver?.disconnect();
   howToPlayResizeObserver = null;
+  howToPlayMutationObserver?.disconnect();
+  howToPlayMutationObserver = null;
   if (howToPlayResizeFrame) window.cancelAnimationFrame(howToPlayResizeFrame);
   howToPlayResizeFrame = 0;
   howToPlayFrame?.style.removeProperty("height");
 }
 
 function syncPuzzleFrameHeight() {
-  if (!howToPlayFrame || !howToPlayShell?.classList.contains("puzzle-mode")) return;
+  if (!howToPlayFrame || howToPlayShell?.hidden) return;
   try {
     const frameDocument = howToPlayFrame.contentDocument;
     if (!frameDocument?.documentElement || !frameDocument.body) return;
-    frameDocument.documentElement.style.overflowY = "hidden";
-    frameDocument.body.style.overflowY = "hidden";
+
+    const frameRoot = frameDocument.documentElement;
+    const frameBody = frameDocument.body;
     const appContent = frameDocument.querySelector("#app");
-    const contentHeight = Math.ceil(appContent?.scrollHeight || frameDocument.body.scrollHeight);
-    const currentHeight = Number.parseFloat(howToPlayFrame.style.height) || 0;
-    if (contentHeight > 0 && Math.abs(currentHeight - contentHeight) > 1) {
-      howToPlayFrame.style.height = `${contentHeight}px`;
-    }
+
+    [frameRoot, frameBody, appContent].filter(Boolean).forEach((element) => {
+      element.style.setProperty("height", "auto", "important");
+      element.style.setProperty("min-height", "0", "important");
+      element.style.setProperty("overflow-y", "hidden", "important");
+      element.style.setProperty("overflow-x", "clip", "important");
+    });
+    if (appContent) appContent.style.setProperty("overflow", "visible", "important");
+
+    const activeScreen = frameDocument.querySelector(".scene.active, .screen.active, .home.active, .home:not([hidden])");
+    const contentHeight = Math.ceil(Math.max(
+      frameBody.scrollHeight,
+      appContent?.scrollHeight || 0,
+      activeScreen?.scrollHeight || 0,
+      activeScreen?.getBoundingClientRect().height || 0,
+    ));
+    const currentHeight = howToPlayFrame.getBoundingClientRect().height;
+    if (contentHeight > 0 && Math.abs(currentHeight - contentHeight) > 2) howToPlayFrame.style.height = contentHeight + 2 + "px";
   } catch {
     howToPlayFrame.style.removeProperty("height");
   }
@@ -3452,15 +3469,35 @@ function schedulePuzzleFrameHeightSync() {
 
 function watchPuzzleFrameHeight() {
   resetHowToPlayFrameSizing();
-  if (!howToPlayShell?.classList.contains("puzzle-mode")) return;
   schedulePuzzleFrameHeightSync();
   try {
     const frameDocument = howToPlayFrame?.contentDocument;
-    if (!frameDocument?.documentElement || typeof ResizeObserver === "undefined") return;
-    howToPlayResizeObserver = new ResizeObserver(schedulePuzzleFrameHeightSync);
-    howToPlayResizeObserver.observe(frameDocument.documentElement);
+    if (!frameDocument?.documentElement) return;
+    const observedContent = [
+      frameDocument.documentElement,
+      frameDocument.body,
+      frameDocument.querySelector("#app"),
+    ].filter(Boolean);
+    if (typeof ResizeObserver !== "undefined") {
+      howToPlayResizeObserver = new ResizeObserver(schedulePuzzleFrameHeightSync);
+      observedContent.forEach((element) => howToPlayResizeObserver.observe(element));
+    }
+    if (typeof MutationObserver !== "undefined") {
+      howToPlayMutationObserver = new MutationObserver(schedulePuzzleFrameHeightSync);
+      howToPlayMutationObserver.observe(frameDocument.body, {
+        attributes: true,
+        attributeFilter: ["class", "hidden"],
+        childList: true,
+        subtree: true,
+      });
+    }
+    frameDocument.fonts?.ready.then(schedulePuzzleFrameHeightSync).catch(() => {});
+    frameDocument.querySelectorAll("img").forEach((image) => {
+      if (!image.complete) image.addEventListener("load", schedulePuzzleFrameHeightSync, { once: true });
+    });
   } catch {
     howToPlayResizeObserver = null;
+    howToPlayMutationObserver = null;
   }
 }
 
