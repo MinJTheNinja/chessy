@@ -72,11 +72,31 @@ async function databaseCounts(client) {
   };
 }
 
+async function appliedMigrationDetails(client) {
+  const tableResult = await client.query("SELECT to_regclass('schema_migrations') AS table_name");
+  if (!tableResult.rows[0]?.table_name) return null;
+
+  const migrationResult = await client.query(
+    "SELECT details FROM schema_migrations WHERE version = $1",
+    [migrationVersion],
+  );
+  return migrationResult.rows[0]?.details || null;
+}
+
 async function migrateLegacyState(client, options = {}) {
   const manageTransaction = options.manageTransaction !== false;
+  const appliedDetails = await appliedMigrationDetails(client);
+  if (appliedDetails) return { ...appliedDetails, alreadyApplied: true };
+
   if (manageTransaction) await client.query("BEGIN");
   try {
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [migrationVersion]);
+    const lockedAppliedDetails = await appliedMigrationDetails(client);
+    if (lockedAppliedDetails) {
+      if (manageTransaction) await client.query("COMMIT");
+      return { ...lockedAppliedDetails, alreadyApplied: true };
+    }
+
     await client.query(schemaSql);
     const stateResult = await client.query("SELECT data FROM app_state WHERE id = $1 FOR UPDATE", ["main"]);
     const legacy = stateResult.rows[0]?.data || {};
@@ -153,6 +173,7 @@ async function migrateLegacyState(client, options = {}) {
 }
 
 module.exports = {
+  appliedMigrationDetails,
   databaseCounts,
   legacyCounts,
   migrateLegacyState,
