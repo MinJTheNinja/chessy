@@ -8981,11 +8981,11 @@ body.is-signed-in .workspace .home-league-actions #createLeagueButton:focus-visi
   background-size: 78%;
 }
 
-.cheoinseong-stage-icon-1 { background-image: url("/assets/cheoinseong/pieces/goryeo-people-pawn.png?v=20260904-board-grounding"); }
-.cheoinseong-stage-icon-2 { background-image: url("/assets/cheoinseong/pieces/goryeo-cavalry-knight.png?v=20260904-board-grounding"); }
-.cheoinseong-stage-icon-3 { background-image: url("/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png?v=20260904-board-grounding"); }
-.cheoinseong-stage-icon-4 { background-image: url("/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png?v=20260904-board-grounding"); }
-.cheoinseong-stage-icon-5 { background-image: url("/assets/cheoinseong/pieces/goryeo-king.png?v=20260904-board-grounding"); }
+.cheoinseong-stage-icon-1 { background-image: url("/assets/front-pieces-v1/g_pawn.webp"); }
+.cheoinseong-stage-icon-2 { background-image: url("/assets/front-pieces-v1/g_knight.webp"); }
+.cheoinseong-stage-icon-3 { background-image: url("/assets/front-pieces-v1/g_bishop.webp"); }
+.cheoinseong-stage-icon-4 { background-image: url("/assets/front-pieces-v1/g_rook.webp"); }
+.cheoinseong-stage-icon-5 { background-image: url("/assets/front-pieces-v1/g_king.webp"); }
 }
 
 .puzzle-stage-glyph {
@@ -9692,7 +9692,8 @@ body.is-signed-in .view[data-view="overview"] {
   right: 16px;
   width: 34px;
   height: 34px;
-  border: 1px solid var(--line-strong);
+  border: 0;
+  box-shadow: none;
   background: transparent;
   color: var(--ink);
   font-weight: 900;
@@ -10672,18 +10673,23 @@ body.is-teacher .mobile-tabbar {
 .piece-guide-close {
   width: 46px;
   height: 46px;
-  border: 1px solid var(--ink);
+  border: 0;
+  box-shadow: none;
   border-radius: 0;
-  background: var(--theme-panel);
+  background: transparent;
   color: var(--ink);
   font-size: 1.65rem;
   line-height: 1;
 }
 
-.piece-guide-close:hover,
+.piece-guide-close:hover {
+  color: var(--theme-accent);
+  background: transparent;
+}
+
 .piece-guide-close:focus-visible {
-  border-color: var(--theme-accent);
-  background: var(--theme-panel-soft);
+  outline: 2px solid var(--theme-accent);
+  outline-offset: 2px;
 }
 
 .piece-guide-content {

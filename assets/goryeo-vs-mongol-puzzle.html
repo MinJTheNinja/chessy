@@ -357,7 +357,7 @@ const RUSH_MAX_TIER=Math.max(1,Math.min(3,Number(puzzleParams.get('maxTier'))||3
 document.documentElement.lang=PUZZLE_LANGUAGE;
 document.body.classList.toggle('piece-theme-original',PUZZLE_EDITION==='original');
 const pieceArt=(name)=>{
-  if(PUZZLE_EDITION!=='original') return `<img alt="" src="/assets/tutorial-pieces/${name}.webp?v=20260905-webp" loading="lazy" decoding="async">`;
+  if(PUZZLE_EDITION!=='original') return `<img alt="" src="/assets/front-pieces-v1/${name}.webp?v=20260905-webp" loading="lazy" decoding="async">`;
   const type=name.split('_')[1]||'pawn';
   const file={pawn:'p',rook:'r',knight:'n',bishop:'b',queen:'q',king:'k'}[type]||'p';
   const side=name.startsWith('m_')?'black':'white';

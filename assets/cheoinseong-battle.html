@@ -311,15 +311,15 @@
     <p>그 길목에는 군량미와 물자를 보관한 군창이 있던 처인부곡이 있었다. 처인부곡민은 천민이 아니라 법적으로 세금과 의무를 지는 양인이었지만, 일반 군현보다 무거운 세금과 잡역을 부담한 지역 주민이었다. 이들은 승려 김윤후와 함께 삶터와 공동체를 지키기 위해 자발적으로 항전에 나섰다.</p>
 
     <div class="legend-grid">
-      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/goryeo-people-pawn.png" alt=""></div><div class="legend-text">백성<span class="role">폰 · 처인부곡의 백성들</span></div></div>
-      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/mongol-infantry-pawn.png?v=20260903-wolf" alt=""></div><div class="legend-text">병졸<span class="role">폰 · 몽골 보병</span></div></div>
-      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/goryeo-cavalry-knight.png" alt=""></div><div class="legend-text">말<span class="role">나이트 · 양측 기병</span></div></div>
-      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png" alt=""></div><div class="legend-text">승병<span class="role">비숍 · 백현원 승병</span></div></div>
-      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/mongol-adviser-bishop.png?v=20260903-wolf" alt=""></div><div class="legend-text">샤먼·책사<span class="role">비숍 · 몽골측 조언자</span></div></div>
-      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png" alt=""></div><div class="legend-text">처인성 성벽<span class="role">룩 · 방어 진지</span></div></div>
-      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/mongol-siege-tower-rook.png?v=20260903-wolf" alt=""></div><div class="legend-text">몽골 공성탑<span class="role">룩 · 공성 장비</span></div></div>
-      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/goryeo-king.png" alt=""></div><div class="legend-text">김윤후<span class="role">킹 · 처인성 지휘</span></div></div>
-      <div class="legend-row"><div class="legend-tile"><img src="/assets/cheoinseong/pieces/mongol-salitai-king-v2.png" alt=""></div><div class="legend-text">칸<span class="role">킹 · 몽골군 지휘관</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/front-pieces-v1/g_pawn.webp" alt=""></div><div class="legend-text">백성<span class="role">폰 · 처인부곡의 백성들</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/front-pieces-v1/m_pawn.webp" alt=""></div><div class="legend-text">병졸<span class="role">폰 · 몽골 보병</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/front-pieces-v1/g_knight.webp" alt=""></div><div class="legend-text">말<span class="role">나이트 · 양측 기병</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/front-pieces-v1/g_bishop.webp" alt=""></div><div class="legend-text">승병<span class="role">비숍 · 백현원 승병</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/front-pieces-v1/m_bishop.webp" alt=""></div><div class="legend-text">샤먼·책사<span class="role">비숍 · 몽골측 조언자</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/front-pieces-v1/g_rook.webp" alt=""></div><div class="legend-text">처인성 성벽<span class="role">룩 · 방어 진지</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/front-pieces-v1/m_rook.webp" alt=""></div><div class="legend-text">몽골 공성탑<span class="role">룩 · 공성 장비</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/front-pieces-v1/g_king.webp" alt=""></div><div class="legend-text">김윤후<span class="role">킹 · 처인성 지휘</span></div></div>
+      <div class="legend-row"><div class="legend-tile"><img src="/assets/front-pieces-v1/m_king.webp" alt=""></div><div class="legend-text">칸<span class="role">킹 · 몽골군 지휘관</span></div></div>
     </div>
     <p class="queen-note">※ 퀸은 아직 처인성 테마로 재해석되지 않아 이번 시리즈에는 등장하지 않습니다.</p>
   </section>
@@ -373,16 +373,16 @@
   var LABEL = { wP:tx('백성'), wN:tx('말'), wB:tx('승병'), wR:tx('처인성 성벽'), wK:tx('김윤후'),
                 bP:tx('병졸'), bN:tx('말'), bB:tx('샤먼'), bR:tx('공성탑'), bK:tx('칸') };
   var PIECE_ART = {
-    wP:'/assets/cheoinseong/pieces/goryeo-people-pawn.png?v=20260904-board-grounding',
-    wN:'/assets/cheoinseong/pieces/goryeo-cavalry-knight.png?v=20260904-board-grounding',
-    wB:'/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png?v=20260904-board-grounding',
-    wR:'/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png?v=20260904-board-grounding',
-    wK:'/assets/cheoinseong/pieces/goryeo-king.png?v=20260904-board-grounding',
-    bP:'/assets/cheoinseong/pieces/mongol-infantry-pawn.png?v=20260904-board-grounding',
-    bN:'/assets/cheoinseong/pieces/mongol-cavalry-knight.png?v=20260904-board-grounding',
-    bB:'/assets/cheoinseong/pieces/mongol-adviser-bishop.png?v=20260904-board-grounding',
-    bR:'/assets/cheoinseong/pieces/mongol-siege-tower-rook.png?v=20260904-board-grounding',
-    bK:'/assets/cheoinseong/pieces/mongol-salitai-king-v2.png?v=20260904-board-grounding'
+    wP:'/assets/front-pieces-v1/g_pawn.webp',
+    wN:'/assets/front-pieces-v1/g_knight.webp',
+    wB:'/assets/front-pieces-v1/g_bishop.webp',
+    wR:'/assets/front-pieces-v1/g_rook.webp',
+    wK:'/assets/front-pieces-v1/g_king.webp',
+    bP:'/assets/front-pieces-v1/m_pawn.webp',
+    bN:'/assets/front-pieces-v1/m_knight.webp',
+    bB:'/assets/front-pieces-v1/m_bishop.webp',
+    bR:'/assets/front-pieces-v1/m_rook.webp',
+    bK:'/assets/front-pieces-v1/m_king.webp'
   };
   var SCENE_ART = [
     '/assets/cheoinseong/illustrations/scene-1-people-defend.png?v=20260904-mascot',

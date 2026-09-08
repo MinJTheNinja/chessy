@@ -1030,18 +1030,18 @@ const pieceEditionNames = {
 };
 
 const cheoinseongPieceAssets = {
-  wp: "/assets/cheoinseong/pieces/goryeo-people-pawn.png?v=20260904-board-grounding",
-  wn: "/assets/cheoinseong/pieces/goryeo-cavalry-knight.png?v=20260904-board-grounding",
-  wb: "/assets/cheoinseong/pieces/goryeo-monk-soldier-bishop.png?v=20260904-board-grounding",
-  wr: "/assets/cheoinseong/pieces/goryeo-cheoinseong-wall-rook.png?v=20260904-board-grounding",
-  wq: "/assets/tutorial-pieces/g_queen.webp?v=20260905-webp",
-  wk: "/assets/cheoinseong/pieces/goryeo-king.png?v=20260904-board-grounding",
-  bp: "/assets/cheoinseong/pieces/mongol-infantry-pawn.png?v=20260904-board-grounding",
-  bn: "/assets/cheoinseong/pieces/mongol-cavalry-knight.png?v=20260904-board-grounding",
-  bb: "/assets/cheoinseong/pieces/mongol-adviser-bishop.png?v=20260904-board-grounding",
-  br: "/assets/cheoinseong/pieces/mongol-siege-tower-rook.png?v=20260904-board-grounding",
-  bq: "/assets/tutorial-pieces/m_queen.webp?v=20260905-webp",
-  bk: "/assets/cheoinseong/pieces/mongol-salitai-king-v2.png?v=20260904-board-grounding",
+  wp: "/assets/front-pieces-v1/g_pawn.webp",
+  wn: "/assets/front-pieces-v1/g_knight.webp",
+  wb: "/assets/front-pieces-v1/g_bishop.webp",
+  wr: "/assets/front-pieces-v1/g_rook.webp",
+  wq: "/assets/front-pieces-v1/g_queen.webp?v=20260905-webp",
+  wk: "/assets/front-pieces-v1/g_king.webp",
+  bp: "/assets/front-pieces-v1/m_pawn.webp",
+  bn: "/assets/front-pieces-v1/m_knight.webp",
+  bb: "/assets/front-pieces-v1/m_bishop.webp",
+  br: "/assets/front-pieces-v1/m_rook.webp",
+  bq: "/assets/front-pieces-v1/m_queen.webp?v=20260905-webp",
+  bk: "/assets/front-pieces-v1/m_king.webp",
 };
 
 function normalizePieceEdition(edition) {
@@ -1121,14 +1121,14 @@ const pieceGuidePieces = [
   {
     type: "k",
     standard: { ko: "킹", en: "King" },
-    custom: { ko: "고려 임금 · 몽골 장수 살리타이", en: "Goryeo king · Mongol commander Salitai" },
+    custom: { ko: "고려 임금 · 몽골 칸", en: "Goryeo king · Mongol Khan" },
     role: { ko: "반드시 지켜야 하는 가장 중요한 말", en: "The piece you must protect" },
     movement: { ko: "어느 방향으로든 한 칸 움직여요. 공격받는 칸으로는 갈 수 없어요.", en: "Moves one square in any direction. It cannot move into an attacked square." },
   },
   {
     type: "q",
     standard: { ko: "퀸", en: "Queen" },
-    custom: { ko: "고려 퀸 · 몽골 친위장", en: "Goryeo queen · Khan's guard" },
+    custom: { ko: "고려 퀸 · 몽골 장수 살리타이", en: "Goryeo queen · Mongol commander Salitai" },
     role: { ko: "가장 넓게 움직이는 강력한 말", en: "The most mobile and powerful piece" },
     movement: { ko: "직선과 대각선으로 원하는 만큼 움직여요.", en: "Moves any number of squares in a straight line or diagonally." },
   },
@@ -2443,7 +2443,7 @@ function localTrainingState() {
   return {
     hasTutorial: Boolean(nextModule),
     nextModule,
-    tutorialSrc: nextModule ? `${nextModule.id >= 5 ? "/assets/advanced-tactics.html" : "/assets/how-to-play.html"}?module=${nextModule.id}&v=20260907-advanced-tactics` : "",
+    tutorialSrc: nextModule ? `${nextModule.id >= 5 ? "/assets/advanced-tactics.html" : "/assets/how-to-play.html"}?module=${nextModule.id}&v=20260909-edition-copy` : "",
     puzzleUnlocked: !nextModule,
     completedModules,
     completedPuzzles: [],
@@ -2467,12 +2467,12 @@ const trainingModuleDescriptions = {
 };
 
 const trainingModuleArt = {
-  1: { src: "/assets/tutorial-pieces/g_pawn.webp?v=20260905-webp", alt: "고려 꼬마 창병" },
-  2: { src: "/assets/tutorial-pieces/g_bishop.webp?v=20260905-webp", alt: "고려 승병" },
-  3: { src: "/assets/tutorial-pieces/g_king.webp?v=20260905-webp", alt: "고려 임금님" },
-  4: { src: "/assets/tutorial-pieces/g_knight.webp?v=20260905-webp", alt: "고려 백마 기수" },
-  5: { src: "/assets/tutorial-pieces/g_rook.webp?v=20260905-webp", alt: "고려 돌탑 수문장" },
-  6: { src: "/assets/tutorial-pieces/g_bishop.webp?v=20260905-webp", alt: "고려 승병" },
+  1: { src: "/assets/front-pieces-v1/g_pawn.webp?v=20260905-webp", alt: "고려 꼬마 창병" },
+  2: { src: "/assets/front-pieces-v1/g_bishop.webp?v=20260905-webp", alt: "고려 승병" },
+  3: { src: "/assets/front-pieces-v1/g_king.webp?v=20260905-webp", alt: "고려 임금님" },
+  4: { src: "/assets/front-pieces-v1/g_knight.webp?v=20260905-webp", alt: "고려 백마 기수" },
+  5: { src: "/assets/front-pieces-v1/g_rook.webp?v=20260905-webp", alt: "고려 돌탑 수문장" },
+  6: { src: "/assets/front-pieces-v1/g_bishop.webp?v=20260905-webp", alt: "고려 승병" },
 };
 
 function activeTrainingEdition() {
@@ -3293,7 +3293,7 @@ function openTrainingModule(moduleId) {
   const korean = currentInterfaceLanguage() === "Korean";
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${korean ? "모듈" : "Module"} ${normalizedModuleId} · ${korean ? module.title : translateCopy(module.title)}`;
   const tutorialPath = normalizedModuleId >= 5 ? "/assets/advanced-tactics.html" : trainingTutorialPath();
-  if (howToPlayFrame) howToPlayFrame.src = `${tutorialPath}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&lang=${korean ? "ko" : "en"}&v=20260907-advanced-tactics`;
+  if (howToPlayFrame) howToPlayFrame.src = `${tutorialPath}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&lang=${korean ? "ko" : "en"}&v=20260909-edition-copy`;
   setActiveTrainingPathMode("tutorial");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -3314,7 +3314,7 @@ function openTrainingReview(moduleId) {
   const korean = currentInterfaceLanguage() === "Korean";
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${korean ? "모듈" : "Module"} ${normalizedModuleId} · ${korean ? "복습 퀴즈" : "Review Quiz"}`;
   const tutorialPath = normalizedModuleId >= 5 ? "/assets/advanced-tactics.html" : trainingTutorialPath();
-  if (howToPlayFrame) howToPlayFrame.src = `${tutorialPath}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&review=1&lang=${korean ? "ko" : "en"}&v=20260907-advanced-tactics`;
+  if (howToPlayFrame) howToPlayFrame.src = `${tutorialPath}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&review=1&lang=${korean ? "ko" : "en"}&v=20260909-edition-copy`;
   setActiveTrainingPathMode("tutorial");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
