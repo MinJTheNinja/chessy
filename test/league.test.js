@@ -552,3 +552,56 @@ test("16 students join one league concurrently and all memberships survive a res
   }));
   assert.ok(scripts.every(script => script === scripts[0] && script.includes('async function joinLeague')));
 });
+
+test("staff can inspect every existing league while players and teachers cannot", { timeout: 60_000 }, async (t) => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "easymate-admin-leagues-"));
+  const runtime = await startServer(dataDir);
+  t.after(async () => {
+    await stopServer(runtime.child);
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  });
+  const staff = await signup(runtime.baseUrl, "league-admin@example.test", "Staff");
+  const teacher = await signup(runtime.baseUrl, "league-owner@example.test", "Teacher");
+  const student = await signup(runtime.baseUrl, "league-member@example.test", "Student");
+  const empty = await request(runtime.baseUrl, "/api/admin/overview", { cookie: staff.cookie });
+  assert.deepEqual(empty.data.leagues, []);
+  assert.equal(empty.data.stats.leagues, 0);
+  const created = await createLeague(runtime.baseUrl, teacher.cookie, "Class <one>");
+  const code = created.data.league.code;
+  await request(runtime.baseUrl, "/api/leagues/join", { method: "POST", cookie: student.cookie, body: { code } });
+  for (const cookie of [undefined, teacher.cookie, student.cookie]) {
+    const denied = await request(runtime.baseUrl, "/api/admin/overview", { cookie });
+    assert.equal(denied.status, 403);
+    assert.equal(denied.data.leagues, undefined);
+  }
+  // Seed older leagues in this isolated fixture to verify that the list is not
+  // truncated to the 30-row limit used by the other admin sections.
+  const dbFile = path.join(dataDir, "db.json");
+  const db = JSON.parse(fs.readFileSync(dbFile, "utf8"));
+  for (let i = 0; i < 31; i++) db.leagues.push({
+    id: 'old-' + i, code: 'OLD' + i, name: 'Old class ' + i,
+    createdBy: 'deleted-owner-' + i, createdAt: '2025-01-01T00:00:00.000Z', competitionEndsOn: '2025-02-01',
+  });
+  fs.writeFileSync(dbFile, JSON.stringify(db));
+  const overview = await request(runtime.baseUrl, "/api/admin/overview", { cookie: staff.cookie });
+  assert.equal(overview.status, 200);
+  assert.equal(overview.data.stats.leagues, 32);
+  assert.equal(overview.data.leagues.length, 32);
+  const league = overview.data.leagues.find(item => item.code === code);
+  assert.equal(league.name, "Class <one>");
+  assert.equal(league.ownerName, "Teacher");
+  assert.equal(league.memberCount, 2);
+  assert.equal(league.status, "active");
+  assert.equal(league.members, undefined);
+  const old = overview.data.leagues.find(item => item.code === 'OLD0');
+  assert.equal(old.status, 'ended');
+  assert.equal(old.memberCount, 0);
+  assert.equal(old.ownerName, null);
+  await request(runtime.baseUrl, "/api/leagues/leave", { method: "POST", cookie: teacher.cookie, body: {} });
+  const left = await request(runtime.baseUrl, "/api/admin/overview", { cookie: staff.cookie });
+  assert.equal(left.data.leagues.find(item => item.code === code).memberCount, 1);
+  await request(runtime.baseUrl, "/api/leagues/teacher", { method: "DELETE", cookie: teacher.cookie });
+  const deleted = await request(runtime.baseUrl, "/api/admin/overview", { cookie: staff.cookie });
+  assert.equal(deleted.data.leagues.length, 31);
+  assert.ok(!deleted.data.leagues.some(item => item.code === code));
+});

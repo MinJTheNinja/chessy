@@ -4071,7 +4071,45 @@ async function refreshAdmin() {
   }
 }
 
+function renderAdminLeagues(data) {
+  const container = document.querySelector("#adminLeaguesList");
+  if (!container) return;
+  const korean = currentInterfaceLanguage() === "Korean";
+  const search = document.querySelector("#adminLeagueSearch");
+  const query = adminSearchText(search?.value);
+  const leagues = data.leagues || [];
+  const filtered = leagues.filter((league) => !query || adminSearchText(
+    [league.name, league.code, league.ownerName].join(" ")
+  ).includes(query));
+  document.querySelector("#adminLeaguesTitle").textContent = korean ? "현재 리그" : "Existing leagues";
+  document.querySelector("#adminLeagueSearchLabel").textContent = korean ? "리그 검색" : "Search leagues";
+  search.placeholder = korean ? "리그 이름, 참여 코드, 개설자" : "League name, code, creator";
+  document.querySelector("#adminLeaguesSummary").textContent = korean
+    ? '전체 ' + leagues.length + '개 · 표시 ' + filtered.length + '개 (종료된 리그 포함)'
+    : filtered.length + ' of ' + leagues.length + ' leagues (including ended leagues)';
+  renderAdminList(container, filtered, (league) => {
+    const card = document.createElement("article");
+    card.className = "admin-item";
+    const title = document.createElement("strong");
+    title.textContent = league.name;
+    const code = document.createElement("p");
+    code.textContent = (korean ? "참여 코드: " : "Join code: ") + league.code;
+    const owner = document.createElement("p");
+    owner.textContent = (korean ? "개설자: " : "Creator: ") + (league.ownerName || (korean ? "삭제된 계정" : "Deleted account"));
+    const status = document.createElement("p");
+    const state = league.status === "ended" ? (korean ? "종료" : "Ended") : (korean ? "진행 중" : "Active");
+    status.textContent = state + ' · ' + (korean ? '참여 ' + league.memberCount + '명' : league.memberCount + ' members');
+    const dates = document.createElement("p");
+    const date = new Date(league.createdAt);
+    const created = Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString(korean ? 'ko-KR' : 'en-US', { timeZone: 'Asia/Seoul' });
+    dates.textContent = (korean ? "개설일: " : "Created: ") + created + ' · ' + (korean ? "종료일: " : "Ends: ") + (league.competitionEndsOn || (korean ? "미설정" : "Not set"));
+    card.append(title, code, owner, status, dates);
+    return card;
+  }, query ? (korean ? "검색 결과가 없습니다." : "No matching leagues.") : (korean ? "현재 존재하는 리그가 없습니다." : "No leagues exist yet."));
+}
+
 function renderAdminOverview(data) {
+  renderAdminLeagues(data);
   cachedAdminData = data;
   if (adminUsersCount) adminUsersCount.textContent = String(data.stats?.users || 0);
   if (adminMatchesCount) adminMatchesCount.textContent = String(data.stats?.activeMatches || 0);
@@ -7858,6 +7896,9 @@ privateChallengeInput.addEventListener("keydown", (event) => {
 });
 copyMatchRoomLinkButton.addEventListener("click", copyRoomLink);
 refreshAdminButton.addEventListener("click", refreshAdmin);
+document.querySelector("#adminLeagueSearch")?.addEventListener("input", () => {
+  if (cachedAdminData) renderAdminLeagues(cachedAdminData);
+});
 const scheduleAdminSearchRender = () => {
   if (adminSearchFrame) return;
   adminSearchFrame = window.requestAnimationFrame(() => {

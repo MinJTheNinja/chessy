@@ -11230,3 +11230,7 @@ body.show-how-to-play .workspace {
 #leagueJoinStatus:empty { display: none; }
 @keyframes league-join-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { #joinLeagueButton[aria-busy="true"]::before { animation: none; } }
+
+.admin-leagues-card { margin-bottom: 24px; }
+#adminLeaguesList { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+#adminLeaguesList .admin-item { min-width: 0; overflow-wrap: anywhere; }

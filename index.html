@@ -1010,6 +1010,16 @@
             </div>
             <p class="admin-status" id="adminStatus">운영자 계정으로 로그인해야 이 화면을 볼 수 있습니다.</p>
 
+            <article class="wire-card admin-leagues-card" aria-labelledby="adminLeaguesTitle">
+              <h3 id="adminLeaguesTitle">현재 리그</h3>
+              <p id="adminLeaguesSummary" aria-live="polite"></p>
+              <label class="admin-search">
+                <span id="adminLeagueSearchLabel">리그 검색</span>
+                <input id="adminLeagueSearch" type="search" placeholder="리그 이름, 참여 코드, 개설자" />
+              </label>
+              <div class="admin-list" id="adminLeaguesList"></div>
+            </article>
+
             <div class="admin-grid">
               <article class="wire-card">
                 <h3>대국 모니터</h3>

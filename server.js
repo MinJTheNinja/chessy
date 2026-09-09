@@ -2188,6 +2188,32 @@ function ensureTeacherLeagueMembership(user, league) {
   return changed;
 }
 
+function adminLeagueViews(db) {
+  const usersById = new Map(db.users.map((user) => [user.id, user]));
+  const memberCounts = new Map();
+  for (const user of db.users) {
+    const code = String(user.leagueCode || "").trim().toUpperCase();
+    if (code) memberCounts.set(code, (memberCounts.get(code) || 0) + 1);
+  }
+  const today = calendarDateKey();
+  return db.leagues.map((league) => {
+    const owner = usersById.get(league.createdBy);
+    const ownerCode = String(owner?.leagueCode || "").trim().toUpperCase();
+    const implicitOwner = owner && !owner.teacherLeagueOptedOut && ownerCode !== league.code;
+    const competitionEndsOn = String(league.competitionEndsOn || "");
+    return {
+      id: league.id,
+      name: league.name || 'EasyMate League ' + league.code,
+      code: league.code,
+      ownerName: owner ? publicDisplayName(owner) : null,
+      memberCount: (memberCounts.get(league.code) || 0) + (implicitOwner ? 1 : 0),
+      createdAt: league.createdAt,
+      competitionEndsOn,
+      status: competitionEndsOn && competitionEndsOn < today ? "ended" : "active",
+    };
+  }).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")) || a.code.localeCompare(b.code));
+}
+
 function teacherLeagueView(league, db) {
   const members = db.users
     .filter((member) => (member.id === league.createdBy && !member.teacherLeagueOptedOut)
@@ -3411,10 +3437,12 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     sendJson(res, 200, {
       stats: {
         users: db.users.length,
+        leagues: db.leagues.length,
         activeMatches: db.matches.filter((match) => match.status !== "ended").length,
         openReports,
         totalReports: db.reports.length,
       },
+      leagues: adminLeagueViews(db),
       users: db.users.slice(-30).reverse().map(adminUser),
       matches: db.matches.slice(-30).reverse().map(adminMatch),
       reports: db.reports.slice(-30).reverse().map((report) => adminReport(report, db)),
