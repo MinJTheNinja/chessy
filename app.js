@@ -954,7 +954,7 @@ function syncLocalizedControls() {
   setText(document.querySelector('[data-leaderboard-period="alltime"]'), korean ? "전체 기간" : "All time");
   setText(document.querySelector('[data-league-action="join"]'), korean ? "참여하기" : "Join");
   setText(document.querySelector('[data-league-action="create"]'), korean ? "리그 만들기" : "Create league");
-  setText(joinLeagueButton, korean ? "참여" : "Join");
+  setText(joinLeagueButton, leagueJoinPending ? (korean ? "참여 중…" : "Joining…") : (korean ? "참여" : "Join"));
   setText(leaveLeagueButton, korean ? "나가기" : "Leave");
   setText(leaveTeacherLeagueButton, korean ? "리그 삭제" : "Delete league");
   setText(createLeagueButton, korean ? "코드 생성" : "Generate code");
@@ -1421,6 +1421,8 @@ let currentManner = 42.8;
 let backendOnline = false;
 let currentUser = null;
 let currentUserRevision = 0;
+let navigationRevision = 0;
+let leagueJoinPending = false;
 
 function replaceCurrentUser(user) {
   currentUser = user;
@@ -3242,6 +3244,7 @@ function setActiveTrainingPathMode(mode) {
 }
 
 function showTrainingModuleHome() {
+  navigationRevision += 1;
   trainingModuleOpen = false;
   howToPlayShell?.classList.remove("puzzle-mode");
   howToPlayView?.classList.remove("puzzle-mode");
@@ -3255,6 +3258,7 @@ function showTrainingModuleHome() {
 }
 
 function showPuzzlePath(mode = "puzzle") {
+  navigationRevision += 1;
   const state = activeTrainingState();
   const nextMode = mode === "cheoinseong" ? "cheoinseong" : "puzzle";
   if (nextMode !== "cheoinseong" && !state.puzzleUnlocked) {
@@ -3275,6 +3279,7 @@ function showPuzzlePath(mode = "puzzle") {
 }
 
 function openTrainingModule(moduleId) {
+  navigationRevision += 1;
   const normalizedModuleId = Math.min(6, Math.max(1, Number(moduleId) || 1));
   const state = activeTrainingState();
   const module = (state.modules || []).find((item) => Number(item.id) === normalizedModuleId);
@@ -3299,6 +3304,7 @@ function openTrainingModule(moduleId) {
 }
 
 function openTrainingReview(moduleId) {
+  navigationRevision += 1;
   const normalizedModuleId = Math.min(6, Math.max(1, Number(moduleId) || 1));
   const state = activeTrainingState();
   if (!(state.completedModules || []).map(Number).includes(normalizedModuleId)) return;
@@ -3320,6 +3326,7 @@ function openTrainingReview(moduleId) {
 }
 
 function openPuzzleStage(stage, index = 0) {
+  navigationRevision += 1;
   const requiresTutorial = stage?.series !== "cheoinseong";
   if (!stage || (requiresTutorial && !activeTrainingState().puzzleUnlocked) || !canOpenPuzzleStage(stage)) return;
   trainingModuleOpen = true;
@@ -3364,6 +3371,7 @@ function openPuzzleStage(stage, index = 0) {
 }
 
 function openPuzzleRush(maxTier = maxUnlockedPuzzleTier()) {
+  navigationRevision += 1;
   if (!activeTrainingState().puzzleUnlocked) return;
   trainingModuleOpen = true;
   howToPlayShell?.classList.add("puzzle-mode");
@@ -4271,6 +4279,7 @@ async function refreshLobby() {
 }
 
 async function checkBackend() {
+  const initialNavigation = navigationRevision;
   const userRevision = captureCurrentUserRevision();
   try {
     const [health, session] = await Promise.all([api("/api/health"), api("/api/session")]);
@@ -4286,8 +4295,12 @@ async function checkBackend() {
     renderAuthState();
     showAchievementUnlocks(session.unlocked);
     if (currentUser) connectSocket(null);
-    const routedToMatch = await loadMatchFromRoute();
+    const routedToMatch = initialNavigation === navigationRevision
+      ? await loadMatchFromRoute()
+      : false;
     if (currentUser && !routedToMatch) await refreshActivePlayState();
+    // Late startup responses must not reset a lesson the player has already opened.
+    if (initialNavigation !== navigationRevision || trainingModuleOpen) return;
     if (isStaffRoute()) {
       setView(isStaffUser() ? "staff" : "overview");
     } else if (isTeacherRoute()) {
@@ -4409,8 +4422,9 @@ async function signInOrRegister() {
     authConfirmPassword.value = "";
     renderAuthState();
     connectSocket(null);
+    const loginNavigation = navigationRevision;
     await refreshActivePlayState();
-    setView("overview");
+    if (loginNavigation === navigationRevision && !trainingModuleOpen) setView("overview");
   } catch (error) {
     authStatus.textContent = error.message;
     renderAuthState();
@@ -4487,8 +4501,9 @@ async function finishGoogleLogin(credential) {
     authConfirmPassword.value = "";
     renderAuthState();
     connectSocket(null);
+    const loginNavigation = navigationRevision;
     await refreshActivePlayState();
-    setView("overview");
+    if (loginNavigation === navigationRevision && !trainingModuleOpen) setView("overview");
   } catch (error) {
     authStatus.textContent = error.message;
     renderAuthState();
@@ -5339,6 +5354,7 @@ async function publishStaffProduct() {
 }
 
 function setView(viewName) {
+  navigationRevision += 1;
   if (viewName === "match") viewName = "dashboard";
   if (viewName === "review") viewName = "dashboard";
   if (viewName === "admin") viewName = "staff";
@@ -6265,7 +6281,15 @@ function setLeagueActionMode(mode) {
 
 
 
+function setLeagueJoinStatus(message) {
+  if (leagueStatus) leagueStatus.textContent = message;
+  const inlineStatus = document.querySelector("#leagueJoinStatus");
+  if (inlineStatus) inlineStatus.textContent = message;
+}
+
 async function joinLeague() {
+  if (leagueJoinPending) return;
+  const korean = currentInterfaceLanguage() === "Korean";
   if (!currentUser) {
     if (leagueStatus) leagueStatus.textContent = "리그에 참여하려면 먼저 로그인하세요.";
     openAccountEntry("signup");
@@ -6273,13 +6297,20 @@ async function joinLeague() {
   }
   const code = leagueCodeInput?.value.trim().toUpperCase();
   if (!code) {
-    if (leagueStatus) leagueStatus.textContent = "선생님에게 받은 리그 코드를 입력하세요.";
+    setLeagueJoinStatus(korean ? "선생님에게 받은 리그 코드를 입력하세요." : "Enter the league code from your teacher.");
     return;
   }
+  leagueJoinPending = true;
+  joinLeagueButton.disabled = true;
+  joinLeagueButton.setAttribute("aria-busy", "true");
+  joinLeagueButton.textContent = korean ? "참여 중…" : "Joining…";
+  leagueCodeInput.disabled = true;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 20000);
   try {
-    if (leagueStatus) leagueStatus.textContent = "리그에 참여하는 중...";
+    setLeagueJoinStatus(korean ? "리그에 참여하는 중… 잠시만 기다려 주세요." : "Joining the league… Please wait.");
     const { data, applied } = await requestCurrentUserMutation(() =>
-      api("/api/leagues/join", { method: "POST", body: { code } }),
+      api("/api/leagues/join", { method: "POST", body: { code }, signal: controller.signal }),
     );
     if (!applied) return;
     latestCreatedLeagueCode = "";
@@ -6288,9 +6319,18 @@ async function joinLeague() {
     renderLeaderboard(data.league);
     renderAuthState();
     setLeagueActionMode(null);
-    if (leagueStatus) leagueStatus.textContent = `참여 완료: ${data.league.code}`;
+    setLeagueJoinStatus((korean ? "참여 완료: " : "Joined: ") + data.league.code);
   } catch (error) {
-    if (leagueStatus) leagueStatus.textContent = error.message;
+    setLeagueJoinStatus(controller.signal.aborted
+      ? (korean ? "응답이 지연되고 있습니다. 참여 여부를 확인하거나 다시 참여를 눌러 주세요." : "The response is delayed. Check your membership or try joining again.")
+      : translateCopy(error.message));
+  } finally {
+    window.clearTimeout(timeout);
+    leagueJoinPending = false;
+    joinLeagueButton.disabled = false;
+    joinLeagueButton.removeAttribute("aria-busy");
+    joinLeagueButton.textContent = currentInterfaceLanguage() === "Korean" ? "참여" : "Join";
+    leagueCodeInput.disabled = false;
   }
 }
 

@@ -510,3 +510,45 @@ test("badge awards remain persisted, visible in profiles, and acknowledgeable", 
   session = await request(runtime.baseUrl, "/api/session", { cookie: student.cookie });
   assert.deepEqual(new Set(session.data.user.achievements.map((badge) => badge.id)), earnedIds);
 });
+
+test("16 students join one league concurrently and all memberships survive a restart", { timeout: 60_000 }, async (t) => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "easymate-classroom-16-"));
+  let runtime = await startServer(dataDir);
+  t.after(async () => {
+    await stopServer(runtime.child);
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  });
+  const teacher = await signup(runtime.baseUrl, "classroom-teacher@example.test", "Teacher");
+  const created = await createLeague(runtime.baseUrl, teacher.cookie, "Classroom of 16");
+  const code = created.data.league.code;
+  const students = await Promise.all(Array.from({ length: 16 }, (_, index) =>
+    signup(runtime.baseUrl, `classroom-${index}@example.test`, `Student ${index}`)));
+  const started = performance.now();
+  const joined = await Promise.all(students.map(student => request(runtime.baseUrl, "/api/leagues/join", {
+    method: "POST", cookie: student.cookie, body: { code: ` ${code.toLowerCase()} ` },
+  })));
+  t.diagnostic(`16 simultaneous joins completed in ${Math.round(performance.now() - started)} ms (isolated local storage).`);
+  for (let index = 0; index < students.length; index++) {
+    assert.equal(joined[index].status, 200);
+    assert.equal(joined[index].data.user.leagueCode, code);
+    assert.ok(joined[index].data.league.members.some(member => member.id === students[index].data.user.id), 'join response includes the joining student');
+  }
+  // Retrying after an uncertain network response must not create another membership.
+  await Promise.all(students.map(student => request(runtime.baseUrl, "/api/leagues/join", {
+    method: "POST", cookie: student.cookie, body: { code },
+  })));
+  await stopServer(runtime.child);
+  runtime = await startServer(dataDir);
+  const teacherView = await request(runtime.baseUrl, "/api/leagues/teacher", { cookie: teacher.cookie });
+  assert.equal(teacherView.status, 200);
+  assert.equal(teacherView.data.league.members.length, 17);
+  assert.equal(new Set(teacherView.data.league.members.map(member => member.id)).size, 17);
+  const sessions = await Promise.all(students.map(student => request(runtime.baseUrl, "/api/session", { cookie: student.cookie })));
+  assert.ok(sessions.every(session => session.data.user.leagueCode === code));
+  const assets = await Promise.all(Array.from({ length: 16 }, () => fetch(`${runtime.baseUrl}/app.js`)));
+  const scripts = await Promise.all(assets.map(response => {
+    assert.equal(response.status, 200);
+    return response.text();
+  }));
+  assert.ok(scripts.every(script => script === scripts[0] && script.includes('async function joinLeague')));
+});

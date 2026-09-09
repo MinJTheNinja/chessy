@@ -425,9 +425,9 @@ async function ensureDb() {
   ensureJsonDb();
 }
 
-async function readDb() {
+async function readDb({ includeUsers = true } = {}) {
   if (!pgPool) {
-    const [db, users] = await Promise.all([readJsonDb(), loadAllUsers()]);
+    const [db, users] = await Promise.all([readJsonDb(), includeUsers ? loadAllUsers() : []]);
     return { ...db, users };
   }
   await ensurePostgresDb();
@@ -435,7 +435,7 @@ async function readDb() {
   const queryable = context?.client || pgPool;
   const [result, users] = await Promise.all([
     queryable.query("SELECT data FROM app_state WHERE id = $1", ["main"]),
-    loadAllUsers(queryable),
+    includeUsers ? loadAllUsers(queryable) : [],
   ]);
   return { ...normalizeDb(result.rows[0]?.data || defaultDb()), users };
 }
@@ -829,7 +829,7 @@ async function getSessionUser(req) {
     return session ? localHydratedUser(identity, identity.users.find((item) => item.id === session.userId)) : null;
   }
   await ensurePostgresDb();
-  const result = await pgPool.query(
+  const result = await (appStateContext.getStore()?.client || pgPool).query(
     `SELECT u.*, COALESCE(
        ARRAY_AGG(tp.module_id ORDER BY tp.module_id) FILTER (WHERE tp.module_id IS NOT NULL),
        ARRAY[]::integer[]
@@ -2532,6 +2532,14 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
     });
     return true;
   }
+  // Authenticate unhandled routes once, inside their transaction when applicable.
+  const fastRoute = {
+    GET: ["/api/admin/analytics/summary", "/api/session", "/api/training/state"],
+    POST: ["/api/analytics/session", "/api/analytics/events", "/api/translate", "/api/moderate",
+      "/api/training/tutorial-complete", "/api/auth/signup", "/api/auth/login", "/api/auth/google", "/api/auth/logout"],
+    DELETE: ["/api/auth/delete"],
+  };
+  if (!fastRoute[req.method]?.includes(pathname)) return false;
   const user = await getSessionUser(req);
 
   if (req.method === "POST" && pathname === "/api/analytics/session") {
@@ -2624,7 +2632,7 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
   }
 
   if (req.method === "GET" && pathname === "/api/session") {
-    const db = user ? await readDb() : null;
+    const db = user ? await readDb({ includeUsers: false }) : null;
     sendJson(res, 200, { user: publicUser(user, db), unlocked: pendingAchievementViews(user) });
     return true;
   }
@@ -3165,7 +3173,7 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     if (ownedTeacherLeague) user.teacherLeagueOptedOut = ownedTeacherLeague.code !== code;
     const unlocked = syncAchievements(user, db);
     await saveUser(user);
-    await writeDb(db);
+    // Membership is stored in users; retain the lock without rewriting app_state.
     sendJson(res, 200, { league: leagueView(league, db, "weekly"), user: publicUser(user, db), unlocked });
     return true;
   }
@@ -4392,22 +4400,30 @@ function serveStatic(req, res, pathname) {
     try {
       let cached = staticTextCache.get(filePath);
       if (!cached || cached.etag !== etag) {
-        const data = await fs.promises.readFile(filePath);
-        const [gzip, brotli] = await Promise.all([
-          gzipAsync(data, { level: zlib.constants.Z_BEST_SPEED }),
-          brotliAsync(data, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 4 } }),
-        ]);
-        cached = { etag, data, gzip, brotli };
+        // Share compression work across simultaneous first-page requests.
+        cached = { etag };
+        cached.ready = (async () => {
+          const data = await fs.promises.readFile(filePath);
+          const [gzip, brotli] = await Promise.all([
+            gzipAsync(data, { level: zlib.constants.Z_BEST_SPEED }),
+            brotliAsync(data, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 4 } }),
+          ]);
+          return { data, gzip, brotli };
+        })();
         staticTextCache.set(filePath, cached);
+        cached.ready.catch(() => {
+          if (staticTextCache.get(filePath) === cached) staticTextCache.delete(filePath);
+        });
       }
 
+      const content = await cached.ready;
       const accepted = String(req.headers["accept-encoding"] || "");
-      let body = cached.data;
+      let body = content.data;
       if (/\bbr\b/i.test(accepted)) {
-        body = cached.brotli;
+        body = content.brotli;
         responseHeaders["content-encoding"] = "br";
       } else if (/\bgzip\b/i.test(accepted)) {
-        body = cached.gzip;
+        body = content.gzip;
         responseHeaders["content-encoding"] = "gzip";
       }
       responseHeaders["content-length"] = body.length;
@@ -4624,6 +4640,11 @@ const server = http.createServer(async (req, res) => {
       if (fastHandled) return;
       const run = async (db, targetResponse = res) => {
         const user = await getSessionUser(req);
+        // Response views and achievements must see the user object being mutated.
+        if (user) {
+          const index = db.users.findIndex((item) => item.id === user.id);
+          if (index >= 0) db.users[index] = user;
+        }
         return handleApi(req, targetResponse, requestUrl.pathname, requestUrl.searchParams, db, user);
       };
       let handled;

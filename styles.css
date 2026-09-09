@@ -11223,3 +11223,10 @@ body.show-how-to-play .workspace {
   object-fit: contain;
   object-position: center;
 }
+
+/* Keep pending league feedback beside the code, including on touch devices. */
+#joinLeagueButton[aria-busy="true"] { cursor: progress; display: inline-flex; align-items: center; gap: .5rem; }
+#joinLeagueButton[aria-busy="true"]::before { content: ""; width: .9em; height: .9em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: league-join-spin .8s linear infinite; }
+#leagueJoinStatus:empty { display: none; }
+@keyframes league-join-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { #joinLeagueButton[aria-busy="true"]::before { animation: none; } }
