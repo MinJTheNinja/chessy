@@ -66,6 +66,7 @@ test('16 state mutations authenticate with their existing connection even with a
   const pgPool = boundedPool(2);
   const context = vm.createContext({
     pgPool,
+    postgresStateQueue: Promise.resolve(),
     appStateContext: new AsyncLocalStorage(),
     ensurePostgresDb: async () => {},
     loadAllUsers: async () => [],
@@ -76,7 +77,7 @@ test('16 state mutations authenticate with their existing connection even with a
     rowToStoredUser: row => row,
     storedUserToUser: row => row,
   });
-  vm.runInContext(functionSource('withAppStateMutation') + functionSource('getSessionUser'), context);
+  vm.runInContext(functionSource('withAppStateMutation') + functionSource('runPostgresStateMutation') + functionSource('getSessionUser'), context);
   const work = Promise.all(Array.from({ length: 16 }, (_, i) => context.withAppStateMutation(async () => {
     const user = await context.getSessionUser({ token: 'student-' + i, headers: {} });
     assert.equal(user.id, 'student-' + i);
@@ -88,4 +89,54 @@ test('16 state mutations authenticate with their existing connection even with a
     assert.equal(new Set(completed).size, 16);
     assert.equal(pgPool.borrowedForSession, 0);
   } finally { clearTimeout(timer); }
+});
+
+function stateContext(pgPool, extra = {}) {
+  const c = vm.createContext({
+    pgPool, postgresStateQueue: Promise.resolve(),
+    appStateContext: new AsyncLocalStorage(), ensurePostgresDb: async () => {},
+    loadAllUsers: async () => [], normalizeDb: v => v, defaultDb: () => ({}),
+    console, ...extra,
+  });
+  vm.runInContext(functionSource('withAppStateMutation') + functionSource('runPostgresStateMutation'), c);
+  return c;
+}
+
+test('queued state writes leave a connection available to login and recover after rollback', { timeout: 3000 }, async () => {
+  const pgPool = boundedPool(2);
+  const c = stateContext(pgPool);
+  let enter, release;
+  const entered = new Promise(r => { enter = r; });
+  const hold = new Promise(r => { release = r; });
+  const first = c.withAppStateMutation(async () => { enter(); await hold; throw Error('rollback'); });
+  const rejected = assert.rejects(first, /rollback/);
+  await entered;
+  const queued = Array.from({length: 16}, () => c.withAppStateMutation(async () => 'joined'));
+  try {
+    const result = await Promise.race([
+      pgPool.query('SELECT * FROM sessions', ['login-user']),
+      new Promise((_, reject) => setTimeout(() => reject(Error('login starved')), 500)),
+    ]);
+    assert.equal(result.rows[0].id, 'login-user');
+  } finally { release(); }
+  await rejected;
+  assert.equal((await Promise.all(queued)).length, 16);
+});
+
+test('Redis starts after commit and release, never on rollback, and cannot block later writes', { timeout: 3000 }, async () => {
+  let released = false, writes = 0;
+  const pool = { async connect() { released = false; return {
+    async query(sql) { return {rows: sql.includes('FOR UPDATE') ? [{data:{}}] : []}; },
+    release() { released = true; },
+  }; }};
+  const c = stateContext(pool, {
+    redisEnabled: true, redisRoomPayload: m => ({id:m.id}),
+    redisCommand: async () => { assert.equal(released, true); writes++; await new Promise(() => {}); },
+  });
+  vm.runInContext(functionSource('syncRedisRoom'), c);
+  await c.withAppStateMutation(async () => { await c.syncRedisRoom({id:'committed'}); assert.equal(writes,0); });
+  assert.equal(writes, 1);
+  await assert.rejects(c.withAppStateMutation(async () => { await c.syncRedisRoom({id:'rolled-back'}); throw Error('rollback'); }), /rollback/);
+  assert.equal(writes, 1);
+  assert.equal(await c.withAppStateMutation(async () => 'next'), 'next');
 });

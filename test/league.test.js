@@ -605,3 +605,35 @@ test("staff can inspect every existing league while players and teachers cannot"
   assert.equal(deleted.data.leagues.length, 31);
   assert.ok(!deleted.data.leagues.some(item => item.code === code));
 });
+
+test("slow and aborted league uploads do not block other students", { timeout: 30000 }, async (t) => {
+  const http = require("node:http");
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "easymate-aborted-"));
+  const runtime = await startServer(dataDir);
+  t.after(async () => {
+    await stopServer(runtime.child);
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  });
+  const teacher = await signup(runtime.baseUrl, "teacher@abort.test", "Teacher");
+  const student = await signup(runtime.baseUrl, "student@abort.test", "Student");
+  const league = await createLeague(runtime.baseUrl, teacher.cookie, "Abort test");
+  const slow = http.request(runtime.baseUrl + "/api/leagues/join", {
+    method: "POST", headers: { cookie: student.cookie, "content-type": "application/json", "content-length": "1000" },
+  });
+  slow.on("error", () => {});
+  t.after(() => slow.destroy());
+  slow.write('{"code":');
+  await new Promise(resolve => setTimeout(resolve, 150));
+  const join = () => fetch(runtime.baseUrl + "/api/leagues/join", {
+    method: "POST", headers: { cookie: student.cookie, "content-type": "application/json" },
+    body: JSON.stringify({code:league.data.league.code}), signal: AbortSignal.timeout(2000),
+  });
+  assert.equal((await join()).status, 200, "an unfinished upload cannot hold the league lock");
+  slow.destroy();
+  await new Promise(resolve => setTimeout(resolve, 100));
+  assert.equal((await join()).status, 200, "aborting an upload cannot wedge future joins");
+  const login = await request(runtime.baseUrl, "/api/auth/login", {
+    method: "POST", body: {email:"student@abort.test", password:"league-test-password"},
+  });
+  assert.equal(login.status, 200);
+});

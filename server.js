@@ -96,8 +96,15 @@ const pgPool = databaseUrl
       connectionString: databaseUrl,
       ssl: postgresSslOptions(databaseUrl),
       connectionTimeoutMillis: Number(process.env.PG_CONNECT_TIMEOUT_MS || 10000),
+      statement_timeout: 8000,
+      idle_in_transaction_session_timeout: 10000,
     })
   : null;
+// Idle transaction timeouts and network disconnects must not crash the process.
+pgPool?.on("error", error => console.warn("PostgreSQL idle connection failed:", error.message));
+pgPool?.on("connect", client => {
+  client.on("error", error => console.warn("PostgreSQL connection failed:", error.message));
+});
 const analyticsStore = new AnalyticsStore({
   pgPool,
   dataDir,
@@ -125,6 +132,7 @@ const gzipAsync = util.promisify(zlib.gzip);
 const brotliAsync = util.promisify(zlib.brotliCompress);
 const staticTextCache = new Map();
 let localDbWriteQueue = Promise.resolve();
+let postgresStateQueue = Promise.resolve();
 let localIdentityWriteQueue = Promise.resolve();
 const appStateContext = new AsyncLocalStorage();
 
@@ -470,21 +478,36 @@ async function withAppStateMutation(callback) {
     localDbWriteQueue = operation.then(() => undefined, () => undefined);
     return operation;
   }
+  // Queue before borrowing a connection so row-lock waiters cannot starve login.
+  const operation = postgresStateQueue.catch(() => {}).then(() => runPostgresStateMutation(callback));
+  postgresStateQueue = operation.then(() => undefined, () => undefined);
+  return operation;
+}
+
+async function runPostgresStateMutation(callback) {
   await ensurePostgresDb();
   const client = await pgPool.connect();
+  const context = { kind: "postgres", client, redisRooms: new Map() };
+  let committed = false;
   try {
     await client.query("BEGIN");
+    await client.query("SET LOCAL lock_timeout = '5s'");
     const result = await client.query("SELECT data FROM app_state WHERE id = $1 FOR UPDATE", ["main"]);
     const users = await loadAllUsers(client);
     const db = { ...normalizeDb(result.rows[0]?.data || defaultDb()), users };
-    const value = await appStateContext.run({ kind: "postgres", client }, () => callback(db));
+    const value = await appStateContext.run(context, () => callback(db));
     await client.query("COMMIT");
+    committed = true;
     return value;
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});
     throw error;
   } finally {
     client.release();
+    // Cache synchronization is optional and must never hold a PostgreSQL lock.
+    if (committed) for (const match of context.redisRooms.values()) {
+      syncRedisRoom(match).catch(error => console.warn("Redis room sync failed:", error.message));
+    }
   }
 }
 
@@ -884,6 +907,7 @@ async function redisCommand(command) {
   if (!redisEnabled) return null;
   try {
     const response = await fetch(upstashRedisRestUrl, {
+      signal: AbortSignal.timeout(2000),
       method: "POST",
       headers: {
         authorization: `Bearer ${upstashRedisRestToken}`,
@@ -916,6 +940,11 @@ function redisRoomPayload(match) {
 
 async function syncRedisRoom(match) {
   if (!match?.id || !redisEnabled) return;
+  const context = appStateContext.getStore();
+  if (context?.redisRooms) {
+    context.redisRooms.set(match.id, redisRoomPayload(match));
+    return;
+  }
   await redisCommand(["SET", `room:${match.id}`, JSON.stringify(redisRoomPayload(match)), "EX", "86400"]);
   await redisCommand(["SADD", "rooms:active", match.id]);
 }
@@ -987,15 +1016,29 @@ function deferredResponse() {
 }
 
 function readBody(req, maxBytes = 1_000_000) {
+  if (req.parsedBody) return req.parsedBody;
   return new Promise((resolve, reject) => {
     let body = "";
     let bodyBytes = 0;
     let tooLarge = false;
+    const fail = (message, statusCode) => {
+      tooLarge = true;
+      clearTimeout(timer);
+      reject(Object.assign(new Error(message), { statusCode }));
+    };
+    const timer = setTimeout(() => fail("Request body timed out", 408), 10000);
+    req.once("aborted", () => fail("Request aborted", 400));
+    req.once("error", () => fail("Request body failed", 400));
+    if (req.aborted || req.destroyed) {
+      fail("Request aborted", 400);
+      return;
+    }
     req.on("data", (chunk) => {
       if (tooLarge) return;
       bodyBytes += chunk.length;
       if (bodyBytes > maxBytes) {
         tooLarge = true;
+        clearTimeout(timer);
         const error = new Error("Request body is too large");
         error.statusCode = 413;
         reject(error);
@@ -1004,6 +1047,7 @@ function readBody(req, maxBytes = 1_000_000) {
       body += chunk;
     });
     req.on("end", () => {
+      clearTimeout(timer);
       if (tooLarge) return;
       if (!body) {
         resolve({});
@@ -1375,7 +1419,7 @@ function decodeJwtPart(value) {
 async function googlePublicKeys() {
   const now = Date.now();
   if (cachedGoogleKeys && now - cachedGoogleKeysAt < 60 * 60 * 1000) return cachedGoogleKeys;
-  const response = await fetch("https://www.googleapis.com/oauth2/v3/certs");
+  const response = await fetch("https://www.googleapis.com/oauth2/v3/certs", { signal: AbortSignal.timeout(8000) });
   if (!response.ok) throw new Error(`Google keys request failed with ${response.status}`);
   const payload = await response.json();
   cachedGoogleKeys = Array.isArray(payload.keys) ? payload.keys : [];
@@ -4644,13 +4688,18 @@ const server = http.createServer(async (req, res) => {
 
   try {
     if (req.method === "GET" && requestUrl.pathname === "/api/health") {
-      const healthy = !pgPool || storageReady;
+      let healthy = !pgPool || storageReady;
+      if (pgPool && storageReady) {
+        try { await pgPool.query("SELECT 1"); }
+        catch { healthy = false; }
+      }
       sendJson(res, healthy ? 200 : 503, {
         ok: healthy,
         app: "Live Chess",
+        release: "20260910-timeout-recovery",
         storage: pgPool ? "postgres" : "local-json",
-        storageStatus: storageReady ? "ready" : "connecting",
-        storageError: storageError ? "temporarily unavailable" : null,
+        storageStatus: healthy ? "ready" : storageReady ? "unavailable" : "connecting",
+        storageError: !healthy || storageError ? "temporarily unavailable" : null,
         postgresProvider: databaseUrl?.includes("supabase") ? "supabase" : pgPool ? "postgres" : null,
         redis: redisEnabled ? "upstash" : "disabled",
         translator: nvidiaEnabled ? "nvidia" : "mymemory",
@@ -4664,6 +4713,12 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (requestUrl.pathname.startsWith("/api/")) {
+      // Finish uploading before authentication or borrowing a transaction connection.
+      if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
+        const limit = requestUrl.pathname === "/api/analytics/session" ? 16_384
+          : requestUrl.pathname === "/api/analytics/events" ? 65_536 : 1_000_000;
+        req.parsedBody = Promise.resolve(await readBody(req, limit));
+      }
       const fastHandled = await handleFastApi(req, res, requestUrl.pathname, requestUrl.searchParams);
       if (fastHandled) return;
       const run = async (db, targetResponse = res) => {
