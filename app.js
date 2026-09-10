@@ -812,6 +812,10 @@ Object.assign(englishText, {
   "모든 훈련 모듈을 완료하면 퍼즐을 열 수 있습니다.": "Complete all training modules to unlock puzzles.",
   "퍼즐": "Puzzles",
 });
+// Korean-first copy must also translate back after an English round trip.
+Object.entries(englishText).forEach(([korean, english]) => {
+  if (!Object.prototype.hasOwnProperty.call(koreanText, english)) koreanText[english] = korean;
+});
 const originalTextNodes = new WeakMap();
 const originalAttributes = new WeakMap();
 let applyingLanguage = false;
@@ -851,69 +855,33 @@ function updateLandingHeroCopy() {
       : "EasyMate";
 }
 
+function localizedValue(current, previous) {
+  // Keep the pair only while the DOM still contains our last output.
+  const original = previous && current === previous.rendered ? previous.original : current;
+  const leading = original.match(/^\s*/)?.[0] || "";
+  const trailing = original.match(/\s*$/)?.[0] || "";
+  return { original, rendered: leading + translateCopy(original.trim()) + trailing };
+}
+
 function translateTextNode(node) {
-  const currentText = node.textContent;
-  if (!currentText || !currentText.trim()) return;
-
-  let original = originalTextNodes.get(node);
-  if (currentInterfaceLanguage() === "Korean") {
-    const currentTrimmed = currentText.trim();
-    const previousTranslation = original ? translateCopy(original.trim()) : null;
-    if (!original || currentTrimmed !== previousTranslation) {
-      original = canonicalOriginalText(currentText);
-      originalTextNodes.set(node, original);
-    }
-    const trimmed = original.trim();
-    const translated = koreanText[trimmed];
-    if (!translated) return;
-    if (node.parentElement?.tagName === "OPTION" && !node.parentElement.hasAttribute("value")) {
-      node.parentElement.value = trimmed;
-    }
-    const leading = original.match(/^\s*/)?.[0] || "";
-    const trailing = original.match(/\s*$/)?.[0] || "";
-    node.textContent = `${leading}${translated}${trailing}`;
-    return;
+  const current = node.textContent;
+  if (!current?.trim()) return;
+  const pair = localizedValue(current, originalTextNodes.get(node));
+  if (node.parentElement?.tagName === "OPTION" && !node.parentElement.hasAttribute("value")) {
+    node.parentElement.value = originalCopy(current.trim());
   }
-
-  if (original) {
-    node.textContent = canonicalOriginalText(original);
-    return;
-  }
-  const canonical = canonicalOriginalText(currentText);
-  if (canonical !== currentText) {
-    originalTextNodes.set(node, canonical);
-    node.textContent = canonical;
-  }
+  originalTextNodes.set(node, pair);
+  if (current !== pair.rendered) node.textContent = pair.rendered;
 }
 
 function translateAttribute(element, attribute) {
-  if (!element.hasAttribute(attribute)) return;
-  const currentValue = element.getAttribute(attribute);
-  if (!currentValue) return;
-
-  let originals = originalAttributes.get(element);
-  if (!originals) {
-    originals = {};
-    originalAttributes.set(element, originals);
-  }
-
-  if (currentInterfaceLanguage() === "Korean") {
-    const previousTranslation = originals[attribute] ? translateCopy(originals[attribute]) : null;
-    if (!originals[attribute] || currentValue !== previousTranslation) originals[attribute] = originalCopy(currentValue);
-    const translated = koreanText[originals[attribute]];
-    if (translated) element.setAttribute(attribute, translated);
-    return;
-  }
-
-  if (originals[attribute]) {
-    element.setAttribute(attribute, originalCopy(originals[attribute]));
-    return;
-  }
-  const canonical = originalCopy(currentValue);
-  if (canonical !== currentValue) {
-    originals[attribute] = canonical;
-    element.setAttribute(attribute, canonical);
-  }
+  const current = element.getAttribute(attribute);
+  if (!current) return;
+  const pairs = originalAttributes.get(element) || {};
+  const pair = localizedValue(current, pairs[attribute]);
+  pairs[attribute] = pair;
+  originalAttributes.set(element, pairs);
+  if (current !== pair.rendered) element.setAttribute(attribute, pair.rendered);
 }
 
 function applyInterfaceLanguage(root = document.body) {
@@ -933,6 +901,9 @@ function applyInterfaceLanguage(root = document.body) {
   while (walker.nextNode()) textNodes.push(walker.currentNode);
   textNodes.forEach(translateTextNode);
 
+  if (root.matches?.("[placeholder], [aria-label], [title]")) {
+    ["placeholder", "aria-label", "title"].forEach(attribute => translateAttribute(root, attribute));
+  }
   root.querySelectorAll?.("[placeholder], [aria-label], [title]").forEach((element) => {
     ["placeholder", "aria-label", "title"].forEach((attribute) => translateAttribute(element, attribute));
   });
@@ -965,7 +936,7 @@ function syncLocalizedControls() {
     setText(signupButton, korean ? "새 계정" : "New account");
     setText(authSubmit, authMode === "login" ? (korean ? "로그인" : "Log in") : (korean ? "계정 만들기" : "Create account"));
   }
-  setText(tutorialLoginButton, korean ? "로그인 화면으로 가기" : "Go to login");
+  setText(tutorialLoginButton, currentUser ? (korean ? "대국하러 가기" : "Go to play") : (korean ? "로그인 화면으로 가기" : "Go to login"));
   renderLeagueAction();
   renderTodayQuests();
   renderTrainingControls();
@@ -1121,14 +1092,14 @@ const pieceGuidePieces = [
   {
     type: "k",
     standard: { ko: "킹", en: "King" },
-    custom: { ko: "고려 임금 · 몽골 칸", en: "Goryeo king · Mongol Khan" },
+    custom: { ko: "김윤후 승장 · 몽골 칸", en: "Commander Kim Yun-hu · Mongol Khan" },
     role: { ko: "반드시 지켜야 하는 가장 중요한 말", en: "The piece you must protect" },
     movement: { ko: "어느 방향으로든 한 칸 움직여요. 공격받는 칸으로는 갈 수 없어요.", en: "Moves one square in any direction. It cannot move into an attacked square." },
   },
   {
     type: "q",
     standard: { ko: "퀸", en: "Queen" },
-    custom: { ko: "고려 퀸 · 몽골 장수 살리타이", en: "Goryeo queen · Mongol commander Salitai" },
+    custom: { ko: "근위대장 · 칸의 친위장", en: "Royal Guard · Khan’s Guard" },
     role: { ko: "가장 넓게 움직이는 강력한 말", en: "The most mobile and powerful piece" },
     movement: { ko: "직선과 대각선으로 원하는 만큼 움직여요.", en: "Moves any number of squares in a straight line or diagonally." },
   },
@@ -1142,21 +1113,21 @@ const pieceGuidePieces = [
   {
     type: "b",
     standard: { ko: "비숍", en: "Bishop" },
-    custom: { ko: "고려 승병 · 몽골 책사", en: "Goryeo monk-soldier · Mongol adviser" },
+    custom: { ko: "지혜 승병 · 몽골 주술사", en: "Wise Monk Soldier · Mongol Shaman" },
     role: { ko: "대각선 길을 멀리 내다보는 말", en: "Controls long diagonals" },
     movement: { ko: "대각선으로 원하는 만큼 움직여요.", en: "Moves any number of squares diagonally." },
   },
   {
     type: "n",
     standard: { ko: "나이트", en: "Knight" },
-    custom: { ko: "고려 기병 · 몽골 기병", en: "Goryeo cavalry · Mongol cavalry" },
+    custom: { ko: "백마 기수 · 몽골 기마궁수", en: "White Horse Rider · Mongol Horse Archer" },
     role: { ko: "다른 말을 뛰어넘는 기습의 말", en: "A jumping piece that creates surprises" },
     movement: { ko: "두 칸 간 뒤 옆으로 한 칸, L자로 움직여요. 다른 말을 뛰어넘을 수 있어요.", en: "Moves in an L shape: two squares, then one sideways. It can jump over pieces." },
   },
   {
     type: "p",
     standard: { ko: "폰", en: "Pawn" },
-    custom: { ko: "고려 백성 병사 · 몽골 보병", en: "Goryeo people’s soldier · Mongol infantry" },
+    custom: { ko: "고려 백성 · 몽골 선봉병", en: "Goryeo Resident · Mongol Vanguard" },
     role: { ko: "한 걸음씩 전진해 길을 만드는 말", en: "Advances to claim space" },
     movement: { ko: "앞으로 한 칸, 첫 수에는 두 칸도 갈 수 있어요. 잡을 때는 대각선 앞으로 가며, 끝 줄에 닿으면 승진해요.", en: "Moves one square forward, or two on its first move. It captures diagonally and promotes on the last rank." },
   },
@@ -1200,9 +1171,11 @@ function renderPieceGuide() {
   if (!pieceGuideContent) return;
   const korean = currentInterfaceLanguage() === "Korean";
   const copy = (value) => value[korean ? "ko" : "en"];
-  pieceGuideEyebrow.textContent = korean ? "처인성 체스 빠른 안내" : "Cheoinseong chess quick guide";
+  const edition = pieceGuideDialog?.dataset.openSource === "match" ? selectedPieceEdition : "cheoinseong";
+  const historical = edition === "cheoinseong";
+  pieceGuideEyebrow.textContent = historical ? (korean ? "처인성 체스 빠른 안내" : "Cheoinseong chess quick guide") : (korean ? "체스 빠른 안내" : "Chess quick guide");
   pieceGuideTitle.textContent = korean ? "말 한눈에 보기" : "Meet the Pieces";
-  pieceGuideIntro.textContent = korean
+  pieceGuideIntro.textContent = !historical ? (korean ? "내 말의 이름과 움직임을 확인하세요." : "Check your pieces’ names and moves.") : korean
     ? "고려·몽골 캐릭터가 어떤 체스 말인지, 어디로 움직이는지 한 장으로 확인하세요."
     : "See which chess piece each Goryeo–Mongol character represents and how it moves.";
   closePieceGuideButton?.setAttribute("aria-label", korean ? "말 안내 닫기" : "Close piece guide");
@@ -1213,12 +1186,12 @@ function renderPieceGuide() {
     const diagramLabel = korean ? `${standard}가 움직일 수 있는 칸` : `Squares the ${standard.toLowerCase()} can move to`;
     return `
       <article class="piece-guide-card">
-        <div class="piece-guide-piece-pair" role="group" aria-label="${copy(piece.custom)}">
-          <span>${cheoinseongPieceSvg(`w${piece.type}`, { decorative: true })}</span>
-          <span>${cheoinseongPieceSvg(`b${piece.type}`, { decorative: true })}</span>
+        <div class="piece-guide-piece-pair" role="group" aria-label="${historical ? copy(piece.custom) : standard}">
+          <span>${pieceSvg(`w${piece.type}`, edition)}</span>
+          <span>${pieceSvg(`b${piece.type}`, edition)}</span>
         </div>
         <div class="piece-guide-piece-copy">
-          <span class="piece-guide-custom-name">${copy(piece.custom)}</span>
+          <span class="piece-guide-custom-name">${historical ? copy(piece.custom) : standard}</span>
           <h4>${standard}</h4>
           <strong>${copy(piece.role)}</strong>
           <p>${copy(piece.movement)}</p>
@@ -1259,7 +1232,7 @@ function renderPieceGuide() {
     <section class="piece-guide-section" aria-labelledby="pieceGuidePiecesHeading">
       <div class="piece-guide-section-heading">
         <span>01</span>
-        <div><h3 id="pieceGuidePiecesHeading">${korean ? "여섯 말을 만나봐요" : "Meet the six pieces"}</h3><p>${korean ? "그림은 고려 진영과 몽골 진영을 함께 보여줘요." : "Each card shows both the Goryeo and Mongol versions."}</p></div>
+        <div><h3 id="pieceGuidePiecesHeading">${korean ? "여섯 말을 만나봐요" : "Meet the six pieces"}</h3><p>${historical ? (korean ? "그림은 고려 진영과 몽골 진영을 함께 보여줘요." : "Each card shows both the Goryeo and Mongol versions.") : (korean ? "백과 흑의 여섯 가지 말을 보여줘요." : "The six pieces in white and black.")}</p></div>
       </div>
       <div class="piece-guide-grid">${pieceCards}</div>
       <div class="piece-guide-legend"><span><i class="is-move"></i>${korean ? "이동" : "Move"}</span><span><i class="is-first"></i>${korean ? "폰의 첫 두 칸" : "Pawn's first two-square move"}</span><span><i class="is-capture"></i>${korean ? "폰이 잡는 칸" : "Pawn capture"}</span></div>
@@ -1273,8 +1246,8 @@ function renderPieceGuide() {
 
 function openPieceGuide({ source = "manual" } = {}) {
   if (!(pieceGuideDialog instanceof HTMLDialogElement) || pieceGuideDialog.open) return;
-  renderPieceGuide();
   pieceGuideDialog.dataset.openSource = source;
+  renderPieceGuide();
   pieceGuideDialog.showModal();
   closePieceGuideButton?.focus();
   trackEvent("piece_guide_opened", { source, mode: activeTrainingPathMode });
@@ -2208,6 +2181,12 @@ function renderStaffAccessState() {
 
 function renderAuthState() {
   const signedIn = Boolean(currentUser);
+  if (tutorialLoginButton) {
+    tutorialLoginButton.hidden = false;
+    tutorialLoginButton.textContent = signedIn
+      ? (currentInterfaceLanguage() === "Korean" ? "대국하러 가기" : "Go to play")
+      : (currentInterfaceLanguage() === "Korean" ? "로그인 화면으로 가기" : "Go to login");
+  }
   document.body.classList.toggle("is-signed-in", signedIn);
   authForm.classList.toggle("signed-in", signedIn);
   if (!document.body.classList.contains("auth-entry-open") || signedIn) entryAuth.hidden = true;
@@ -3190,7 +3169,7 @@ function renderTrainingControls() {
     showCheoinseongGuideButton.classList.remove("locked");
     showCheoinseongGuideButton.setAttribute("aria-disabled", "false");
   }
-  if (tutorialLoginButton) tutorialLoginButton.hidden = Boolean(currentUser);
+  if (tutorialLoginButton) tutorialLoginButton.hidden = false;
   renderTrainingEditionControls();
   if (tutorialPuzzleNote) {
     tutorialPuzzleNote.hidden = puzzleUnlocked || activeTrainingPathMode === "cheoinseong";
@@ -3240,7 +3219,7 @@ function setActiveTrainingPathMode(mode) {
   showTutorialGuideButton?.classList.toggle("active", mode === "tutorial");
   showPuzzleGuideButton?.classList.toggle("active", mode === "puzzle");
   showCheoinseongGuideButton?.classList.toggle("active", mode === "cheoinseong");
-  pieceGuideTriggers.forEach((button) => { button.hidden = !["puzzle", "cheoinseong"].includes(mode); });
+  pieceGuideTriggers.forEach((button) => { button.hidden = button.dataset.pieceGuideContext !== "match" && !["puzzle", "cheoinseong"].includes(mode); });
 }
 
 function showTrainingModuleHome() {
@@ -3547,7 +3526,7 @@ function updateTutorialGateState() {
   document.body.classList.toggle("tutorial-required", required);
   document.body.classList.toggle("tutorial-complete", complete);
   if (tutorialGateNote) tutorialGateNote.hidden = !required;
-  if (tutorialLoginButton) tutorialLoginButton.hidden = Boolean(currentUser);
+  if (tutorialLoginButton) tutorialLoginButton.hidden = false;
   setHowToPlayMode(activeTrainingPathMode);
   document.querySelectorAll("[data-view-link]").forEach((link) => {
     const blocked = required && link.dataset.viewLink !== "how-to-play";
@@ -5626,7 +5605,14 @@ function buildBoard() {
         const pieceEdition = selectedPieceEdition;
         piece.className = `piece ${pieceColor}-piece piece-${pieces[id][1]} piece-edition-${pieceEdition}`;
         piece.innerHTML = pieceSvg(pieces[id], pieceEdition);
-        square.append(piece);
+        const guide = pieceGuidePieces.find(item => item.type === pieces[id][1]);
+        const lang = currentInterfaceLanguage() === "Korean" ? "ko" : "en";
+        const name = guide.standard[lang];
+        square.title = name + " · " + guide.movement[lang];
+        const nameplate = document.createElement("span");
+        nameplate.className = "piece-nameplate";
+        nameplate.textContent = name;
+        square.append(piece, nameplate);
       }
 
       board.append(square);
@@ -7673,6 +7659,8 @@ textSizeSlider.addEventListener("input", (event) => applyTextSize(event.target.v
 languageSelect?.addEventListener("change", async () => {
   applyInterfaceLanguage();
   syncLegalLanguage();
+  if (pieceGuideDialog?.open) renderPieceGuide();
+  buildBoard();
   renderActiveMatchReturn();
   if (!queueTipPanel?.hidden) showQueueTip();
   renderLandingTypewriter();
@@ -7767,7 +7755,7 @@ mainTutorialButton?.addEventListener("click", () => {
   showTrainingModuleHome();
 });
 
-tutorialLoginButton?.addEventListener("click", () => openAccountEntry("signup"));
+tutorialLoginButton?.addEventListener("click", () => currentUser ? setView("dashboard") : openAccountEntry("login"));
 
 showTutorialGuideButton?.addEventListener("click", () => {
   clearRequestedTrainingModule();
@@ -7791,7 +7779,7 @@ showCheoinseongGuideButton?.addEventListener("click", async () => {
 });
 
 pieceGuideTriggers.forEach((button) => button.addEventListener("click", () => {
-  openPieceGuide({ source: button.classList.contains("piece-guide-toolbar-trigger") ? "puzzle_toolbar" : "puzzle_header" });
+  openPieceGuide({ source: button.dataset.pieceGuideContext === "match" ? "match" : button.classList.contains("piece-guide-toolbar-trigger") ? "puzzle_toolbar" : "puzzle_header" });
 }));
 closePieceGuideButton?.addEventListener("click", () => pieceGuideDialog?.close());
 pieceGuideDialog?.addEventListener("click", (event) => {
