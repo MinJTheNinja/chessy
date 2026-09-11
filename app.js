@@ -1174,12 +1174,12 @@ function renderPieceGuide() {
   const edition = pieceGuideDialog?.dataset.openSource === "match" ? selectedPieceEdition : "cheoinseong";
   const historical = edition === "cheoinseong";
   pieceGuideEyebrow.textContent = historical ? (korean ? "처인성 체스 빠른 안내" : "Cheoinseong chess quick guide") : (korean ? "체스 빠른 안내" : "Chess quick guide");
-  pieceGuideTitle.textContent = korean ? "말 한눈에 보기" : "Meet the Pieces";
+  pieceGuideTitle.textContent = korean ? "기물 확인하기" : "Meet the Pieces";
   pieceGuideIntro.textContent = !historical ? (korean ? "내 말의 이름과 움직임을 확인하세요." : "Check your pieces’ names and moves.") : korean
     ? "고려·몽골 캐릭터가 어떤 체스 말인지, 어디로 움직이는지 한 장으로 확인하세요."
     : "See which chess piece each Goryeo–Mongol character represents and how it moves.";
   closePieceGuideButton?.setAttribute("aria-label", korean ? "말 안내 닫기" : "Close piece guide");
-  pieceGuideTriggers.forEach((button) => { button.textContent = korean ? "말 한눈에 보기" : "Piece Guide"; });
+  pieceGuideTriggers.forEach((button) => { button.textContent = korean ? "기물 확인하기" : "Piece Guide"; });
 
   const pieceCards = pieceGuidePieces.map((piece) => {
     const standard = copy(piece.standard);
@@ -1234,6 +1234,11 @@ function renderPieceGuide() {
         <span>01</span>
         <div><h3 id="pieceGuidePiecesHeading">${korean ? "여섯 말을 만나봐요" : "Meet the six pieces"}</h3><p>${historical ? (korean ? "그림은 고려 진영과 몽골 진영을 함께 보여줘요." : "Each card shows both the Goryeo and Mongol versions.") : (korean ? "백과 흑의 여섯 가지 말을 보여줘요." : "The six pieces in white and black.")}</p></div>
       </div>
+      ${historical ? `<div class="piece-guide-design-story">
+        <h4>${korean ? "기물 디자인 이야기" : "The story behind the pieces"}</h4>
+        <p>${korean ? "고려 측 기물 디자인은 용인시 마스코트를 모티브로 제작되었습니다." : "The Goryeo pieces were designed with inspiration from Yongin City’s mascot."}</p>
+        <p>${korean ? '몽골 측 기물은 몽골의 건국 신화를 바탕으로 늑대 캐릭터로 설정했습니다. 역사서 <strong>《몽골비사》</strong>에 전해지는 이야기에서 몽골족의 시조는 하늘의 뜻으로 태어난 ‘푸른 늑대’와 ‘아름다운 암사슴’입니다. 이 이야기를 모티브로 몽골 측 디자인을 제작했습니다.' : 'The Mongol pieces are wolf characters inspired by Mongolia’s founding myth. In the story recorded in <strong>The Secret History of the Mongols</strong>, the Mongols trace their origins to a blue wolf born by the will of Heaven and a beautiful doe. This story inspired the Mongol designs.'}</p>
+      </div>` : ""}
       <div class="piece-guide-grid">${pieceCards}</div>
       <div class="piece-guide-legend"><span><i class="is-move"></i>${korean ? "이동" : "Move"}</span><span><i class="is-first"></i>${korean ? "폰의 첫 두 칸" : "Pawn's first two-square move"}</span><span><i class="is-capture"></i>${korean ? "폰이 잡는 칸" : "Pawn capture"}</span></div>
     </section>
@@ -3156,6 +3161,10 @@ function renderPuzzlePath() {
 }
 
 function renderTrainingControls() {
+  const trainingTitle = document.querySelector("#howToPlayTitle");
+  if (trainingTitle) trainingTitle.textContent = activeTrainingPathMode === "tutorial"
+    ? (currentInterfaceLanguage() === "Korean" ? "체스가 처음이신가요?" : "New to chess?")
+    : (currentInterfaceLanguage() === "Korean" ? "훈련장" : "Training");
   const state = activeTrainingState();
   const puzzleUnlocked = Boolean(state.puzzleUnlocked);
   const korean = currentInterfaceLanguage() === "Korean";
