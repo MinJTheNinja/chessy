@@ -1038,7 +1038,12 @@
                   <span>사용자 검색</span>
                   <input id="adminUserSearch" type="search" placeholder="이름, 이메일, 역할, 경고 수" />
                 </label>
+                <p id="adminUsersSummary" role="status" aria-live="polite"></p>
                 <div class="admin-list" id="adminUsersList"></div>
+                <div class="admin-users-pagination">
+                  <button class="button secondary small" id="adminUsersPrevious" type="button" aria-controls="adminUsersList" disabled>이전</button>
+                  <button class="button secondary small" id="adminUsersNext" type="button" aria-controls="adminUsersList" disabled>다음</button>
+                </div>
               </article>
               <article class="wire-card">
                 <h3>신고와 경고</h3>

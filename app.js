@@ -1479,6 +1479,7 @@ let sttInterimLines = [];
 let sttSessionStart = null;
 let sttSessionTimer = null;
 let cachedAdminData = null;
+let adminUsersPage = 1;
 let cachedLobbyData = null;
 let adminCommandBuffer = "";
 let adminSearchFrame = 0;
@@ -4033,6 +4034,14 @@ function adminMatchSearchText(match) {
   );
 }
 
+function paginateAdminUsers(users, query, requestedPage) {
+  const filtered = users.filter((user) => !query || adminUserSearchText(user).includes(query));
+  const pages = Math.max(1, Math.ceil(filtered.length / 20));
+  const page = Math.min(pages, Math.max(1, Number(requestedPage) || 1));
+  const start = (page - 1) * 20;
+  return { items: filtered.slice(start, start + 20), total: filtered.length, page, pages, start: filtered.length ? start + 1 : 0, end: Math.min(start + 20, filtered.length) };
+}
+
 function adminUserSearchText(user) {
   return adminSearchText(
     `${user.displayName} ${user.email} ${user.role} ${Number(user.mannerTemperature ?? 0).toFixed(1)} ${(user.warnings || []).length}`,
@@ -4135,7 +4144,19 @@ function renderAdminOverview(data) {
   );
 
   const userQuery = adminSearchText(adminUserSearch?.value);
-  const users = (data.users || []).filter((adminItem) => !userQuery || adminUserSearchText(adminItem).includes(userQuery));
+  const userPage = paginateAdminUsers(data.users || [], userQuery, adminUsersPage);
+  adminUsersPage = userPage.page;
+  const users = userPage.items;
+  const koreanUsers = currentInterfaceLanguage() === "Korean";
+  document.querySelector("#adminUsersSummary").textContent = koreanUsers
+    ? `전체 ${data.users?.length || 0}명 · ${userQuery ? '검색 결과 ' + userPage.total + '명 · ' : ''}${userPage.start}–${userPage.end}명 표시 · ${userPage.page}/${userPage.pages} 페이지`
+    : `${data.users?.length || 0} total users · ${userQuery ? userPage.total + ' matches · ' : ''}Showing ${userPage.start}–${userPage.end} · Page ${userPage.page} of ${userPage.pages}`;
+  const previousUsers = document.querySelector("#adminUsersPrevious");
+  const nextUsers = document.querySelector("#adminUsersNext");
+  previousUsers.textContent = koreanUsers ? "이전" : "Previous";
+  nextUsers.textContent = koreanUsers ? "다음" : "Next";
+  previousUsers.disabled = userPage.page <= 1;
+  nextUsers.disabled = userPage.page >= userPage.pages;
   renderAdminList(
     adminUsersList,
     users,
@@ -7904,7 +7925,15 @@ const scheduleAdminSearchRender = () => {
   });
 };
 adminMatchSearch.addEventListener("input", scheduleAdminSearchRender);
-adminUserSearch.addEventListener("input", scheduleAdminSearchRender);
+adminUserSearch.addEventListener("input", () => { adminUsersPage = 1; scheduleAdminSearchRender(); });
+document.querySelector("#adminUsersPrevious").addEventListener("click", () => {
+  adminUsersPage = Math.max(1, adminUsersPage - 1);
+  if (cachedAdminData) renderAdminOverview(cachedAdminData);
+});
+document.querySelector("#adminUsersNext").addEventListener("click", () => {
+  adminUsersPage += 1;
+  if (cachedAdminData) renderAdminOverview(cachedAdminData);
+});
 
 async function saveProfilePatch(patch = {}) {
   if (!currentUser) {

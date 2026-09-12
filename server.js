@@ -3486,7 +3486,7 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
         totalReports: db.reports.length,
       },
       leagues: adminLeagueViews(db),
-      users: db.users.slice(-30).reverse().map(adminUser),
+      users: [...db.users].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")) || String(a.id).localeCompare(String(b.id))).map(adminUser),
       matches: db.matches.slice(-30).reverse().map(adminMatch),
       reports: db.reports.slice(-30).reverse().map((report) => adminReport(report, db)),
       shopInterests: db.shopInterests.slice(-50).reverse().map((interest) => shopInterestView(interest, db)),
@@ -4695,7 +4695,7 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, healthy ? 200 : 503, {
         ok: healthy,
         app: "Live Chess",
-        release: "20260912-google-login-shared-ip",
+        release: "20260912-admin-user-pagination",
         storage: pgPool ? "postgres" : "local-json",
         storageStatus: healthy ? "ready" : storageReady ? "unavailable" : "connecting",
         storageError: !healthy || storageError ? "temporarily unavailable" : null,
