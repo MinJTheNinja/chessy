@@ -2801,7 +2801,6 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
   }
 
   if (req.method === "POST" && pathname === "/api/auth/google") {
-    if (!requireRateLimit(req, res, user, "auth-google", 20)) return true;
     const body = await readBody(req);
     try {
       const googleProfile = await verifyGoogleCredential(body.credential);
@@ -4696,7 +4695,7 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, healthy ? 200 : 503, {
         ok: healthy,
         app: "Live Chess",
-        release: "20260910-timeout-recovery",
+        release: "20260912-google-login-shared-ip",
         storage: pgPool ? "postgres" : "local-json",
         storageStatus: healthy ? "ready" : storageReady ? "unavailable" : "connecting",
         storageError: !healthy || storageError ? "temporarily unavailable" : null,
