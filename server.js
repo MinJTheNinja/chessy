@@ -702,6 +702,7 @@ async function saveUser(user, queryable = appStateContext.getStore()?.client || 
   const profilePatch = Object.fromEntries(
     Object.entries(stored.profile).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(originalProfile[key])),
   );
+  const ratingDeltas = Object.fromEntries(["easyElo", "weeklyEasyElo"].filter(key => Object.hasOwn(profilePatch, key)).map(key => [key, Number(stored.profile[key]) - Number(originalProfile[key] ?? originalProfile.easyElo ?? 1000)]));
   const changed = (key) => !original || stored[key] !== original[key];
   stored.updatedAt = new Date().toISOString();
   user.updatedAt = stored.updatedAt;
@@ -717,7 +718,7 @@ async function saveUser(user, queryable = appStateContext.getStore()?.client || 
         displayName: changed("displayName") ? stored.displayName : current.displayName,
         authProvider: changed("authProvider") ? stored.authProvider : current.authProvider,
         googleSub: changed("googleSub") ? stored.googleSub : current.googleSub,
-        profile: { ...(current.profile || {}), ...profilePatch },
+        profile: { ...(current.profile || {}), ...profilePatch, ...Object.fromEntries(Object.entries(ratingDeltas).map(([key, delta]) => [key, Number(current.profile?.[key] ?? current.profile?.easyElo ?? 1000) + delta])) },
         updatedAt: stored.updatedAt,
       };
       return localHydratedUser(identity, identity.users[index]);
@@ -730,7 +731,7 @@ async function saveUser(user, queryable = appStateContext.getStore()?.client || 
          display_name = CASE WHEN $11 THEN $4 ELSE display_name END,
          auth_provider = CASE WHEN $12 THEN $5 ELSE auth_provider END,
          google_sub = CASE WHEN $13 THEN $6 ELSE google_sub END,
-         profile = profile || $7::jsonb,
+         profile = profile || $7::jsonb || COALESCE((SELECT jsonb_object_agg(key, COALESCE((profile->>key)::numeric, (profile->>'easyElo')::numeric, 1000) + value::numeric) FROM jsonb_each_text($14::jsonb)), '{}'::jsonb),
          updated_at = $8
      WHERE id = $1`,
     [
@@ -747,6 +748,7 @@ async function saveUser(user, queryable = appStateContext.getStore()?.client || 
       changed("displayName"),
       changed("authProvider"),
       changed("googleSub"),
+      JSON.stringify(ratingDeltas),
     ],
   );
   user.__originalStored = stored;
@@ -897,6 +899,7 @@ async function completeTutorialProgress(userId, requestedModule) {
       );
     }
     user.training = normalizeTraining({ ...user.training, completedModules: [...user.training.completedModules, nextModule.id] });
+    addEasyElo(user, 20);
     applyDailyStreak(user, completedAt, "learning");
     const unlocked = syncAchievements(user, { users: [user], matches: [], reports: [] });
     return { state: trainingState(user), user, unlocked };
@@ -1773,7 +1776,29 @@ function applyDailyStreak(user, completedAt = new Date(), activityType = "match"
   return true;
 }
 
+function addEasyElo(user, points) {
+  if (!user) return;
+  user.weeklyEasyElo = Number(user.weeklyEasyElo ?? user.easyElo ?? 1000) + points;
+  user.easyElo = Number(user.easyElo ?? 1000) + points;
+}
+
 function recordMatchCompletionStreak(match, db) {
+  if (!match.easyEloAwarded && (match.moves || []).length >= 2 && !/expired|cancel|staff/i.test(match.result || "")) {
+    const game = new Chess(match.fen || new Chess().fen());
+    const timedOutColor = /lost on time/i.test(match.result || "")
+      ? (match.clocks?.whiteMs <= 0 ? "white" : match.clocks?.blackMs <= 0 ? "black" : null) : null;
+    const winningColor = game.isCheckmate() ? (game.turn() === "w" ? "black" : "white") : timedOutColor ? (timedOutColor === "white" ? "black" : "white") : null;
+    const winner = winningColor ? winnerUserIdForColor(match, winningColor) : match.resignedBy ? (match.players || []).find(p => p.userId && p.userId !== match.resignedBy)?.userId : null;
+    const draw = game.isDraw() || match.result === "Draw agreed";
+    match.easyEloAwarded = true;
+    match.easyEloChanges = {};
+    for (const participant of match.players || []) {
+      const player = db.users.find(u => u.id === participant.userId);
+      if (!player) continue;
+      const points = winner === player.id ? 30 : draw ? 15 : 5;
+      addEasyElo(player, points); match.easyEloChanges[player.id] = points;
+    }
+  }
   const participantIds = new Set((match.players || []).map((player) => player.userId).filter(Boolean));
   const unlocked = [];
   participantIds.forEach((userId) => {
@@ -2948,6 +2973,20 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
   }
 
   const forumPostParams = routePattern(pathname, "/api/forum/posts/:id");
+  if (req.method === "PATCH" && forumPostParams) {
+    if (!requireUser(user, res)) return true;
+    const post = db.forumPosts.find((item) => item.id === forumPostParams.id);
+    if (!post) { sendJson(res, 404, { error: "Forum post not found." }); return true; }
+    if (post.authorId !== user.id) { sendJson(res, 403, { error: "Only the author can edit this post." }); return true; }
+    const body = await readBody(req);
+    const title = String(body.title || "").trim().slice(0, 80);
+    const text = String(body.body || "").trim().slice(0, 2000);
+    if (!title || !text) { sendJson(res, 400, { error: "Title and body are required." }); return true; }
+    post.title = title; post.body = text; post.updatedAt = new Date().toISOString();
+    await writeDb(db);
+    broadcast(null, { type: "forum:updated", action: "edited", postId: post.id });
+    sendJson(res, 200, { post }); return true;
+  }
   if (req.method === "DELETE" && forumPostParams) {
     if (!requireStaff(user, res)) return true;
     const postIndex = db.forumPosts.findIndex((item) => item.id === forumPostParams.id);
@@ -3343,6 +3382,8 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
       if (Number.isFinite(Number(body[key]))) puzzle[key] = Math.max(0, Number(body[key]));
     });
     const existingIndex = user.training.completedPuzzles.findIndex((item) => item.id === puzzleId);
+    const knownPuzzle = cheoinseongPuzzleIds.includes(puzzleId) || goryeoPuzzleTiers.flat().includes(baseGoryeoPuzzleId(puzzleId)) && /^(?:[smha][1-3](?:-v[2-6])?|gate[2-5])$/.test(puzzleId);
+    if (existingIndex < 0 && knownPuzzle) addEasyElo(user, 10);
     if (existingIndex >= 0) user.training.completedPuzzles[existingIndex] = { ...user.training.completedPuzzles[existingIndex], ...puzzle };
     else user.training.completedPuzzles.push(puzzle);
     applyDailyStreak(user, new Date(), "learning");
@@ -4236,6 +4277,7 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     }
     if (!requireMatchAccess(match, user, res)) return true;
     const wasEnded = match.status === "ended";
+    if (!wasEnded && body.result === "Resigned") match.resignedBy = user.id;
     if (match.clocks) {
       match.clocks = liveClockState(match);
     }
@@ -4695,7 +4737,7 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, healthy ? 200 : 503, {
         ok: healthy,
         app: "Live Chess",
-        release: "20260912-admin-user-pagination",
+        release: "20260912-learning-forum-controls",
         storage: pgPool ? "postgres" : "local-json",
         storageStatus: healthy ? "ready" : storageReady ? "unavailable" : "connecting",
         storageError: !healthy || storageError ? "temporarily unavailable" : null,

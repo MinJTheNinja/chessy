@@ -637,3 +637,47 @@ test("slow and aborted league uploads do not block other students", { timeout: 3
   });
   assert.equal(login.status, 200);
 });
+
+
+test("learning points persist once, concurrent learning merges, and authors alone edit posts", {timeout:60000}, async(t)=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'learning-edit-'));
+ const runtime=await startServer(dir);t.after(async()=>{await stopServer(runtime.child);fs.rmSync(dir,{recursive:true,force:true});});
+ const a=await signup(runtime.baseUrl,'author@example.test','Author');
+ const b=await signup(runtime.baseUrl,'reader@example.test','Reader');
+ const call=(route,body,cookie=a.cookie,method='POST')=>request(runtime.baseUrl,route,{method,cookie,body});
+ const session=async(cookie=a.cookie)=>(await request(runtime.baseUrl,'/api/session',{cookie})).data.user;
+ const repeated=await Promise.all(Array.from({length:8},()=>call('/api/training/tutorial-complete',{module:1})));
+ assert.ok(repeated.every(r=>r.status===200));assert.equal((await session()).easyElo,1020);
+ // Tutorial uses a separate identity transaction while puzzle writes use app_state.
+ const mixed=await Promise.all([call('/api/training/tutorial-complete',{module:2}),call('/api/training/puzzle-complete',{puzzleId:'cheoin-1',stars:3})]);
+ assert.ok(mixed.every(r=>r.status===200));assert.equal((await session()).easyElo,1050);
+ await call('/api/training/puzzle-complete',{puzzleId:'cheoin-1',stars:3});assert.equal((await session()).easyElo,1050);
+ const post=await call('/api/forum/posts',{title:'Original',body:'Original body',category:'Notice'});assert.equal(post.status,201);
+ const route='/api/forum/posts/'+post.data.post.id;
+ assert.equal((await call(route,{title:'Stolen',body:'No'},b.cookie,'PATCH')).status,403);
+ assert.equal((await call(route,{title:'',body:'No'},a.cookie,'PATCH')).status,400);
+ const edited=await call(route,{title:'Edited',body:'Updated body',category:'Free',authorId:b.data.user.id},a.cookie,'PATCH');
+ assert.equal(edited.status,200);assert.equal(edited.data.post.category,'Notice');assert.equal(edited.data.post.authorId,a.data.user.id);
+ const list=await request(runtime.baseUrl,'/api/forum/posts',{cookie:a.cookie});assert.equal(list.data.posts.find(p=>p.id===post.data.post.id).title,'Edited');
+ const challenge=await call('/api/challenges',{timeControl:'10+0'});assert.equal(challenge.status,200);
+ const joined=await call('/api/challenges/'+challenge.data.challenge.code+'/accept',{},b.cookie);assert.equal(joined.status,200);
+ const matchId=joined.data.match.id;
+ const move=async(from,to,cookie)=>{const r=await call('/api/matches/'+matchId+'/move',{from,to},cookie);assert.equal(r.status,200,JSON.stringify(r.data));return r;};
+ // Fool's mate: a verified server-side checkmate awards the actual winner.
+ await move('f2','f3',a.cookie);await move('e7','e5',b.cookie);await move('g2','g4',a.cookie);
+ const ended=await move('d8','h4',b.cookie);assert.equal(ended.data.match.status,'ended');
+ assert.equal((await session(a.cookie)).easyElo,1055);assert.equal((await session(b.cookie)).easyElo,1030);
+ await call('/api/matches/'+matchId+'/end',{result:'Completed'},a.cookie);
+ assert.equal((await session(a.cookie)).easyElo,1055);assert.equal((await session(b.cookie)).easyElo,1030);
+ for (const result of ['Resigned','Draw agreed']) {
+  const next=await call('/api/challenges',{timeControl:'10+0'});
+  const joinedNext=await call('/api/challenges/'+next.data.challenge.code+'/accept',{},b.cookie);
+  const id=joinedNext.data.match.id;
+  assert.equal((await call('/api/matches/'+id+'/move',{from:'e2',to:'e4'},a.cookie)).status,200);
+  assert.equal((await call('/api/matches/'+id+'/move',{from:'e7',to:'e5'},b.cookie)).status,200);
+  assert.equal((await call('/api/matches/'+id+'/end',{result},a.cookie)).status,200);
+ }
+ assert.equal((await session(a.cookie)).easyElo,1075);assert.equal((await session(b.cookie)).easyElo,1075);
+ const identity=JSON.parse(fs.readFileSync(path.join(dir,'identity.json'),'utf8'));
+ assert.equal(identity.users.find(u=>u.id===a.data.user.id).profile.weeklyEasyElo,1075);
+});

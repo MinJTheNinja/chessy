@@ -432,7 +432,7 @@
                     <section class="match-action-strip" aria-label="대국 행동">
                       <button class="icon-action" id="drawMatch" type="button" title="무승부 제안" aria-label="무승부 제안">1/2</button>
                       <button class="icon-action danger" id="resignMatch" type="button" title="기권" aria-label="기권">⚑</button>
-                      <button class="icon-action danger report-inline" id="reportUser" type="button" title="신고하기" aria-label="신고하기">!</button>
+                      <button class="icon-action danger report-inline" id="reportUser" type="button" title="신고하기" aria-label="신고하기">신고</button>
                     </section>
 
                     <section class="player-clock-card self-clock-card" id="whiteClockCard">
@@ -652,15 +652,15 @@
                 </label>
                 <label>
                   내용
-                  <textarea id="forumPostBody" placeholder="내용을 작성하세요" maxlength="420"></textarea>
+                  <textarea id="forumPostBody" placeholder="내용을 작성하세요" maxlength="2000"></textarea>
                 </label>
                 <button class="button primary full" id="publishForumPost" type="button">게시</button>
               </article>
 
               <nav class="forum-tabs" aria-label="게시판 분류">
                 <button type="button" data-forum-filter="All">전체</button>
-                <button type="button" data-forum-filter="Notice">공지</button>
-                <button class="active" type="button" data-forum-filter="Question">질문</button>
+                <button class="active" type="button" data-forum-filter="Notice">공지</button>
+                <button type="button" data-forum-filter="Question">질문</button>
                 <button type="button" data-forum-filter="Free">자유</button>
               </nav>
 

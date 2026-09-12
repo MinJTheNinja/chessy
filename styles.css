@@ -11247,3 +11247,7 @@ body.show-how-to-play .workspace {
 
 .admin-users-pagination { display: flex; justify-content: space-between; gap: 12px; margin-top: 16px; }
 #adminUsersSummary { color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
+
+#reportUser { width: auto; min-width: 48px; padding-inline: 8px; font-size: 0.85rem; }
+.forum-edit-form { display: grid; gap: 10px; margin-top: 14px; }
+.forum-edit-form input, .forum-edit-form textarea { width: 100%; box-sizing: border-box; font: inherit; }

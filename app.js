@@ -930,6 +930,7 @@ function syncLocalizedControls() {
   setText(leaveTeacherLeagueButton, korean ? "리그 삭제" : "Delete league");
   setText(createLeagueButton, korean ? "코드 생성" : "Generate code");
   closeLeagueActionPopoverButton?.setAttribute("aria-label", korean ? "리그 코드 창 닫기" : "Close league code dialog");
+  setText(reportUserButton, korean ? "신고" : "Report");
   setText(mainTutorialButton, korean ? "훈련장으로 가기" : "Go to training");
   if (!currentUser) {
     setText(loginButton, korean ? "로그인" : "Login");
@@ -1483,7 +1484,7 @@ let adminUsersPage = 1;
 let cachedLobbyData = null;
 let adminCommandBuffer = "";
 let adminSearchFrame = 0;
-let forumFilter = "Question";
+let forumFilter = "Notice";
 let forumPosts = [];
 let expandedForumPostId = null;
 let staffShopProducts = [];
@@ -2188,7 +2189,7 @@ function renderStaffAccessState() {
 function renderAuthState() {
   const signedIn = Boolean(currentUser);
   if (tutorialLoginButton) {
-    tutorialLoginButton.hidden = false;
+    tutorialLoginButton.hidden = Boolean(currentUser);
     tutorialLoginButton.textContent = signedIn
       ? (currentInterfaceLanguage() === "Korean" ? "대국하러 가기" : "Go to play")
       : (currentInterfaceLanguage() === "Korean" ? "로그인 화면으로 가기" : "Go to login");
@@ -3179,7 +3180,7 @@ function renderTrainingControls() {
     showCheoinseongGuideButton.classList.remove("locked");
     showCheoinseongGuideButton.setAttribute("aria-disabled", "false");
   }
-  if (tutorialLoginButton) tutorialLoginButton.hidden = false;
+  if (tutorialLoginButton) tutorialLoginButton.hidden = Boolean(currentUser);
   renderTrainingEditionControls();
   if (tutorialPuzzleNote) {
     tutorialPuzzleNote.hidden = puzzleUnlocked || activeTrainingPathMode === "cheoinseong";
@@ -3536,7 +3537,7 @@ function updateTutorialGateState() {
   document.body.classList.toggle("tutorial-required", required);
   document.body.classList.toggle("tutorial-complete", complete);
   if (tutorialGateNote) tutorialGateNote.hidden = !required;
-  if (tutorialLoginButton) tutorialLoginButton.hidden = false;
+  if (tutorialLoginButton) tutorialLoginButton.hidden = Boolean(currentUser);
   setHowToPlayMode(activeTrainingPathMode);
   document.querySelectorAll("[data-view-link]").forEach((link) => {
     const blocked = required && link.dataset.viewLink !== "how-to-play";
@@ -4874,6 +4875,7 @@ function setForumPolling(active) {
 }
 
 function renderForumPosts() {
+  if (forumPostList.querySelector(".forum-edit-form")) return;
   forumPostList.replaceChildren();
   forumFilterButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.forumFilter === forumFilter);
@@ -5030,6 +5032,14 @@ function renderForumPosts() {
       }
       main.append(detail);
     }
+    if (currentUser && post.authorId === currentUser.id) {
+      const editButton = document.createElement("button");
+      editButton.type = "button";
+      editButton.className = "forum-pin-action";
+      editButton.textContent = currentInterfaceLanguage() === "Korean" ? "편집" : "Edit";
+      editButton.addEventListener("click", () => openForumPostEditor(post, main, editButton));
+      side.append(editButton);
+    }
     side.append(author, time, comments);
     if (pinButton) side.append(pinButton);
     if (deleteButton) side.append(deleteButton);
@@ -5119,6 +5129,36 @@ function showAchievementUnlocks(unlocked = []) {
     () => api("/api/achievements/acknowledge", { method: "POST", body: { ids: acknowledged } }),
     (data) => (data?.user ? { ...currentUser, ...data.user } : currentUser),
   ).catch(() => {});
+}
+
+function openForumPostEditor(post, container, editButton) {
+  if (container.querySelector(".forum-edit-form")) return;
+  const korean = currentInterfaceLanguage() === "Korean";
+  const form = document.createElement("form");
+  form.className = "forum-edit-form";
+  const title = document.createElement("input");
+  title.value = post.title; title.maxLength = 80; title.required = true;
+  title.setAttribute("aria-label", korean ? "게시글 제목" : "Post title");
+  const body = document.createElement("textarea");
+  body.value = post.body || ""; body.maxLength = 2000; body.required = true; body.rows = 6;
+  body.setAttribute("aria-label", korean ? "게시글 내용" : "Post body");
+  const save = document.createElement("button");
+  save.type = "submit"; save.className = "button primary small"; save.textContent = korean ? "저장" : "Save";
+  const cancel = document.createElement("button");
+  cancel.type = "button"; cancel.className = "button secondary small"; cancel.textContent = korean ? "취소" : "Cancel";
+  const error = document.createElement("p"); error.setAttribute("role", "alert");
+  cancel.addEventListener("click", () => { form.remove(); editButton.disabled = false; editButton.focus(); });
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault(); save.disabled = true; cancel.disabled = true; error.textContent = "";
+    try {
+      await api(`/api/forum/posts/${encodeURIComponent(post.id)}`, { method: "PATCH", body: { title: title.value.trim(), body: body.value.trim() } });
+      form.remove();
+      expandedForumPostId = post.id;
+      await refreshForumPosts();
+    } catch (failure) { error.textContent = failure.message; }
+    finally { save.disabled = false; cancel.disabled = false; }
+  });
+  form.append(title, body, save, cancel, error); container.append(form); editButton.disabled = true; title.focus();
 }
 
 function renderHomeForumPreview() {
@@ -5469,6 +5509,8 @@ function setView(viewName) {
   }
   if (viewName === "how-to-play") refreshTrainingState();
   if (viewName === "forum") {
+    forumFilter = "Notice";
+    renderForumPosts();
     refreshForumPosts();
     forumInitialized = true;
   }
@@ -5693,6 +5735,7 @@ function renderMatch(match) {
   if (match.game?.board) {
     pieces = piecesFromBoard(match.game.board);
     selectedSquare = null;
+    legalMoveTargets = [];
     buildBoard();
   }
   const opponent = match.players?.find((player) => player.userId !== currentUser?.id) || match.players?.[1];
@@ -5716,6 +5759,10 @@ function renderMatch(match) {
   startMatchClock(waitingForOpponent ? { ...match, clocks: match.clocks ? { ...match.clocks, running: false } : null } : match);
   connectSocket(match.id);
   if (matchEnded) {
+    const revision = captureCurrentUserRevision();
+    api("/api/session").then(data => {
+      if (applyCurrentUserSnapshot(data.user, revision)) { renderDashboardSummary(); refreshProfile(); }
+    }).catch(() => {});
     endVoiceCall(false);
   } else if (waitingForOpponent) {
     startPassiveWaitingDisplay();
@@ -5794,6 +5841,14 @@ async function makeMove(from, to) {
 }
 
 function handleSquareClick(square) {
+  const ownColor = currentMatchPlayers.find((player) => player.userId === currentUser?.id)?.color;
+  if (currentMatchId && (!ownColor || matchLayout.dataset.state !== "playing")) return;
+  if (currentMatchId && pieces[square] && pieces[square][0] !== ownColor[0] && !legalMoveTargets.includes(square)) {
+    selectedSquare = null;
+    legalMoveTargets = [];
+    buildBoard();
+    return;
+  }
   if (!selectedSquare) {
     if (!pieces[square]) return;
     selectedSquare = square;
