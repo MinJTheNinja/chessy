@@ -36,6 +36,19 @@
           <button class="active" type="button" data-piece-edition="cheoinseong">처인성</button>
           <button type="button" data-piece-edition="beta">Beta</button>
         </div>
+        <div class="header-language" id="headerLanguage" translate="no">
+          <button class="header-language-button" id="headerLanguageButton" type="button" aria-expanded="false" aria-controls="headerLanguagePopup" aria-label="화면 언어 선택">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="m12.87 15.07-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17A15.65 15.65 0 0 1 9 11.35 15.65 15.65 0 0 1 6.69 8h-2a17.58 17.58 0 0 0 3 4.56L2.6 17.59 4 19l5-5 3.11 3.11.76-2.04ZM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12Zm-2.62 7 1.62-4.33L19.12 17h-3.24Z"/></svg>
+            <span id="headerLanguageLabel">한국어</span>
+          </button>
+          <div class="header-language-popup" id="headerLanguagePopup" hidden>
+            <strong id="headerLanguageTitle">화면 언어</strong>
+            <div role="radiogroup" aria-labelledby="headerLanguageTitle">
+              <label><input type="radio" name="headerLanguage" value="Korean" data-header-language checked /><span lang="ko">한국어</span></label>
+              <label><input type="radio" name="headerLanguage" value="English" data-header-language /><span lang="en">English</span></label>
+            </div>
+          </div>
+        </div>
         <div class="header-profile" id="headerProfile" hidden>
           <button
             class="profile-menu-button"

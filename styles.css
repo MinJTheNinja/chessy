@@ -11251,3 +11251,37 @@ body.show-how-to-play .workspace {
 #reportUser { width: auto; min-width: 48px; padding-inline: 8px; font-size: 0.85rem; }
 .forum-edit-form { display: grid; gap: 10px; margin-top: 14px; }
 .forum-edit-form input, .forum-edit-form textarea { width: 100%; box-sizing: border-box; font: inherit; }
+/* Header interface language selector */
+.header-language { position: relative; flex-shrink: 0; }
+.header-language-button {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 40px;
+  padding: 6px 10px; border: 0; border-radius: 4px;
+  background: transparent; color: var(--muted);
+  font: inherit; font-size: 0.94rem; font-weight: 650; white-space: nowrap;
+  cursor: pointer;
+}
+.header-language-button svg { flex-shrink: 0; }
+.header-language-button:hover,
+.header-language-button[aria-expanded="true"] { background: var(--theme-panel-soft); color: var(--ink); }
+.header-language-button:focus-visible,
+.header-language-popup label:focus-within { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
+.header-language-popup {
+  position: absolute; top: calc(100% + 10px); right: 0; z-index: 100;
+  width: 200px; max-width: calc(100vw - 32px); padding: 12px;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--theme-panel); color: var(--ink);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 14%);
+}
+.header-language-popup[hidden] { display: none; }
+.header-language-popup strong { display: block; padding: 4px 8px 10px; font-size: 0.8rem; color: var(--muted); }
+.header-language-popup label {
+  display: flex; align-items: center; gap: 10px; min-height: 42px;
+  padding: 8px; border-radius: 4px; cursor: pointer; font-size: 0.94rem;
+}
+.header-language-popup label:hover,
+.header-language-popup label:has(input:checked) { background: var(--theme-panel-soft); }
+.header-language-popup input { width: 16px; height: 16px; margin: 0; accent-color: var(--theme-accent); }
+@media (max-width: 600px) {
+  .header-language-button { gap: 5px; padding-inline: 5px; font-size: 0.82rem; }
+  .header-language-button svg { width: 21px; height: 21px; }
+}
