@@ -1,6 +1,13 @@
 const board = document.querySelector("#chessBoard");
 const menuToggle = document.querySelector("#menuToggle");
 const languageSelect = document.querySelector("#languageSelect");
+const headerLanguage = document.querySelector("#headerLanguage");
+const headerLanguageButton = document.querySelector("#headerLanguageButton");
+const headerLanguagePopup = document.querySelector("#headerLanguagePopup");
+const savedInterfaceLanguage = readLocalSetting("easyMateInterfaceLanguage");
+if (languageSelect && ["Korean", "English"].includes(savedInterfaceLanguage)) {
+  languageSelect.value = savedInterfaceLanguage;
+}
 const pieceEditionControls = document.querySelectorAll("[data-piece-edition]");
 const sidebarMenu = document.querySelector("#sidebarMenu");
 const syncState = document.querySelector("#syncState");
@@ -847,7 +854,7 @@ function applyInterfaceLanguage(root = document.body) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       const parent = node.parentElement;
-      if (!parent || ["SCRIPT", "STYLE", "TEXTAREA"].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
+      if (!parent || parent.closest('[translate="no"]') || ["SCRIPT", "STYLE", "TEXTAREA"].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
     },
   });
@@ -856,7 +863,7 @@ function applyInterfaceLanguage(root = document.body) {
   textNodes.forEach(translateTextNode);
 
   root.querySelectorAll?.("[placeholder], [aria-label], [title]").forEach((element) => {
-    ["placeholder", "aria-label", "title"].forEach((attribute) => translateAttribute(element, attribute));
+    if (!element.closest('[translate="no"]')) ["placeholder", "aria-label", "title"].forEach((attribute) => translateAttribute(element, attribute));
   });
   applyingLanguage = false;
   syncLocalizedControls();
@@ -870,6 +877,12 @@ function syncLocalizedControls() {
   const setText = (element, text) => {
     if (element && element.textContent !== text) element.textContent = text;
   };
+  setText(document.querySelector("#headerLanguageLabel"), korean ? "한국어" : "English");
+  setText(document.querySelector("#headerLanguageTitle"), korean ? "화면 언어" : "Interface language");
+  headerLanguageButton?.setAttribute("aria-label", korean ? "화면 언어 선택" : "Choose interface language");
+  document.querySelectorAll("[data-header-language]").forEach((input) => {
+    input.checked = input.value === currentInterfaceLanguage();
+  });
   setText(document.querySelector('[data-leaderboard-scope="mine"]'), korean ? "내 리그" : "My league");
   setText(document.querySelector('[data-leaderboard-scope="all"]'), korean ? "전체" : "All");
   setText(document.querySelector('[data-leaderboard-period="weekly"]'), korean ? "주간" : "Weekly");
@@ -6363,6 +6376,7 @@ authPassword.addEventListener("input", () => {
 googleSignInButton.addEventListener("click", signInWithGoogle);
 headerProfileButton.addEventListener("click", (event) => {
   event.stopPropagation();
+  setHeaderLanguagePopup(false);
   toggleProfileMenu();
 });
 headerSignOutButton.addEventListener("click", signOut);
@@ -6372,6 +6386,7 @@ contrastModeButton.addEventListener("click", toggleContrastMode);
 textSizeSlider.addEventListener("input", (event) => applyTextSize(event.target.value));
 
 languageSelect?.addEventListener("change", () => {
+  writeLocalSetting("easyMateInterfaceLanguage", languageSelect.value);
   applyInterfaceLanguage();
   syncLegalLanguage();
   renderActiveMatchReturn();
@@ -6391,6 +6406,39 @@ languageSelect?.addEventListener("change", () => {
   }
   resetSubtitlePlaceholders();
   setSttStatus(sttListening);
+});
+
+function setHeaderLanguagePopup(open, restoreFocus = false) {
+  if (!headerLanguagePopup || !headerLanguageButton) return;
+  headerLanguagePopup.hidden = !open;
+  headerLanguageButton.setAttribute("aria-expanded", String(open));
+  if (open) {
+    closeProfileMenu();
+    headerLanguagePopup.querySelector("input:checked")?.focus();
+  } else if (restoreFocus) {
+    headerLanguageButton.focus();
+  }
+}
+
+headerLanguageButton?.addEventListener("click", () => {
+  setHeaderLanguagePopup(headerLanguagePopup.hidden);
+});
+document.addEventListener("click", (event) => {
+  if (!headerLanguage?.contains(event.target)) setHeaderLanguagePopup(false);
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !headerLanguagePopup?.hidden) setHeaderLanguagePopup(false, true);
+});
+headerLanguage?.addEventListener("focusout", (event) => {
+  if (!headerLanguage.contains(event.relatedTarget)) setHeaderLanguagePopup(false);
+});
+document.querySelectorAll("[data-header-language]").forEach((input) => {
+  input.addEventListener("change", () => {
+    if (!input.checked || !languageSelect) return;
+    languageSelect.value = input.value;
+    languageSelect.dispatchEvent(new Event("change"));
+    setHeaderLanguagePopup(false, true);
+  });
 });
 
 document.querySelectorAll("[data-profile-language]").forEach((input) => {
