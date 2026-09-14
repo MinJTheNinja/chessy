@@ -14,8 +14,8 @@
     <noscript>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
     </noscript>
-    <link rel="stylesheet" href="/styles.css?v=20260829-text-active-states" />
-    <script src="/app.js?v=20260829-dashboard-simplify" defer></script>
+    <link rel="stylesheet" href="/styles.css?v=20260914-screen-refresh" />
+    <script src="/app.js?v=20260914-screen-refresh" defer></script>
   </head>
   <body>
     <header class="site-header">
@@ -154,10 +154,11 @@
               <div class="home-main-column">
                 <section class="home-match-intro" aria-labelledby="dashboardTitle">
                   <div class="home-overview-head">
-                    <h2 id="dashboardTitle">환영합니다, <span id="welcomeName">Player</span>님!</h2>
+                    <div><h2 id="dashboardTitle">환영합니다, <span id="welcomeName">Player</span>님!</h2><p class="screen-description">오늘도 한 수씩, 함께 성장해요.</p></div>
+<div class="home-start-actions"><button class="button primary" type="button" data-view-link="dashboard">대국 시작</button><button class="button secondary" type="button" id="homeContinueTraining">훈련 이어하기</button></div>
                     <div class="home-theme-control">
                       <button class="home-theme-toggle" id="homeThemeToggle" type="button" aria-label="보드 테마 선택" aria-expanded="false" aria-controls="homeThemePopover">
-                        <img src="/assets/board-theme-selector-icon-v1.png" alt="" aria-hidden="true" loading="lazy" decoding="async" />
+                        <span>보드 테마</span><span aria-hidden="true">⌄</span>
                       </button>
                       <section class="home-theme-popover" id="homeThemePopover" aria-labelledby="homeThemeGuideTitle" hidden>
                         <h3 id="homeThemeGuideTitle">보드 테마</h3>
@@ -183,10 +184,11 @@
                 <article class="home-daily-puzzle" aria-labelledby="dailyPuzzleTitle">
                   <img src="/assets/daily-puzzle-icon-transparent.png" alt="퍼즐 탐험 아이콘" loading="lazy" decoding="async" />
                   <div>
-                    <h3 id="dailyPuzzleTitle">오늘의 퍼즐: 성문 뒤의 함정</h3>
-                    <button class="button primary" id="homeDailyPuzzleButton" type="button">풀어보기</button>
+                    <h3 id="dailyPuzzleTitle">추천 퍼즐: 성문 뒤의 함정</h3>
+                    <p>백 차례 · 1수 메이트</p>
+<button class="button primary" id="homeDailyPuzzleButton" type="button">풀어보기</button>
                   </div>
-                </article>
+                <div class="home-puzzle-preview" role="img" aria-label="성문 뒤의 함정 시작 배치: 백 차례, e1 룩으로 메이트를 찾으세요."><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true">♚</span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true">♟</span><span class="preview-square dark" aria-hidden="true">♟</span><span class="preview-square light" aria-hidden="true">♟</span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true">♞</span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true">♙</span><span class="preview-square light" aria-hidden="true">♙</span><span class="preview-square dark" aria-hidden="true">♙</span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true">♖</span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true">♔</span><span class="preview-square light" aria-hidden="true"></span></div></article>
 
                 <section class="home-elo-strip" aria-label="내 학습 기록">
                   <div class="home-elo">
@@ -195,20 +197,16 @@
                   </div>
                   <div class="home-stat-inline">
                     <span><b id="dashboardStreak">0</b>일 연속</span>
-                    <span><b>0</b> 대국</span>
-                    <span><b>0</b> 퍼즐</span>
-                    <span><b>0</b> 배지</span>
+                    <span><b id="homeMatchCount">—</b> 대국</span>
+                    <span><b id="homePuzzleCount">0</b> 퍼즐</span>
+                    <span><b id="homeBadgeCount">—</b> 배지</span>
                   </div>
                 </section>
 
                 <section class="home-insight-panel" aria-label="리더보드와 오늘의 퀘스트">
-                  <div class="home-insight-tabs" role="tablist" aria-label="홈 정보">
-                    <button class="active" id="homeLeaderboardTab" type="button" role="tab" aria-selected="true" aria-controls="homeLeaderboardPanel">리더보드</button>
-                    <button id="homeQuestTab" type="button" role="tab" aria-selected="false" aria-controls="homeQuestPanel">오늘의 퀘스트</button>
-                  </div>
 
-                  <article class="home-leaderboard" id="homeLeaderboardPanel" role="tabpanel" aria-labelledby="homeLeaderboardTab">
-                    <div class="home-section-head">
+                  <article class="home-leaderboard" id="homeLeaderboardPanel" aria-labelledby="homeLeaderboardTitle">
+                    <h3 id="homeLeaderboardTitle">리더보드</h3><div class="home-section-head">
                       <div class="home-leaderboard-scope" role="group" aria-label="리더보드 범위">
                         <button class="active" type="button" data-leaderboard-scope="mine">내 리그</button>
                         <button type="button" data-leaderboard-scope="all">전체</button>
@@ -239,7 +237,7 @@
                     </section>
                   </article>
 
-                  <section class="home-today-quests" id="homeQuestPanel" role="tabpanel" aria-labelledby="homeQuestTab" hidden>
+                  <section class="home-today-quests" id="homeQuestPanel" aria-labelledby="todayQuestsTitle">
                     <h3 id="todayQuestsTitle">오늘의 퀘스트</h3>
                     <ul class="today-quest-list" id="todayQuestList"></ul>
                   </section>
@@ -251,8 +249,7 @@
           <section class="view" data-view="dashboard" aria-labelledby="matchTitle">
             <div class="view-header">
               <div>
-                <span class="eyebrow">플레이</span>
-                <h2 id="matchTitle">상대 찾기</h2>
+                <h2 id="matchTitle">플레이</h2><p class="screen-description">원하는 방식으로 대국을 시작하세요.</p>
               </div>
             </div>
 
@@ -261,7 +258,7 @@
                 <div class="lobby-main-panel">
                   <section class="quick-match-intro" aria-labelledby="quickMatchTitle">
                     <h3 id="quickMatchTitle">퀵 매칭</h3>
-                    <p>기본 설정으로 바로 상대를 찾습니다. 보통 20초 안에 연결됩니다.</p>
+                    <p>비슷한 실력의 상대를 찾아드려요.</p>
                     <button class="play-find-button" id="findMatch" type="button">상대 찾기</button>
                   </section>
 
@@ -301,7 +298,7 @@
                         <h3>게임 만들기</h3>
                       </div>
                     </div>
-                    <button class="text-action-button" id="showCreateSeek" type="button">방 만들기</button>
+                    <p>시간과 규칙을 직접 설정하세요.</p><button class="text-action-button" id="showCreateSeek" type="button">방 만들기</button>
                   </section>
 
                   <div class="seek-composer" id="seekComposer" hidden>
@@ -350,7 +347,7 @@
                   <section class="match-option-section friend-option-section">
                     <span class="label">비공개</span>
                     <h3>친구와 플레이</h3>
-                    <button class="text-action-button" id="showFriendRoom" type="button">코드로 참여</button>
+                    <p>친구에게 받은 코드를 입력하세요.</p><div class="friend-code-inline"><input id="friendCodePreview" type="text" placeholder="방 코드 입력" aria-label="방 코드 입력" autocomplete="off" maxlength="16" /><button class="text-action-button" id="showFriendRoom" type="button">참여</button></div>
                   </section>
                 </aside>
               </aside>
@@ -587,7 +584,7 @@
           <section class="view how-to-play-view" data-view="how-to-play" aria-labelledby="howToPlayTitle">
             <div class="view-header">
               <div>
-                <h2 id="howToPlayTitle">훈련장</h2>
+                <h2 id="howToPlayTitle">체스가 처음이신가요?</h2><p class="screen-description">기초부터 차근차근 배워보세요.</p>
               </div>
               <button class="button primary" id="tutorialLoginButton" type="button">로그인 화면으로 가기</button>
             </div>
@@ -605,7 +602,8 @@
               훈련장을 완료하면 퍼즐과 처인성 시리즈를 열 수 있습니다.
             </div>
 
-            <section class="training-module-list" id="trainingModuleList" aria-label="튜토리얼 모듈"></section>
+            <div class="training-summary"><span id="trainingProgressLabel" translate="no"></span><progress id="trainingProgressMeter" max="4" value="0" aria-labelledby="trainingProgressLabel"></progress></div>
+<section class="training-module-list" id="trainingModuleList" aria-label="튜토리얼 모듈"></section>
             <section class="training-module-list puzzle-path-list" id="puzzlePathList" aria-label="퍼즐 단계" hidden></section>
             <section class="training-module-list puzzle-path-list cheoinseong-path-list" id="cheoinseongPathList" aria-label="처인성 퍼즐 단계" hidden></section>
 

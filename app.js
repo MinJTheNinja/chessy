@@ -741,6 +741,28 @@ Object.assign(englishText, {
   "모든 훈련 모듈을 완료하면 퍼즐을 열 수 있습니다.": "Complete all training modules to unlock puzzles.",
   "퍼즐": "Puzzles",
 });
+const screenRefreshCopy = {
+  "오늘도 한 수씩, 함께 성장해요.": "Grow together, one move at a time.",
+  "대국 시작": "Start a game",
+  "훈련 이어하기": "Continue learning",
+  "추천 퍼즐: 성문 뒤의 함정": "Featured puzzle: Trap behind the gate",
+  "백 차례 · 1수 메이트": "White to move · Mate in one",
+  "원하는 방식으로 대국을 시작하세요.": "Choose how you want to play.",
+  "비슷한 실력의 상대를 찾아드려요.": "Find an opponent at a similar level.",
+  "시간과 규칙을 직접 설정하세요.": "Set your own time control and rules.",
+  "친구에게 받은 코드를 입력하세요.": "Enter the code from your friend.",
+  "기초부터 차근차근 배워보세요.": "Learn the basics, one step at a time.",
+  "이어서 학습": "Continue lesson",
+  "보드 테마": "Board theme",
+  "성문 뒤의 함정 시작 배치: 백 차례, e1 룩으로 메이트를 찾으세요.": "Trap behind the gate: White to move. Find mate with the rook on e1.",
+  "방 코드 입력": "Room code",
+  "참여": "Join",
+  "체스가 처음이신가요?": "New to chess?"
+};
+Object.assign(englishText, screenRefreshCopy);
+Object.entries(screenRefreshCopy).forEach(([ko, en]) => { koreanText[en] = ko; });
+// Keep Korean restoration available for existing English-only copy entries.
+Object.entries(englishText).forEach(([ko, en]) => { if (!koreanText[en]) koreanText[en] = ko; });
 const originalTextNodes = new WeakMap();
 const originalAttributes = new WeakMap();
 let applyingLanguage = false;
@@ -2408,6 +2430,12 @@ function renderTrainingModuleList() {
   });
   if (renderSignature === trainingModuleRenderSignature && trainingModuleList.childElementCount) return;
   trainingModuleRenderSignature = renderSignature;
+  const progressLabel = document.querySelector('#trainingProgressLabel');
+  const completed = (state.modules || []).filter(module => module.completed).length;
+  const total = (state.modules || []).length;
+  if (progressLabel) progressLabel.textContent = currentInterfaceLanguage() === 'Korean' ? completed + ' / ' + total + ' 단계 완료' : completed + ' / ' + total + ' lessons completed';
+  const meter = document.querySelector('#trainingProgressMeter');
+  if (meter) { meter.max = total || 4; meter.value = completed; }
   const nextModuleId = Number(state.nextModule?.id || 0);
   trainingModuleList.innerHTML = "";
   (state.modules || []).forEach((module) => {
@@ -2433,9 +2461,18 @@ function renderTrainingModuleList() {
           <strong>${accessible ? completed ? "눌러서 다시 학습" : "눌러서 시작" : "이전 모듈을 먼저 완료하세요"}</strong>
         </div>
       </div>`;
+    card.querySelector(".training-path-tooltip").removeAttribute("role");
     const control = card.querySelector(".training-path-node");
     if (accessible) {
       control.addEventListener("click", () => openTrainingModule(moduleId));
+    }
+    if (current) {
+      const continueButton = document.createElement('button');
+      continueButton.className = 'button primary training-continue';
+      continueButton.type = 'button';
+      continueButton.textContent = currentInterfaceLanguage() === 'Korean' ? '이어서 학습' : 'Continue lesson';
+      continueButton.addEventListener('click', () => openTrainingModule(moduleId));
+      card.querySelector('.training-path-tooltip').append(continueButton);
     }
     trainingModuleList.append(card);
   });
@@ -2459,6 +2496,7 @@ function renderTrainingModuleList() {
         <strong>${puzzleUnlocked ? "눌러서 퍼즐 풀기" : "튜토리얼을 먼저 완료하세요"}</strong>
       </div>
     </div>`;
+  puzzleCard.querySelector(".training-path-tooltip").removeAttribute("role");
   const puzzleControl = puzzleCard.querySelector(".training-path-node");
   if (puzzleUnlocked) {
     puzzleControl.addEventListener("click", () => setHowToPlayMode("puzzle"));
@@ -2656,6 +2694,9 @@ function renderTrainingControls() {
 }
 
 function renderHomeTrainingProgress() {
+  const puzzleCount = document.querySelector('#homePuzzleCount');
+  const nextCount = String(completedPuzzleIds().size);
+  if (puzzleCount && puzzleCount.textContent !== nextCount) puzzleCount.textContent = nextCount;
   const completedModules = new Set((activeTrainingState().completedModules || []).map(Number));
   document.querySelectorAll("[data-home-training-module]").forEach((row) => {
     const moduleId = Number(row.dataset.homeTrainingModule);
@@ -4652,6 +4693,8 @@ function setView(viewName) {
   if (viewName === "overview") {
     renderDashboardSummary();
     refreshLeaderboard();
+    refreshProfile();
+    refreshTrainingState();
   }
   if (viewName === "profile") refreshProfile();
   document.querySelector("#dashboard").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -5475,6 +5518,7 @@ async function createLeague() {
 }
 
 function setHomeInsightTab(tab = "leaderboard") {
+  if (!homeLeaderboardTab) return;
   const showQuests = tab === "quests";
   homeLeaderboardPanel?.toggleAttribute("hidden", showQuests);
   homeQuestPanel?.toggleAttribute("hidden", !showQuests);
@@ -5633,6 +5677,10 @@ async function refreshLeaderboard() {
 }
 
 function renderProfile(profile) {
+  if (profile?.user) {
+    document.querySelector('#homeMatchCount').textContent = String(profile.stats?.matches ?? 0);
+    document.querySelector('#homeBadgeCount').textContent = String(profile.badges?.length ?? 0);
+  }
   if (!profile?.user) return;
   const user = profile.user;
   renderAvatar(profileAvatar, user, "CL");
@@ -6459,6 +6507,12 @@ document.addEventListener("click", (event) => {
 homeLeaderboardTab?.addEventListener("click", () => setHomeInsightTab("leaderboard"));
 homeQuestTab?.addEventListener("click", () => setHomeInsightTab("quests"));
 resumeMatchButton?.addEventListener("click", resumeActivePlay);
+document.querySelector('#homeContinueTraining')?.addEventListener('click', async () => {
+  setView('how-to-play');
+  await refreshTrainingState();
+  const next = activeTrainingState().nextModule;
+  if (next) openTrainingModule(Number(next.id));
+});
 homeDailyPuzzleButton?.addEventListener("click", async () => {
   setView("how-to-play");
   await refreshTrainingState();
@@ -6554,6 +6608,9 @@ showCreateSeekButton.addEventListener("click", () => {
   queuePrompt.textContent = "Choose settings, then create a game.";
   seekTimeControl.focus();
 });
+document.querySelector("#friendCodePreview")?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") { event.preventDefault(); showFriendRoomButton.click(); }
+});
 showFriendRoomButton.addEventListener("click", async () => {
   const state = await refreshActivePlayState();
   if (state?.openChallenge) {
@@ -6567,8 +6624,11 @@ showFriendRoomButton.addEventListener("click", async () => {
     privateChallengeCode.textContent = "----";
     friendRoomStatus.textContent = "";
   }
+  const inlineCode = document.querySelector("#friendCodePreview");
+  if (inlineCode) privateChallengeInput.value = inlineCode.value.trim().toUpperCase();
   friendRoomDialog.showModal();
   privateChallengeInput.focus();
+  if (privateChallengeInput.value) await joinPrivateChallenge();
 });
 closeFriendRoomButton.addEventListener("click", () => friendRoomDialog.close());
 createSeekButton.addEventListener("click", createOpenSeek);
