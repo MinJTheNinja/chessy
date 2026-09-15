@@ -837,6 +837,7 @@ const screenRefreshCopy = {
   "참여": "Join",
   "체스가 처음이신가요?": "New to chess?"
 };
+Object.assign(screenRefreshCopy, { "체스 기초": "Chess basics" });
 Object.assign(englishText, screenRefreshCopy);
 Object.entries(screenRefreshCopy).forEach(([ko, en]) => { koreanText[en] = ko; });
 // Korean-first copy must also translate back after an English round trip.
@@ -940,9 +941,6 @@ function applyInterfaceLanguage(root = document.body) {
 
 function syncLocalizedControls() {
   const korean = currentInterfaceLanguage() === "Korean";
-  document.querySelectorAll("[data-profile-language]").forEach((input) => {
-    input.checked = input.value === currentInterfaceLanguage();
-  });
   const setText = (element, text) => {
     if (element && element.textContent !== text) element.textContent = text;
   };
@@ -1214,8 +1212,8 @@ function renderPieceGuide() {
   pieceGuideEyebrow.textContent = historical ? (korean ? "처인성 체스 빠른 안내" : "Cheoinseong chess quick guide") : (korean ? "체스 빠른 안내" : "Chess quick guide");
   pieceGuideTitle.textContent = korean ? "기물 확인하기" : "Meet the Pieces";
   pieceGuideIntro.textContent = !historical ? (korean ? "내 말의 이름과 움직임을 확인하세요." : "Check your pieces’ names and moves.") : korean
-    ? "고려·몽골 캐릭터가 어떤 체스 말인지, 어디로 움직이는지 한 장으로 확인하세요."
-    : "See which chess piece each Goryeo–Mongol character represents and how it moves.";
+    ? "고려·몽골 기물의 이름과 움직임을 확인하세요."
+    : "Check the Goryeo–Mongol pieces and their moves.";
   closePieceGuideButton?.setAttribute("aria-label", korean ? "말 안내 닫기" : "Close piece guide");
   pieceGuideTriggers.forEach((button) => { button.textContent = korean ? "기물 확인하기" : "Piece Guide"; });
 
@@ -1272,11 +1270,11 @@ function renderPieceGuide() {
         <span>01</span>
         <div><h3 id="pieceGuidePiecesHeading">${korean ? "여섯 말을 만나봐요" : "Meet the six pieces"}</h3><p>${historical ? (korean ? "그림은 고려 진영과 몽골 진영을 함께 보여줘요." : "Each card shows both the Goryeo and Mongol versions.") : (korean ? "백과 흑의 여섯 가지 말을 보여줘요." : "The six pieces in white and black.")}</p></div>
       </div>
-      ${historical ? `<div class="piece-guide-design-story">
-        <h4>${korean ? "기물 디자인 이야기" : "The story behind the pieces"}</h4>
+      ${historical ? `<details class="piece-guide-design-story">
+        <summary>${korean ? "기물 디자인 이야기" : "The story behind the pieces"}</summary>
         <p>${korean ? "고려 측 기물 디자인은 용인시 마스코트를 모티브로 제작되었습니다." : "The Goryeo pieces were designed with inspiration from Yongin City’s mascot."}</p>
         <p>${korean ? '몽골 측 기물은 몽골의 건국 신화를 바탕으로 늑대 캐릭터로 설정했습니다. 역사서 <strong>《몽골비사》</strong>에 전해지는 이야기에서 몽골족의 시조는 하늘의 뜻으로 태어난 ‘푸른 늑대’와 ‘아름다운 암사슴’입니다. 이 이야기를 모티브로 몽골 측 디자인을 제작했습니다.' : 'The Mongol pieces are wolf characters inspired by Mongolia’s founding myth. In the story recorded in <strong>The Secret History of the Mongols</strong>, the Mongols trace their origins to a blue wolf born by the will of Heaven and a beautiful doe. This story inspired the Mongol designs.'}</p>
-      </div>` : ""}
+      </details>` : ""}
       <div class="piece-guide-grid">${pieceCards}</div>
       <div class="piece-guide-legend"><span><i class="is-move"></i>${korean ? "이동" : "Move"}</span><span><i class="is-first"></i>${korean ? "폰의 첫 두 칸" : "Pawn's first two-square move"}</span><span><i class="is-capture"></i>${korean ? "폰이 잡는 칸" : "Pawn capture"}</span></div>
     </section>
@@ -3102,14 +3100,12 @@ function renderPuzzleStageList(list, seriesItem) {
   const currentIndex = allComplete ? 0 : nextIndex;
   const next = stages[currentIndex];
   const t = (ko, en) => korean ? ko : en;
-  const title = history ? t(seriesItem.ko, seriesItem.en) : t("한 수씩, 더 쉬워지는 체스", "Make chess easier, one move at a time");
+  const title = history ? t("처인성 이야기 퍼즐", "Cheoinseong story puzzles") : t("고려·몽골 체크메이트 퍼즐", "Goryeo–Mongol checkmate puzzles");
   list.replaceChildren();
   if (!next) return;
   const hero = document.createElement("header");
   hero.className = `puzzle-course-header${history ? " is-history" : ""}`;
-  hero.innerHTML = `<div class="puzzle-course-intro"><span class="puzzle-course-eyebrow">${history ? t("지역 이야기 · 용인 처인성", "Local stories · Cheoinseong, Yongin") : t("고려 vs 몽골 · 전술 퍼즐", "Goryeo vs Mongol · Tactical puzzles")}</span>
-    <h2>${title}</h2><p>${history ? t("지역의 이야기를 만나고, 체스 한 수로 풀어보세요.", "Explore local stories through each chess move.") : t("짧은 퍼즐로 체크메이트 감각을 익혀보세요.", "Build your checkmate instincts with short puzzles.")}</p>
-    ${history ? `<small>${t("역사에서 영감을 받은 체스 퍼즐", "Chess puzzles inspired by history")}</small>` : ""}</div>
+  hero.innerHTML = `<div class="puzzle-course-intro"><h2>${title}</h2></div>
     ${history ? `<div class="puzzle-course-art" aria-hidden="true"><img src="/assets/cheoinseong-pieces-v2/g_rook.png" alt="" /><img src="/assets/cheoinseong-pieces-v2/g_knight.png" alt="" /></div>` : ""}
     <div class="puzzle-course-progress"><span id="${seriesItem.id}CourseProgress">${completedCount} / ${stages.length} ${t("단계 완료", "stages complete")}</span><progress max="${stages.length}" value="${completedCount}" aria-labelledby="${seriesItem.id}CourseProgress"></progress></div>`;
   list.append(hero);
@@ -3118,8 +3114,7 @@ function renderPuzzleStageList(list, seriesItem) {
   const lessons = document.createElement("div");
   lessons.className = "puzzle-course-lessons";
   const groups = history ? [{ name: t("처인성을 따라가는 다섯 이야기", "Five stories of Cheoinseong"), stages }] : [1, 2, 3].map(tier => ({
- name: t(`메이트 인 ${tier}`, `Mate in ${tier}`),
- description: t(`나의 ${tier}수로 체크메이트를 완성해요.`, `Find checkmate in ${tier} moves.`),
+ name: t(`${tier}수 메이트`, `Mate in ${tier}`),
  stages: stages.filter(stage => Number(stage.tier || 1) === tier)
 }));
   groups.forEach((group) => {
@@ -3133,7 +3128,7 @@ function renderPuzzleStageList(list, seriesItem) {
       const done = completed.has(stage.id);
       const ready = !done && canOpenPuzzleStage(stage, completed);
       const accessible = canOpenPuzzleStage(stage, completed);
-      const status = done ? t("완료 · 다시 풀기", "Complete · Replay") : ready ? t("도전 가능", "Ready") : t("앞 단계를 완료하면 열려요", "Complete the previous stage to unlock");
+      const status = done ? t("다시 풀기", "Replay") : ready ? t("도전", "Start") : t("잠김", "Locked");
       const row = document.createElement("li");
       row.className = `puzzle-lesson${done ? " is-complete" : ""}${ready ? " is-current" : ""}${accessible ? "" : " is-locked"}`;
       const control = document.createElement("button");
@@ -3156,21 +3151,17 @@ function renderPuzzleStageList(list, seriesItem) {
     section.append(rows);
     lessons.append(section);
   });
-  const note = document.createElement("p");
-  note.className = "puzzle-course-note";
-  note.textContent = t("완료한 단계는 언제든 다시 풀 수 있어요.", "You can replay completed stages anytime.");
-  lessons.append(note);
   const aside = document.createElement("aside");
   aside.className = "puzzle-course-aside";
   aside.setAttribute("aria-label", t("다음 도전과 복습", "Next challenge and review"));
-  aside.innerHTML = `<section class="puzzle-next-card"><span class="puzzle-course-eyebrow">${allComplete ? t("모든 단계를 완료했어요", "All stages complete") : history ? t("이어서 할 이야기", "Your next story") : t("다음 도전", "Next challenge")}</span><h3>${t(next.ko, next.en)}</h3><div class="puzzle-next-art"><img src="${puzzleStageArtwork(next)}" alt="${t("고려측 체스 기물", "Goryeo chess piece")}" /></div><p>${allComplete ? t("처음부터 다시 풀며 배운 내용을 복습해보세요.", "Replay the course to review what you learned.") : t(next.koDescription, next.enDescription)}</p><button class="button primary puzzle-resume" type="button">${allComplete ? t("처음부터 복습하기", "Review from the start") : history ? t("이야기 이어하기", "Continue the story") : t("이어서 풀기", "Continue puzzles")} <span aria-hidden="true">→</span></button></section>
+  aside.innerHTML = `<section class="puzzle-next-card"><span class="puzzle-course-eyebrow">${allComplete ? t("모든 단계를 완료했어요", "All stages complete") : history ? t("이어서 할 이야기", "Your next story") : t("다음 도전", "Next challenge")}</span><h3>${t(next.ko, next.en)}</h3><div class="puzzle-next-art"><img src="${puzzleStageArtwork(next)}" alt="${t("고려측 체스 기물", "Goryeo chess piece")}" /></div><button class="button primary puzzle-resume" type="button">${allComplete ? t("처음부터 복습하기", "Review from the start") : history ? t("이야기 이어하기", "Continue the story") : t("이어서 풀기", "Continue puzzles")} <span aria-hidden="true">→</span></button></section>
     <section class="puzzle-learning-note"><span class="puzzle-course-eyebrow">${history ? t("체스와 만나는 지역 이야기", "Local stories through chess") : t("천천히 생각해도 괜찮아요", "Take your time")}</span><h3>${history ? t("처인성을 지키는 기물들", "The defenders of Cheoinseong") : t("한 수보다 중요한 생각", "Think before you move")}</h3><p>${history ? t("병사, 기마병, 승병과 성벽. 실제 게임 속 고려측 기물을 만나며 이야기를 따라가세요.", "Follow the story with the Goryeo soldiers, cavalry, monks and fortress pieces used in the game.") : t("상대 왕의 도망갈 칸을 살피고, 내 기물이 함께 공격할 방법을 찾아보세요.", "Look for the king’s escape squares and ways for your pieces to work together.")}</p></section>`;
   aside.querySelector(".puzzle-resume").addEventListener("click", () => openPuzzleStage(next, currentIndex));
   if (!history) {
     const maxTier = maxUnlockedPuzzleTier(completed);
     const rushCard = document.createElement("section");
     rushCard.className = "puzzle-rush-card";
-    rushCard.innerHTML = `<span class="puzzle-course-eyebrow">${t("90초 무작위 도전", "90-second random run")}</span><h3>${t("퍼즐 러시", "Puzzle Rush")}</h3><p>${t(`현재 열린 메이트 인 ${maxTier}까지 무작위로 이어서 풉니다.`, `Race through random puzzles up to Mate in ${maxTier}.`)}</p><button class="button secondary" type="button" data-puzzle-rush>${t("러시 시작", "Start Rush")} <span aria-hidden="true">→</span></button>`;
+    rushCard.innerHTML = `<h3>${t("퍼즐 러시", "Puzzle Rush")}</h3><p>${t(`90초 · ${maxTier}수 메이트까지`, `90 seconds · Up to mate in ${maxTier}`)}</p><button class="button secondary" type="button" data-puzzle-rush>${t("시작", "Start")} <span aria-hidden="true">→</span></button>`;
     rushCard.querySelector("[data-puzzle-rush]").addEventListener("click", () => openPuzzleRush(maxTier));
     aside.querySelector(".puzzle-learning-note").replaceWith(rushCard);
   }
@@ -7854,7 +7845,9 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !headerLanguagePopup?.hidden) setHeaderLanguagePopup(false, true);
 });
 headerLanguage?.addEventListener("focusout", (event) => {
-  if (!headerLanguage.contains(event.relatedTarget)) setHeaderLanguagePopup(false);
+  // Label clicks briefly blur the radio before forwarding activation to it.
+  // Outside clicks are handled above; only close here for a real focus destination.
+  if (event.relatedTarget && !headerLanguage.contains(event.relatedTarget)) setHeaderLanguagePopup(false);
 });
 document.querySelectorAll("[data-header-language]").forEach((input) => {
   input.addEventListener("change", () => {
@@ -7865,13 +7858,6 @@ document.querySelectorAll("[data-header-language]").forEach((input) => {
   });
 });
 
-document.querySelectorAll("[data-profile-language]").forEach((input) => {
-  input.addEventListener("change", () => {
-    if (!input.checked || !languageSelect) return;
-    languageSelect.value = input.value;
-    languageSelect.dispatchEvent(new Event("change"));
-  });
-});
 
 document.addEventListener("click", (event) => {
   const control = event.target.closest("[data-piece-edition]");
