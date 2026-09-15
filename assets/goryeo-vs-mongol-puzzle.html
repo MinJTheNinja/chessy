@@ -167,6 +167,9 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
   box-shadow:inset 0 0 0 2px rgba(142,59,49,.5)}
 .pc{position:absolute;inset:0% 4% 15% 4%;pointer-events:none;z-index:3;
   filter:drop-shadow(0 2px 1.5px rgba(0,0,0,.3))}
+.original-puzzle-piece{display:block;width:100%;height:100%;object-fit:contain}
+.original-puzzle-piece.light{filter:drop-shadow(0 2px 1px rgba(32,52,72,.28))}
+.original-puzzle-piece.dark{filter:brightness(.2) contrast(1.2) drop-shadow(0 1px 1px rgba(247,240,223,.5))}
 .pc.hint-glow{animation:hintGlow .8s ease-in-out infinite alternate}
 @keyframes hintGlow{from{filter:drop-shadow(0 0 2px var(--geum)) drop-shadow(0 2px 1.5px rgba(0,0,0,.3))}
   to{filter:drop-shadow(0 0 12px var(--geum)) drop-shadow(0 0 4px var(--geum))}}
@@ -275,6 +278,8 @@ body,body.home-mode{
   .lv-nav{width:100%;border-top:1px solid rgba(31,51,72,.18)}
   .lv-btn{padding:10px 6px}
 }
+.rush-hud{display:flex;width:min(100%,520px);margin:0 0 9px;align-items:center;justify-content:center;gap:18px;border:1px solid var(--meok);background:#fffdf7;padding:8px 12px}
+.rush-hud[hidden]{display:none}.rush-hud span{font-size:11px;color:#657080}.rush-hud strong{display:block;margin-top:1px;font-size:18px;color:var(--meok)}.rush-hud .rush-time.danger strong{color:var(--jinsa)}
 </style>
 </head>
 <body class="home-mode">
@@ -307,6 +312,7 @@ body,body.home-mode{
       <div class="pz-top">
         <button class="back" id="backBtn">← 목록</button>
         <div class="pz-title" id="pzTitle"></div>
+      <div class="rush-hud" id="rushHud" hidden><div><span id="rushTimeLabel">남은 시간</span><strong id="rushTime">1:30</strong></div><div><span id="rushScoreLabel">해결</span><strong id="rushScore">0</strong></div></div>
       </div>
       <div class="turn-banner" id="banner"></div>
       <div class="frame-outer">
@@ -340,21 +346,22 @@ body,body.home-mode{
 
 <script>
 const PUZZLE_LANGUAGE=new URLSearchParams(window.location.search).get('lang')==='en'?'en':'ko';
+const RUSH_MODE=new URLSearchParams(location.search).get('mode')==='rush';
+const RUSH_MAX_TIER=Math.max(1,Math.min(3,Number(new URLSearchParams(location.search).get('maxTier'))||1));
 document.documentElement.lang=PUZZLE_LANGUAGE;
-/* 고려 vs 몽골 — 치비 기물 원화 (전 기물 원화) */
+/* 일반 퍼즐은 홈의 오리지널 체스 세트와 같은 기물을 사용한다. */
+const ORIGINAL_PIECE_FILE={pawn:'p',rook:'r',knight:'n',bishop:'b',queen:'q',king:'k'};
+const originalPieceArt=(name)=>{
+  const [faction,type]=name.split('_');
+  const file=ORIGINAL_PIECE_FILE[type]||'p';
+  const tone=faction==='m'?'dark':'light';
+  return `<img class="original-puzzle-piece ${tone}" alt="" src="/assets/original-chess-pieces-v1/${file}.png" loading="lazy" decoding="async">`;
+};
 const ART = {
-g_pawn: `<img alt="" src="/assets/tutorial-pieces/g_pawn.png" loading="lazy" decoding="async">`,
-g_rook: `<img alt="" src="/assets/tutorial-pieces/g_rook.png" loading="lazy" decoding="async">`,
-g_knight: `<img alt="" src="/assets/tutorial-pieces/g_knight.png" loading="lazy" decoding="async">`,
-g_bishop: `<img alt="" src="/assets/tutorial-pieces/g_bishop.png" loading="lazy" decoding="async">`,
-g_queen: `<img alt="" src="/assets/tutorial-pieces/g_queen.png" loading="lazy" decoding="async">`,
-g_king: `<img alt="" src="/assets/tutorial-pieces/g_king.png" loading="lazy" decoding="async">`,
-m_pawn: `<img alt="" src="/assets/tutorial-pieces/m_pawn.png" loading="lazy" decoding="async">`,
-m_rook: `<img alt="" src="/assets/tutorial-pieces/m_rook.png" loading="lazy" decoding="async">`,
-m_knight: `<img alt="" src="/assets/tutorial-pieces/m_knight.png" loading="lazy" decoding="async">`,
-m_bishop: `<img alt="" src="/assets/tutorial-pieces/m_bishop.png" loading="lazy" decoding="async">`,
-m_queen: `<img alt="" src="/assets/tutorial-pieces/m_queen.png" loading="lazy" decoding="async">`,
-m_king: `<img alt="" src="/assets/tutorial-pieces/m_king.png" loading="lazy" decoding="async">`
+  g_pawn:originalPieceArt('g_pawn'), g_rook:originalPieceArt('g_rook'), g_knight:originalPieceArt('g_knight'),
+  g_bishop:originalPieceArt('g_bishop'), g_queen:originalPieceArt('g_queen'), g_king:originalPieceArt('g_king'),
+  m_pawn:originalPieceArt('m_pawn'), m_rook:originalPieceArt('m_rook'), m_knight:originalPieceArt('m_knight'),
+  m_bishop:originalPieceArt('m_bishop'), m_queen:originalPieceArt('m_queen'), m_king:originalPieceArt('m_king')
 };
 
 
@@ -743,6 +750,7 @@ function makePuzzleCard(level,puzzle,isMain){
 
 /* ───────── 퍼즐 진행 ───────── */
 function openPuzzle(lvIdx,pzIdx){
+  clearInterval(rush.timer); rush.active=false; rushHud.hidden=true;
   curLvIdx=lvIdx; curPzIdx=pzIdx;
   cur=LEVELS[lvIdx].puzzles[pzIdx];
   document.getElementById('pzTitle').textContent=LEVELS[lvIdx].name+'-'+(pzIdx+1)+' · '+cur.title;
@@ -759,6 +767,7 @@ function goHome(){
   renderHome();
 }
 function returnToPuzzlePath(){
+  clearInterval(rush.timer); rush.active=false;
   if(window.parent&&window.parent!==window){
     window.parent.postMessage({type:'easymate:return-puzzle-path'},'*');
     return;
@@ -775,7 +784,7 @@ function resetPuzzle(){
   bd=cur.setup(); sel=null; locked=false; phase=1; wrongCount=0; hintLevel=0; history=[]; puzzleStartedAt=Date.now();
   hintLine.textContent='';
   hintBtn.textContent=PUZZLE_LANGUAGE==='en'?'💡 Show Hint':'💡 힌트 보기';
-  hintBtn.hidden=false;
+  hintBtn.hidden=RUSH_MODE;
   captureTray.innerHTML='';
   setBanner(firstBannerText(),'');
   drawBoard();
@@ -821,6 +830,7 @@ function drawBoard(extra){
   }
 }
 function onSquare(r,c,sq){
+  if(RUSH_MODE && (!rush.active || Date.now()>=rush.deadline)){if(rush.active)finishRush();return;}
   if(locked) return;
   const p=bd[r][c];
   if(sel){
@@ -854,6 +864,7 @@ function escapeSquares(b1){
   return escs.length?escs:defs;
 }
 function tryMove(from,to){
+  const runDeadline=RUSH_MODE ? rush.deadline : 0;
   const before=bd;
   const capturedPiece=bd[to[0]][to[1]];
   const captured=!!capturedPiece;
@@ -871,6 +882,7 @@ function tryMove(from,to){
     setBanner(PUZZLE_LANGUAGE==='en'?'Good move. The Mongol army responds…':'좋은 수! 몽골군이 응수합니다…','good');
     SFX.good();
     setTimeout(()=>{
+      if(RUSH_MODE && (!rush.active || rush.deadline!==runDeadline || Date.now()>=rush.deadline)) return;
       const rep=bestReply(bd);
       const bCaptured=!!bd[rep[1][0]][rep[1][1]];
       bd=applyMove(bd,rep[0],rep[1]);
@@ -894,6 +906,7 @@ function tryMove(from,to){
     drawBoard({last:to, esc:escapeSquares(after)});
   }
   setTimeout(()=>{
+      if(RUSH_MODE && (!rush.active || rush.deadline!==runDeadline || Date.now()>=rush.deadline)) return;
     bd=before; locked=false;
     drawBoard();
     setBanner(phase===2?(PUZZLE_LANGUAGE==='en'?'Find the finishing move!':'마무리 일격을 찾아라!'):firstBannerText(),'');
@@ -912,6 +925,7 @@ function calcStars(){
   return 1;
 }
 function winPuzzle(){
+  if(RUSH_MODE && (!rush.active || Date.now()>=rush.deadline)){if(rush.active)finishRush();return;}
   const earned=calcStars();
   stars[cur.id]=Math.max(stars[cur.id]||0, earned);
   const level=LEVELS[curLvIdx];
@@ -932,6 +946,18 @@ function winPuzzle(){
   }, '*');
   setBanner(PUZZLE_LANGUAGE==='en'?'Checkmate! Goryeo wins!':'체크메이트! 고려의 승리!','win');
   SFX.win();
+  if(rush.active){
+    rush.score+=1;
+    rushScore.textContent=String(rush.score);
+    locked=true;
+    setTimeout(()=>{
+      if(!rush.active) return;
+      rush.index+=1;
+      loadRushPuzzle();
+    },520);
+    return;
+  }
+
   setTimeout(()=>{
     document.getElementById('winArt').innerHTML=ART[cur.art];
     document.getElementById('winStars').innerHTML=starsHtml(earned);
@@ -946,7 +972,7 @@ function winPuzzle(){
 
 /* ───────── 버튼 ───────── */
 document.getElementById('backBtn').onclick=()=>{ SFX.select(); returnToPuzzlePath(); };
-document.getElementById('againBtn').onclick=()=>{ overlay.classList.remove('show'); resetPuzzle(); };
+document.getElementById('againBtn').onclick=()=>{ overlay.classList.remove('show'); if(RUSH_MODE) startRush(); else resetPuzzle(); };
 document.getElementById('toListBtn').onclick=()=>{ SFX.select(); returnToPuzzlePath(); };
 hintBtn.onclick=()=>{
   if(!cur) return;
@@ -963,6 +989,7 @@ hintBtn.onclick=()=>{
   }
 };
 function openRequestedPuzzle(){
+  if(RUSH_MODE){startRush();return;}
   const requestedId=new URLSearchParams(window.location.search).get('puzzle');
   if(requestedId){
     for(let levelIndex=0;levelIndex<LEVELS.length;levelIndex+=1){
@@ -976,6 +1003,57 @@ function openRequestedPuzzle(){
   }
   renderHome();
 }
+
+const rush={active:false,queue:[],index:0,score:0,deadline:0,timer:0};
+const rushHud=document.getElementById('rushHud');
+const rushTime=document.getElementById('rushTime');
+const rushScore=document.getElementById('rushScore');
+function shuffled(items){
+  const copy=[...items];
+  for(let i=copy.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[copy[i],copy[j]]=[copy[j],copy[i]];}
+  return copy;
+}
+function startRush(){
+  clearInterval(rush.timer);
+  rush.queue=shuffled(ALL_PUZZLES.filter(puzzle=>Number(puzzle.depth||1)<=RUSH_MAX_TIER));
+  rush.index=0; rush.score=0; rush.deadline=Date.now()+90000; rush.active=true;
+  rushScore.textContent='0'; rushHud.hidden=false;
+  document.getElementById('rushTimeLabel').textContent=PUZZLE_LANGUAGE==='en'?'Time left':'남은 시간';
+  document.getElementById('rushScoreLabel').textContent=PUZZLE_LANGUAGE==='en'?'Solved':'해결';
+  homeScreen.classList.remove('active'); puzzleScreen.classList.add('active'); document.body.classList.remove('home-mode');
+  overlay.classList.remove('show');
+  tickRush(); rush.timer=setInterval(tickRush,250); loadRushPuzzle();
+}
+function loadRushPuzzle(){
+  if(!rush.active)return;
+  if(rush.index>=rush.queue.length){rush.queue=shuffled(rush.queue);rush.index=0;}
+  cur=rush.queue[rush.index];
+  curLvIdx=LEVELS.findIndex(level=>level.puzzles.some(puzzle=>puzzle.id===cur.id));
+  curPzIdx=LEVELS[curLvIdx].puzzles.findIndex(puzzle=>puzzle.id===cur.id);
+  document.getElementById('pzTitle').textContent=(PUZZLE_LANGUAGE==='en'?`Rush ${rush.score+1}`:`러시 ${rush.score+1}`)+' · '+cur.title;
+  resetPuzzle();
+}
+function tickRush(){
+  if(!rush.active)return;
+  const left=Math.max(0,rush.deadline-Date.now());
+  const total=Math.ceil(left/1000);
+  rushTime.textContent=`${Math.floor(total/60)}:${String(total%60).padStart(2,'0')}`;
+  rushTime.parentElement.classList.toggle('danger',total<=10);
+  if(left<=0)finishRush();
+}
+function finishRush(){
+  if(!rush.active)return;
+  rush.active=false; locked=true; clearInterval(rush.timer);
+  document.querySelector('.win-card h2').textContent=PUZZLE_LANGUAGE==='en'?'Rush Complete!':'퍼즐 러시 종료!';
+  document.getElementById('winArt').innerHTML=ART.g_knight;
+  document.getElementById('winStars').innerHTML='';
+  document.getElementById('winText').innerHTML=PUZZLE_LANGUAGE==='en'
+    ? `You solved <strong>${rush.score}</strong> puzzles in 90 seconds.`
+    : `90초 동안 <strong>${rush.score}</strong>개의 퍼즐을 해결했어요.`;
+  document.getElementById('againBtn').textContent=PUZZLE_LANGUAGE==='en'?'Try Again':'다시 도전';
+  overlay.classList.add('show');
+}
+
 
 openRequestedPuzzle();
 </script>

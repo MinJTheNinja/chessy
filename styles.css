@@ -9476,8 +9476,13 @@ body.piece-theme-beta {
 }
 
 /* The landing logo is a true-alpha PNG; let the wallpaper continue through its panel. */
+.entry-content,
+.entry-auth {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
 .entry-content {
-  background: rgba(255, 255, 255, 0.7);
   border-color: transparent !important;
   box-shadow: none;
 }
@@ -9652,3 +9657,111 @@ body.is-signed-in .match-layout:is([data-state="idle"],[data-state="searching"])
 @media(max-width: 760px) {
   body:has(.view:is([data-view="overview"],[data-view="dashboard"],[data-view="how-to-play"]).active):not(.show-landing) .app-shell { scroll-margin-top: 80px; }
 }
+
+/* Public landing identity: readable before JavaScript and on small screens. */
+.entry-content .entry-identity-eyebrow {
+  max-width: 100%;
+  margin: 16px auto 12px;
+  color: var(--green);
+  font-size: clamp(0.85rem, 2.5vw, 1rem);
+  font-weight: 700;
+  text-align: center;
+  word-break: keep-all;
+}
+.entry-content .entry-identity-title {
+  max-width: 820px;
+  margin: 0 auto 20px;
+  font-size: clamp(1.6rem, 4.2vw, 3.25rem);
+  line-height: 1.35;
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.entry-content .entry-identity-description {
+  max-width: 620px;
+  margin: 0 auto 28px;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.8;
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+/* Puzzle courses: compact, named stages using the in-game Goryeo artwork. */
+.how-to-play-view[data-training-mode="puzzle"] > .training-summary,
+.how-to-play-view[data-training-mode="cheoinseong"] > .training-summary { display: none; }
+body .how-to-play-view .puzzle-path-list { width: min(100%, 1180px); min-height: 0 !important; padding: 28px 0 12px; }
+.puzzle-course-header { display: grid; grid-template-columns: minmax(0, 1fr) 190px; align-items: center; gap: 24px; margin-bottom: 28px; }
+.puzzle-course-eyebrow { display: block; color: #007f98; font-size: .8rem; font-weight: 750; margin-bottom: 10px; }
+.puzzle-course-intro h2 { font-size: clamp(1.5rem, 2.8vw, 2.25rem); line-height: 1.35; margin: 0 0 10px; letter-spacing: -.045em; }
+.puzzle-course-intro p { margin: 0; color: var(--muted); line-height: 1.65; }
+.puzzle-course-intro small { display: block; margin-top: 10px; color: var(--muted); }
+.puzzle-course-header.is-history { grid-template-columns: minmax(0, 1fr) 210px 160px; }
+.puzzle-course-art { display: flex; align-items: end; justify-content: center; height: 160px; }
+.puzzle-course-art img { width: 52%; height: 150px; object-fit: contain; }
+.puzzle-course-art img + img { margin-left: -18px; }
+.puzzle-course-progress { display: grid; gap: 10px; font-size: .85rem; color: var(--muted); }
+.puzzle-course-progress progress { width: 100%; height: 8px; accent-color: #009bb5; border: 0; border-radius: 8px; overflow: hidden; }
+.puzzle-course-progress progress::-webkit-progress-bar { background: #e2e8e9; }
+.puzzle-course-progress progress::-webkit-progress-value { background: #009bb5; border-radius: 8px; }
+.puzzle-course-layout { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 28px; align-items: start; }
+.puzzle-lesson-group + .puzzle-lesson-group { margin-top: 26px; }
+.puzzle-lesson-group h3 { font-size: 1.15rem; margin: 0 0 5px; }
+.puzzle-lesson-group > p { font-size: .85rem; color: var(--muted); margin: 0 0 12px; }
+.puzzle-lesson-list { padding: 0; margin: 12px 0 0; list-style: none; display: grid; gap: 8px; }
+.puzzle-lesson-button { display: grid; grid-template-columns: 26px 66px minmax(0, 1fr) 115px; align-items: center; gap: 12px; width: 100%; min-height: 96px; padding: 12px; text-align: left; border: 1px solid #dee4e5; border-radius: 10px; background: #fff; color: var(--ink); font: inherit; cursor: pointer; }
+.puzzle-lesson-button:hover:not(:disabled) { border-color: #009bb5; background: #f2fbfc; }
+.puzzle-lesson-button:focus-visible, .puzzle-course-aside button:focus-visible { outline: 3px solid #007f98; outline-offset: 3px; }
+.puzzle-lesson-number { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: #e9edef; color: #39434d; font-size: .85rem; font-weight: 750; }
+.is-complete .puzzle-lesson-number, .is-current .puzzle-lesson-number { color: #fff; background: #00869e; }
+.puzzle-lesson-art { display: grid; place-items: center; width: 66px; height: 68px; border-radius: 6px; background: #f5f4ef; }
+.puzzle-lesson-art img { width: 100%; height: 100%; object-fit: contain; }
+.puzzle-lesson-copy { display: grid; gap: 6px; min-width: 0; }
+.puzzle-lesson-copy strong { font-size: .95rem; line-height: 1.4; word-break: keep-all; }
+.puzzle-lesson-copy > span { font-size: .8rem; color: #5d6770; line-height: 1.55; word-break: keep-all; }
+.puzzle-lesson-status { display: flex; gap: 7px; align-items: center; justify-content: end; font-size: .75rem; line-height: 1.5; color: #52616a; }
+.is-complete .puzzle-lesson-status, .is-current .puzzle-lesson-status { color: #00788f; font-weight: 700; }
+.is-current .puzzle-lesson-button { border: 2px solid #009bb5; background: #f2fbfc; padding: 11px; }
+.puzzle-lesson-button:disabled { opacity: 1; cursor: not-allowed; background: #f8f9f9; }
+.is-locked .puzzle-lesson-art { filter: grayscale(.85); opacity: .7; }
+.puzzle-course-aside { display: grid; gap: 16px; position: sticky; top: 96px; }
+.puzzle-next-card, .puzzle-learning-note { padding: 22px; border: 1px solid #c9e7ec; border-radius: 10px; background: #edfafd; }
+.puzzle-next-card h3, .puzzle-learning-note h3 { margin: 0 0 14px; font-size: 1.15rem; line-height: 1.4; }
+.puzzle-next-card p, .puzzle-learning-note p { color: #53616b; font-size: .85rem; line-height: 1.7; margin: 14px 0 20px; }
+.puzzle-next-art { display: grid; place-items: center; background: #e4f0eb; border-radius: 8px; height: 190px; }
+.puzzle-next-art img { height: 180px; width: 100%; object-fit: contain; }
+body .puzzle-course-aside .puzzle-resume { width: 100%; background: #00849c !important; border-color: #00849c !important; color: white !important; display: flex; justify-content: space-between; gap: 12px; min-height: 48px; padding: 12px 16px; border-radius: 6px; }
+.puzzle-learning-note { border-color: #e2e6e6; background: #fafaf7; }
+.puzzle-learning-note p { margin-bottom: 0; }
+.puzzle-course-note { color: var(--muted); font-size: .8rem; margin: 18px 0 0; }
+@media (max-width: 1000px) {
+  .puzzle-course-header.is-history { grid-template-columns: minmax(0, 1fr) 160px; }
+  .puzzle-course-art { display: none; }
+  .puzzle-course-layout { grid-template-columns: minmax(0, 1fr) 250px; gap: 18px; }
+  .puzzle-lesson-button { grid-template-columns: 24px 54px minmax(0, 1fr); gap: 10px; }
+  .puzzle-lesson-art { width: 54px; height: 60px; }
+  .puzzle-lesson-status { grid-column: 3; justify-content: start; }
+}
+@media (max-width: 700px) {
+  body .how-to-play-view .puzzle-path-list { padding-top: 20px; }
+  .puzzle-course-header, .puzzle-course-header.is-history { grid-template-columns: 1fr; gap: 16px; margin-bottom: 22px; }
+  .puzzle-course-progress { max-width: 240px; }
+  .puzzle-course-layout { display: flex; flex-direction: column; gap: 24px; }
+  .puzzle-course-aside { order: -1; position: static; width: 100%; }
+  .puzzle-course-lessons { width: 100%; }
+  .puzzle-next-card { position: relative; padding: 18px 104px 18px 18px; min-height: 150px; }
+  .puzzle-next-art { position: absolute; right: 14px; top: 18px; width: 76px; height: 88px; }
+  .puzzle-next-art img { height: 84px; }
+  .puzzle-next-card h3 { font-size: 1.05rem; margin-bottom: 8px; }
+  .puzzle-next-card p { margin: 8px 0 14px; }
+  .puzzle-learning-note { display: none; }
+  .puzzle-lesson-button { padding: 10px; }
+  .is-current .puzzle-lesson-button { padding: 9px; }
+  .puzzle-lesson-copy strong { font-size: .9rem; }
+}
+/* Keep the existing timed challenge available on desktop and mobile. */
+.puzzle-rush-card { padding: 22px; border: 1px solid #dce4e6; border-radius: 10px; background: #fafaf7; }
+.puzzle-rush-card h3 { margin: 0 0 12px; font-size: 1.15rem; }
+.puzzle-rush-card p { color: #53616b; font-size: .85rem; line-height: 1.7; margin: 0 0 18px; }
+.puzzle-rush-card button { width: 100%; min-height: 44px; }
+@media(max-width:700px) { .puzzle-rush-card { padding: 18px; } }

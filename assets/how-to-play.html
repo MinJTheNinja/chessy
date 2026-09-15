@@ -80,7 +80,7 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
 .enemy-row .char-name small{color:var(--mongol)}
 
 /* Lesson cards: each faction speaks directly beside its own piece. */
-.lesson-layout{display:grid;grid-template-columns:minmax(250px,340px) minmax(0,1fr);gap:clamp(26px,5vw,68px);align-items:start;width:min(980px,100%);margin:auto}
+.lesson-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,340px);gap:clamp(26px,5vw,68px);align-items:start;width:min(980px,100%);margin:auto}
 .lesson-board-panel{min-width:0;padding-top:4px}
 .lesson-board-label{min-height:30px;margin:0 auto 8px;width:min(340px,36vw);font-family:var(--font-ui);font-size:16px;font-weight:900;color:var(--goryeo);letter-spacing:.01em}
 .lesson-board-panel .board-wrap{margin:0 auto 10px}
@@ -140,6 +140,10 @@ svg,img{display:block;width:100%;height:100%;object-fit:contain}
   transition:left .45s cubic-bezier(.34,1.4,.64,1), top .45s cubic-bezier(.34,1.4,.64,1);
   filter:drop-shadow(0 3px 2px rgba(0,0,0,.28));
 }
+.original-tutorial-piece{display:block;width:100%;height:100%;object-fit:contain}
+.original-tutorial-piece.light{filter:drop-shadow(0 2px 1px rgba(32,52,72,.28))}
+.original-tutorial-piece.dark{filter:brightness(.2) contrast(1.2) drop-shadow(0 1px 1px rgba(247,240,223,.5))}
+.themed-tutorial-piece{display:block;width:100%;height:100%;object-fit:contain}
 .piece-token::before{
   content:"";position:absolute;left:15%;right:15%;bottom:1%;height:16%;border-radius:50%;z-index:-1;
   background:radial-gradient(ellipse at center, rgba(62,92,148,.5) 0%, rgba(62,92,148,.24) 55%, rgba(62,92,148,0) 75%);
@@ -259,7 +263,7 @@ h1,h2,h3,h4,.jua,.title-label,.warrior-label,.lesson-board-label,.mission,.lesso
 .start-btn,.replay,.nav button,.btn-next{border:1px solid var(--meok);border-radius:0;box-shadow:none;background:transparent;color:var(--meok)}
 .start-btn:hover,.replay:hover,.nav button:hover,.btn-next:hover{background:var(--meok);color:#fffdf7;transform:none}
 .start-btn:active,.replay:active,.nav button:active{transform:none;box-shadow:none}
-.lesson-layout{width:min(1040px,100%);grid-template-columns:minmax(250px,360px) minmax(0,1fr);gap:clamp(28px,5vw,72px)}
+.lesson-layout{width:min(1040px,100%);grid-template-columns:minmax(0,1fr) minmax(250px,360px);gap:clamp(28px,5vw,72px)}
 .lesson-board-panel{padding-top:10px}
 .lesson-board-label{width:min(360px,100%);margin-bottom:12px;font-size:18px;font-weight:850}
 .lesson-board-panel .board,.lesson-board-panel .mission,.lesson-board-panel .capture-shelf{width:min(360px,100%)}
@@ -424,9 +428,20 @@ body{
   <div id="scenes"></div>
 </div>
 <script>
-/* 고려 vs 몽골 — 치비 기물 원화 (전 기물 원화) */
-const pieceArt=(name)=>`<img alt="" src="/assets/tutorial-pieces/${name}.png" loading="eager" decoding="async">`;
-const tutorialLanguage=new URLSearchParams(window.location.search).get('lang')==='en'?'en':'ko';
+/* 홈에서 선택한 기물 테마를 튜토리얼 전체에 동일하게 적용한다. */
+const tutorialParams=new URLSearchParams(window.location.search);
+const tutorialPieceTheme=tutorialParams.get('theme')==='cheoinseong'?'cheoinseong':'original';
+const ORIGINAL_PIECE_FILE={pawn:'p',rook:'r',knight:'n',bishop:'b',queen:'q',king:'k'};
+const pieceArt=(name)=>{
+  if(tutorialPieceTheme==='cheoinseong'){
+    return `<img class="themed-tutorial-piece" alt="" src="/assets/tutorial-pieces/${name}.png" loading="eager" decoding="async">`;
+  }
+  const [faction,type]=name.split('_');
+  const file=ORIGINAL_PIECE_FILE[type]||'p';
+  const tone=faction==='m'?'dark':'light';
+  return `<img class="original-tutorial-piece ${tone}" alt="" src="/assets/original-chess-pieces-v1/${file}.png" loading="eager" decoding="async">`;
+};
+const tutorialLanguage=tutorialParams.get('lang')==='en'?'en':'ko';
 const isEnglish=tutorialLanguage==='en';
 document.documentElement.lang=tutorialLanguage;
 const choose=(ko,en)=>isEnglish?en:ko;
@@ -613,9 +628,9 @@ if(isEnglish){
 const RECAP_SCENE = CHECKMATE_START_SCENE + CHECKMATE_LESSONS.length;
 const MODULE_DONE_SCENE = -1;
 const REVIEW_SCENE = -2;
-const requestedModule = Number(new URLSearchParams(window.location.search).get('module')) || 1;
+const requestedModule = Number(tutorialParams.get('module')) || 1;
 const moduleId = Math.min(4, Math.max(1, requestedModule));
-const isReview = new URLSearchParams(window.location.search).get('review') === '1';
+const isReview = tutorialParams.get('review') === '1';
 const moduleBounds = {
   1: [0, PIECE_START_SCENE + totalPieceScenes - 1],
   2: [CAPTURE_START_SCENE, CAPTURE_START_SCENE + CAPTURE_SCENES.length - 1],
@@ -745,12 +760,6 @@ function recapScene(){
 function lessonLayout({goryeo, mongol, label='', speech, enemySpeech='', mission='', note='', noteId='', nav, capture=false, legend=''}){
   return `
     <div class="lesson-layout">
-      <section class="lesson-board-panel">
-        ${label?`<div class="lesson-board-label">${label}</div>`:''}
-        <div class="board-wrap"><div class="board" id="board"></div></div>
-        ${capture?`<div class="capture-shelf" id="captureShelf" aria-label="${choose('잡은 몽골 기물','Captured Mongol pieces')}"></div>`:''}
-        <div class="mission" id="mission">${mission}</div>
-      </section>
       <section class="lesson-copy-panel">
         <div class="lesson-piece-brief">
           <div class="char-art">${ART[goryeo]}</div>
@@ -763,6 +772,12 @@ function lessonLayout({goryeo, mongol, label='', speech, enemySpeech='', mission
         ${note?`<div class="lesson-copy-content"><p class="lesson-note"${noteId?` id="${noteId}"`:''}>${note}</p></div>`:''}
         ${legend}
         <div class="nav lesson-nav">${nav}</div>
+      </section>
+      <section class="lesson-board-panel">
+        ${label?`<div class="lesson-board-label">${label}</div>`:''}
+        <div class="board-wrap"><div class="board" id="board"></div></div>
+        ${capture?`<div class="capture-shelf" id="captureShelf" aria-label="${choose('잡은 몽골 기물','Captured Mongol pieces')}"></div>`:''}
+        <div class="mission" id="mission">${mission}</div>
       </section>
     </div>`;
 }

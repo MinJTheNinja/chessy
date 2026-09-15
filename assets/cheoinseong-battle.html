@@ -147,6 +147,20 @@
   @media (max-width:740px){ .scene-body{ grid-template-columns:1fr; } }
 
   .narrative p{ color:var(--ink-soft); margin:0 0 12px; }
+  .scene-illustration{
+    margin:18px 0 0;
+    border-top:1px solid var(--border);
+    border-bottom:1px solid var(--border);
+    background:#fff;
+    overflow:hidden;
+  }
+  .scene-illustration img{
+    display:block;
+    width:100%;
+    height:auto;
+    aspect-ratio:3/2;
+    object-fit:cover;
+  }
   .prompt-banner{
     margin-top:14px; padding:10px 12px; border:1px solid var(--ink); background:var(--paper);
     font-weight:700; font-size:0.9rem; color:var(--ink);
@@ -181,14 +195,16 @@
   .sq.flash{ animation:flashSq .8s ease; }
   @keyframes flashSq{ 0%{ box-shadow:inset 0 0 0 40px var(--accent); } 100%{ box-shadow:inset 0 0 0 40px transparent; } }
 
-  .piece{ width:82%; height:82%; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  .piece .glyph{ font-size:clamp(1.1rem,4.6vw,1.65rem); color:#fff; line-height:1; }
+  .piece{ width:94%; height:94%; display:grid; place-items:center; background:transparent!important; overflow:visible; }
+  .piece img{ display:block; width:100%; height:100%; object-fit:contain; }
+  .piece.w img{ filter:drop-shadow(0 2px 1px rgba(32,52,72,.28)); }
+  .piece.b img{ filter:drop-shadow(0 2px 1px rgba(82,34,27,.32)); }
+  .piece .glyph{ display:none; }
   .piece .tag-chip{
     margin-top:2px; font-size:clamp(0.5rem,1.6vw,0.62rem); font-weight:700; color:#fff;
     padding:0 3px; line-height:1.3; text-align:center; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
-  .piece.w{ background:var(--goryeo); }
-  .piece.b{ background:var(--jinsa); }
+  .piece.w,.piece.b{ background:transparent; }
 
   .board-controls{ display:flex; flex-wrap:wrap; gap:16px; margin-top:16px; justify-content:center; }
   .btn{
@@ -334,6 +350,26 @@
   var GLYPH = { P:'♟', N:'♞', B:'♝', R:'♜', K:'♚' };
   var LABEL = { wP:tx('백성'), wN:tx('말'), wB:tx('승병'), wR:tx('처인성 성벽'), wK:tx('김윤후'),
                 bP:tx('병졸'), bN:tx('말'), bB:tx('샤먼'), bR:tx('공성탑'), bK:tx('살리타이') };
+  var GORYEO_PIECE_ART = {
+    P:'/assets/cheoinseong-pieces-v2/g_pawn.png',
+    R:'/assets/cheoinseong-pieces-v2/g_rook.png',
+    N:'/assets/cheoinseong-pieces-v2/g_knight.png',
+    B:'/assets/cheoinseong-pieces-v2/g_bishop.png',
+    Q:'/assets/cheoinseong-pieces-v2/g_queen.png',
+    K:'/assets/cheoinseong-pieces-v2/g_king.png'
+  };
+  var MONGOL_PIECE_ART = {
+    P:'/assets/tutorial-pieces/m_pawn.png',
+    R:'/assets/tutorial-pieces/m_rook.png',
+    N:'/assets/tutorial-pieces/m_knight.png',
+    B:'/assets/tutorial-pieces/m_bishop.png',
+    Q:'/assets/tutorial-pieces/m_queen.png',
+    K:'/assets/tutorial-pieces/m_king.png'
+  };
+  function pieceAsset(pieceCode){
+    if(!pieceCode) return '';
+    return (pieceCode[0]==='w' ? GORYEO_PIECE_ART : MONGOL_PIECE_ART)[pieceCode[1]] || '';
+  }
 
   function inb(r,c){ return r>=0 && r<8 && c>=0 && c<8; }
   function color(p){ return p ? p[0] : null; }
@@ -515,6 +551,34 @@
     }
   ];
 
+  var SCENE_ART = {
+    'cheoin-1': {
+      src:'/assets/cheoinseong-scenes-v1/01-local-defense.jpg',
+      altKo:'눈 덮인 처인성 안에서 백성과 승병들이 물자를 나르고 성벽을 지키는 모습',
+      altEn:'Villagers and monk soldiers organize supplies and defend snowy Cheoinseong without a royal army'
+    },
+    'cheoin-2': {
+      src:'/assets/cheoinseong-scenes-v1/02-encirclement.jpg',
+      altKo:'처인성 주변의 겨울 들판을 몽골 기병이 여러 방향에서 에워싸는 모습',
+      altEn:'Mongol cavalry spread across winter fields to encircle Cheoinseong'
+    },
+    'cheoin-3': {
+      src:'/assets/cheoinseong-scenes-v1/03-monk-soldiers.jpg',
+      altKo:'처인성 성벽에서 승병과 부곡민이 함께 전선을 준비하는 모습',
+      altEn:'Monk soldiers and local defenders prepare the front line together at Cheoinseong'
+    },
+    'cheoin-4': {
+      src:'/assets/cheoinseong-scenes-v1/04-wall-holds.jpg',
+      altKo:'높은 토성 위의 고려 수비대가 아래 몽골군과 공성 장비를 막아내는 모습',
+      altEn:'Cheoinseong defenders hold the elevated earthen wall against Mongol forces and siege equipment'
+    },
+    'cheoin-5': {
+      src:'/assets/cheoinseong-scenes-v1/05-last-arrow.jpg',
+      altKo:'처인성의 여러 수비대 위로 출처를 알 수 없는 화살 한 발이 몽골 지휘부를 향하는 모습',
+      altEn:'An anonymous arrow passes above Cheoinseong defenders toward the distant Mongol command group'
+    }
+  };
+
   if(language==='en'){
     var EN_PUZZLES = [
       {
@@ -651,6 +715,20 @@
       p.textContent = txt;
       narrativeCol.appendChild(p);
     });
+    var sceneArt = SCENE_ART[puzzle.id];
+    if(sceneArt){
+      var figure = document.createElement('figure');
+      figure.className = 'scene-illustration';
+      var illustration = document.createElement('img');
+      illustration.src = sceneArt.src;
+      illustration.alt = language === 'en' ? sceneArt.altEn : sceneArt.altKo;
+      illustration.loading = 'lazy';
+      illustration.decoding = 'async';
+      illustration.width = 1280;
+      illustration.height = 853;
+      figure.appendChild(illustration);
+      narrativeCol.appendChild(figure);
+    }
     var promptEl = document.createElement('div');
     promptEl.className = 'prompt-banner';
     promptEl.textContent = puzzle.prompt;
@@ -790,14 +868,12 @@
             var pc = document.createElement('div');
             pc.className = 'piece ' + p[0];
             pc.title = LABEL[p];
-            var glyphEl = document.createElement('div');
-            glyphEl.className = 'glyph';
-            glyphEl.textContent = GLYPH[p[1]];
-            var tagEl2 = document.createElement('div');
-            tagEl2.className = 'tag-chip';
-            tagEl2.textContent = LABEL[p];
-            pc.appendChild(glyphEl);
-            pc.appendChild(tagEl2);
+            var pieceImage = document.createElement('img');
+            pieceImage.src = pieceAsset(p);
+            pieceImage.alt = LABEL[p] || '';
+            pieceImage.loading = 'eager';
+            pieceImage.decoding = 'async';
+            pc.appendChild(pieceImage);
             sq.appendChild(pc);
           }
 
