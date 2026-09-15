@@ -965,6 +965,10 @@ function syncLocalizedControls() {
   closeLeagueActionPopoverButton?.setAttribute("aria-label", korean ? "리그 코드 창 닫기" : "Close league code dialog");
   setText(reportUserButton, korean ? "신고" : "Report");
   setText(mainTutorialButton, korean ? "훈련장으로 가기" : "Go to training");
+  setText(document.querySelector("#entryIdentityEyebrow"), korean ? "누구나 쉽게 체스, 더 가까이 지역 이야기" : "Chess for everyone, local stories to discover");
+  setText(document.querySelector("#entryIdentityTitleFirst"), korean ? "체스를 쉽게 배우고," : "Learn chess with ease.");
+  setText(document.querySelector("#entryIdentityTitleSecond"), korean ? "우리 고장의 이야기를 만나다." : "Discover the stories of our communities.");
+  setText(document.querySelector("#entryIdentityDescription"), korean ? "처음 배우는 한 수부터 함께 즐기는 대국까지, 이지메이트가 체스를 쉽게 안내합니다. 처인성 전투를 담은 체스판 위에서 지역의 역사와 문화도 새롭게 발견해보세요." : "From your first move to a game with friends, EasyMate makes learning chess approachable. Discover local history and culture on a chessboard inspired by the Battle of Cheoinseong.");
   if (!currentUser) {
     setText(loginButton, korean ? "로그인" : "Login");
     setText(signupButton, korean ? "새 계정" : "New account");
@@ -3078,101 +3082,101 @@ function nextSimilarPuzzleId(stage, completed = completedPuzzleIds()) {
   return variants.find((id) => !completed.has(id)) || variants[0];
 }
 
+function puzzleStageArtwork(stage) {
+  const pieces = {
+    s1: "rook", s2: "knight", s3: "queen", m1: "rook", m2: "king", m3: "pawn", h1: "knight", h2: "rook", a1: "king", a2: "rook", a3: "queen",
+    "cheoin-1": "pawn", "cheoin-2": "knight", "cheoin-3": "bishop", "cheoin-4": "rook", "cheoin-5": "queen",
+  };
+  return `/assets/cheoinseong-pieces-v2/g_${pieces[stage.id] || "pawn"}.png`;
+}
+
 function renderPuzzleStageList(list, seriesItem) {
   if (!list) return;
   const korean = currentInterfaceLanguage() === "Korean";
+  const history = seriesItem.id === "cheoinseong";
   const completed = completedPuzzleIds();
+  const stages = seriesItem.stages;
+  const completedCount = stages.filter((stage) => completed.has(stage.id)).length;
+  const nextIndex = stages.findIndex((stage) => !completed.has(stage.id) && canOpenPuzzleStage(stage, completed));
+  const allComplete = nextIndex === -1;
+  const currentIndex = allComplete ? 0 : nextIndex;
+  const next = stages[currentIndex];
+  const t = (ko, en) => korean ? ko : en;
+  const title = history ? t(seriesItem.ko, seriesItem.en) : t("한 수씩, 더 쉬워지는 체스", "Make chess easier, one move at a time");
   list.replaceChildren();
-
-  const heading = document.createElement("header");
-  heading.className = "puzzle-series-heading";
-  heading.innerHTML = `<span>${korean ? seriesItem.koLabel : seriesItem.enLabel}</span><h2>${korean ? seriesItem.ko : seriesItem.en}</h2>`;
-  list.append(heading);
-
-  const isTiered = seriesItem.id === "goryeo";
-  const completedStageCount = isTiered ? 0 : contiguousCompletedStageCount(seriesItem.stages, completed);
-  const currentStageIndex = isTiered ? -1 : Math.min(completedStageCount, seriesItem.stages.length - 1);
-  if (isTiered) {
-    const unlockedTier = maxUnlockedPuzzleTier(completed);
-    const rush = document.createElement("section");
-    rush.className = "puzzle-rush-card";
-    rush.innerHTML = `
-      <div><span>${korean ? "90초 무작위 도전" : "90-second random run"}</span><h3>${korean ? "퍼즐 러시" : "Puzzle Rush"}</h3><p>${korean ? `현재 열린 메이트 인 ${unlockedTier}까지 무작위로 이어서 풉니다.` : `Race through random puzzles up to Mate in ${unlockedTier}.`}</p></div>
-      <button type="button" data-puzzle-rush>${korean ? "러시 시작" : "Start Rush"}</button>`;
-    rush.querySelector("[data-puzzle-rush]")?.addEventListener("click", () => openPuzzleRush(unlockedTier));
-    list.append(rush);
+  if (!next) return;
+  const hero = document.createElement("header");
+  hero.className = `puzzle-course-header${history ? " is-history" : ""}`;
+  hero.innerHTML = `<div class="puzzle-course-intro"><span class="puzzle-course-eyebrow">${history ? t("지역 이야기 · 용인 처인성", "Local stories · Cheoinseong, Yongin") : t("고려 vs 몽골 · 전술 퍼즐", "Goryeo vs Mongol · Tactical puzzles")}</span>
+    <h2>${title}</h2><p>${history ? t("지역의 이야기를 만나고, 체스 한 수로 풀어보세요.", "Explore local stories through each chess move.") : t("짧은 퍼즐로 체크메이트 감각을 익혀보세요.", "Build your checkmate instincts with short puzzles.")}</p>
+    ${history ? `<small>${t("역사에서 영감을 받은 체스 퍼즐", "Chess puzzles inspired by history")}</small>` : ""}</div>
+    ${history ? `<div class="puzzle-course-art" aria-hidden="true"><img src="/assets/cheoinseong-pieces-v2/g_rook.png" alt="" /><img src="/assets/cheoinseong-pieces-v2/g_knight.png" alt="" /></div>` : ""}
+    <div class="puzzle-course-progress"><span id="${seriesItem.id}CourseProgress">${completedCount} / ${stages.length} ${t("단계 완료", "stages complete")}</span><progress max="${stages.length}" value="${completedCount}" aria-labelledby="${seriesItem.id}CourseProgress"></progress></div>`;
+  list.append(hero);
+  const layout = document.createElement("div");
+  layout.className = "puzzle-course-layout";
+  const lessons = document.createElement("div");
+  lessons.className = "puzzle-course-lessons";
+  const groups = history ? [{ name: t("처인성을 따라가는 다섯 이야기", "Five stories of Cheoinseong"), stages }] : [1, 2, 3].map(tier => ({
+ name: t(`메이트 인 ${tier}`, `Mate in ${tier}`),
+ description: t(`나의 ${tier}수로 체크메이트를 완성해요.`, `Find checkmate in ${tier} moves.`),
+ stages: stages.filter(stage => Number(stage.tier || 1) === tier)
+}));
+  groups.forEach((group) => {
+    const section = document.createElement("section");
+    section.className = "puzzle-lesson-group";
+    section.innerHTML = `<h3>${group.name}</h3>${group.description ? `<p>${group.description}</p>` : ""}`;
+    const rows = document.createElement("ol");
+    rows.className = "puzzle-lesson-list";
+    group.stages.forEach((stage) => {
+      const index = stages.indexOf(stage);
+      const done = completed.has(stage.id);
+      const ready = !done && canOpenPuzzleStage(stage, completed);
+      const accessible = canOpenPuzzleStage(stage, completed);
+      const status = done ? t("완료 · 다시 풀기", "Complete · Replay") : ready ? t("도전 가능", "Ready") : t("앞 단계를 완료하면 열려요", "Complete the previous stage to unlock");
+      const row = document.createElement("li");
+      row.className = `puzzle-lesson${done ? " is-complete" : ""}${ready ? " is-current" : ""}${accessible ? "" : " is-locked"}`;
+      const control = document.createElement("button");
+      control.type = "button";
+      control.className = "puzzle-lesson-button";
+      control.disabled = !accessible;
+      control.innerHTML = `<span class="puzzle-lesson-number">${index + 1}</span><span class="puzzle-lesson-art"><img src="${puzzleStageArtwork(stage)}" alt="" loading="lazy" /></span><span class="puzzle-lesson-copy"><strong>${t(stage.ko, stage.en)}</strong><span>${t(stage.koDescription, stage.enDescription)}</span></span><span class="puzzle-lesson-status"><span aria-hidden="true">${done ? "✓" : ready ? "▷" : "🔒"}</span>${status}</span>`;
+      if (accessible) control.addEventListener("click", () => openPuzzleStage(stage, index));
+      row.append(control);
+      const variantId = done ? nextSimilarPuzzleId(stage, completed) : "";
+      if (variantId) {
+        const practice = document.createElement("button");
+        practice.type = "button"; practice.className = "puzzle-course-similar";
+        practice.textContent = t("유사문제 풀기 →", "Practice similar puzzle →");
+        practice.addEventListener("click", () => openPuzzleStage({...stage, id: variantId, ko: stage.ko + " · 유사 퍼즐", en: stage.en + " · Similar puzzle"}, index));
+        row.append(practice);
+      }
+      rows.append(row);
+    });
+    section.append(rows);
+    lessons.append(section);
+  });
+  const note = document.createElement("p");
+  note.className = "puzzle-course-note";
+  note.textContent = t("완료한 단계는 언제든 다시 풀 수 있어요.", "You can replay completed stages anytime.");
+  lessons.append(note);
+  const aside = document.createElement("aside");
+  aside.className = "puzzle-course-aside";
+  aside.setAttribute("aria-label", t("다음 도전과 복습", "Next challenge and review"));
+  aside.innerHTML = `<section class="puzzle-next-card"><span class="puzzle-course-eyebrow">${allComplete ? t("모든 단계를 완료했어요", "All stages complete") : history ? t("이어서 할 이야기", "Your next story") : t("다음 도전", "Next challenge")}</span><h3>${t(next.ko, next.en)}</h3><div class="puzzle-next-art"><img src="${puzzleStageArtwork(next)}" alt="${t("고려측 체스 기물", "Goryeo chess piece")}" /></div><p>${allComplete ? t("처음부터 다시 풀며 배운 내용을 복습해보세요.", "Replay the course to review what you learned.") : t(next.koDescription, next.enDescription)}</p><button class="button primary puzzle-resume" type="button">${allComplete ? t("처음부터 복습하기", "Review from the start") : history ? t("이야기 이어하기", "Continue the story") : t("이어서 풀기", "Continue puzzles")} <span aria-hidden="true">→</span></button></section>
+    <section class="puzzle-learning-note"><span class="puzzle-course-eyebrow">${history ? t("체스와 만나는 지역 이야기", "Local stories through chess") : t("천천히 생각해도 괜찮아요", "Take your time")}</span><h3>${history ? t("처인성을 지키는 기물들", "The defenders of Cheoinseong") : t("한 수보다 중요한 생각", "Think before you move")}</h3><p>${history ? t("병사, 기마병, 승병과 성벽. 실제 게임 속 고려측 기물을 만나며 이야기를 따라가세요.", "Follow the story with the Goryeo soldiers, cavalry, monks and fortress pieces used in the game.") : t("상대 왕의 도망갈 칸을 살피고, 내 기물이 함께 공격할 방법을 찾아보세요.", "Look for the king’s escape squares and ways for your pieces to work together.")}</p></section>`;
+  aside.querySelector(".puzzle-resume").addEventListener("click", () => openPuzzleStage(next, currentIndex));
+  if (!history) {
+    const maxTier = maxUnlockedPuzzleTier(completed);
+    const rushCard = document.createElement("section");
+    rushCard.className = "puzzle-rush-card";
+    rushCard.innerHTML = `<span class="puzzle-course-eyebrow">${t("90초 무작위 도전", "90-second random run")}</span><h3>${t("퍼즐 러시", "Puzzle Rush")}</h3><p>${t(`현재 열린 메이트 인 ${maxTier}까지 무작위로 이어서 풉니다.`, `Race through random puzzles up to Mate in ${maxTier}.`)}</p><button class="button secondary" type="button" data-puzzle-rush>${t("러시 시작", "Start Rush")} <span aria-hidden="true">→</span></button>`;
+    rushCard.querySelector("[data-puzzle-rush]").addEventListener("click", () => openPuzzleRush(maxTier));
+    aside.querySelector(".puzzle-learning-note").replaceWith(rushCard);
   }
 
-  let lastTier = 0;
-  seriesItem.stages.forEach((stage, index) => {
-    const tier = Math.max(1, Number(stage.tier || 1));
-    if (isTiered && tier !== lastTier) {
-      if (lastTier) {
-        const previousTierStages = seriesItem.stages.filter((candidate) => Number(candidate.tier || 1) === lastTier);
-        const gateOpen = previousTierStages.every((candidate) => completed.has(candidate.id));
-        const gate = document.createElement("div");
-        gate.className = `puzzle-tier-gate${gateOpen ? " open" : " locked"}`;
-        gate.innerHTML = `<span aria-hidden="true">${gateOpen ? "✓" : "🔒"}</span><strong>${gateOpen ? (korean ? `메이트 인 ${tier} 해제` : `Mate in ${tier} unlocked`) : (korean ? `메이트 인 ${lastTier}을 모두 완료하면 해제` : `Clear every Mate in ${lastTier} stage to unlock`)}</strong>`;
-        list.append(gate);
-      }
-      const tierHeading = document.createElement("div");
-      tierHeading.className = "puzzle-tier-heading";
-      tierHeading.innerHTML = `<span>${korean ? `난이도 ${tier}` : `Tier ${tier}`}</span><h3>${korean ? `메이트 인 ${tier}` : `Mate in ${tier}`}</h3>`;
-      list.append(tierHeading);
-      lastTier = tier;
-    }
-    const isComplete = isTiered ? completed.has(stage.id) : index < completedStageCount;
-    const isCurrent = isTiered ? canOpenPuzzleStage(stage, completed) && !isComplete : index === currentStageIndex;
-    const accessible = isTiered ? canOpenPuzzleStage(stage, completed) : isComplete || isCurrent;
-    const variants = similarPuzzleIds(stage);
-    const status = isComplete
-      ? korean ? "완료" : "Complete"
-      : isCurrent
-        ? korean ? "도전 가능" : "Ready"
-        : korean ? "잠김" : "Locked";
-    const row = document.createElement("article");
-    row.className = `training-module-row puzzle-stage-row ${index % 2 ? "path-right" : "path-left"}${isComplete ? " completed" : ""}${isCurrent ? " current" : ""}${accessible ? "" : " locked"}${index === seriesItem.stages.length - 1 ? " path-last" : ""}`;
-    const tooltipId = `puzzleStageTooltip-${seriesItem.id}-${index + 1}`;
-    const title = korean ? stage.ko : stage.en;
-    const description = korean ? stage.koDescription : stage.enDescription;
-    const icon = stage.iconIndex
-      ? `<span class="puzzle-stage-icon cheoinseong-stage-icon cheoinseong-stage-icon-${stage.iconIndex}" aria-hidden="true"></span>`
-      : index < 8
-        ? `<span class="puzzle-stage-icon puzzle-stage-icon-${index + 1}" aria-hidden="true"></span>`
-        : `<span class="puzzle-stage-glyph" aria-hidden="true">♛</span>`;
-    const similarPuzzleId = isComplete ? nextSimilarPuzzleId(stage, completed) : "";
-    const similarAction = similarPuzzleId
-      ? `<button class="puzzle-similar-button" type="button" data-similar-puzzle="${similarPuzzleId}">${korean ? "유사문제 풀기" : "Practice similar puzzle"}</button>`
-      : "";
-    row.innerHTML = `
-      <div class="training-path-anchor">
-        <button class="training-path-node" type="button" aria-describedby="${tooltipId}"${accessible ? "" : ' aria-disabled="true"'}>
-          ${icon}
-          <span class="visually-hidden">${index + 1}. ${title} · ${status}</span>
-        </button>
-        <div class="training-path-tooltip" id="${tooltipId}" role="tooltip">
-          <span class="training-module-index">${korean ? "퍼즐" : "Puzzle"} ${index + 1} · ${status}</span>
-          <h3>${title}</h3>
-          <p>${description}</p>
-          <strong>${accessible ? korean ? "눌러서 퍼즐 풀기" : "Open puzzle" : korean ? "이전 난이도를 모두 완료하세요" : "Complete the previous tier first"}</strong>
-          ${similarAction}
-        </div>
-      </div>`;
-    if (accessible) row.querySelector(".training-path-node")?.addEventListener("click", () => openPuzzleStage(stage, index));
-    row.querySelector("[data-similar-puzzle]")?.addEventListener("click", (event) => {
-      event.stopPropagation();
-      const button = event.currentTarget;
-      const variantId = button.dataset.similarPuzzle;
-      const variantIndex = Math.max(0, variants.indexOf(variantId));
-      openPuzzleStage({
-        ...stage,
-        id: variantId,
-        ko: `${stage.ko} · 유사 퍼즐 ${variantIndex + 1}`,
-        en: `${stage.en} · Similar puzzle ${variantIndex + 1}`,
-      }, index);
-    });
-    list.append(row);
-  });
+  layout.append(lessons, aside);
+  list.append(layout);
 }
 
 function maxUnlockedPuzzleTier(completed = completedPuzzleIds()) {
