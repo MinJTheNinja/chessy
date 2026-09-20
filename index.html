@@ -585,15 +585,24 @@
           <section class="view how-to-play-view" data-view="how-to-play" aria-labelledby="howToPlayTitle">
             <div class="view-header">
               <div>
-                <h2 id="howToPlayTitle">체스가 처음이신가요?</h2><p class="screen-description">기초부터 차근차근 배워보세요.</p>
+                <h2 id="howToPlayTitle">훈련장</h2>
               </div>
               <button class="button primary" id="tutorialLoginButton" type="button">로그인 화면으로 가기</button>
             </div>
 
+            <section class="training-resume-card" aria-label="이어 하기">
+              <span class="training-resume-art" aria-hidden="true"><img src="/assets/cheoinseong-pieces-v2/g_knight.png" alt="" /></span>
+              <div class="training-resume-copy">
+                <span>이어 하기</span>
+                <strong id="trainingResumeTitle">캠페인 · 처인성 2장 마음을 하나로 모으다</strong>
+              </div>
+              <button class="button primary" id="trainingResumeButton" type="button">이어 하기 <span aria-hidden="true">→</span></button>
+            </section>
+
             <div class="training-mode-toggle" aria-label="훈련장 종류">
-              <button class="active" id="showTutorialGuide" type="button">튜토리얼</button>
-              <button id="showPuzzleGuide" type="button">퍼즐</button>
-              <button id="showCheoinseongGuide" type="button">처인성</button>
+              <button class="active" id="showTutorialGuide" type="button">기본기 <small>0 / 6</small></button>
+              <button id="showCheoinseongGuide" type="button">캠페인 <small>0 / 5</small></button>
+              <button id="showPuzzleGuide" type="button">연습 <small>0 / 11</small></button>
             </div>
 
             <div class="tutorial-gate-note" id="tutorialGateNote" hidden>

@@ -107,6 +107,8 @@ const puzzlePathList = document.querySelector("#puzzlePathList");
 const cheoinseongPathList = document.querySelector("#cheoinseongPathList");
 const trainingModuleToolbar = document.querySelector("#trainingModuleToolbar");
 const activeTrainingModuleTitle = document.querySelector("#activeTrainingModuleTitle");
+const trainingResumeTitle = document.querySelector("#trainingResumeTitle");
+const trainingResumeButton = document.querySelector("#trainingResumeButton");
 const headerProfile = document.querySelector("#headerProfile");
 const headerProfileButton = document.querySelector("#headerProfileButton");
 const headerProfileMenu = document.querySelector("#headerProfileMenu");
@@ -2226,8 +2228,8 @@ const puzzlePathStages = [
     series: "cheoinseong",
     player: "/assets/cheoinseong-battle.html",
     iconIndex: 1,
-    ko: "관군 없이, 스스로",
-    en: "Without the royal army",
+    ko: "작은 토성, 결사 항전을 택하다",
+    en: "A small earthen fort chooses resistance",
     koDescription: "처인부곡의 백성이 성벽에 다가온 몽골 병졸을 직접 막아냅니다.",
     enDescription: "The people of Cheoin stop a Mongol foot soldier approaching the wall.",
   },
@@ -2236,8 +2238,8 @@ const puzzlePathStages = [
     series: "cheoinseong",
     player: "/assets/cheoinseong-battle.html",
     iconIndex: 2,
-    ko: "몽골 기병, 성을 에워싸다",
-    en: "Mongol cavalry surrounds the fort",
+    ko: "마음을 하나로 모으다",
+    en: "Gathering as one",
     koDescription: "나이트 포크로 적 지휘부와 공성탑을 동시에 위협합니다.",
     enDescription: "Use a knight fork to threaten the commander and siege tower together.",
   },
@@ -2246,8 +2248,8 @@ const puzzlePathStages = [
     series: "cheoinseong",
     player: "/assets/cheoinseong-battle.html",
     iconIndex: 3,
-    ko: "승병들, 최전선에 서다",
-    en: "Monks take the front line",
+    ko: "완강리 김윤후의 매복",
+    en: "Kim Yun-hu's ambush",
     koDescription: "승병을 상징하는 비숍이 긴 대각선에서 이중공격을 만듭니다.",
     enDescription: "A bishop representing the warrior monks creates a double attack.",
   },
@@ -2256,8 +2258,8 @@ const puzzlePathStages = [
     series: "cheoinseong",
     player: "/assets/cheoinseong-battle.html",
     iconIndex: 4,
-    ko: "성벽이 버티다",
-    en: "The walls hold",
+    ko: "이름을 알 수 없는 화살",
+    en: "An arrow from an unknown hand",
     koDescription: "처인성 성벽을 상징하는 룩으로 왕과 기병을 함께 겨눕니다.",
     enDescription: "Use the rook-like fortress wall to fork the king and cavalry.",
   },
@@ -2276,6 +2278,7 @@ const puzzlePathStages = [
 let entryTypewriterTimer = 0;
 let selectedTrainingReviewModuleId = 0;
 let activeTrainingPathMode = "tutorial";
+let campaignDetailOpen = false;
 
 function landingTypewriterPhrase() {
   return currentInterfaceLanguage() === "Korean" ? "체스..? 엄청 쉽죠." : "chess..? it’s easy.";
@@ -2424,7 +2427,7 @@ function renderTodayQuests() {
   });
 }
 
-function renderTrainingModuleList() {
+function renderTrainingModuleListLegacy() {
   if (!trainingModuleList) return;
   const state = activeTrainingState();
   const renderSignature = JSON.stringify({
@@ -2609,7 +2612,7 @@ function puzzleStageArtwork(stage) {
   return `/assets/cheoinseong-pieces-v2/g_${pieces[stage.id] || "pawn"}.png`;
 }
 
-function renderPuzzleStageList(list, seriesItem) {
+function renderPuzzleStageListLegacy(list, seriesItem) {
   if (!list) return;
   const korean = currentInterfaceLanguage() === "Korean";
   const history = seriesItem.id === "cheoinseong";
@@ -2716,7 +2719,7 @@ function renderPuzzlePath() {
   });
 }
 
-function renderTrainingControls() {
+function renderTrainingControlsLegacy() {
   const state = activeTrainingState();
   const puzzleUnlocked = Boolean(state.puzzleUnlocked);
   const korean = currentInterfaceLanguage() === "Korean";
@@ -2741,6 +2744,67 @@ function renderTrainingControls() {
   renderTrainingModuleList();
   renderPuzzlePath();
   renderHomeTrainingProgress();
+}
+
+function trainingPuzzleRows(stages, completed, ko, campaign = false) {
+  const next = stages.findIndex((stage) => !completed.has(stage.id));
+  const current = next < 0 ? 0 : next;
+  const list = document.createElement("ol");
+  list.className = campaign ? "campaign-scene-list" : "practice-lesson-list";
+  stages.forEach((stage, index) => {
+    const done = completed.has(stage.id);
+    const ready = !done && index === current;
+    const accessible = done || ready;
+    const item = document.createElement("li");
+    item.className = `${done ? "is-complete" : ""}${ready ? " is-current" : ""}${accessible ? "" : " is-locked"}`;
+    const type = campaign ? `<em>${index < 2 ? (ko ? "정사 기반" : "Historical") : (ko ? "재구성" : "Reconstruction")}</em>` : "";
+    const score = campaign ? (done ? "<small>★★★</small>" : "") : `<small>${ko ? "유사문제" : "Related"} ${done ? "5 / 5" : ready ? "3 / 5" : "0 / 5"}</small>`;
+    item.innerHTML = `<button type="button" ${accessible ? "" : "disabled"}><span class="puzzle-lesson-number">${index + 1}</span><span class="puzzle-lesson-art"><img src="${puzzleStageArtwork(stage)}" alt="" /></span><span class="puzzle-lesson-copy"><strong>${ko ? stage.ko : stage.en} ${type}</strong><span>${ko ? stage.koDescription : stage.enDescription}</span></span><span class="puzzle-lesson-status">${done ? `✓ ${ko ? "다시 풀기" : "Replay"}` : ready ? `▷ ${ko ? "도전" : "Start"}` : `♙ ${ko ? "잠김" : "Locked"}`}${score}</span></button>`;
+    if (accessible) item.querySelector("button").onclick = () => openPuzzleStage(stage, index, { allowLocked: true });
+    list.append(item);
+  });
+  return list;
+}
+
+function renderPuzzleStageList(list, seriesItem) {
+  if (!list) return;
+  const ko = currentInterfaceLanguage() === "Korean";
+  const completed = completedPuzzleIds();
+  const stages = seriesItem.stages;
+  const count = stages.filter((stage) => completed.has(stage.id)).length;
+  list.replaceChildren();
+  if (seriesItem.id === "cheoinseong" && !campaignDetailOpen) {
+    list.innerHTML = `<header class="training-section-heading"><div><h2>${ko ? "캠페인" : "Campaigns"}</h2><p>${ko ? "체스로 역사 속 한 장면을 풀고, 그 사건을 더 깊이 알아봐요." : "Solve a moment from history through chess and discover its story."}</p></div></header>
+      <article class="campaign-season-card"><div class="campaign-season-copy"><span class="campaign-kicker">${ko ? "시즌 1 · 1232" : "Season 1 · 1232"} <b>${ko ? "진행 중" : "In progress"}</b></span><h3>${ko ? "처인성" : "Cheoinseong"}</h3><p>${ko ? "관군 없이 성을 지킨 승려 김윤후와 처인부곡민. 체스로 항전의 다섯 장면을 풀고, 그날의 기록도 함께 읽어요." : "Five scenes about Kim Yun-hu and the people who defended Cheoinseong."}</p></div><div class="campaign-season-art" aria-hidden="true"><img src="/assets/cheoinseong-pieces-v2/g_rook.png" alt="" /><img src="/assets/cheoinseong-pieces-v2/g_knight.png" alt="" /></div><div class="campaign-season-progress"><span>${count} / 5 ${ko ? "단계 완료" : "complete"}</span><i><b style="width:${count * 20}%"></b></i></div><button type="button" class="button primary campaign-open">${ko ? "캠페인 보기" : "View campaign"} →</button><p class="campaign-reward">♟ ♟ ${ko ? "5장을 모두 풀면 고려-몽골 말 디자인과 배지를 받아요" : "Complete all chapters to earn the piece set and badge"}</p></article>
+      <section class="campaign-coming"><h3>${ko ? "곧 열려요" : "Coming soon"}</h3><div><article><span>${ko ? "시즌 2 · [연도]" : "Season 2 · [year]"}</span><strong>[${ko ? "캠페인 제목" : "Campaign title"}]</strong><small>[${ko ? "한 줄 소개" : "Description"}]</small><em>[${ko ? "공개 시기 미정" : "Release TBD"}]</em></article><article><span>${ko ? "시즌 3 · [연도]" : "Season 3 · [year]"}</span><strong>[${ko ? "캠페인 제목" : "Campaign title"}]</strong><small>[${ko ? "한 줄 소개" : "Description"}]</small><em>[${ko ? "공개 시기 미정" : "Release TBD"}]</em></article></div></section>`;
+    list.querySelector(".campaign-open").onclick = () => {
+      campaignDetailOpen = true;
+      puzzlePathRenderSignature = "";
+      renderPuzzlePath();
+    };
+    return;
+  }
+  if (seriesItem.id === "cheoinseong") {
+    list.innerHTML = `<button class="campaign-back" type="button">← ${ko ? "캠페인" : "Campaigns"}</button><header class="campaign-detail-head"><div><span>${ko ? "시즌 1 · 1232" : "Season 1 · 1232"}</span><h2>${ko ? "처인성" : "Cheoinseong"}</h2><p>${ko ? "관군 없이 성을 지킨 승려 김윤후와 처인부곡민의 이야기를 체스로 풀어요." : "Play through the story of Cheoinseong."}</p></div><div class="campaign-detail-art"><img src="/assets/cheoinseong-pieces-v2/g_rook.png" alt="" /><img src="/assets/cheoinseong-pieces-v2/g_knight.png" alt="" /></div><div class="campaign-season-progress"><span>${count} / 5 ${ko ? "단계 완료" : "complete"}</span><i><b style="width:${count * 20}%"></b></i></div></header><section class="campaign-era"><div><strong>${ko ? "이 사건, 한눈에" : "At a glance"}</strong><small>${ko ? "사건 요약 2~3문장" : "A brief event summary"}</small></div><span>${ko ? "인물 · 지도 · 답사 자료 모음" : "People · map · field notes"} →</span><ol><li><b>1231</b><small>${ko ? "몽골 1차 침입" : "First invasion"}</small></li><li><b>1232</b><small>${ko ? "강화 천도" : "Move to Ganghwa"}</small></li><li><b>1232</b><small>${ko ? "처인성 전투" : "Battle of Cheoinseong"}</small></li><li><b>[${ko ? "연도" : "year"}]</b><small>[${ko ? "사건" : "event"}]</small></li></ol></section><section class="campaign-scenes"><h3>${ko ? "다섯 장면" : "Five scenes"} <small>${ko ? "풀 때마다 그날의 기록이 열려요" : "A record opens with each solution"}</small></h3></section><footer class="campaign-completion"><strong>${ko ? "시즌 1 보상" : "Season 1 reward"}</strong><span>▢ ${ko ? "처인성 수호자 배지" : "Guardian badge"}</span><span>♟ ♟ ${ko ? "고려-몽골 말 디자인" : "Goryeo-Mongol pieces"}</span><small>${ko ? "5장을 모두 풀면 받아요" : "Complete all five chapters"}</small></footer>`;
+    list.querySelector(".campaign-scenes").append(trainingPuzzleRows(stages, completed, ko, true));
+    list.querySelector(".campaign-back").onclick = () => {
+      campaignDetailOpen = false;
+      puzzlePathRenderSignature = "";
+      renderPuzzlePath();
+    };
+    return;
+  }
+  list.innerHTML = `<header class="training-section-heading"><div><h2>${ko ? "연습" : "Practice"}</h2><p>${ko ? "배운 개념을 퍼즐로 익혀요. 캠페인에서 만난 개념도 여기에 쌓여요." : "Build fluency through puzzles from lessons and campaigns."}</p></div><div class="training-inline-progress"><span>${count} / 11 ${ko ? "단계 완료" : "complete"}</span><i><b style="width:${count / 11 * 100}%"></b></i></div></header><section class="practice-rush"><span>ϟ</span><div><strong>${ko ? "퍼즐 러시 90초 · 3수 메이트까지" : "Puzzle Rush 90s · up to mate in 3"}</strong><small>${ko ? "최고 기록 [기록 없음]" : "Best score [none]"}</small></div><button type="button">${ko ? "도전하기" : "Start"}</button></section><div class="practice-filters"><button class="active" type="button">${ko ? "전체" : "All"}</button><button type="button">${ko ? "안 푼 퍼즐" : "Unsolved"}</button><button type="button">${ko ? "유사문제 남은 것" : "Related"}</button><span>♟ ♟ ${ko ? "말 디자인 · 고려-몽골 · 바꾸기" : "Piece set · Change"}</span></div><div class="practice-groups"></div>`;
+  list.querySelector(".practice-rush button").onclick = () => openPuzzleRush(3);
+  const groups = [[ko ? "1수 메이트" : "Mate in 1", stages.filter((s) => s.id.startsWith("s"))], [ko ? "2수 메이트" : "Mate in 2", stages.filter((s) => s.id.startsWith("m"))], [ko ? "3수 메이트" : "Mate in 3", stages.filter((s) => s.id.startsWith("h"))]];
+  groups.forEach(([name, group], index) => {
+    const section = document.createElement(index ? "details" : "section");
+    section.className = "practice-group";
+    if (index) section.innerHTML = `<summary><strong>${name}</strong><span>[n] / [n] ${ko ? "완료" : "complete"}</span></summary>`;
+    else section.innerHTML = `<h3>${name} <small>${group.filter((stage) => completed.has(stage.id)).length} / ${group.length} ${ko ? "완료" : "complete"}</small></h3>`;
+    if (!index) section.append(trainingPuzzleRows(group, completed, ko));
+    list.querySelector(".practice-groups").append(section);
+  });
 }
 
 function renderHomeTrainingProgress() {
@@ -2796,12 +2860,7 @@ function showTrainingModuleHome() {
 }
 
 function showPuzzlePath(mode = "puzzle") {
-  const state = activeTrainingState();
   const nextMode = mode === "cheoinseong" ? "cheoinseong" : "puzzle";
-  if (nextMode !== "cheoinseong" && !state.puzzleUnlocked) {
-    showTrainingModuleHome();
-    return;
-  }
   trainingModuleOpen = false;
   howToPlayShell?.classList.add("puzzle-mode");
   howToPlayView?.classList.add("puzzle-mode");
@@ -2862,8 +2921,7 @@ function openTrainingReview(moduleId) {
 }
 
 function openPuzzleStage(stage, index = 0, options = {}) {
-  const requiresTutorial = stage?.series !== "cheoinseong";
-  if (!stage || (!options.allowLocked && requiresTutorial && !activeTrainingState().puzzleUnlocked)) return;
+  if (!stage) return;
   trainingModuleOpen = true;
   howToPlayShell?.classList.add("puzzle-mode");
   howToPlayView?.classList.add("puzzle-mode");
@@ -2969,11 +3027,8 @@ function watchPuzzleFrameHeight() {
 }
 
 function setHowToPlayMode(mode) {
-  const state = activeTrainingState();
-  const puzzleUnlocked = Boolean(state.puzzleUnlocked);
   const requestedPathMode = mode === "cheoinseong" ? "cheoinseong" : "puzzle";
-  const pathIsAvailable = requestedPathMode === "cheoinseong" || puzzleUnlocked;
-  const nextMode = ["puzzle", "cheoinseong"].includes(mode) && pathIsAvailable ? requestedPathMode : "tutorial";
+  const nextMode = ["puzzle", "cheoinseong"].includes(mode) ? requestedPathMode : "tutorial";
   if (nextMode === "puzzle" || nextMode === "cheoinseong") {
     showPuzzlePath(nextMode);
     return;
@@ -6979,3 +7034,67 @@ if (isStudentTutorialRequired()) {
   openAccountEntry("signup");
 }
 checkBackend();
+
+/* PDF v3 training room renderer. */
+function renderTrainingModuleList() {
+  if (!trainingModuleList) return;
+  const state = activeTrainingState();
+  const ko = currentInterfaceLanguage() === "Korean";
+  const done = new Set((state.completedModules || []).map(Number));
+  const currentId = Number(state.nextModule?.id || 0);
+  const lessons = [
+    [1, "기물의 움직임", "Piece movement", "폰, 룩, 비숍, 나이트, 퀸, 킹의 움직임과 킹끼리 붙을 수 없는 규칙을 배워요.", "movement"],
+    [2, "기물 잡기", "Capturing pieces", "각 기물이 상대 기물을 잡는 방법을 연습해요.", "capture"],
+    [3, "체크에서 벗어나기", "Escaping check", "체크를 피하고, 막고, 공격한 기물을 잡아봐요.", "defense"],
+    [4, "체크메이트", "Checkmate", "여러 체크메이트 모양과 승리 조건을 배워요.", "mate"],
+    [5, "핀과 스큐어", "Pins and skewers", "한 줄에 선 두 기물을 묶는 핀과 스큐어를 배워요.", "capture"],
+    [6, "숨은 공격과 메이트", "Discovered attacks", "숨은 공격을 열고, 질식·사다리·뒷줄 메이트를 구분해요.", "mate"],
+  ];
+  trainingModuleList.innerHTML = `<header class="training-section-heading"><div><h2>${ko ? "기본기" : "Fundamentals"}</h2><p>${ko ? "규칙은 여기서 한 번만 배워요. 배운 규칙은 캠페인과 연습에서 써봐요." : "Learn each rule once, then use it in campaigns and practice."}</p></div><div class="training-inline-progress"><span>${done.size} / 6 ${ko ? "단계 완료" : "complete"}</span><i><b style="width:${done.size / 6 * 100}%"></b></i></div></header><div class="fundamentals-list"></div>`;
+  const list = trainingModuleList.querySelector(".fundamentals-list");
+  lessons.forEach(([id, koTitle, enTitle, description, icon]) => {
+    const complete = done.has(id);
+    const current = id === currentId;
+    const accessible = id <= 4 && (complete || current);
+    const row = document.createElement("article");
+    row.className = `fundamentals-row${complete ? " is-complete" : ""}${current ? " is-current" : ""}${accessible ? "" : " is-locked"}`;
+    row.innerHTML = `<span class="fundamentals-number">${id}</span><span class="fundamentals-icon"><span class="training-stage-icon icon-${icon}"></span></span><span class="fundamentals-copy"><strong>${ko ? koTitle : enTitle}</strong><small>${ko ? description : enTitle}</small></span><button class="fundamentals-action" type="button" ${accessible ? "" : "disabled"}>${complete ? `✓ ${ko ? "다시 보기" : "Replay"}` : current ? `▷ ${ko ? "이어하기" : "Continue"}` : ko ? "대기" : "Locked"}</button>`;
+    if (accessible) row.querySelector("button").onclick = () => openTrainingModule(id);
+    list.append(row);
+  });
+  const footer = document.createElement("footer");
+  footer.className = "training-next-link";
+  footer.innerHTML = `<span>${ko ? "기본기를 다 마치지 않아도 캠페인을 시작할 수 있어요." : "You can begin a campaign before completing every fundamental."}</span><button type="button">${ko ? "캠페인 보기" : "View campaigns"} →</button>`;
+  footer.querySelector("button").onclick = () => setHowToPlayMode("cheoinseong");
+  trainingModuleList.append(footer);
+}
+
+function renderTrainingControls() {
+  const state = activeTrainingState();
+  const ko = currentInterfaceLanguage() === "Korean";
+  const completed = completedPuzzleIds();
+  const basics = new Set((state.completedModules || []).map(Number)).size;
+  const practice = puzzlePathStages.filter((stage) => !stage.series && completed.has(stage.id)).length;
+  const campaign = puzzlePathStages.filter((stage) => stage.series === "cheoinseong" && completed.has(stage.id)).length;
+  if (showTutorialGuideButton) showTutorialGuideButton.innerHTML = `${ko ? "기본기" : "Fundamentals"} <small>${basics} / 6</small>`;
+  if (showCheoinseongGuideButton) showCheoinseongGuideButton.innerHTML = `${ko ? "캠페인" : "Campaigns"} <small>${campaign} / 5</small>`;
+  if (showPuzzleGuideButton) showPuzzleGuideButton.innerHTML = `${ko ? "연습" : "Practice"} <small>${practice} / 11</small>`;
+  [showPuzzleGuideButton, showCheoinseongGuideButton].forEach((button) => {
+    button?.classList.remove("locked");
+    button?.setAttribute("aria-disabled", "false");
+  });
+  if (tutorialLoginButton) tutorialLoginButton.hidden = Boolean(currentUser);
+  if (tutorialPuzzleNote) tutorialPuzzleNote.hidden = true;
+  const stages = puzzlePathStages.filter((stage) => stage.series === "cheoinseong");
+  const missing = stages.findIndex((stage) => !completed.has(stage.id));
+  const index = missing < 0 ? 0 : missing;
+  if (trainingResumeTitle) trainingResumeTitle.textContent = ko ? `캠페인 · 처인성 ${index + 1}장 ${stages[index].ko}` : `Campaign · Cheoinseong ${index + 1} · ${stages[index].en}`;
+  if (trainingResumeButton) trainingResumeButton.onclick = () => {
+    campaignDetailOpen = true;
+    puzzlePathRenderSignature = "";
+    setHowToPlayMode("cheoinseong");
+  };
+  renderTrainingModuleList();
+  renderPuzzlePath();
+  renderHomeTrainingProgress();
+}
