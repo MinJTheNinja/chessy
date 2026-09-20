@@ -11574,3 +11574,135 @@ body .puzzle-course-aside .puzzle-resume { width: 100%; background: #00849c !imp
   .how-to-play-view.puzzle-mode > :is(.view-header,.training-edition-picker,.training-mode-toggle,.training-summary) { display: none; }
   .profile-theme-list button { gap: 12px; }
 }
+
+/* Training room v3 - mirrors the supplied one-page UI specifications. */
+.how-to-play-view { --training-accent:#008ba3; --training-soft:#edf9fb; --training-border:#d8dfe0; }
+body .how-to-play-view > .view-header { align-items:center; margin-bottom:18px; }
+.how-to-play-view > .view-header h2 { color:#10212b; font-size:2rem; letter-spacing:-.05em; }
+.training-resume-card { display:grid; grid-template-columns:54px minmax(0,1fr) auto; align-items:center; gap:16px; min-height:74px; margin:0 0 18px; padding:12px 16px; border:1px solid #cce7eb; border-radius:10px; background:#eaf8fb; }
+.training-resume-art { display:grid; place-items:center; width:50px; height:50px; overflow:hidden; }
+.training-resume-art img { width:100%; height:100%; object-fit:contain; }
+.training-resume-copy { display:grid; gap:3px; min-width:0; }
+.training-resume-copy span { color:#007f96; font-size:.78rem; font-weight:800; }
+.training-resume-copy strong { color:#21333b; font-size:.95rem; line-height:1.45; word-break:keep-all; }
+.how-to-play-view .training-resume-card .button { min-width:134px; min-height:46px; display:flex; align-items:center; justify-content:space-between; gap:16px; background:#007f96 !important; border-color:#007f96 !important; color:#fff !important; }
+.how-to-play-view .training-mode-toggle { gap:0; margin:0 0 28px; }
+.how-to-play-view .training-mode-toggle button { min-width:112px; padding:14px 18px; color:#485961; font-weight:750; }
+.how-to-play-view .training-mode-toggle button small { margin-left:5px; color:#7a878d; font-size:.72rem; font-weight:600; }
+.how-to-play-view .training-mode-toggle button.active { color:#17282f; }
+.how-to-play-view .training-mode-toggle button.active small { color:var(--training-accent); }
+.how-to-play-view > :is(.tutorial-gate-note,.tutorial-puzzle-note,.training-summary) { display:none !important; }
+body .how-to-play-view :is(#trainingModuleList,.puzzle-path-list):not([hidden]) { display:block; width:100%; min-height:0; padding:0; }
+#trainingModuleList::before, .puzzle-path-list::before { display:none !important; }
+.training-section-heading { display:flex; align-items:end; justify-content:space-between; gap:28px; margin:0 0 22px; }
+.training-section-heading h2 { margin:0 0 7px; font-size:1.55rem; letter-spacing:-.04em; }
+.training-section-heading p { margin:0; color:#68767d; font-size:.88rem; line-height:1.65; }
+.training-inline-progress { flex:0 0 180px; display:grid; gap:8px; color:#69777e; font-size:.78rem; }
+.training-inline-progress i, .campaign-season-progress i { display:block; height:4px; overflow:hidden; border-radius:5px; background:#dce3e5; }
+.training-inline-progress b, .campaign-season-progress b { display:block; height:100%; border-radius:inherit; background:#00a0b8; }
+.fundamentals-list { display:grid; gap:9px; }
+.fundamentals-row { display:grid; grid-template-columns:34px 56px minmax(0,1fr) 110px; align-items:center; gap:12px; min-height:78px; padding:10px 14px; border:1px solid var(--training-border); border-radius:7px; background:#fff; }
+.fundamentals-row.is-current { border-color:#00a1b7; background:#effbfc; box-shadow:inset 0 0 0 1px #00a1b7; }
+.fundamentals-row.is-locked { background:#fafafa; color:#8d969a; }
+.fundamentals-number, .puzzle-lesson-number { display:grid; place-items:center; width:27px; height:27px; border-radius:50%; background:#eef1f2; color:#6d777c; font-size:.78rem; font-weight:800; }
+.fundamentals-row:is(.is-complete,.is-current) .fundamentals-number, .campaign-scene-list li:is(.is-complete,.is-current) .puzzle-lesson-number, .practice-lesson-list li:is(.is-complete,.is-current) .puzzle-lesson-number { color:#fff; background:#008da5; }
+.fundamentals-icon { display:grid; place-items:center; width:52px; height:52px; border-radius:5px; background:#f0f3f3; }
+.fundamentals-icon .training-stage-icon { width:38px; height:38px; }
+.fundamentals-copy { display:grid; gap:5px; min-width:0; }
+.fundamentals-copy strong { color:#26363d; font-size:.98rem; }
+.fundamentals-copy small { color:#68757b; font-size:.78rem; line-height:1.5; word-break:keep-all; }
+.fundamentals-action { justify-self:end; min-width:90px; padding:8px 6px; border:0; background:transparent; color:#007e94; font:inherit; font-size:.78rem; font-weight:800; cursor:pointer; }
+.fundamentals-action:disabled { color:#858f94; cursor:not-allowed; }
+.training-next-link { display:flex; justify-content:space-between; gap:20px; margin-top:18px; padding-top:18px; border-top:1px solid #e1e5e6; color:#637177; font-size:.8rem; }
+.training-next-link button, .campaign-back { border:0; background:transparent; color:#007e94; font:inherit; font-weight:800; cursor:pointer; }
+.campaign-season-card { display:grid; grid-template-columns:minmax(0,1fr) 170px; gap:18px 24px; padding:24px; border:1px solid #00a0b8; border-radius:10px; background:#fff; }
+.campaign-kicker { color:#007f96; font-size:.78rem; font-weight:800; }
+.campaign-kicker b { display:inline-block; margin-left:8px; padding:3px 7px; background:#e7f7f8; font-size:.7rem; }
+.campaign-season-copy h3 { margin:12px 0 10px; font-size:2rem; letter-spacing:-.05em; }
+.campaign-season-copy p { max-width:650px; margin:0; color:#4e5e66; line-height:1.75; font-size:.9rem; }
+.campaign-season-art { display:flex; align-items:center; justify-content:center; height:120px; }
+.campaign-season-art img { width:55%; height:112px; object-fit:contain; }
+.campaign-season-art img + img { margin-left:-22px; }
+.campaign-season-progress { grid-column:1/-1; display:grid; gap:8px; color:#65737a; font-size:.78rem; }
+.campaign-season-card > .button { justify-self:start; min-height:44px; background:#007f96 !important; border-color:#007f96 !important; color:#fff !important; }
+.campaign-reward { align-self:center; justify-self:end; margin:0; color:#65737a; font-size:.75rem; }
+.campaign-reward:first-letter { color:#a14b3d; }
+.campaign-coming { margin-top:26px; }
+.campaign-coming h3 { margin:0 0 12px; font-size:1.05rem; }
+.campaign-coming > div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.campaign-coming article { display:grid; gap:9px; min-height:128px; padding:18px; border:1px dashed #cbd2d4; border-radius:9px; color:#778287; }
+.campaign-coming article span { font-size:.75rem; font-weight:700; }
+.campaign-coming article strong { color:#4e5a60; font-size:1rem; }
+.campaign-coming article small { font-size:.78rem; }
+.campaign-coming article em { justify-self:start; padding:4px 7px; border:1px solid #d0d6d7; font-style:normal; font-size:.68rem; }
+.campaign-back { margin:0 0 18px; padding:0; }
+.campaign-detail-head { display:grid; grid-template-columns:minmax(0,1fr) 180px 140px; align-items:end; gap:22px; margin-bottom:22px; }
+.campaign-detail-head > div:first-child > span { color:#007f96; font-size:.78rem; font-weight:800; }
+.campaign-detail-head h2 { margin:10px 0 6px; font-size:2rem; }
+.campaign-detail-head p { margin:0; color:#66747b; font-size:.82rem; }
+.campaign-detail-art { display:flex; height:95px; }
+.campaign-detail-art img { width:55%; height:90px; object-fit:contain; }
+.campaign-detail-art img + img { margin-left:-18px; }
+.campaign-era { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:18px; margin-bottom:26px; padding:18px; border:1px solid #d8dfe0; border-radius:9px; background:#fff; }
+.campaign-era > div { display:grid; gap:8px; }
+.campaign-era > div small, .campaign-era > span { color:#66757c; font-size:.75rem; }
+.campaign-era > span { color:#007f96; font-weight:800; }
+.campaign-era ol { grid-column:1/-1; display:grid; grid-template-columns:repeat(4,1fr); margin:8px 0 0; padding:0; list-style:none; border-top:1px solid #dfe4e5; }
+.campaign-era li { position:relative; display:grid; gap:5px; padding:16px 8px 0; color:#34454c; font-size:.78rem; }
+.campaign-era li::before { content:""; position:absolute; top:-5px; left:8px; width:9px; height:9px; border:2px solid #00a0b8; border-radius:50%; background:#fff; }
+.campaign-era li:not(:last-child)::after { content:""; position:absolute; top:-1px; left:18px; right:-8px; height:2px; background:#00a0b8; }
+.campaign-era li small { color:#758087; }
+.campaign-scenes h3 { margin:0 0 12px; font-size:1.2rem; }
+.campaign-scenes h3 small { margin-left:10px; color:#718087; font-size:.75rem; font-weight:500; }
+.campaign-scene-list, .practice-lesson-list { display:grid; gap:8px; margin:0; padding:0; list-style:none; }
+.campaign-scene-list button, .practice-lesson-list button { display:grid; grid-template-columns:28px 64px minmax(0,1fr) 112px; align-items:center; gap:12px; width:100%; min-height:82px; padding:10px 14px; border:1px solid #d9dfe0; border-radius:7px; background:#fff; color:#26363d; font:inherit; text-align:left; }
+.campaign-scene-list .is-current button, .practice-lesson-list .is-current button { border-color:#00a0b8; background:#effbfc; box-shadow:inset 0 0 0 1px #00a0b8; }
+.campaign-scene-list .is-locked button, .practice-lesson-list .is-locked button { background:#fafafa; color:#889297; }
+.campaign-scene-list .puzzle-lesson-art, .practice-lesson-list .puzzle-lesson-art { width:60px; height:60px; }
+.campaign-scene-list .puzzle-lesson-copy strong em { margin-left:8px; padding:3px 6px; border:1px solid #aeb9bc; font-size:.65rem; font-style:normal; font-weight:600; }
+.campaign-scene-list .puzzle-lesson-status, .practice-lesson-list .puzzle-lesson-status { display:grid; justify-items:end; gap:5px; color:#007f96; font-size:.72rem; font-weight:800; text-align:right; }
+.campaign-scene-list .puzzle-lesson-status small, .practice-lesson-list .puzzle-lesson-status small { color:#6c787e; font-weight:500; }
+.campaign-completion { display:grid; grid-template-columns:100px minmax(0,1fr) minmax(0,1fr) 150px; align-items:center; gap:16px; margin-top:18px; padding:14px; border:1px solid #d9dfe0; border-radius:8px; font-size:.75rem; }
+.campaign-completion strong { color:#008399; }
+.campaign-completion small { color:#68757b; text-align:right; }
+.practice-rush { display:grid; grid-template-columns:40px minmax(0,1fr) auto; align-items:center; gap:14px; margin:0 0 18px; padding:13px 16px; border:1px solid #dce4e5; border-radius:8px; background:#fff; }
+.practice-rush > span { display:grid; place-items:center; width:34px; height:34px; border-radius:7px; background:#e5f8fa; color:#008ba3; font-size:1.2rem; font-weight:900; }
+.practice-rush div { display:grid; gap:4px; }
+.practice-rush strong { font-size:.9rem; }
+.practice-rush small { color:#718087; font-size:.72rem; }
+.practice-rush button { min-width:100px; padding:10px 16px; border:1px solid #536067; border-radius:5px; background:#fff; font:inherit; font-size:.78rem; font-weight:800; }
+.practice-filters { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+.practice-filters button { padding:7px 14px; border:1px solid #d6ddde; border-radius:18px; background:#fff; color:#526168; font:inherit; font-size:.72rem; }
+.practice-filters button.active { border-color:#263b45; background:#263b45; color:#fff; }
+.practice-filters > span { margin-left:auto; color:#5d6d74; font-size:.72rem; }
+.practice-group > h3, .practice-group summary { margin:0; padding:12px 0; font-size:1rem; }
+.practice-group > h3 small, .practice-group summary span { margin-left:8px; color:#6c797f; font-size:.72rem; font-weight:500; }
+.practice-group { margin-top:4px; }
+details.practice-group { border:1px solid #dbe1e2; border-radius:7px; background:#fff; }
+details.practice-group + details.practice-group { margin-top:10px; }
+details.practice-group summary { display:flex; justify-content:space-between; padding:16px; cursor:pointer; list-style:none; }
+@media (max-width:700px) {
+  .training-resume-card { grid-template-columns:46px minmax(0,1fr); }
+  .training-resume-card .button { grid-column:1/-1; width:100%; }
+  .how-to-play-view .training-mode-toggle { overflow-x:auto; }
+  .how-to-play-view .training-mode-toggle button { min-width:max-content; padding-inline:14px; }
+  .training-section-heading, .campaign-detail-head { display:grid; grid-template-columns:1fr; gap:14px; }
+  .training-inline-progress { width:180px; }
+  .fundamentals-row { grid-template-columns:28px 46px minmax(0,1fr); gap:9px; }
+  .fundamentals-action { grid-column:3; justify-self:start; padding-left:0; }
+  .fundamentals-icon { width:44px; height:44px; }
+  .campaign-season-card { grid-template-columns:1fr; padding:18px; }
+  .campaign-season-art { display:none; }
+  .campaign-reward { justify-self:start; }
+  .campaign-coming > div { grid-template-columns:1fr; }
+  .campaign-detail-art { display:none; }
+  .campaign-era { grid-template-columns:1fr; overflow:hidden; }
+  .campaign-era ol { grid-template-columns:repeat(4,minmax(110px,1fr)); overflow-x:auto; }
+  .campaign-scene-list button, .practice-lesson-list button { grid-template-columns:26px 48px minmax(0,1fr); padding:10px; }
+  .campaign-scene-list .puzzle-lesson-art, .practice-lesson-list .puzzle-lesson-art { width:46px; height:50px; }
+  .campaign-scene-list .puzzle-lesson-status, .practice-lesson-list .puzzle-lesson-status { grid-column:3; justify-items:start; text-align:left; }
+  .campaign-completion { grid-template-columns:1fr 1fr; }
+  .campaign-completion small { text-align:left; }
+  .practice-filters { overflow-x:auto; padding-bottom:4px; }
+  .practice-filters > span { display:none; }
+}
