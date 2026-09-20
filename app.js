@@ -164,6 +164,30 @@ const showForumComposerButton = document.querySelector("#showForumComposer");
 const forumComposer = document.querySelector("#forumComposer");
 const forumFilterButtons = document.querySelectorAll("[data-forum-filter]");
 const forumNoticeOption = forumPostCategory?.querySelector('option[value="Notice"]');
+const forumPostsPanel = document.querySelector("#forumPostsPanel");
+const forumSearchInput = document.querySelector("#forumSearchInput");
+const closeForumComposerButton = document.querySelector("#closeForumComposer");
+const showResourceLibraryButton = document.querySelector("#showResourceLibrary");
+const resourceLibraryPanel = document.querySelector("#resourceLibraryPanel");
+const resourceDetailPanel = document.querySelector("#resourceDetailPanel");
+const resourceUploadPanel = document.querySelector("#resourceUploadPanel");
+const resourceGrid = document.querySelector("#resourceGrid");
+const resourceSearchInput = document.querySelector("#resourceSearchInput");
+const resourceTypeInputs = document.querySelectorAll("[data-resource-type]");
+const resourceResultCount = document.querySelector("#resourceResultCount");
+const resetResourceFiltersButton = document.querySelector("#resetResourceFilters");
+const showResourceUploadButton = document.querySelector("#showResourceUpload");
+const resourceUploadBackButton = document.querySelector("#resourceUploadBack");
+const cancelResourceUploadButton = document.querySelector("#cancelResourceUpload");
+const resourceUploadForm = document.querySelector("#resourceUploadForm");
+const resourceFileInput = document.querySelector("#resourceFileInput");
+const resourceDropzone = document.querySelector("#resourceDropzone");
+const resourceFileRow = document.querySelector("#resourceFileRow");
+const resourceFileName = document.querySelector("#resourceFileName");
+const resourceFileMeta = document.querySelector("#resourceFileMeta");
+const removeResourceFileButton = document.querySelector("#removeResourceFile");
+const resourceTitleInput = document.querySelector("#resourceTitleInput");
+const resourceDescriptionInput = document.querySelector("#resourceDescriptionInput");
 const shopInterestStatus = document.querySelector("#shopInterestStatus");
 const shopProductGrid = document.querySelector("#shopProductGrid");
 const staffProductForm = document.querySelector("#staffProductForm");
@@ -1229,11 +1253,21 @@ let cachedAdminData = null;
 let cachedLobbyData = null;
 let adminCommandBuffer = "";
 let adminSearchFrame = 0;
-let forumFilter = "Question";
+let forumFilter = "All";
 let forumPosts = [];
 let expandedForumPostId = null;
+let selectedResourceFile = null;
 let staffShopProducts = [];
 let deletedShopProductIds = [];
+
+const forumResources = [
+  { id: "resource-checkmate", title: "체크메이트 한 수 연습 학습지", type: "PDF", pages: 4, size: "1.8MB", author: "이지메이트", date: "9월 18일", downloads: 24, comments: 3, official: true, answer: true, description: "체크메이트 기본 패턴을 한 수 문제로 연습하는 A4 학습지예요. 훈련장 기본기를 마친 뒤 복습 자료로 사용해 보세요." },
+  { id: "resource-cheoinseong", title: "처인성 캠페인 수업 지도안", type: "PDF", pages: 8, size: "3.2MB", author: "이지메이트", date: "9월 16일", downloads: 18, comments: 2, official: true, answer: false, description: "처인성 캠페인을 교실 수업에 연결할 수 있도록 장면별 질문과 활동 순서를 정리한 지도안입니다." },
+  { id: "resource-notation", title: "기보 읽기 미니 카드", type: "이미지", pages: 6, size: "2.4MB", author: "나이트쌤", date: "9월 14일", downloads: 12, comments: 1, official: false, answer: false, description: "체스 좌표와 기보 표기를 익힐 때 책상 위에 놓고 쓰는 미니 카드 자료예요." },
+  { id: "resource-opening", title: "오프닝 원칙 정리표", type: "HWP", pages: 3, size: "860KB", author: "민정", date: "9월 12일", downloads: 9, comments: 0, official: false, answer: false, description: "말 전개, 중앙 장악, 킹 안전 세 가지 원칙을 수업용 표로 정리했습니다." },
+  { id: "resource-pieces", title: "기물 가치 비교 활동지", type: "PDF", pages: 2, size: "1.1MB", author: "룩키", date: "9월 10일", downloads: 15, comments: 2, official: false, answer: true, description: "기물의 상대적인 가치를 직접 비교하고 이유를 적어 보는 활동지입니다." },
+  { id: "resource-board", title: "빈 체스판 기록 용지", type: "PDF", pages: 1, size: "420KB", author: "이지메이트", date: "9월 8일", downloads: 31, comments: 0, official: true, answer: false, description: "포지션을 직접 표시하거나 수업 문제를 만들 때 쓰는 인쇄용 빈 체스판입니다." },
+];
 
 const defaultShopProducts = [
   {
@@ -4274,7 +4308,10 @@ function renderForumPosts() {
     button.classList.toggle("active", button.dataset.forumFilter === forumFilter);
     button.textContent = translateCopy(button.dataset.forumFilter);
   });
-  const visiblePosts = (forumFilter === "All" ? forumPosts : forumPosts.filter((post) => post.category === forumFilter)).sort(
+  const searchTerm = String(forumSearchInput?.value || "").trim().toLocaleLowerCase();
+  const visiblePosts = (forumFilter === "All" ? forumPosts : forumPosts.filter((post) => post.category === forumFilter))
+    .filter((post) => !searchTerm || `${post.title || ""} ${post.body || ""} ${post.author || ""}`.toLocaleLowerCase().includes(searchTerm))
+    .sort(
     (first, second) => Number(second.pinned) - Number(first.pinned)
   );
   renderHomeForumPreview();
@@ -4406,6 +4443,240 @@ function renderForumPosts() {
     item.append(pin, main, side);
     forumPostList.append(item);
   });
+}
+
+function setForumSurface(surface = "posts") {
+  const showPosts = surface === "posts";
+  const showLibrary = surface === "library";
+  forumFilterButtons.forEach((button) => {
+    button.classList.toggle("active", showPosts && button.dataset.forumFilter === forumFilter);
+  });
+  forumPostsPanel?.toggleAttribute("hidden", !showPosts);
+  resourceLibraryPanel?.toggleAttribute("hidden", !showLibrary);
+  resourceDetailPanel?.toggleAttribute("hidden", surface !== "detail");
+  resourceUploadPanel?.toggleAttribute("hidden", surface !== "upload");
+  showResourceLibraryButton?.classList.toggle("active", !showPosts);
+  showResourceLibraryButton?.setAttribute("aria-current", showPosts ? "false" : "page");
+  if (showLibrary) renderResourceLibrary();
+}
+
+function createResourcePreview(resource, large = false) {
+  const preview = document.createElement("div");
+  preview.className = `resource-preview${large ? " resource-preview-large" : ""}`;
+  preview.setAttribute("aria-hidden", "true");
+  const paper = document.createElement("span");
+  paper.className = "resource-preview-paper";
+  const lines = document.createElement("i");
+  lines.className = "resource-preview-lines";
+  const boardPreview = document.createElement("b");
+  boardPreview.className = "resource-preview-board";
+  for (let square = 0; square < 64; square += 1) {
+    const cell = document.createElement("span");
+    cell.className = (Math.floor(square / 8) + square % 8) % 2 ? "is-dark" : "is-light";
+    boardPreview.append(cell);
+  }
+  paper.append(lines, boardPreview);
+  preview.append(paper);
+  if (resource.pending) preview.classList.add("is-pending");
+  return preview;
+}
+
+function renderResourceLibrary() {
+  if (!resourceGrid) return;
+  const term = String(resourceSearchInput?.value || "").trim().toLocaleLowerCase();
+  const selectedTypes = [...resourceTypeInputs].filter((input) => input.checked).map((input) => input.value);
+  const visible = forumResources.filter((resource) => {
+    const matchesType = !selectedTypes.length || selectedTypes.includes(resource.type);
+    const matchesTerm = !term || `${resource.title} ${resource.author} ${resource.description}`.toLocaleLowerCase().includes(term);
+    return matchesType && matchesTerm;
+  });
+
+  const countByType = (type) => forumResources.filter((resource) => resource.type === type).length;
+  const pdfCount = document.querySelector("#resourceCountPdf");
+  const hwpCount = document.querySelector("#resourceCountHwp");
+  const imageCount = document.querySelector("#resourceCountImage");
+  if (pdfCount) pdfCount.textContent = String(countByType("PDF"));
+  if (hwpCount) hwpCount.textContent = String(countByType("HWP"));
+  if (imageCount) imageCount.textContent = String(countByType("이미지"));
+  if (resourceResultCount) resourceResultCount.textContent = String(visible.length);
+
+  resourceGrid.replaceChildren();
+  if (!visible.length) {
+    const empty = document.createElement("div");
+    empty.className = "resource-empty";
+    empty.innerHTML = "<strong>찾은 자료가 없어요.</strong><span>검색어나 형식 필터를 바꿔 보세요.</span>";
+    resourceGrid.append(empty);
+    return;
+  }
+
+  visible.forEach((resource) => {
+    const card = document.createElement("article");
+    card.className = `resource-card${resource.pending ? " is-pending" : ""}`;
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "resource-card-open";
+    open.setAttribute("aria-label", `${resource.title} 상세 보기`);
+    open.append(createResourcePreview(resource));
+
+    const copy = document.createElement("div");
+    copy.className = "resource-card-copy";
+    const title = document.createElement("h3");
+    title.textContent = resource.title;
+    const meta = document.createElement("p");
+    meta.textContent = resource.pending ? `${resource.type} · 검토 중, 나만 보여요` : `${resource.type} · ${resource.pages}쪽 · ${resource.size}`;
+    const author = document.createElement("span");
+    author.textContent = `${resource.author} · ${resource.date}`;
+    const stats = document.createElement("footer");
+    stats.innerHTML = `<span aria-label="다운로드 수">↓ ${resource.downloads}</span><span aria-label="댓글 수">▢ ${resource.comments}</span>`;
+    if (resource.official) {
+      const official = document.createElement("b");
+      official.textContent = "공식";
+      title.prepend(official);
+    }
+    copy.append(title, meta, author, stats);
+    open.append(copy);
+    open.addEventListener("click", () => openResourceDetail(resource));
+    card.append(open);
+    resourceGrid.append(card);
+  });
+}
+
+function openResourceDetail(resource) {
+  if (!resourceDetailPanel) return;
+  resourceDetailPanel.replaceChildren();
+  const back = document.createElement("button");
+  back.type = "button";
+  back.className = "resource-back";
+  back.textContent = "← 자료방";
+  back.addEventListener("click", () => setForumSurface("library"));
+
+  const heading = document.createElement("header");
+  heading.className = "resource-detail-heading";
+  const title = document.createElement("h3");
+  title.textContent = resource.title;
+  const meta = document.createElement("p");
+  meta.textContent = `${resource.author} · ${resource.date}`;
+  heading.append(title, meta);
+
+  const layout = document.createElement("div");
+  layout.className = "resource-detail-layout";
+  const viewer = document.createElement("div");
+  viewer.className = "resource-viewer";
+  viewer.append(createResourcePreview(resource, true));
+  const pageLabel = document.createElement("span");
+  pageLabel.textContent = `1 / ${resource.pages || 1}쪽`;
+  viewer.append(pageLabel);
+
+  const downloadCard = document.createElement("aside");
+  downloadCard.className = "resource-download-card";
+  const download = document.createElement("button");
+  download.type = "button";
+  download.className = "button resource-primary";
+  download.textContent = "↓ 다운로드";
+  download.addEventListener("click", () => {
+    if (resource.fileUrl) {
+      const link = document.createElement("a");
+      link.href = resource.fileUrl;
+      link.download = resource.fileName || resource.title;
+      link.click();
+      return;
+    }
+    download.textContent = "샘플 자료 준비 중";
+    window.setTimeout(() => { download.textContent = "↓ 다운로드"; }, 1800);
+  });
+  const fileMeta = document.createElement("p");
+  fileMeta.textContent = `인쇄용 A4 · ${resource.type} · ${resource.size} · 다운로드 ${resource.downloads}`;
+  const answerRow = document.createElement("div");
+  answerRow.innerHTML = `<span>정답지</span><strong>${resource.answer ? "포함" : "미포함"}</strong>`;
+  const termsRow = document.createElement("div");
+  termsRow.innerHTML = "<span>이용 조건</span><strong>수업용 공유</strong>";
+  const authorRow = document.createElement("div");
+  const authorLabel = document.createElement("span");
+  authorLabel.textContent = "올린이";
+  const authorName = document.createElement("strong");
+  authorName.textContent = resource.author;
+  authorRow.append(authorLabel, authorName);
+  downloadCard.append(download, fileMeta, answerRow, termsRow, authorRow);
+  layout.append(viewer, downloadCard);
+
+  const description = document.createElement("section");
+  description.className = "resource-description";
+  const descriptionTitle = document.createElement("h4");
+  descriptionTitle.textContent = "설명";
+  const descriptionBody = document.createElement("p");
+  descriptionBody.textContent = resource.description;
+  description.append(descriptionTitle, descriptionBody);
+
+  const comments = document.createElement("section");
+  comments.className = "resource-detail-comments";
+  comments.innerHTML = `<h4>댓글 <span>${resource.comments}</span></h4><div><input type="text" aria-label="댓글 내용" placeholder="사용해 본 후기나 질문을 남겨요" /><button type="button">등록</button></div>`;
+  resourceDetailPanel.append(back, heading, layout, description, comments);
+  setForumSurface("detail");
+}
+
+function showResourceUpload() {
+  selectedResourceFile = null;
+  resourceUploadForm?.reset();
+  resourceFileRow?.toggleAttribute("hidden", true);
+  resourceDropzone?.toggleAttribute("hidden", false);
+  setForumSurface("upload");
+  resourceDropzone?.focus();
+}
+
+function setSelectedResourceFile(file) {
+  if (!file) return;
+  if (file.size > 20 * 1024 * 1024) {
+    resourceDropzone?.setCustomValidity("파일은 20MB 이하로 골라 주세요.");
+    resourceDropzone?.reportValidity();
+    return;
+  }
+  selectedResourceFile = file;
+  resourceDropzone?.setCustomValidity("");
+  if (resourceFileName) resourceFileName.textContent = file.name;
+  if (resourceFileMeta) resourceFileMeta.textContent = `${Math.max(0.1, file.size / 1024 / 1024).toFixed(1)}MB · 업로드 준비됨`;
+  resourceFileRow?.toggleAttribute("hidden", false);
+  resourceDropzone?.toggleAttribute("hidden", true);
+}
+
+function resourceTypeFromFile(file) {
+  const extension = String(file?.name || "").split(".").pop().toLocaleLowerCase();
+  if (["hwp", "hwpx"].includes(extension)) return "HWP";
+  if (String(file?.type || "").startsWith("image/")) return "이미지";
+  return "PDF";
+}
+
+function submitResourceUpload(event) {
+  event.preventDefault();
+  if (!selectedResourceFile) {
+    resourceDropzone?.setCustomValidity("올릴 파일을 먼저 골라 주세요.");
+    resourceDropzone?.reportValidity();
+    return;
+  }
+  if (!resourceUploadForm?.reportValidity()) return;
+  const type = resourceTypeFromFile(selectedResourceFile);
+  const today = new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric" }).format(new Date());
+  forumResources.unshift({
+    id: `resource-upload-${Date.now()}`,
+    title: resourceTitleInput.value.trim(),
+    type,
+    pages: 1,
+    size: `${Math.max(0.1, selectedResourceFile.size / 1024 / 1024).toFixed(1)}MB`,
+    author: currentUser?.displayName || "나",
+    date: today,
+    downloads: 0,
+    comments: 0,
+    official: false,
+    answer: Boolean(document.querySelector("#resourceAnswerCheck")?.checked),
+    description: resourceDescriptionInput.value.trim() || "설명이 아직 없어요.",
+    pending: true,
+    fileName: selectedResourceFile.name,
+    fileUrl: URL.createObjectURL(selectedResourceFile),
+  });
+  selectedResourceFile = null;
+  resourceUploadForm.reset();
+  resourceFileRow?.toggleAttribute("hidden", true);
+  resourceDropzone?.toggleAttribute("hidden", false);
+  setForumSurface("library");
 }
 
 async function completeReviewQuiz(payload = {}) {
@@ -6881,6 +7152,9 @@ leaderboardScopeButtons.forEach((button) => {
   });
 });
 showForumComposerButton.addEventListener("click", toggleForumComposer);
+closeForumComposerButton?.addEventListener("click", () => {
+  forumComposer.hidden = true;
+});
 publishForumPostButton.addEventListener("click", publishForumPost);
 forumPostCategory.addEventListener("change", () => {
   if (forumPostCategory.value === "Notice" && !isStaffUser()) forumPostCategory.value = "Question";
@@ -6888,9 +7162,42 @@ forumPostCategory.addEventListener("change", () => {
 forumFilterButtons.forEach((button) => {
   button.addEventListener("click", () => {
     forumFilter = button.dataset.forumFilter;
+    setForumSurface("posts");
     renderForumPosts();
   });
 });
+forumSearchInput?.addEventListener("input", renderForumPosts);
+showResourceLibraryButton?.addEventListener("click", () => setForumSurface("library"));
+resourceSearchInput?.addEventListener("input", renderResourceLibrary);
+resourceTypeInputs.forEach((input) => input.addEventListener("change", renderResourceLibrary));
+resetResourceFiltersButton?.addEventListener("click", () => {
+  resourceTypeInputs.forEach((input) => { input.checked = false; });
+  if (resourceSearchInput) resourceSearchInput.value = "";
+  renderResourceLibrary();
+});
+showResourceUploadButton?.addEventListener("click", showResourceUpload);
+resourceUploadBackButton?.addEventListener("click", () => setForumSurface("library"));
+cancelResourceUploadButton?.addEventListener("click", () => setForumSurface("library"));
+resourceDropzone?.addEventListener("click", () => resourceFileInput?.click());
+resourceFileInput?.addEventListener("change", () => setSelectedResourceFile(resourceFileInput.files?.[0]));
+resourceDropzone?.addEventListener("dragover", (event) => {
+  event.preventDefault();
+  resourceDropzone.classList.add("is-dragging");
+});
+resourceDropzone?.addEventListener("dragleave", () => resourceDropzone.classList.remove("is-dragging"));
+resourceDropzone?.addEventListener("drop", (event) => {
+  event.preventDefault();
+  resourceDropzone.classList.remove("is-dragging");
+  setSelectedResourceFile(event.dataTransfer?.files?.[0]);
+});
+removeResourceFileButton?.addEventListener("click", () => {
+  selectedResourceFile = null;
+  if (resourceFileInput) resourceFileInput.value = "";
+  resourceFileRow?.toggleAttribute("hidden", true);
+  resourceDropzone?.toggleAttribute("hidden", false);
+  resourceDropzone?.focus();
+});
+resourceUploadForm?.addEventListener("submit", submitResourceUpload);
 document.querySelectorAll("[data-shop-interest]").forEach((button) => {
   button.addEventListener("click", () => saveShopInterest(button.dataset.shopInterest));
 });
