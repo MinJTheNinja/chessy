@@ -1,6 +1,14 @@
 [
   {
     "date": "2026-09-21",
+    "scope": "profile-and-settings",
+    "macrostructure": "Editorial Profile Ledger",
+    "theme": "EasyMate existing system",
+    "enrichment": "badge artwork and chess-piece watermarks",
+    "brief": "Profile and settings UI from two supplied PDFs"
+  },
+  {
+    "date": "2026-09-21",
     "scope": "single-page",
     "macrostructure": "Workbench",
     "theme": "EasyMate existing system",

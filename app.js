@@ -278,6 +278,11 @@ const peerFeedbackNote = document.querySelector("#peerFeedbackNote");
 const submitPeerFeedbackButton = document.querySelector("#submitPeerFeedback");
 const badgeList = document.querySelector("#badgeList");
 const badgeDetails = document.querySelector("#badgeDetails");
+const nextBadgeDetails = document.querySelector("#nextBadgeDetails");
+const openProfileSettingsButton = document.querySelector("#openProfileSettings");
+const closeProfileSettingsButton = document.querySelector("#closeProfileSettings");
+const profileSettingsEmail = document.querySelector("#profileSettingsEmail");
+const profileSignOutButton = document.querySelector("#profileSignOut");
 const profileStreak = document.querySelector("#profileStreak");
 const profileEasyElo = document.querySelector("#profileEasyElo");
 const profileSideElo = document.querySelector("#profileSideElo");
@@ -2320,6 +2325,7 @@ function updateHeaderPieceEditionToggle(edition = currentUser?.pieceEdition) {
     const active = control.dataset.pieceEdition === activeEdition;
     control.classList.toggle("active", active);
     control.setAttribute("aria-pressed", String(active));
+    if (control.getAttribute("role") === "radio") control.setAttribute("aria-checked", String(active));
   });
 }
 
@@ -5818,6 +5824,7 @@ function setView(viewName) {
   if (viewName === "home" && currentUser) viewName = "overview";
   if (viewName === "staff" && !isStaffUser()) viewName = "dashboard";
   if (viewName === "teacher" && !isTeacherUser()) viewName = "overview";
+  document.body.classList.remove("profile-settings-open");
   updateTutorialGateState();
   const returningToActiveMatch = viewName === "dashboard" && Boolean(currentMatchId || resumableMatch || resumableChallenge || resumableOpenSeek);
   if (isStudentTutorialRequired() && viewName !== "how-to-play" && !returningToActiveMatch) {
@@ -6209,6 +6216,12 @@ async function makeMove(from, to) {
     }
     syncState.textContent = error.message;
   }
+}
+
+function setProfileSettingsMode(open) {
+  document.body.classList.toggle("profile-settings-open", Boolean(open));
+  const target = open ? document.querySelector(".profile-settings-panel") : document.querySelector(".profile-hero-card");
+  target?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function handleSquareClick(square) {
@@ -7351,6 +7364,109 @@ async function refreshLeaderboard() {
   }
 }
 
+const profileBadgeCategoryOrder = ["훈련장", "꾸준함", "퍼즐", "대국", "커뮤니티와 매너", "리그"];
+
+const nextProfileBadgeCatalog = [
+  { id: "first-step", name: "첫걸음", detail: "첫 튜토리얼을 완료하세요.", imageUrl: "/assets/badges/first-step.png", goal: 1, progress: (profile) => profile.user?.training?.completedModules?.length || 0 },
+  { id: "first-match", name: "첫 대국", detail: "충분히 진행된 실제 대국을 완료하세요.", imageUrl: "/assets/badges/first-match.png", goal: 1, progress: (profile) => profile.stats?.matches || 0 },
+  { id: "march-3", name: "3일 행군", detail: "3일 연속 학습하거나 대국을 완료하세요.", imageUrl: "/assets/badges/march-3.png", goal: 3, progress: (profile) => profile.user?.streak || 0 },
+  { id: "gate-guardian", name: "성문 수호자", detail: "성문 뒤의 함정 퍼즐을 세 번 해결하세요.", imageUrl: "/assets/badges/gate-guardian.png", goal: 3, progress: (profile) => profile.user?.training?.completedPuzzles?.length || 0 },
+  { id: "five-routes", name: "다섯 갈래 길", detail: "같은 테마의 유사 퍼즐 다섯 개를 해결하세요.", imageUrl: "/assets/badges/five-routes.png", goal: 5, progress: (profile) => profile.user?.training?.completedPuzzles?.length || 0 },
+  { id: "first-greeting", name: "첫 인사", detail: "아이스브레이커 미션을 완료하세요.", imageUrl: "/assets/badges/first-greeting.png", goal: 1, progress: () => 0 },
+];
+
+function createProfileBadgeCard(badge) {
+  const item = document.createElement("article");
+  item.className = "profile-badge-item";
+
+  const artwork = document.createElement("img");
+  artwork.className = "profile-badge-artwork";
+  artwork.src = badge.imageUrl || "/assets/badges/canva-first-step.png";
+  artwork.alt = `${badge.name || "EasyMate"} 배지`;
+  artwork.loading = "lazy";
+  artwork.decoding = "async";
+  artwork.addEventListener("error", () => artwork.remove(), { once: true });
+
+  const copy = document.createElement("div");
+  copy.className = "profile-badge-copy";
+  const name = document.createElement("strong");
+  name.textContent = badge.name || "Badge";
+  const detail = document.createElement("p");
+  detail.textContent = badge.detail || "";
+  copy.append(name, detail);
+
+  if (badge.earnedAt) {
+    const earnedAt = new Date(badge.earnedAt);
+    if (!Number.isNaN(earnedAt.getTime())) {
+      const time = document.createElement("time");
+      time.dateTime = badge.earnedAt;
+      time.textContent = new Intl.DateTimeFormat(
+        currentInterfaceLanguage() === "Korean" ? "ko-KR" : "en-US",
+        { year: "numeric", month: "numeric", day: "numeric" },
+      ).format(earnedAt);
+      copy.append(time);
+    }
+  }
+
+  item.append(artwork, copy);
+  return item;
+}
+
+function renderProfileBadges(earnedBadges, profile) {
+  badgeDetails.replaceChildren();
+  if (!earnedBadges.length) {
+    const empty = document.createElement("p");
+    empty.className = "profile-badge-empty";
+    empty.textContent = currentInterfaceLanguage() === "Korean"
+      ? "아직 받은 배지가 없습니다. 훈련장, 퍼즐, 대국에서 첫 배지를 획득해 보세요."
+      : "No badges yet. Earn your first one in training, puzzles, or a match.";
+    badgeDetails.append(empty);
+  } else {
+    const grouped = earnedBadges.reduce((map, badge) => {
+      const category = badge.category || "기타";
+      if (!map.has(category)) map.set(category, []);
+      map.get(category).push(badge);
+      return map;
+    }, new Map());
+    const orderedCategories = [...grouped.keys()].sort((first, second) => {
+      const firstIndex = profileBadgeCategoryOrder.indexOf(first);
+      const secondIndex = profileBadgeCategoryOrder.indexOf(second);
+      return (firstIndex < 0 ? 99 : firstIndex) - (secondIndex < 0 ? 99 : secondIndex);
+    });
+    orderedCategories.forEach((categoryName) => {
+      const section = document.createElement("section");
+      section.className = "profile-badge-group";
+      const heading = document.createElement("h4");
+      heading.append(document.createTextNode(categoryName));
+      const count = document.createElement("small");
+      count.textContent = `${grouped.get(categoryName).length}개`;
+      heading.append(count);
+      const grid = document.createElement("div");
+      grid.className = "profile-badge-grid";
+      grouped.get(categoryName).forEach((badge) => grid.append(createProfileBadgeCard(badge)));
+      section.append(heading, grid);
+      badgeDetails.append(section);
+    });
+  }
+
+  nextBadgeDetails?.replaceChildren();
+  const earnedIds = new Set(earnedBadges.map((badge) => badge.id));
+  nextProfileBadgeCatalog.filter((badge) => !earnedIds.has(badge.id)).slice(0, 3).forEach((badge) => {
+    const item = createProfileBadgeCard(badge);
+    item.classList.add("is-next");
+    const progress = Math.min(Number(badge.progress(profile) || 0), badge.goal);
+    const meter = document.createElement("progress");
+    meter.max = badge.goal;
+    meter.value = progress;
+    meter.setAttribute("aria-label", `${badge.name} 진행률`);
+    const ratio = document.createElement("small");
+    ratio.className = "profile-badge-progress";
+    ratio.textContent = `${progress} / ${badge.goal}`;
+    item.querySelector(".profile-badge-copy")?.append(meter, ratio);
+    nextBadgeDetails?.append(item);
+  });
+}
+
 function renderProfile(profile) {
   if (profile?.user) {
     document.querySelector('#homeMatchCount').textContent = String(profile.stats?.matches ?? 0);
@@ -7361,6 +7477,7 @@ function renderProfile(profile) {
   renderAvatar(profileAvatar, user, "CL");
   profileName.textContent = user.displayName;
   profileEmail.textContent = user.email;
+  if (profileSettingsEmail) profileSettingsEmail.textContent = user.email;
   if (profileLanguageText) {
     profileLanguageText.textContent = user.languagePair
       ? translateCopy(user.languagePair)
@@ -7378,7 +7495,7 @@ function renderProfile(profile) {
   if (profileLessonsCount) profileLessonsCount.textContent = String(profile.stats?.matches || 0);
   const earnedBadges = Array.isArray(profile.badges) ? profile.badges : [];
   if (profileQuestionsCount) profileQuestionsCount.textContent = String(earnedBadges.length);
-  if (profileTestsCount) profileTestsCount.textContent = String(profile.stats?.completedMatches || 0);
+  if (profileTestsCount) profileTestsCount.textContent = String(user.training?.completedPuzzles?.length || 0);
   updateTemperature(Number(user.mannerTemperature ?? currentManner));
   renderDashboardSummary();
 
@@ -7392,56 +7509,7 @@ function renderProfile(profile) {
     badgeList.append(item);
   }
 
-  badgeDetails.replaceChildren();
-  if (!earnedBadges.length) {
-    const empty = document.createElement("p");
-    empty.className = "profile-badge-empty";
-    empty.textContent = currentInterfaceLanguage() === "Korean"
-      ? "아직 받은 배지가 없습니다. 훈련장, 퍼즐, 대국에서 첫 배지를 획득해 보세요."
-      : "No badges yet. Earn your first one in training, puzzles, or a match.";
-    badgeDetails.append(empty);
-  }
-  earnedBadges.forEach((badge) => {
-    const item = document.createElement("article");
-    item.className = "profile-badge-item";
-
-    const artwork = document.createElement("img");
-    artwork.className = "profile-badge-artwork";
-    artwork.src = badge.imageUrl || "/assets/badges/canva-first-step.png";
-    artwork.alt = `${badge.name || "EasyMate"} 배지`;
-    artwork.loading = "lazy";
-    artwork.decoding = "async";
-    artwork.loading = "lazy";
-    artwork.addEventListener("error", () => artwork.remove(), { once: true });
-
-    const copy = document.createElement("div");
-    copy.className = "profile-badge-copy";
-    if (badge.category) {
-      const category = document.createElement("span");
-      category.className = "profile-badge-category";
-      category.textContent = badge.category;
-      copy.append(category);
-    }
-    const name = document.createElement("strong");
-    name.textContent = badge.name || "Badge";
-    const detail = document.createElement("p");
-    detail.textContent = badge.detail || "";
-    copy.append(name, detail);
-    if (badge.earnedAt) {
-      const earnedAt = new Date(badge.earnedAt);
-      if (!Number.isNaN(earnedAt.getTime())) {
-        const time = document.createElement("time");
-        time.dateTime = badge.earnedAt;
-        time.textContent = new Intl.DateTimeFormat(
-          currentInterfaceLanguage() === "Korean" ? "ko-KR" : "en-US",
-          { year: "numeric", month: "short", day: "numeric" },
-        ).format(earnedAt);
-        copy.append(time);
-      }
-    }
-    item.append(artwork, copy);
-    badgeDetails.append(item);
-  });
+  renderProfileBadges(earnedBadges, profile);
 
   if (cultureGuideList) cultureGuideList.innerHTML = "";
   if (cultureGuideList && !profile.cultureGuide.length) {
@@ -7469,6 +7537,7 @@ function clearProfile() {
   renderAvatar(profileAvatar, null, "CL");
   profileName.textContent = "ChessLearner";
   profileEmail.textContent = "player@example.com";
+  if (profileSettingsEmail) profileSettingsEmail.textContent = "player@example.com";
   if (profileLanguageText) {
     profileLanguageText.textContent =
       currentInterfaceLanguage() === "Korean" ? "언어 설정을 불러오려면 로그인하세요." : "Sign in to load language settings.";
@@ -7486,6 +7555,7 @@ function clearProfile() {
   if (profileTestsCount) profileTestsCount.textContent = "0";
   badgeList.innerHTML = "";
   badgeDetails.innerHTML = "";
+  nextBadgeDetails?.replaceChildren();
   if (cultureGuideList) cultureGuideList.innerHTML = "";
   profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "저장된 프로필을 불러오려면 로그인하세요." : "Sign in to load your saved profile.";
 }
@@ -8113,6 +8183,9 @@ headerProfileButton.addEventListener("click", (event) => {
   toggleProfileMenu();
 });
 headerSignOutButton.addEventListener("click", signOut);
+profileSignOutButton?.addEventListener("click", signOut);
+openProfileSettingsButton?.addEventListener("click", () => setProfileSettingsMode(true));
+closeProfileSettingsButton?.addEventListener("click", () => setProfileSettingsMode(false));
 deleteAccountButton.addEventListener("click", deleteAccountWithTypedConfirmation);
 deleteAccountConfirm?.addEventListener("input", updateDeleteAccountButtonState);
 contrastModeButton.addEventListener("click", toggleContrastMode);

@@ -918,11 +918,7 @@
           </section>
 
           <section class="view profile-view" data-view="profile" aria-labelledby="profileTitle">
-            <div class="view-header profile-title-header">
-              <div>
-                <h2 id="profileTitle">프로필</h2>
-              </div>
-            </div>
+            <h2 class="visually-hidden" id="profileTitle">프로필</h2>
             <div class="profile-dashboard">
               <article class="profile-hero-card">
                 <div class="profile-avatar-column">
@@ -943,6 +939,10 @@
                   </div>
                   <small class="profile-email" id="profileEmail">player@example.com</small>
                 </div>
+
+                <button class="profile-settings-link" id="openProfileSettings" type="button" aria-label="프로필 설정 열기">
+                  <span aria-hidden="true">☼</span> 설정
+                </button>
 
                 <aside class="profile-performance">
                   <div class="profile-elo-display">
@@ -976,22 +976,33 @@
                   <article class="profile-panel profile-history-panel">
                     <h3>배지</h3>
                     <div class="profile-badge-summary" id="badgeList"></div>
-                    <div class="profile-badge-grid" id="badgeDetails" aria-live="polite"></div>
+                    <div class="profile-badge-groups" id="badgeDetails" aria-live="polite"></div>
+                  </article>
+                  <article class="profile-panel profile-next-panel">
+                    <div class="profile-section-heading">
+                      <h3>다음 배지</h3>
+                      <span>곧 받을 수 있어요</span>
+                    </div>
+                    <div class="profile-next-grid" id="nextBadgeDetails"></div>
                   </article>
                 </main>
               </div>
 
               <section class="profile-panel profile-settings-panel" aria-labelledby="profileSettingsTitle">
-                <h3 id="profileSettingsTitle">설정</h3>
+                <button class="profile-settings-back" id="closeProfileSettings" type="button">← 프로필</button>
+                <header class="profile-settings-header">
+                  <h3 id="profileSettingsTitle">설정</h3>
+                  <p>바꾸면 바로 적용돼요.</p>
+                </header>
                 <div class="settings-grid profile-settings-grid">
                   <article class="settings-card profile-board-settings">
 
                     <div class="profile-theme-settings">
                       <span class="profile-settings-label">보드 테마</span>
                       <div class="profile-theme-list" role="group" aria-label="보드 테마 선택">
-                        <button type="button" data-piece-edition="original"><b>오리지널</b><small>기본 체스판</small></button>
-                        <button type="button" data-piece-edition="cheoinseong"><b>처인성</b><small>EasyMate &amp; 용인문화원</small></button>
-                        <button type="button" data-piece-edition="beta"><b>Beta</b><small>한국 테마 체스</small></button>
+                        <button type="button" role="radio" aria-checked="false" data-piece-edition="original"><i aria-hidden="true"></i><span class="profile-theme-preview original" aria-hidden="true">♞</span><span><b>오리지널</b><small>기본 체스판</small></span></button>
+                        <button type="button" role="radio" aria-checked="true" data-piece-edition="cheoinseong"><i aria-hidden="true"></i><span class="profile-theme-preview cheoinseong" aria-hidden="true">♟ ♟</span><span><b>처인성</b><small>EasyMate &amp; 용인문화원</small></span></button>
+                        <button type="button" role="radio" aria-checked="false" data-piece-edition="beta"><i aria-hidden="true"></i><span class="profile-theme-preview beta" aria-hidden="true">♛</span><span><b>Beta</b><small>한국 테마 체스</small></span></button>
                       </div>
                     </div>
                   </article>
@@ -1018,6 +1029,10 @@
                   <input id="profileImage" type="url" placeholder="이미지 URL을 붙여넣기" hidden />
                   <article class="settings-card delete-account-zone">
                     <span class="profile-settings-label">계정</span>
+                    <div class="profile-account-row">
+                      <span><b>로그인 계정</b><small id="profileSettingsEmail">player@example.com</small></span>
+                      <button id="profileSignOut" type="button">로그아웃</button>
+                    </div>
                     <h4>계정 삭제</h4>
                     <p>삭제하려면 아래에 <strong>delete account</strong>를 입력하세요.</p>
                     <input id="deleteAccountConfirm" type="text" placeholder="delete account" autocomplete="off" />
