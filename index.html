@@ -60,9 +60,10 @@
     <noscript>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
     </noscript>
-    <link rel="stylesheet" href="/styles.css?v=20260916-mobile-language" />
+    <link rel="stylesheet" href="/tokens.css?v=20260921-forum" />
+    <link rel="stylesheet" href="/styles.css?v=20260921-forum" />
     <script src="/analytics-client.js?v=20260906-product-analytics" defer></script>
-    <script src="/app.js?v=20260916-mobile-language" defer></script>
+    <script src="/app.js?v=20260921-forum" defer></script>
   </head>
   <body>
     <header class="site-header">
@@ -698,43 +699,79 @@
             <div class="forum-board">
               <header class="forum-heading">
                 <h2 id="forumTitle">게시판</h2>
-                <p>공지, 질문, 플레이어들의 자유로운 대화 공간입니다.</p>
+                <p>공지, 질문, 수업 자료를 나누는 공간입니다.</p>
               </header>
 
-              <div class="forum-actions">
-                <button class="button secondary" data-view-link="overview" type="button">홈으로 돌아가기</button>
-                <button class="button primary" id="showForumComposer" type="button">+ 새 글</button>
-              </div>
-
-              <article class="wire-card forum-composer" id="forumComposer" hidden>
-                <h3>새 글</h3>
-                <label>
-                  제목
-                  <input id="forumPostTitle" type="text" placeholder="제목 입력" maxlength="80" />
-                </label>
-                <label>
-                  분류
-                  <select id="forumPostCategory">
-                    <option value="Notice">공지</option>
-                    <option value="Question">질문</option>
-                    <option value="Free">자유</option>
-                  </select>
-                </label>
-                <label>
-                  내용
-                  <textarea id="forumPostBody" placeholder="내용을 작성하세요" maxlength="2000"></textarea>
-                </label>
-                <button class="button primary full" id="publishForumPost" type="button">게시</button>
-              </article>
-
               <nav class="forum-tabs" aria-label="게시판 분류">
-                <button type="button" data-forum-filter="All">전체</button>
-                <button class="active" type="button" data-forum-filter="Notice">공지</button>
+                <button class="active" type="button" data-forum-filter="All">전체</button>
+                <button type="button" data-forum-filter="Notice">공지</button>
                 <button type="button" data-forum-filter="Question">질문</button>
-                <button type="button" data-forum-filter="Free">자유</button>
+                <button type="button" id="showResourceLibrary">자료방</button>
               </nav>
 
-              <div class="forum-list" id="forumPostList"></div>
+              <section class="forum-section" id="forumPostsPanel">
+                <div class="forum-toolbar">
+                  <label class="forum-search"><span class="sr-only">게시글 검색</span><input id="forumSearchInput" type="search" placeholder="검색" autocomplete="off" /></label>
+                  <button class="button primary" id="showForumComposer" type="button"><span aria-hidden="true">＋</span> 새 글</button>
+                </div>
+
+                <article class="wire-card forum-composer" id="forumComposer" hidden>
+                  <div class="forum-composer-head"><h3>새 글</h3><button type="button" id="closeForumComposer" aria-label="글쓰기 닫기">×</button></div>
+                  <label>제목<input id="forumPostTitle" type="text" placeholder="제목 입력" maxlength="80" /></label>
+                  <label>분류<select id="forumPostCategory"><option value="Notice">공지</option><option value="Question">질문</option><option value="Free">자유</option></select></label>
+                  <label>내용<textarea id="forumPostBody" placeholder="내용을 작성하세요" maxlength="420"></textarea></label>
+                  <button class="button primary full" id="publishForumPost" type="button">게시하기</button>
+                </article>
+
+                <div class="forum-list" id="forumPostList"></div>
+              </section>
+
+              <section class="resource-library" id="resourceLibraryPanel" hidden aria-labelledby="resourceLibraryTitle">
+                <div class="forum-toolbar">
+                  <label class="forum-search resource-search"><span class="sr-only">학습지 검색</span><input id="resourceSearchInput" type="search" placeholder="학습지 검색" autocomplete="off" /></label>
+                  <button class="button resource-primary" id="showResourceUpload" type="button"><span aria-hidden="true">⇧</span> 자료 올리기</button>
+                </div>
+                <div class="resource-layout">
+                  <aside class="resource-filters" aria-label="자료 형식">
+                    <h3>형식</h3>
+                    <label><input type="checkbox" value="PDF" data-resource-type /> PDF <span id="resourceCountPdf">0</span></label>
+                    <label><input type="checkbox" value="HWP" data-resource-type /> HWP <span id="resourceCountHwp">0</span></label>
+                    <label><input type="checkbox" value="이미지" data-resource-type /> 이미지 <span id="resourceCountImage">0</span></label>
+                    <button type="button" id="resetResourceFilters">필터 초기화</button>
+                  </aside>
+                  <div class="resource-results">
+                    <p class="resource-count" id="resourceLibraryTitle">자료 <strong id="resourceResultCount">0</strong>개</p>
+                    <div class="resource-grid" id="resourceGrid"></div>
+                  </div>
+                </div>
+                <p class="resource-safety-note">올린 자료는 관리자 확인 후 공개돼요. 학생 이름이나 얼굴이 나온 자료는 올리지 말아 주세요.</p>
+              </section>
+
+              <section class="resource-detail" id="resourceDetailPanel" hidden aria-live="polite"></section>
+
+              <section class="resource-upload" id="resourceUploadPanel" hidden aria-labelledby="resourceUploadTitle">
+                <button class="resource-back" id="resourceUploadBack" type="button">← 자료방</button>
+                <p class="resource-upload-intro">체스 학습지나 수업 자료를 다른 선생님, 친구들과 나눠요.</p>
+                <div class="resource-upload-layout">
+                  <form id="resourceUploadForm">
+                    <h3 id="resourceUploadTitle" class="sr-only">자료 올리기</h3>
+                    <label class="resource-field-label" for="resourceFileInput">파일 <b>*</b></label>
+                    <input id="resourceFileInput" type="file" accept=".pdf,.hwp,.hwpx,.docx,image/*" hidden />
+                    <button class="resource-dropzone" id="resourceDropzone" type="button">
+                      <span aria-hidden="true">⇧</span><strong>파일을 끌어다 놓거나, 여기를 눌러 골라요</strong><small>PDF · 이미지 · HWP · DOCX · 최대 20MB</small>
+                    </button>
+                    <div class="resource-file-row" id="resourceFileRow" hidden><span class="resource-file-thumb" aria-hidden="true">▤</span><strong id="resourceFileName"></strong><small id="resourceFileMeta"></small><button id="removeResourceFile" type="button" aria-label="선택한 파일 제거">×</button></div>
+                    <label class="resource-field-label" for="resourceTitleInput">제목 <b>*</b></label>
+                    <input id="resourceTitleInput" type="text" placeholder="예: 체크메이트 한 수 연습 학습지" maxlength="80" required />
+                    <label class="resource-field-label" for="resourceDescriptionInput">설명</label>
+                    <textarea id="resourceDescriptionInput" rows="5" placeholder="어떤 수업에서, 어떤 순서로 쓰면 좋은지 적어요" maxlength="500"></textarea>
+                    <fieldset class="resource-campaign-field"><legend>연결할 캠페인</legend><p>연결하면 그 캠페인 이야기 자료에도 함께 보여요.</p><label><input type="radio" name="resourceCampaign" value="없음" checked /> 없음</label><label><input type="radio" name="resourceCampaign" value="시즌 1 · 처인성" /> 시즌 1 · 처인성</label></fieldset>
+                    <fieldset class="resource-checks"><legend>올리기 전에 확인해요 <b>*</b></legend><label><input id="resourceAnswerCheck" type="checkbox" /> 정답지가 들어 있어요 <small>체크하면 교사용에게만 보여요.</small></label><label><input id="resourcePrivacyCheck" type="checkbox" required /> 학생 이름, 얼굴 같은 개인정보가 없어요</label><label><input id="resourceRightsCheck" type="checkbox" required /> 직접 만들었거나 공유가 허용된 자료예요</label></fieldset>
+                    <div class="resource-upload-actions"><span>관리자 확인 후 자료방에 공개돼요.</span><button id="cancelResourceUpload" type="button">취소</button><button class="button resource-primary" type="submit">⇧ 올리기</button></div>
+                  </form>
+                  <aside class="resource-upload-tips"><h3>이런 자료가 좋아요</h3><ul><li>A4로 인쇄해서 바로 쓸 수 있어요.</li><li>문제와 정답을 따로 파일로 나눠 올려요.</li><li>체스판 그림이 흐리지 않게 해상도를 확인해요.</li><li>출처가 있으면 파일 안에 적어요.</li></ul><a href="#" aria-disabled="true">↓ 학습지 양식 · 준비 중</a></aside>
+                </div>
+              </section>
             </div>
           </section>
 

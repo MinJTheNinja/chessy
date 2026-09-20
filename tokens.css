@@ -1,4 +1,4 @@
-/* Hallmark · tokens for the EasyMate visual demo */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 · EasyMate app design system */
 :root {
   --color-paper: oklch(97% 0.008 85);
   --color-paper-2: oklch(94% 0.012 85);
@@ -6,10 +6,12 @@
   --color-ink-soft: oklch(43% 0.024 250);
   --color-rule: oklch(80% 0.012 85);
   --color-accent: oklch(60% 0.13 220);
+  --color-accent-ink: oklch(97% 0.008 85);
   --color-accent-soft: oklch(91% 0.035 220);
   --color-focus: oklch(58% 0.16 225);
   --color-gold: oklch(70% 0.12 82);
   --color-danger: oklch(55% 0.16 28);
+  --shadow-card: 0 5px 14px oklch(25% 0.04 250 / 0.12);
 
   --font-display: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
   --font-body: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
