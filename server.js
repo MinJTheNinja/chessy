@@ -4463,6 +4463,7 @@ function serveStatic(req, res, pathname) {
     requested === "/tokens.css" ||
     requested === "/robots.txt" ||
     requested === "/sitemap.xml" ||
+    requested === "/sitemap.txt" ||
     requested === "/google0bf39d77e9bebab7.html" ||
     requested.startsWith("/assets/");
 

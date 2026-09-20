@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://easymate.online/sitemap.xml
+Sitemap: https://easymate.online/sitemap.txt
