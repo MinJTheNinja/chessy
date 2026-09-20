@@ -120,6 +120,8 @@ const contentTypes = {
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
   ".png": "image/png",
   ".webp": "image/webp",
   ".jpg": "image/jpeg",
@@ -4459,6 +4461,8 @@ function serveStatic(req, res, pathname) {
     requested === "/hallmark-demo.html" ||
     requested === "/hallmark-demo.css" ||
     requested === "/tokens.css" ||
+    requested === "/robots.txt" ||
+    requested === "/sitemap.xml" ||
     requested === "/google0bf39d77e9bebab7.html" ||
     requested.startsWith("/assets/");
 
