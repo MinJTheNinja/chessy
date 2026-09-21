@@ -11681,6 +11681,11 @@ body .how-to-play-view :is(#trainingModuleList,.puzzle-path-list):not([hidden]) 
 details.practice-group { border:1px solid #dbe1e2; border-radius:7px; background:#fff; }
 details.practice-group + details.practice-group { margin-top:10px; }
 details.practice-group summary { display:flex; justify-content:space-between; padding:16px; cursor:pointer; list-style:none; }
+details.practice-group summary::after { content:"⌄"; margin-left:12px; color:#63737a; font-weight:800; }
+details.practice-group[open] summary { border-bottom:1px solid #e1e6e7; }
+details.practice-group[open] summary::after { content:"⌃"; }
+details.practice-group .practice-lesson-list { padding:12px; }
+details.practice-group.is-locked summary { background:#fafafa; color:#7b878c; }
 @media (max-width:700px) {
   .training-resume-card { grid-template-columns:46px minmax(0,1fr); }
   .training-resume-card .button { grid-column:1/-1; width:100%; }

@@ -3278,20 +3278,22 @@ function renderTrainingControlsLegacy() {
 }
 
 function trainingPuzzleRows(stages, completed, ko, campaign = false) {
-  const next = stages.findIndex((stage) => !completed.has(stage.id));
-  const current = next < 0 ? 0 : next;
   const list = document.createElement("ol");
   list.className = campaign ? "campaign-scene-list" : "practice-lesson-list";
   stages.forEach((stage, index) => {
     const done = completed.has(stage.id);
-    const ready = !done && index === current;
-    const accessible = done || ready;
+    const accessible = done || canOpenPuzzleStage(stage, completed);
+    const ready = !done && accessible;
     const item = document.createElement("li");
     item.className = `${done ? "is-complete" : ""}${ready ? " is-current" : ""}${accessible ? "" : " is-locked"}`;
     const type = campaign ? `<em>${index < 2 ? (ko ? "정사 기반" : "Historical") : (ko ? "재구성" : "Reconstruction")}</em>` : "";
-    const score = campaign ? (done ? "<small>★★★</small>" : "") : `<small>${ko ? "유사문제" : "Related"} ${done ? "5 / 5" : ready ? "3 / 5" : "0 / 5"}</small>`;
+    const variants = similarPuzzleIds(stage);
+    const similarDone = variants.filter((id) => completed.has(id)).length;
+    const score = campaign
+      ? (done ? "<small>★★★</small>" : "")
+      : variants.length ? `<small>${ko ? "유사문제" : "Related"} ${similarDone} / ${variants.length}</small>` : "";
     item.innerHTML = `<button type="button" ${accessible ? "" : "disabled"}><span class="puzzle-lesson-number">${index + 1}</span><span class="puzzle-lesson-art"><img src="${puzzleStageArtwork(stage)}" alt="" /></span><span class="puzzle-lesson-copy"><strong>${ko ? stage.ko : stage.en} ${type}</strong><span>${ko ? stage.koDescription : stage.enDescription}</span></span><span class="puzzle-lesson-status">${done ? `✓ ${ko ? "다시 풀기" : "Replay"}` : ready ? `▷ ${ko ? "도전" : "Start"}` : `♙ ${ko ? "잠김" : "Locked"}`}${score}</span></button>`;
-    if (accessible) item.querySelector("button").onclick = () => openPuzzleStage(stage, index, { allowLocked: true });
+    if (accessible) item.querySelector("button").onclick = () => openPuzzleStage(stage, puzzlePathStages.indexOf(stage));
     list.append(item);
   });
   return list;
@@ -3327,13 +3329,22 @@ function renderPuzzleStageList(list, seriesItem) {
   }
   list.innerHTML = `<header class="training-section-heading"><div><h2>${ko ? "연습" : "Practice"}</h2><p>${ko ? "배운 개념을 퍼즐로 익혀요. 캠페인에서 만난 개념도 여기에 쌓여요." : "Build fluency through puzzles from lessons and campaigns."}</p></div><div class="training-inline-progress"><span>${count} / 11 ${ko ? "단계 완료" : "complete"}</span><i><b style="width:${count / 11 * 100}%"></b></i></div></header><section class="practice-rush"><span>ϟ</span><div><strong>${ko ? "퍼즐 러시 90초 · 3수 메이트까지" : "Puzzle Rush 90s · up to mate in 3"}</strong><small>${ko ? "최고 기록 [기록 없음]" : "Best score [none]"}</small></div><button type="button">${ko ? "도전하기" : "Start"}</button></section><div class="practice-filters"><button class="active" type="button">${ko ? "전체" : "All"}</button><button type="button">${ko ? "안 푼 퍼즐" : "Unsolved"}</button><button type="button">${ko ? "유사문제 남은 것" : "Related"}</button><span>♟ ♟ ${ko ? "말 디자인 · 고려-몽골 · 바꾸기" : "Piece set · Change"}</span></div><div class="practice-groups"></div>`;
   list.querySelector(".practice-rush button").onclick = () => openPuzzleRush(3);
-  const groups = [[ko ? "1수 메이트" : "Mate in 1", stages.filter((s) => s.id.startsWith("s"))], [ko ? "2수 메이트" : "Mate in 2", stages.filter((s) => s.id.startsWith("m"))], [ko ? "3수 메이트" : "Mate in 3", stages.filter((s) => s.id.startsWith("h"))]];
+  const groups = [1, 2, 3].map((tier) => [
+    ko ? `${tier}수 메이트` : `Mate in ${tier}`,
+    stages.filter((stage) => Number(stage.tier || 1) === tier),
+  ]);
   groups.forEach(([name, group], index) => {
     const section = document.createElement(index ? "details" : "section");
     section.className = "practice-group";
-    if (index) section.innerHTML = `<summary><strong>${name}</strong><span>[n] / [n] ${ko ? "완료" : "complete"}</span></summary>`;
-    else section.innerHTML = `<h3>${name} <small>${group.filter((stage) => completed.has(stage.id)).length} / ${group.length} ${ko ? "완료" : "complete"}</small></h3>`;
-    if (!index) section.append(trainingPuzzleRows(group, completed, ko));
+    const groupDone = group.filter((stage) => completed.has(stage.id)).length;
+    const groupUnlocked = group.some((stage) => completed.has(stage.id) || canOpenPuzzleStage(stage, completed));
+    section.classList.toggle("is-locked", !groupUnlocked);
+    if (index) {
+      section.innerHTML = `<summary><strong>${name}</strong><span>${groupDone} / ${group.length} ${ko ? "완료" : "complete"}${groupUnlocked ? "" : ` · ${ko ? "잠김" : "locked"}`}</span></summary>`;
+    } else {
+      section.innerHTML = `<h3>${name} <small>${groupDone} / ${group.length} ${ko ? "완료" : "complete"}</small></h3>`;
+    }
+    section.append(trainingPuzzleRows(group, completed, ko));
     list.querySelector(".practice-groups").append(section);
   });
 }
