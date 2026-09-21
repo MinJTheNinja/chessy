@@ -11285,8 +11285,8 @@ body.show-how-to-play .workspace {
   .header-language-button { gap: 5px; padding-inline: 5px; font-size: 0.82rem; }
   .header-language-button svg { width: 21px; height: 21px; }
 }
-/* September screen refresh: scope presentation changes to home, lobby and training. */
-body:has(.view:is([data-view="overview"], [data-view="dashboard"], [data-view="how-to-play"]).active):not(.show-landing) {
+/* September screen refresh: soften the shared wallpaper on primary content screens. */
+body:has(.view:is([data-view="overview"], [data-view="dashboard"], [data-view="how-to-play"], [data-view="forum"], [data-view="profile"]).active):not(.show-landing) {
   background-image: linear-gradient(#ffffffb8, #ffffffb8), url('/assets/chess-line-wallpaper-v1.png');
 }
 body.is-signed-in .view[data-view="overview"],
