@@ -423,18 +423,6 @@ const koreanText = {
   "Sell your dedicated board here with product details, reservation interest, and future checkout flow.": "상품 정보, 관심 예약, 향후 결제 흐름을 이곳에서 관리합니다.",
   "Reserve interest": "관심 예약",
   "Join waitlist": "대기자 명단 참여",
-  "Prototype": "프로토타입",
-  "Studio": "스튜디오",
-  "Accessory": "액세서리",
-  "Founder's Board": "파운더스 보드",
-  "Coach Board": "코치 보드",
-  "Travel Kit": "여행 키트",
-  "Portable tournament-size board for live matches, captions, and lesson review.": "라이브 매치, 자막, 수업 복습을 위한 휴대용 토너먼트 크기 보드입니다.",
-  "Larger tabletop board for tutors, clubs, and language exchange sessions.": "튜터, 동아리, 언어 교환 세션을 위한 큰 탁상용 보드입니다.",
-  "Compact pieces, carrying case, and setup guide for in-person practice games.": "대면 연습 게임을 위한 소형 말, 휴대 케이스, 설치 가이드입니다.",
-  "$149 estimated": "예상가 $149",
-  "$229 estimated": "예상가 $229",
-  "$49 estimated": "예상가 $49",
   "Select a product to save interest.": "관심 상품을 선택하세요.",
   "Staff only": "스태프 전용",
   "Register product": "상품 등록",
@@ -613,11 +601,7 @@ Object.assign(koreanText, {
   "Click any word to replay pronunciation.": "단어를 누르면 발음을 다시 들을 수 있어요.",
   "Vocabulary Chest": "단어 상자",
   "Key match vocabulary": "대국 중 나온 핵심 표현",
-  "7 items ready": "7개 표현 준비됨",
   "Cultural Exchange Insight": "문화 교류 메모",
-  'Detected reference: saying "GG"': '"GG" 인사 표현 발견',
-  "Research prompt: compare polite post-game phrases in your partner's language.":
-    "다음 질문: 파트너의 언어에서는 대국 뒤 어떤 말로 예의를 표현하나요?",
   "Save to Culture Guide": "문화 노트에 저장",
   "Guide": "가이드",
   "How to play": "튜토리얼",
@@ -1412,51 +1396,6 @@ const queueTips = [
   },
 ];
 
-const defaultReview = {
-  vocabulary: [
-    {
-      term: "calm position",
-      translation: "침착한 포지션",
-      context: "공격하기 전 조용한 오프닝을 고른 이유를 설명할 때 나온 표현입니다.",
-      pronunciationText: "calm position",
-      language: "en-US",
-    },
-    {
-      term: "London System",
-      translation: "런던 시스템",
-      context: "초보자도 안정적으로 둘 수 있는 계획을 이야기할 때 나온 오프닝입니다.",
-      pronunciationText: "London System",
-      language: "en-US",
-    },
-    {
-      term: "knight fork",
-      translation: "나이트 포크",
-      context: "나이트가 두 기물을 동시에 공격했을 때 나온 표현입니다.",
-      pronunciationText: "knight fork",
-      language: "en-US",
-    },
-    {
-      term: "center control",
-      translation: "중앙 장악",
-      context: "어떤 수가 전략적으로 좋은지 설명할 때 쓰기 좋은 표현입니다.",
-      pronunciationText: "center control",
-      language: "en-US",
-    },
-    {
-      term: "good game",
-      translation: "좋은 경기였어요",
-      context: "대국이 끝난 뒤 예의 있게 마무리할 때 쓰는 말입니다.",
-      pronunciationText: "good game",
-      language: "en-US",
-    },
-  ],
-  culturalInsight: {
-    title: '"GG" 인사 표현 발견',
-    summary: 'AI가 "GG"와 "good game"을 서로 존중하는 마무리 표현으로 확인했습니다.',
-    researchPrompt: "파트너의 언어에서는 대국 뒤 어떤 말로 예의를 표현하나요?",
-  },
-};
-
 let pieces = { ...initialPieces };
 let queueInterval;
 let queuePollInterval;
@@ -1555,40 +1494,8 @@ let forumPosts = [];
 let expandedForumPostId = null;
 let selectedResourceFile = null;
 let staffShopProducts = [];
-let deletedShopProductIds = [];
 
-const forumResources = [
-  { id: "resource-checkmate", title: "체크메이트 한 수 연습 학습지", type: "PDF", pages: 4, size: "1.8MB", author: "이지메이트", date: "9월 18일", downloads: 24, comments: 3, official: true, answer: true, description: "체크메이트 기본 패턴을 한 수 문제로 연습하는 A4 학습지예요. 훈련장 기본기를 마친 뒤 복습 자료로 사용해 보세요." },
-  { id: "resource-cheoinseong", title: "처인성 캠페인 수업 지도안", type: "PDF", pages: 8, size: "3.2MB", author: "이지메이트", date: "9월 16일", downloads: 18, comments: 2, official: true, answer: false, description: "처인성 캠페인을 교실 수업에 연결할 수 있도록 장면별 질문과 활동 순서를 정리한 지도안입니다." },
-  { id: "resource-notation", title: "기보 읽기 미니 카드", type: "이미지", pages: 6, size: "2.4MB", author: "나이트쌤", date: "9월 14일", downloads: 12, comments: 1, official: false, answer: false, description: "체스 좌표와 기보 표기를 익힐 때 책상 위에 놓고 쓰는 미니 카드 자료예요." },
-  { id: "resource-opening", title: "오프닝 원칙 정리표", type: "HWP", pages: 3, size: "860KB", author: "민정", date: "9월 12일", downloads: 9, comments: 0, official: false, answer: false, description: "말 전개, 중앙 장악, 킹 안전 세 가지 원칙을 수업용 표로 정리했습니다." },
-  { id: "resource-pieces", title: "기물 가치 비교 활동지", type: "PDF", pages: 2, size: "1.1MB", author: "룩키", date: "9월 10일", downloads: 15, comments: 2, official: false, answer: true, description: "기물의 상대적인 가치를 직접 비교하고 이유를 적어 보는 활동지입니다." },
-  { id: "resource-board", title: "빈 체스판 기록 용지", type: "PDF", pages: 1, size: "420KB", author: "이지메이트", date: "9월 8일", downloads: 31, comments: 0, official: true, answer: false, description: "포지션을 직접 표시하거나 수업 문제를 만들 때 쓰는 인쇄용 빈 체스판입니다." },
-];
-
-const defaultShopProducts = [
-  {
-    id: "default-founders-board",
-    tag: "Prototype",
-    name: "Founder's Board",
-    description: "Portable tournament-size board for live matches, captions, and lesson review.",
-    price: "$149 estimated",
-  },
-  {
-    id: "default-coach-board",
-    tag: "Studio",
-    name: "Coach Board",
-    description: "Larger tabletop board for tutors, clubs, and language exchange sessions.",
-    price: "$229 estimated",
-  },
-  {
-    id: "default-travel-kit",
-    tag: "Accessory",
-    name: "Travel Kit",
-    description: "Compact pieces, carrying case, and setup guide for in-person practice games.",
-    price: "$49 estimated",
-  },
-];
+const forumResources = [];
 
 const voiceClientId =
   window.crypto?.randomUUID?.() || `voice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -5260,7 +5167,10 @@ function renderResourceLibrary() {
   if (!visible.length) {
     const empty = document.createElement("div");
     empty.className = "resource-empty";
-    empty.innerHTML = "<strong>찾은 자료가 없어요.</strong><span>검색어나 형식 필터를 바꿔 보세요.</span>";
+    const hasActiveFilters = Boolean(term || selectedTypes.length);
+    empty.innerHTML = hasActiveFilters
+      ? "<strong>찾은 자료가 없어요.</strong><span>검색어나 형식 필터를 바꿔 보세요.</span>"
+      : "<strong>아직 올라온 자료가 없어요.</strong><span>첫 자료를 올려 주세요.</span>";
     resourceGrid.append(empty);
     return;
   }
@@ -5337,7 +5247,7 @@ function openResourceDetail(resource) {
       link.click();
       return;
     }
-    download.textContent = "샘플 자료 준비 중";
+    download.textContent = "다운로드 파일이 없습니다";
     window.setTimeout(() => { download.textContent = "↓ 다운로드"; }, 1800);
   });
   const fileMeta = document.createElement("p");
@@ -5671,17 +5581,6 @@ function saveStaffShopProducts() {
   localStorage.setItem("easyMateStaffShopProducts", JSON.stringify(staffShopProducts));
 }
 
-function loadDeletedShopProductIds() {
-  try {
-    deletedShopProductIds = JSON.parse(localStorage.getItem("easyMateDeletedShopProductIds") || "[]");
-  } catch {
-    deletedShopProductIds = [];
-  }
-}
-
-function saveDeletedShopProductIds() {
-  localStorage.setItem("easyMateDeletedShopProductIds", JSON.stringify(deletedShopProductIds));
-}
 
 function ensureStaffProductIds() {
   let changed = false;
@@ -5711,6 +5610,7 @@ function readStaffProductImage(file) {
 
 function addShopProductCard({ id, tag: productTag = "Staff pick", imageSrc, name, price, description }, { prepend = true, deletable = false } = {}) {
   if (!shopProductGrid) return;
+  shopProductGrid.querySelector(".shop-empty")?.remove();
   const card = document.createElement("article");
   card.className = "wire-card product-card";
   if (id) card.dataset.productId = id;
@@ -5759,13 +5659,15 @@ function addShopProductCard({ id, tag: productTag = "Staff pick", imageSrc, name
 
 function renderStaffShopProducts() {
   loadStaffShopProducts();
-  loadDeletedShopProductIds();
   ensureStaffProductIds();
-  document.querySelectorAll("[data-product-id]").forEach((card) => card.remove());
-  defaultShopProducts
-    .filter((product) => !deletedShopProductIds.includes(product.id))
-    .forEach((product) => addShopProductCard(product, { prepend: false, deletable: true }));
+  shopProductGrid?.replaceChildren();
   staffShopProducts.forEach((product) => addShopProductCard(product, { prepend: false, deletable: true }));
+  if (shopProductGrid && !shopProductGrid.children.length) {
+    const empty = document.createElement("p");
+    empty.className = "shop-empty";
+    empty.textContent = "등록된 상품이 없습니다.";
+    shopProductGrid.append(empty);
+  }
 }
 
 function deleteStaffProduct(productId) {
@@ -5775,16 +5677,11 @@ function deleteStaffProduct(productId) {
   }
   const beforeCount = staffShopProducts.length;
   staffShopProducts = staffShopProducts.filter((product) => product.id !== productId);
-  const defaultProductDeleted = defaultShopProducts.some((product) => product.id === productId);
-  if (defaultProductDeleted && !deletedShopProductIds.includes(productId)) {
-    deletedShopProductIds.push(productId);
-    saveDeletedShopProductIds();
-  }
   saveStaffShopProducts();
   document.querySelector(`[data-product-id="${CSS.escape(productId)}"]`)?.remove();
   if (staffProductStatus) {
     staffProductStatus.textContent = translateCopy(
-      beforeCount === staffShopProducts.length && !defaultProductDeleted ? "Product not found." : "Product deleted.",
+      beforeCount === staffShopProducts.length ? "Product not found." : "Product deleted.",
     );
   }
 }
@@ -5891,7 +5788,6 @@ function setView(viewName) {
   });
   if (viewName === "dashboard") {
     if (!boardInitialized) buildBoard();
-    if (!reviewInitialized) renderReview(defaultReview);
     Promise.allSettled([refreshStats(), refreshLobby()]);
   }
   if (viewName === "how-to-play") refreshTrainingState();
@@ -5905,7 +5801,6 @@ function setView(viewName) {
     renderStaffShopProducts();
     shopInitialized = true;
   }
-  if (viewName === "stt" && !reviewInitialized) renderReview(defaultReview);
   if (viewName === "staff") refreshAdmin();
   if (viewName === "teacher") refreshTeacherLeague();
   if (viewName === "overview") {
@@ -6130,12 +6025,12 @@ function renderMatch(match) {
   const opponent = match.players?.find((player) => player.userId !== currentUser?.id) || match.players?.[1];
   partnerName.textContent = opponent
     ? `${opponent.displayName} (${translateCopy(match.partnerLanguage)})`
-    : `Mina K. (${translateCopy(match.partnerLanguage)})`;
+    : `${translateCopy("Partner waiting")} (${translateCopy(match.partnerLanguage)})`;
   partnerId.textContent = shortPlayerId(opponent);
   boardPartnerName.textContent = opponent ? opponent.displayName : translateCopy("Partner waiting");
   boardPartnerId.textContent = shortPlayerId(opponent);
   if (selfPlayerName) selfPlayerName.textContent = currentUser?.displayName || translateCopy("You");
-  voiceRing.textContent = initials(opponent?.displayName || "Mina K.");
+  voiceRing.textContent = opponent?.displayName ? initials(opponent.displayName) : "—";
   matchResult.textContent = match.result ? translateCopy(match.result) : translateCopy("In progress");
   const turn = match.game?.turn || "white";
   syncState.textContent = match.game?.gameOver
@@ -7545,10 +7440,10 @@ function renderProfile(profile) {
 }
 
 function clearProfile() {
-  renderAvatar(profileAvatar, null, "CL");
-  profileName.textContent = "ChessLearner";
-  profileEmail.textContent = "player@example.com";
-  if (profileSettingsEmail) profileSettingsEmail.textContent = "player@example.com";
+  renderAvatar(profileAvatar, null, "—");
+  profileName.textContent = currentInterfaceLanguage() === "Korean" ? "로그인 필요" : "Sign in required";
+  profileEmail.textContent = "—";
+  if (profileSettingsEmail) profileSettingsEmail.textContent = "—";
   if (profileLanguageText) {
     profileLanguageText.textContent =
       currentInterfaceLanguage() === "Korean" ? "언어 설정을 불러오려면 로그인하세요." : "Sign in to load language settings.";
@@ -7558,9 +7453,9 @@ function clearProfile() {
   if (profilePieceEdition) profilePieceEdition.value = "cheoinseong";
   if (profileImage) profileImage.value = "";
   if (profileStreak) profileStreak.textContent = "0";
-  if (profileEasyElo) profileEasyElo.textContent = "1000";
-  if (profileSideElo) profileSideElo.textContent = "1000";
-  if (profileUserId) profileUserId.textContent = "user";
+  if (profileEasyElo) profileEasyElo.textContent = "—";
+  if (profileSideElo) profileSideElo.textContent = "—";
+  if (profileUserId) profileUserId.textContent = "—";
   if (profileLessonsCount) profileLessonsCount.textContent = "0";
   if (profileQuestionsCount) profileQuestionsCount.textContent = "0";
   if (profileTestsCount) profileTestsCount.textContent = "0";
@@ -8005,43 +7900,42 @@ function renderReview(review) {
     }, { page: "/play" });
   }
   reviewInitialized = true;
-  reviewStatus.textContent =
-    currentInterfaceLanguage() === "Korean"
-      ? `${review.vocabulary.length}개 표현 생성됨`
-      : `${review.vocabulary.length} items generated`;
-  pronunciationStatus.textContent =
-    currentInterfaceLanguage() === "Korean"
-      ? "AI 복습이 만들어졌습니다. 단어를 누르면 발음을 다시 들을 수 있어요."
-      : "AI review generated. Click any word to replay pronunciation.";
+  const vocabulary = Array.isArray(review.vocabulary) ? review.vocabulary : [];
+  reviewStatus.textContent = currentInterfaceLanguage() === "Korean"
+    ? vocabulary.length ? `${vocabulary.length}개 표현 생성됨` : "표현 없음"
+    : vocabulary.length ? `${vocabulary.length} items generated` : "No expressions";
+  pronunciationStatus.textContent = vocabulary.length
+    ? currentInterfaceLanguage() === "Korean" ? "AI 복습이 만들어졌습니다. 단어를 누르면 발음을 다시 들을 수 있어요." : "AI review generated. Click any word to replay pronunciation."
+    : currentInterfaceLanguage() === "Korean" ? "실제 대화에서 확인된 표현이 없습니다." : "No expressions were found in the actual conversation.";
   vocabList.innerHTML = "";
-
-  review.vocabulary.forEach((item) => {
+  if (!vocabulary.length) {
+    const empty = document.createElement("p");
+    empty.className = "review-empty";
+    empty.textContent = currentInterfaceLanguage() === "Korean" ? "대화에서 나온 표현이 여기에 표시됩니다." : "Expressions from the conversation will appear here.";
+    vocabList.append(empty);
+  }
+  vocabulary.forEach((item) => {
     const card = document.createElement("article");
     card.className = "vocab-item";
-
     const button = document.createElement("button");
     button.className = "vocab-term";
     button.dataset.say = item.pronunciationText || item.term;
     button.dataset.lang = item.language || "en-US";
     button.textContent = item.term;
     button.addEventListener("click", () => playPronunciation(button));
-
     const translation = document.createElement("strong");
     translation.textContent = item.translation;
-
     const context = document.createElement("p");
     context.textContent = item.context;
-
     card.append(button, translation, context);
     vocabList.append(card);
   });
-
-  culturalTitle.textContent = review.culturalInsight.title;
-  culturalBody.textContent = review.culturalInsight.summary;
-  culturalPrompt.textContent =
-    currentInterfaceLanguage() === "Korean"
-      ? `다음 질문: ${translateCopy(review.culturalInsight.researchPrompt)}`
-      : `Research prompt: ${review.culturalInsight.researchPrompt}`;
+  const insight = review.culturalInsight || {};
+  culturalTitle.textContent = insight.title || (currentInterfaceLanguage() === "Korean" ? "아직 문화 메모가 없어요" : "No culture note yet");
+  culturalBody.textContent = insight.summary || (currentInterfaceLanguage() === "Korean" ? "실제 대화에서 문화 관련 표현이 확인되면 여기에 표시됩니다." : "Culture-related expressions from actual conversations will appear here.");
+  culturalPrompt.textContent = insight.researchPrompt
+    ? currentInterfaceLanguage() === "Korean" ? `다음 질문: ${translateCopy(insight.researchPrompt)}` : `Research prompt: ${insight.researchPrompt}`
+    : "";
 }
 
 async function requestReview(source = "the completed match") {
@@ -8050,7 +7944,7 @@ async function requestReview(source = "the completed match") {
   pronunciationStatus.textContent =
     currentInterfaceLanguage() === "Korean" ? `${source}에서 AI 복습을 만드는 중입니다.` : `Building AI review from ${source}.`;
   if (!backendOnline || !currentMatchId) {
-    reviewStatus.textContent = currentInterfaceLanguage() === "Korean" ? "프로토타입 복습 준비됨" : "Prototype review ready";
+    reviewStatus.textContent = currentInterfaceLanguage() === "Korean" ? "복습 없음" : "No review";
     pronunciationStatus.textContent =
       currentInterfaceLanguage() === "Korean"
         ? "저장된 복습을 만들려면 서버를 시작하고 대국을 완료하세요."
@@ -8667,7 +8561,7 @@ document.querySelectorAll("[data-close-dialog]").forEach((button) => {
 });
 
 partnerLanguage.addEventListener("change", () => {
-  partnerName.textContent = `Mina K. (${partnerLanguage.value})`;
+  partnerName.textContent = currentInterfaceLanguage() === "Korean" ? `상대 대기 중 (${partnerLanguage.value})` : `Partner waiting (${partnerLanguage.value})`;
 });
 
 startVoiceCallButton.addEventListener("click", startVoiceCall);

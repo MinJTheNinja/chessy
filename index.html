@@ -145,7 +145,7 @@
             <input id="authLanguagePair" type="hidden" value="English to Korean" />
             <label>
               이메일
-              <input id="authEmail" type="email" placeholder="player@example.com" autocomplete="email" />
+              <input id="authEmail" type="email" placeholder="이메일 주소" autocomplete="email" />
             </label>
             <label id="authDisplayNameField" hidden>
               표시 이름
@@ -519,9 +519,9 @@
               <aside class="panel match-side-panel">
                 <h3>파트너</h3>
                 <div class="partner-card">
-                  <div class="avatar speaking" id="voiceRing">MK</div>
+                  <div class="avatar speaking" id="voiceRing">—</div>
                   <div>
-                    <strong id="partnerName">Mina K.</strong>
+                    <strong id="partnerName">상대 대기 중</strong>
                     <p class="partner-id">ID <span id="partnerId">대기 중</span></p>
                     <p><span id="mannerTemp">🌱 친절한 대화 상대</span></p>
                   </div>
@@ -578,58 +578,21 @@
                     <span class="eyebrow">단어 상자</span>
                     <h3>대국 중 나온 핵심 표현</h3>
                   </div>
-                  <span class="pill" id="reviewStatus">7개 표현 준비됨</span>
+                  <span class="pill" id="reviewStatus">복습 없음</span>
                 </div>
 
                 <div class="vocab-list" id="vocabList">
-                  <article class="vocab-item">
-                    <button class="vocab-term" data-say="calm position" data-lang="en-US">calm position</button>
-                    <strong>침착한 포지션</strong>
-                    <p>Mina가 공격 전 조용한 오프닝을 좋아한다고 설명할 때 나온 표현입니다.</p>
-                  </article>
-                  <article class="vocab-item">
-                    <button class="vocab-term" data-say="London System" data-lang="en-US">London System</button>
-                    <strong>런던 시스템</strong>
-                    <p>초보자도 안정적으로 둘 수 있는 계획을 이야기할 때 나온 오프닝입니다.</p>
-                  </article>
-                  <article class="vocab-item">
-                    <button class="vocab-term" data-say="knight fork" data-lang="en-US">knight fork</button>
-                    <strong>나이트 포크</strong>
-                    <p>나이트가 두 기물을 동시에 공격했을 때 나온 표현입니다.</p>
-                  </article>
-                  <article class="vocab-item">
-                    <button class="vocab-term" data-say="protect my king" data-lang="en-US">protect my king</button>
-                    <strong>왕을 보호하다</strong>
-                    <p>공격 전 수비 수를 설명할 때 쓰기 좋은 표현입니다.</p>
-                  </article>
-                  <article class="vocab-item">
-                    <button class="vocab-term" data-say="good game" data-lang="en-US">good game</button>
-                    <strong>좋은 경기였어요</strong>
-                    <p>대국이 끝난 뒤 예의 있게 마무리할 때 쓰는 말입니다.</p>
-                  </article>
-                  <article class="vocab-item">
-                    <button class="vocab-term" data-say="Could you replay that move?" data-lang="en-US">Could you replay that move?</button>
-                    <strong>그 수를 다시 보여줄 수 있나요?</strong>
-                    <p>방금 둔 수를 다시 보고 싶을 때 쓸 수 있는 문장입니다.</p>
-                  </article>
-                  <article class="vocab-item">
-                    <button class="vocab-term" data-say="center control" data-lang="en-US">center control</button>
-                    <strong>중앙 장악</strong>
-                    <p>비숍 수가 왜 좋은지 설명할 때 나온 전략 표현입니다.</p>
-                  </article>
+                  <p class="review-empty">완료한 대국에서 나온 표현이 여기에 표시됩니다.</p>
                 </div>
               </section>
 
               <aside class="review-side">
                 <article class="wire-card cultural-card">
                   <span class="eyebrow">문화 교류 메모</span>
-                  <h3 id="culturalTitle">"GG" 인사 표현 발견</h3>
-                  <p id="culturalBody">
-                    AI가 두 플레이어가 "good game"과 "GG"를 친근한 마무리 인사로 쓴 것을 발견했습니다.
-                    여러 온라인 게임 문화에서 이 표현은 단순한 경기 결과보다 서로에 대한 존중을 뜻합니다.
-                  </p>
-                  <p id="culturalPrompt">다음 질문: 파트너의 언어에서는 대국 뒤 어떤 말로 예의를 표현하나요?</p>
-                  <button class="button secondary full">문화 노트에 저장</button>
+                  <h3 id="culturalTitle">아직 문화 메모가 없어요</h3>
+                  <p id="culturalBody">실제 대화에서 문화 관련 표현이 확인되면 여기에 표시됩니다.</p>
+                  <p id="culturalPrompt"></p>
+                  <button class="button secondary full" disabled>문화 노트에 저장</button>
                 </article>
 
               </aside>
@@ -648,7 +611,7 @@
               <span class="training-resume-art" aria-hidden="true"><img src="/assets/cheoinseong-pieces-v2/g_knight.png" alt="" /></span>
               <div class="training-resume-copy">
                 <span>이어 하기</span>
-                <strong id="trainingResumeTitle">캠페인 · 처인성 2장 마음을 하나로 모으다</strong>
+                <strong id="trainingResumeTitle">아직 진행 중인 훈련이 없어요</strong>
               </div>
               <button class="button primary" id="trainingResumeButton" type="button">이어 하기 <span aria-hidden="true">→</span></button>
             </section>
@@ -786,34 +749,13 @@
             <section class="shop-hero">
               <div>
                 <span class="eyebrow">실물 체스 키트</span>
-                <h3>체스와 언어 연습을 위한 보드입니다.</h3>
-                <p>상품 정보, 관심 예약, 향후 결제 흐름을 이곳에서 관리합니다.</p>
+                <h3>등록된 상품을 확인하세요.</h3>
+                <p>관리자가 등록한 상품만 이곳에 표시됩니다.</p>
               </div>
-              <button class="button primary" data-shop-interest="Founder's Board">관심 예약</button>
             </section>
 
-            <div class="shop-grid">
-              <article class="wire-card product-card">
-                <span class="product-tag">프로토타입</span>
-                <h3>파운더스 보드</h3>
-                <p>라이브 대국, 자막, 수업 복습을 위한 휴대용 보드입니다.</p>
-                <strong>예상가 $149</strong>
-                <button class="button secondary full" data-shop-interest="Founder's Board" type="button">대기자 명단 참여</button>
-              </article>
-              <article class="wire-card product-card">
-                <span class="product-tag">스튜디오</span>
-                <h3>코치 보드</h3>
-                <p>튜터, 동아리, 언어 교환 세션을 위한 큰 탁상용 보드입니다.</p>
-                <strong>예상가 $229</strong>
-                <button class="button secondary full" data-shop-interest="Coach Board" type="button">대기자 명단 참여</button>
-              </article>
-              <article class="wire-card product-card">
-                <span class="product-tag">액세서리</span>
-                <h3>여행 키트</h3>
-                <p>대면 연습 게임을 위한 소형 말, 휴대 케이스, 설치 가이드입니다.</p>
-                <strong>예상가 $49</strong>
-                <button class="button secondary full" data-shop-interest="Travel Kit" type="button">대기자 명단 참여</button>
-              </article>
+            <div class="shop-grid" id="shopProductGrid">
+              <p class="shop-empty">등록된 상품이 없습니다.</p>
             </div>
             <p class="shop-interest-status" id="shopInterestStatus">관심 상품을 선택하세요.</p>
           </section>
@@ -844,8 +786,7 @@
                 <article class="wire-card subtitle-card">
                   <h3>번역 자막</h3>
                   <div class="subtitle-lines" id="translatedSpeech">
-                    <p><strong>Mina:</strong> 침착한 포지션을 원할 때 저는 보통 런던 시스템을 둡니다.</p>
-                    <p><strong>You:</strong> 좋아요. 방금 비숍 수가 중앙을 잘 잡고 있어요.</p>
+                    <p class="subtitle-placeholder">실제 음성이 인식되면 번역이 여기에 표시됩니다.</p>
                   </div>
                 </article>
               </section>
@@ -930,14 +871,14 @@
 
                 <div class="profile-hero-identity">
                   <div class="profile-name-row">
-                    <strong><span id="profileName">ChessLearner</span></strong>
+                    <strong><span id="profileName">로그인 필요</span></strong>
                     <button class="inline-edit-button" id="editProfileName" type="button" aria-label="유저네임 수정">✎</button>
                   </div>
                   <div class="profile-inline-editor" id="profileNameEditor" hidden>
-                    <input id="profileDisplayName" type="text" placeholder="ChessLearner" />
+                    <input id="profileDisplayName" type="text" placeholder="표시 이름" />
                     <button class="button primary small" id="saveProfileName" type="button">저장</button>
                   </div>
-                  <small class="profile-email" id="profileEmail">player@example.com</small>
+                  <small class="profile-email" id="profileEmail">—</small>
                 </div>
 
                 <button class="profile-settings-link" id="openProfileSettings" type="button" aria-label="프로필 설정 열기">
@@ -1030,7 +971,7 @@
                   <article class="settings-card delete-account-zone">
                     <span class="profile-settings-label">계정</span>
                     <div class="profile-account-row">
-                      <span><b>로그인 계정</b><small id="profileSettingsEmail">player@example.com</small></span>
+                      <span><b>로그인 계정</b><small id="profileSettingsEmail">—</small></span>
                       <button id="profileSignOut" type="button">로그아웃</button>
                     </div>
                     <h4>계정 삭제</h4>

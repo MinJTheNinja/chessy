@@ -153,29 +153,6 @@ function postgresSslOptions(connectionString) {
   return process.env.PGSSLMODE === "require" ? { rejectUnauthorized: false } : false;
 }
 
-const sampleTranscript = [
-  {
-    speaker: "Mina",
-    text: "I usually play the London System when I want a calm position.",
-    translation: "Korean: I usually play the London System when I want a calm position.",
-    kind: "speech",
-    at: new Date().toISOString(),
-  },
-  {
-    speaker: "You",
-    text: "That makes sense. Your bishop move controls the center nicely.",
-    translation: "Korean: That makes sense. Your bishop move controls the center nicely.",
-    kind: "speech",
-    at: new Date().toISOString(),
-  },
-  {
-    speaker: "Mina",
-    text: "GG, that knight fork was really strong.",
-    translation: "Korean: GG, that knight fork was really strong.",
-    kind: "speech",
-    at: new Date().toISOString(),
-  },
-];
 
 const quickPools = [
   {
@@ -2526,7 +2503,7 @@ function createMatch(db, user, body = {}, opponent = null) {
     ? { userId: opponent.id, displayName: opponent.displayName, color: "black", pieceEdition: normalizedPieceEdition(opponent.pieceEdition) }
     : {
         userId: null,
-        displayName: body.waitingForOpponent ? "Partner waiting" : "Mina K.",
+        displayName: body.waitingForOpponent ? "Partner waiting" : "Practice bot",
         color: "black",
         pieceEdition: "beta",
       };
@@ -2550,7 +2527,7 @@ function createMatch(db, user, body = {}, opponent = null) {
     pgn: "",
     clocks: createClockState(timeControl, createdAt),
     moves: [],
-    transcript: [...sampleTranscript],
+    transcript: [],
     reviewId: null,
     createdAt,
     endedAt: null,
@@ -2563,8 +2540,9 @@ function createMatch(db, user, body = {}, opponent = null) {
 }
 
 function buildReview(match) {
-  const transcriptText = match.transcript.map((item) => item.text || "").join(" ").toLowerCase();
-  let vocabulary = vocabularyTemplates
+  const transcript = Array.isArray(match.transcript) ? match.transcript : [];
+  const transcriptText = transcript.map((item) => item.text || "").join(" ").toLowerCase();
+  const vocabulary = vocabularyTemplates
     .filter((item) => item.triggers.some((trigger) => transcriptText.includes(trigger)))
     .slice(0, 10)
     .map((item) => ({
@@ -2575,23 +2553,25 @@ function buildReview(match) {
       language: "en-US",
     }));
 
-  if (vocabulary.length < 5) {
-    const existing = new Set(vocabulary.map((item) => item.term));
-    vocabulary = vocabulary.concat(vocabularyTemplates.filter((item) => !existing.has(item.term)).slice(0, 5 - vocabulary.length));
-  }
-
   let culturalInsight = {
-    title: "Detected reference: saying GG",
-    summary:
-      'The AI noticed "GG" and "good game" as a friendly closing. In many online game communities, this expresses respect, not only the literal result.',
-    researchPrompt: "Look up how your partner's language expresses sportsmanship after a match.",
+    title: "아직 문화 메모가 없어요",
+    summary: "실제 대화에서 문화 관련 표현이 확인되면 여기에 표시됩니다.",
+    researchPrompt: "",
   };
+
+  if (/\b(gg|good game)\b/i.test(transcriptText)) {
+    culturalInsight = {
+      title: "GG 인사 표현 발견",
+      summary: "실제 대화에서 GG 또는 good game 표현이 확인되었습니다.",
+      researchPrompt: "파트너의 언어에서는 대국 뒤 어떤 말로 예의를 표현하나요?",
+    };
+  }
 
   if (/\b(food|meal|holiday|festival|slang|street food)\b/i.test(transcriptText)) {
     culturalInsight = {
-      title: "Detected local culture reference",
-      summary: "The AI noticed a food, holiday, or slang reference in the conversation.",
-      researchPrompt: "Save this item to your culture guide and ask your partner about it next match.",
+      title: "지역 문화 표현 발견",
+      summary: "실제 대화에서 음식, 명절 또는 지역 표현이 확인되었습니다.",
+      researchPrompt: "이 표현의 배경을 파트너에게 물어보고 문화 노트에 기록해 보세요.",
     };
   }
 
@@ -2599,7 +2579,7 @@ function buildReview(match) {
     id: id("review"),
     matchId: match.id,
     createdAt: new Date().toISOString(),
-    summary: `Review generated from ${match.transcript.length} transcript items and ${match.moves.length} chess moves.`,
+    summary: `Review generated from ${transcript.length} transcript items and ${match.moves.length} chess moves.`,
     vocabulary,
     culturalInsight,
   };
@@ -4386,7 +4366,7 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
       id: id("letter"),
       fromUserId: user.id,
       toUserId: body.toUserId || null,
-      recipient: String(body.recipient || "Mina K.").slice(0, 80),
+      recipient: String(body.recipient || "Partner").slice(0, 80),
       note: String(body.note || "").slice(0, 500),
       transcript: String(body.transcript || "").slice(0, 3000),
       createdAt: new Date().toISOString(),
