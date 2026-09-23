@@ -8,7 +8,6 @@ const { AsyncLocalStorage } = require("async_hooks");
 const { URL } = require("url");
 const { Chess } = require("chess.js");
 const { Pool } = require("pg");
-const { AnalyticsStore } = require("./analytics");
 const {
   migrateLegacyState,
   sessionTtlMs,
@@ -104,11 +103,6 @@ const pgPool = databaseUrl
 pgPool?.on("error", error => console.warn("PostgreSQL idle connection failed:", error.message));
 pgPool?.on("connect", client => {
   client.on("error", error => console.warn("PostgreSQL connection failed:", error.message));
-});
-const analyticsStore = new AnalyticsStore({
-  pgPool,
-  dataDir,
-  sessionTimeoutMs: Number(process.env.ANALYTICS_SESSION_TIMEOUT_MS || 30 * 60 * 1000),
 });
 let pgReady = null;
 let storageReady = !pgPool;
@@ -498,7 +492,7 @@ function shouldExpirePrivateRooms(method, pathname) {
 function apiRequestNeedsStateTransaction(method, pathname) {
   if (shouldExpirePrivateRooms(method, pathname)) return true;
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(method)) return false;
-  return pathname !== "/api/translate" && pathname !== "/api/moderate" && !pathname.startsWith("/api/analytics/");
+  return pathname !== "/api/translate" && pathname !== "/api/moderate";
 }
 
 function storedUserToUser(stored, completedModules = []) {
@@ -1920,34 +1914,6 @@ function requireUser(user, res) {
   return false;
 }
 
-function analyticsConsentGranted(req) {
-  return req.headers["x-easymate-analytics-consent"] === "granted";
-}
-
-function recordAnalytics(req, user, eventName, properties = {}, options = {}) {
-  if (!analyticsConsentGranted(req)) return;
-  analyticsStore.recordServerEvent(req, user, eventName, properties, options).catch((error) => {
-    console.warn(`Analytics event unavailable (${eventName}): ${error.message}`);
-  });
-}
-
-function analyticsMatchResult(value) {
-  const result = String(value || "").toLowerCase();
-  if (result.includes("checkmate")) return "checkmate";
-  if (result.includes("stalemate")) return "stalemate";
-  if (result.includes("draw")) return "draw";
-  if (result.includes("resign")) return "resigned";
-  if (result.includes("timeout") || result.includes("time")) return "timeout";
-  if (result.includes("cancel")) return "cancelled";
-  return "completed";
-}
-
-function analyticsMatchDuration(match) {
-  const started = Date.parse(match?.joinedAt || match?.createdAt || "");
-  const ended = Date.parse(match?.endedAt || "");
-  return Number.isFinite(started) && Number.isFinite(ended) ? Math.max(0, ended - started) : undefined;
-}
-
 function matchParticipant(match, user) {
   if (!match || !user) return false;
   return (match.players || []).some((player) => player.userId === user.id) || match.userId === user.id;
@@ -2611,69 +2577,13 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
   }
   // Authenticate unhandled routes once, inside their transaction when applicable.
   const fastRoute = {
-    GET: ["/api/admin/analytics/summary", "/api/session", "/api/training/state"],
-    POST: ["/api/analytics/session", "/api/analytics/events", "/api/translate", "/api/moderate",
+    GET: ["/api/session", "/api/training/state"],
+    POST: ["/api/translate", "/api/moderate",
       "/api/training/tutorial-complete", "/api/auth/signup", "/api/auth/login", "/api/auth/google", "/api/auth/logout"],
     DELETE: ["/api/auth/delete"],
   };
   if (!fastRoute[req.method]?.includes(pathname)) return false;
   const user = await getSessionUser(req);
-
-  if (req.method === "POST" && pathname === "/api/analytics/session") {
-    if (!analyticsConsentGranted(req)) {
-      sendJson(res, 403, { error: "Analytics consent is required." });
-      return true;
-    }
-    if (!requireRateLimit(req, res, user, "analytics-session", 30)) return true;
-    const body = await readBody(req, 16_384);
-    try {
-      const session = await analyticsStore.startOrResumeSession({
-        anonymousId: body.anonymous_id,
-        sessionId: body.session_id,
-        userId: user?.id || null,
-        userAgent: req.headers["user-agent"],
-        viewportWidth: body.viewport_width,
-        entryPage: body.entry_page,
-        referrer: body.referrer,
-      });
-      sendJson(res, 200, { session_id: session.sessionId, created: session.created });
-    } catch (error) {
-      sendJson(res, 400, { error: error.message });
-    }
-    return true;
-  }
-
-  if (req.method === "POST" && pathname === "/api/analytics/events") {
-    if (!analyticsConsentGranted(req)) {
-      sendJson(res, 403, { error: "Analytics consent is required." });
-      return true;
-    }
-    if (!requireRateLimit(req, res, user, "analytics-events", 120)) return true;
-    const body = await readBody(req, 65_536);
-    try {
-      const result = await analyticsStore.recordBatch({
-        anonymousId: body.anonymous_id,
-        sessionId: body.session_id,
-        userId: user?.id || null,
-        userAgent: req.headers["user-agent"],
-        viewportWidth: body.viewport_width,
-        entryPage: body.entry_page,
-        referrer: body.referrer,
-        events: body.events,
-      });
-      sendJson(res, 202, { accepted: result.accepted, session_id: result.sessionId });
-    } catch (error) {
-      sendJson(res, 400, { error: error.message });
-    }
-    return true;
-  }
-
-  if (req.method === "GET" && pathname === "/api/admin/analytics/summary") {
-    if (!requireStaff(user, res)) return true;
-    const summary = await analyticsStore.summary(searchParams.get("days"));
-    sendJson(res, 200, summary, { "cache-control": "no-store" });
-    return true;
-  }
 
   if (req.method === "POST" && pathname === "/api/translate") {
     if (!requireUser(user, res)) return true;
@@ -2738,18 +2648,15 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
     const password = String(body.password || "");
     const displayName = String(body.displayName || "").trim().slice(0, 40);
     if (!email || !password) {
-      recordAnalytics(req, null, "signup_failed", { failure_reason: "missing_credentials" }, { page: "/signup" });
       sendJson(res, 400, { error: "Email and password are required." });
       return true;
     }
     if (!displayName) {
-      recordAnalytics(req, null, "signup_failed", { failure_reason: "missing_display_name" }, { page: "/signup" });
       sendJson(res, 400, { error: "Display name is required." });
       return true;
     }
     let found = await findUserByEmail(email);
     if (found && !(await verifyPassword(password, found.passwordHash))) {
-      recordAnalytics(req, null, "signup_failed", { failure_reason: "account_exists" }, { page: "/signup" });
       sendJson(res, 409, { error: "Account exists. Use the existing password to log in." });
       return true;
     }
@@ -2781,14 +2688,12 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
         if (error.code !== "23505") throw error;
         found = await findUserByEmail(email);
         if (!found || !(await verifyPassword(password, found.passwordHash))) {
-          recordAnalytics(req, null, "signup_failed", { failure_reason: "account_exists" }, { page: "/signup" });
           sendJson(res, 409, { error: "Account exists. Use the existing password to log in." });
           return true;
         }
       }
     }
     const token = await createStoredSession(found.id);
-    recordAnalytics(req, found, "signup_completed", { provider: "password" }, { page: "/signup" });
     sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": sessionCookie(token, req) });
     return true;
   }
@@ -2797,12 +2702,10 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
     const body = await readBody(req);
     const found = await findUserByEmail(body.email);
     if (!found || !(await verifyPassword(String(body.password || ""), found.passwordHash))) {
-      recordAnalytics(req, null, "login_failed", { failure_reason: "invalid_credentials", provider: "password" }, { page: "/login" });
       sendJson(res, 401, { error: "Invalid email or password." });
       return true;
     }
     const token = await createStoredSession(found.id);
-    recordAnalytics(req, found, "login_completed", { provider: "password" }, { page: "/login" });
     sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": sessionCookie(token, req) });
     return true;
   }
@@ -2854,10 +2757,8 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
         current.pieceEdition = normalizedPieceEdition(current.pieceEdition);
       });
       const token = await createStoredSession(found.id);
-      recordAnalytics(req, found, "login_completed", { provider: "google" }, { page: "/login" });
       sendJson(res, 200, { user: publicUser(found) }, { "set-cookie": sessionCookie(token, req) });
     } catch (error) {
-      recordAnalytics(req, null, "login_failed", { failure_reason: "google_auth_failed", provider: "google" }, { page: "/login" });
       sendJson(res, 401, { error: error.message || "Google login failed." });
     }
     return true;
@@ -2865,7 +2766,6 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
 
   if (req.method === "POST" && pathname === "/api/auth/logout") {
     await deleteStoredSession(getCookie(req, "lc_session"));
-    recordAnalytics(req, user, "logout_completed", {}, { page: "/" });
     sendJson(res, 200, { ok: true }, { "set-cookie": sessionCookie("", req, { clear: true }) });
     return true;
   }
@@ -2948,7 +2848,6 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     };
     db.forumPosts.unshift(post);
     await writeDb(db);
-    recordAnalytics(req, user, "post_created", { post_id: post.id, category: post.category }, { page: "/community" });
     broadcast(null, { type: "forum:updated", action: "created", postId: post.id });
     sendJson(res, 201, { post });
     return true;
@@ -3372,10 +3271,6 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     const unlocked = syncAchievements(user, db);
     await saveUser(user);
     await writeDb(db);
-    recordAnalytics(req, user, "puzzle_completed", {
-      puzzle_id: puzzle.id,
-      duration_ms: puzzle.durationMs,
-    }, { page: "/training" });
     sendJson(res, 200, { state: trainingState(user), user: publicUser(user, db), unlocked });
     return true;
   }
@@ -3477,10 +3372,6 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     });
     await saveUser(user);
     await writeDb(db);
-    recordAnalytics(req, user, "culture_content_completed", {
-      content_type: "culture_note",
-      source_feature: "profile",
-    }, { page: "/profile" });
     sendJson(res, 200, buildProfile(user, db));
     return true;
   }
@@ -3902,7 +3793,6 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
 
   if (req.method === "POST" && pathname === "/api/challenges") {
     if (!requireUser(user, res)) return true;
-    const roomCreationStartedAt = Date.now();
     const body = await readBody(req);
     db.challenges.forEach((item) => {
       if (item.userId !== user.id || item.status !== "open") return;
@@ -3941,11 +3831,6 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     db.challenges.push(challenge);
     await writeDb(db);
     await syncRedisRoom(match);
-    recordAnalytics(req, user, "room_created", {
-      match_type: "private",
-      time_control: match.timeControl,
-      room_creation_duration_ms: Date.now() - roomCreationStartedAt,
-    }, { page: "/play" });
     sendJson(res, 200, { challenge, match: decorateMatch(match) });
     return true;
   }
@@ -3957,12 +3842,10 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     const code = String(acceptChallengeParams.code || "").trim().toUpperCase();
     const challenge = db.challenges.find((item) => item.code === code && item.status === "open");
     if (!challenge) {
-      recordAnalytics(req, user, "room_join_failed", { failure_reason: "not_found", join_method: "code" }, { page: "/play" });
       sendJson(res, 404, { error: "Private challenge code not found or already used." });
       return true;
     }
     if (challenge.userId === user.id) {
-      recordAnalytics(req, user, "room_join_failed", { failure_reason: "own_room", join_method: "code" }, { page: "/play" });
       sendJson(res, 409, { error: "You cannot join your own private challenge." });
       return true;
     }
@@ -3976,7 +3859,6 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     if (match) {
       const openSlot = match.players?.find((player) => !player.userId);
       if (!openSlot || match.status === "ended") {
-        recordAnalytics(req, user, "room_join_failed", { failure_reason: "unavailable", join_method: "code" }, { page: "/play" });
         sendJson(res, 409, { error: "This private room is no longer available." });
         return true;
       }
@@ -4012,10 +3894,6 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     await syncRedisRoom(match);
     broadcast(match.id, { type: "match:started", match: decorateMatch(match) });
     broadcast(null, { type: "queue:matched", match: decorateMatch(match) });
-    recordAnalytics(req, user, "room_joined", {
-      join_method: "code",
-      wait_duration_ms: Math.max(0, Date.now() - Date.parse(challenge.createdAt)),
-    }, { page: "/play" });
     sendJson(res, 200, { match: decorateMatch(match), challenge });
     return true;
   }
@@ -4200,18 +4078,6 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     });
     if (!wasEndedBeforeMove && match.status === "ended") await saveMatchParticipantUsers(match, db);
     await writeDb(db);
-    if (!wasEndedBeforeMove && match.status === "ended") {
-      const completionProperties = {
-        match_type: match.pairingType || "match",
-        rated: Boolean(match.rated),
-        game_duration_ms: analyticsMatchDuration(match),
-        result: analyticsMatchResult(match.result),
-      };
-      recordAnalytics(req, user, "match_completed", completionProperties, { page: "/play" });
-      if (match.pairingType === "private-challenge") {
-        recordAnalytics(req, user, "game_completed", completionProperties, { page: "/play" });
-      }
-    }
     syncRedisRoom(match).catch((error) => console.warn(`Redis room sync failed: ${error.message}`));
     broadcast(match.id, { type: "match:move", matchId: match.id, move, match: decorateMatch(match) });
     sendJson(res, 200, { match: decorateMatch(match), move, unlocked });
@@ -4282,19 +4148,6 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     if (!wasEnded) await saveMatchParticipantUsers(match, db);
     await writeDb(db);
     await syncRedisRoom(match);
-    if (!wasEnded) {
-      const completionProperties = {
-        match_type: match.pairingType || "match",
-        rated: Boolean(match.rated),
-        game_duration_ms: analyticsMatchDuration(match),
-        result: analyticsMatchResult(match.result),
-      };
-      const completionEvent = completionProperties.result === "resigned" ? "match_abandoned" : "match_completed";
-      recordAnalytics(req, user, completionEvent, completionProperties, { page: "/play" });
-      if (match.pairingType === "private-challenge") {
-        recordAnalytics(req, user, "game_completed", completionProperties, { page: "/play" });
-      }
-    }
     broadcast(match.id, { type: "match:ended", matchId: match.id, result: match.result, match: decorateMatch(match) });
     sendJson(res, 200, { match: decorateMatch(match), unlocked });
     return true;
@@ -4302,7 +4155,6 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
 
   const reviewParams = routePattern(pathname, "/api/matches/:id/review");
   if (req.method === "POST" && reviewParams) {
-    const reviewStartedAt = Date.now();
     const match = db.matches.find((item) => item.id === reviewParams.id);
     if (!match) {
       sendJson(res, 404, { error: "Match not found." });
@@ -4313,9 +4165,6 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     match.reviewId = review.id;
     db.reviews.push(review);
     await writeDb(db);
-    recordAnalytics(req, user, "review_completed", {
-      review_generation_duration_ms: Date.now() - reviewStartedAt,
-    }, { page: "/play" });
     broadcast(match.id, { type: "review:generated", matchId: match.id, review });
     sendJson(res, 200, { review });
     return true;
@@ -4436,7 +4285,6 @@ function serveStatic(req, res, pathname) {
   const allowedStatic =
     requested === "/index.html" ||
     requested === "/app.js" ||
-    requested === "/analytics-client.js" ||
     requested === "/styles.css" ||
     requested === "/hallmark-demo.html" ||
     requested === "/hallmark-demo.css" ||
@@ -4468,7 +4316,7 @@ function serveStatic(req, res, pathname) {
     if (compressibleExtensions.has(extension)) responseHeaders.vary = "Accept-Encoding";
     if (requested.startsWith("/assets/tutorial-pieces/") || requested.startsWith("/assets/original-chess-pieces-v1/") || /-v\d+\.[a-z0-9]+$/i.test(requested)) {
       responseHeaders["cache-control"] = "public, max-age=31536000, immutable";
-    } else if (requested === "/index.html" || requested === "/app.js" || requested === "/analytics-client.js" || requested === "/styles.css" || extension === ".html") {
+    } else if (requested === "/index.html" || requested === "/app.js" || requested === "/styles.css" || extension === ".html") {
       responseHeaders["cache-control"] = "no-cache, must-revalidate";
     } else {
       responseHeaders["cache-control"] = "public, max-age=3600, must-revalidate";
@@ -4741,9 +4589,7 @@ const server = http.createServer(async (req, res) => {
     if (requestUrl.pathname.startsWith("/api/")) {
       // Finish uploading before authentication or borrowing a transaction connection.
       if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
-        const limit = requestUrl.pathname === "/api/analytics/session" ? 16_384
-          : requestUrl.pathname === "/api/analytics/events" ? 65_536 : 1_000_000;
-        req.parsedBody = Promise.resolve(await readBody(req, limit));
+        req.parsedBody = Promise.resolve(await readBody(req));
       }
       const fastHandled = await handleFastApi(req, res, requestUrl.pathname, requestUrl.searchParams);
       if (fastHandled) return;
@@ -4794,9 +4640,6 @@ async function startServer() {
     storageReady = true;
     storageError = null;
     await cleanupExpiredSessions();
-    await analyticsStore.initialize().catch((error) => {
-      console.warn(`Analytics storage unavailable; core product remains active: ${error.message}`);
-    });
     console.log("Storage ready (local-json).");
   }
   return new Promise((resolve, reject) => {
@@ -4818,9 +4661,6 @@ async function initializeStorage() {
     await cleanupExpiredSessions();
     storageReady = true;
     storageError = null;
-    await analyticsStore.initialize().catch((error) => {
-      console.warn(`Analytics storage unavailable; core product remains active: ${error.message}`);
-    });
     console.log("Storage ready (postgres).");
   } catch (error) {
     storageReady = false;
