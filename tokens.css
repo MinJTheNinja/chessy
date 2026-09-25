@@ -1,20 +1,26 @@
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 · EasyMate app design system */
 :root {
-  --color-home-paper: oklch(97% 0.008 80);
-  --color-home-paper-2: oklch(94% 0.012 80);
-  --color-home-ink: oklch(24% 0.012 25);
-  --color-home-ink-soft: oklch(45% 0.016 70);
-  --color-home-rule: oklch(84% 0.014 80);
-  --color-home-accent: oklch(55% 0.15 300);
-  --color-home-accent-dark: oklch(46% 0.15 300);
-  --color-home-accent-soft: oklch(91% 0.035 300);
-  --color-home-focus: oklch(35% 0.18 300);
-  --color-home-deep: oklch(31% 0.1 300);
-  --color-home-accent-ink: oklch(97% 0.008 80);
-  --font-home-display: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
-  --font-home-body: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+  --color-home-paper: oklch(97% 0.006 60);
+  --color-home-paper-2: oklch(95% 0.009 60);
+  --color-home-paper-3: oklch(92% 0.014 60);
+  --color-home-ink: oklch(24% 0.012 35);
+  --color-home-ink-soft: oklch(45% 0.012 45);
+  --color-home-rule: oklch(84% 0.01 60);
+  --color-home-accent: oklch(55% 0.14 305);
+  --color-home-accent-dark: oklch(45% 0.14 305);
+  --color-home-accent-soft: oklch(92% 0.035 305);
+  --color-home-focus: oklch(38% 0.18 305);
+  --color-home-deep: oklch(24% 0.07 295);
+  --color-home-deep-card: oklch(31% 0.075 295);
+  --color-home-deep-rule: oklch(43% 0.07 295);
+  --color-home-deep-text: oklch(92% 0.018 295);
+  --color-home-deep-muted: oklch(79% 0.035 295);
+  --color-home-koryo: oklch(76% 0.085 255);
+  --color-home-mongol: oklch(76% 0.09 25);
+  --color-home-accent-ink: oklch(97% 0.006 60);
+  --font-home-display: "Pretendard", "Noto Sans KR", sans-serif;
+  --font-home-body: "Noto Sans KR", "Pretendard", sans-serif;
   --font-home-symbol: "Segoe UI Symbol", "Noto Sans Symbols 2", serif;
-
   --color-paper: oklch(97% 0.008 85);
   --color-paper-2: oklch(94% 0.012 85);
   --color-ink: oklch(25% 0.042 250);

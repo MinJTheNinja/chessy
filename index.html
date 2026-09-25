@@ -60,8 +60,8 @@
     <noscript>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
     </noscript>
-    <link rel="stylesheet" href="/tokens.css?v=20260925-home-refresh" />
-    <link rel="stylesheet" href="/styles.css?v=20260925-home-refresh" />
+    <link rel="stylesheet" href="/tokens.css?v=20260925-home-v2" />
+    <link rel="stylesheet" href="/styles.css?v=20260925-home-v2" />
     <script src="/app.js?v=20260921-forum" defer></script>
   </head>
   <body>
@@ -201,9 +201,10 @@
         <div class="workspace">
           <section class="view active" data-view="overview" aria-labelledby="homeHeroTitle">
             <section class="home-brand-hero" aria-labelledby="homeHeroTitle">
-              <div class="home-brand-copy">
+              <div class="home-brand-logo-row">
                 <img class="home-brand-wordmark" src="/assets/easymate-wordmark-v2.png" alt="EasyMate" width="1200" height="332" fetchpriority="high" decoding="async" />
-                <p class="home-brand-kicker">누구나 쉽게 체스, 더 가까이 지역 이야기</p>
+              </div>
+              <div class="home-brand-copy">
                 <h1 id="homeHeroTitle">체스를 배우고,<br />우리 고장의 이야기를 만나요.</h1>
                 <p class="home-brand-lede">기물의 움직임부터 처인성 캠페인까지, 한 수씩 따라가며 배우는 용인형 체스 학습 공간입니다.</p>
                 <div class="home-brand-actions">
@@ -211,13 +212,11 @@
                   <button class="button secondary" type="button" data-view-link="dashboard">대국 시작</button>
                 </div>
               </div>
-              <div class="home-brand-art" aria-hidden="true">
-                <span class="home-brand-piece home-brand-piece-bishop">♝</span>
-                <img src="/assets/easymate-logo-mark-v2.png" alt="" width="369" height="366" decoding="async" />
-                <span class="home-brand-piece home-brand-piece-queen">♛</span>
-              </div>
-            </section>
-            <div class="home-dashboard">
+              <figure class="home-brand-art">
+                <span class="home-brand-art-tile" aria-hidden="true"></span>
+                <img src="/assets/cheoinseong/illustrations/scene-2-cavalry-encircle.png" alt="처인성을 둘러싼 기마대 장면" width="1672" height="941" decoding="async" />
+              </figure>
+            </section>            <div class="home-dashboard">
               <div class="home-main-column">
                 <section class="home-match-intro" aria-labelledby="dashboardTitle">
                   <div class="home-overview-head">
@@ -352,8 +351,15 @@
                 <p>고려와 몽골의 이야기를 서로 다른 기물과 퍼즐로 구성했습니다. 역사를 외우기보다 직접 수를 선택하며 장면을 따라갑니다.</p>
                 <button class="home-story-link" type="button" data-view-link="how-to-play">캠페인 시작 <span aria-hidden="true">→</span></button>
               </div>
+              <div class="home-piece-row" aria-label="처인성 캠페인 기물 구성">
+                <article class="home-piece"><span aria-hidden="true">♚</span><strong>킹</strong><small>고려 · 김윤후 승장</small><small>몽골 · 살리타이</small></article>
+                <article class="home-piece"><span aria-hidden="true">♛</span><strong>퀸</strong><small>고려 · 궁수</small><small>몽골 · 설정 중</small></article>
+                <article class="home-piece"><span aria-hidden="true">♜</span><strong>룩</strong><small>고려 · 처인 토성</small><small>몽골 · 공성탑</small></article>
+                <article class="home-piece"><span aria-hidden="true">♝</span><strong>비숍</strong><small>고려 · 승병</small><small>몽골 · 샤먼·책사</small></article>
+                <article class="home-piece"><span aria-hidden="true">♞</span><strong>나이트</strong><small>고려 · 매복 기습대</small><small>몽골 · 기마대</small></article>
+                <article class="home-piece"><span aria-hidden="true">♟</span><strong>폰</strong><small>고려 · 처인부곡민</small><small>몽골 · 병졸</small></article>
+              </div>
             </section>
-
             <section class="home-story-section home-activity-story" aria-labelledby="homeActivityTitle">
               <header class="home-story-heading">
                 <p>활동 기록</p>
@@ -372,12 +378,19 @@
                 <p>교육과 문화, 체스를 연결해 누구나 한 수씩 배울 수 있는 경험을 만듭니다.</p>
               </div>
               <ul class="home-team-list" aria-label="EasyMate 팀원">
-                <li><strong>김예원</strong><span>EasyMate 팀</span></li>
-                <li><strong>성민종</strong><span>EasyMate 팀</span></li>
-                <li><strong>이재현</strong><span>EasyMate 팀</span></li>
+                <li><img src="/assets/team-seong-minjong.jpg" alt="성민종 프로필 사진" width="413" height="531" loading="lazy" decoding="async" /><strong>성민종</strong><span>Founder</span></li>
+                <li><img src="/assets/team-kim-yewon.jpg" alt="김예원 프로필 사진" width="2660" height="3420" loading="lazy" decoding="async" /><strong>김예원</strong><span>Co-founder, CMO</span></li>
+                <li><img src="/assets/team-lee-jaehyun.jpg" alt="이재현 프로필 사진" width="3838" height="5758" loading="lazy" decoding="async" /><strong>이재현</strong><span>CTO</span></li>
               </ul>
             </section>
-          </section>
+
+            <section class="home-closing" aria-labelledby="homeClosingTitle">
+              <div>
+                <h2 id="homeClosingTitle">함께 만들어요</h2>
+                <p>문화제·수업·지역 프로그램 협력 문의를 기다립니다.</p>
+              </div>
+              <a href="mailto:easymate.team@gmail.com">문의하기</a>
+            </section>          </section>
 
           <section class="view" data-view="dashboard" aria-labelledby="matchTitle">
             <div class="view-header">

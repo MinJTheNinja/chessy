@@ -1,5 +1,15 @@
 [
   {
+    "date": "2026-09-25",
+    "scope": "home-page",
+    "macrostructure": "Narrative Workflow",
+    "theme": "custom",
+    "theme_axes": "light / geometric-sans / cool-purple",
+    "vibe": "local history, disciplined learning, human team",
+    "enrichment": "supplied campaign art and team photography",
+    "brief": "EasyMate home UI from supplied v2 mockup with named team roles"
+  },
+  {
     "date": "2026-09-21",
     "scope": "profile-and-settings",
     "macrostructure": "Editorial Profile Ledger",
