@@ -1,5 +1,20 @@
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 · EasyMate app design system */
 :root {
+  --color-home-paper: oklch(97% 0.008 80);
+  --color-home-paper-2: oklch(94% 0.012 80);
+  --color-home-ink: oklch(24% 0.012 25);
+  --color-home-ink-soft: oklch(45% 0.016 70);
+  --color-home-rule: oklch(84% 0.014 80);
+  --color-home-accent: oklch(55% 0.15 300);
+  --color-home-accent-dark: oklch(46% 0.15 300);
+  --color-home-accent-soft: oklch(91% 0.035 300);
+  --color-home-focus: oklch(35% 0.18 300);
+  --color-home-deep: oklch(31% 0.1 300);
+  --color-home-accent-ink: oklch(97% 0.008 80);
+  --font-home-display: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+  --font-home-body: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+  --font-home-symbol: "Segoe UI Symbol", "Noto Sans Symbols 2", serif;
+
   --color-paper: oklch(97% 0.008 85);
   --color-paper-2: oklch(94% 0.012 85);
   --color-ink: oklch(25% 0.042 250);
