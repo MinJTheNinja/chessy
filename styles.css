@@ -26,7 +26,13 @@
   --home-accent-ink: oklch(97% 0.006 60);
   --home-display: "Pretendard", "Noto Sans KR", sans-serif;
   --home-body: "Noto Sans KR", "Pretendard", sans-serif;
-  --home-symbol: "Segoe UI Symbol", "Noto Sans Symbols 2", serif;  --em-green: #2f6b62;
+  --home-symbol: "Segoe UI Symbol", "Noto Sans Symbols 2", serif;
+  --home-team-section-block: 88px;
+  --home-team-section-inline: 48px;
+  --home-team-column-gap: 56px;
+  --home-team-member-gap: 28px;
+  --home-team-card-top: 16px;
+  --em-green: #2f6b62;
   --em-green-dark: #244e48;
   --em-blue: #3e5c94;
   --typewriter-ink: #000000;
@@ -13634,42 +13640,52 @@ body.is-signed-in .view[data-view="overview"] {
 .home-team-story {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-xl);
+  gap: var(--home-team-column-gap);
+  padding: var(--home-team-section-block) var(--home-team-section-inline);
+  align-items: start;
   background: var(--home-paper-2);
 }
 
 .home-team-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-lg);
-  align-self: end;
+  gap: var(--home-team-member-gap);
+  align-self: start;
 }
 
 .home-team-list li {
   display: grid;
   gap: var(--space-2xs);
   min-width: 0;
-  padding-top: var(--space-sm);
+  padding-top: var(--home-team-card-top);
   border-top: 1px solid var(--home-rule);
 }
 
-.home-team-list img {
+.home-team-photo {
+  display: grid;
+  width: 100%;
+  margin: 0 0 var(--home-team-card-top);
+  aspect-ratio: 2 / 3;
+  place-items: center;
+  overflow: hidden;
+  background: var(--home-paper);
+}
+
+.home-team-photo img {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 5;
-  margin-bottom: var(--space-sm);
-  object-fit: cover;
-  object-position: center 28%;
-  background: var(--home-paper-3);
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
 }
 
 .home-team-list strong {
-  font-size: var(--text-lg);
+  font-size: 19px;
 }
 
 .home-team-list span {
   color: var(--home-accent-dark);
-  font-size: var(--text-sm);
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -13838,7 +13854,18 @@ body.is-signed-in .view[data-view="overview"] {
   }
 
   .home-team-story {
-    grid-template-columns: minmax(16rem, 0.72fr) minmax(0, 1.28fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  }
+}
+
+@media (max-width: 39.999rem) {
+  .home-team-story {
+    gap: var(--space-xl);
+    padding: var(--space-2xl) var(--space-md);
+  }
+
+  .home-team-photo {
+    width: min(100%, 18rem);
   }
 }
 
