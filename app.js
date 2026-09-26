@@ -134,6 +134,9 @@ const loginButton = document.querySelector("#loginButton");
 const activeMatchesCount = document.querySelector("#activeMatchesCount");
 const subtitleSessionsCount = document.querySelector("#subtitleSessionsCount");
 const welcomeName = document.querySelector("#welcomeName");
+document.querySelector("#homeStatusClose")?.addEventListener("click", () => {
+  document.querySelector("#homeStatusBanner")?.setAttribute("hidden", "");
+});
 const dashboardHeroAvatar = document.querySelector("#dashboardHeroAvatar");
 const dashboardStreak = document.querySelector("#dashboardStreak");
 const dashboardEasyElo = document.querySelector("#dashboardEasyElo");
@@ -713,6 +716,13 @@ Object.assign(englishText, {
   "상점": "Shop",
   "나": "Profile",
   "환영합니다,": "Welcome,",
+  "이어서 즐겨요": "Pick up where you left off",
+  "내 현황": "My stats",
+  "내 현황 닫기": "Dismiss my stats",
+  "일 연속": " day streak",
+  "대국": "games",
+  "퍼즐": "puzzles",
+  "배지": "badges",
   "님!": "!",
   "오늘의 퍼즐: 성문 뒤의 함정": "Today's puzzle: Trap Behind the Gate",
   "성문 뒤의 함정": "Trap Behind the Gate",
@@ -965,7 +975,6 @@ function syncLocalizedControls() {
   setText(document.querySelector("#entryIdentityEyebrow"), korean ? "누구나 쉽게 체스, 더 가까이 지역 이야기" : "Chess for everyone, local stories to discover");
   setText(document.querySelector("#entryIdentityTitleFirst"), korean ? "체스를 쉽게 배우고," : "Learn chess with ease.");
   setText(document.querySelector("#entryIdentityTitleSecond"), korean ? "우리 고장의 이야기를 만나다." : "Discover the stories of our communities.");
-  setText(document.querySelector("#entryIdentityDescription"), korean ? "처음 배우는 한 수부터 함께 즐기는 대국까지, 이지메이트가 체스를 쉽게 안내합니다. 처인성 전투를 담은 체스판 위에서 지역의 역사와 문화도 새롭게 발견해보세요." : "From your first move to a game with friends, EasyMate makes learning chess approachable. Discover local history and culture on a chessboard inspired by the Battle of Cheoinseong.");
   if (!currentUser) {
     setText(loginButton, korean ? "로그인" : "Login");
     setText(signupButton, korean ? "새 계정" : "New account");

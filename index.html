@@ -61,8 +61,8 @@
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
     </noscript>
     <link rel="stylesheet" href="/tokens.css?v=20260925-home-v3" />
-    <link rel="stylesheet" href="/styles.css?v=20260925-home-v3" />
-    <script src="/app.js?v=20260921-forum" defer></script>
+    <link rel="stylesheet" href="/styles.css?v=20260926-landing-v6" />
+    <script src="/app.js?v=20260926-landing-v6" defer></script>
   </head>
   <body>
     <header class="site-header">
@@ -119,6 +119,23 @@
       </div>
     </header>
 
+    <section class="home-status-banner" id="homeStatusBanner" aria-label="내 현황">
+      <div class="home-status-content">
+        <strong>환영합니다, <span id="welcomeName">Player</span>님!</strong>
+        <span class="home-status-separator" aria-hidden="true">·</span>
+        <span><b id="dashboardEasyElo">1000</b> Easy Elo</span>
+        <span class="home-status-separator" aria-hidden="true">·</span>
+        <span><b id="dashboardStreak">0</b>일 연속</span>
+        <span class="home-status-separator" aria-hidden="true">·</span>
+        <span>대국 <b id="homeMatchCount">—</b></span>
+        <span class="home-status-separator" aria-hidden="true">·</span>
+        <span>퍼즐 <b id="homePuzzleCount">0</b></span>
+        <span class="home-status-separator" aria-hidden="true">·</span>
+        <span>배지 <b id="homeBadgeCount">—</b></span>
+      </div>
+      <button class="home-status-close" id="homeStatusClose" type="button" aria-label="내 현황 닫기">×</button>
+    </section>
+
     <main>
       <section class="entry" id="home" aria-label="EasyMate 시작">
         <div class="entry-visual">
@@ -128,7 +145,6 @@
             </a>
             <p class="entry-identity-eyebrow" id="entryIdentityEyebrow">누구나 쉽게 체스, 더 가까이 지역 이야기</p>
             <h1 class="entry-identity-title"><span id="entryIdentityTitleFirst">EasyMate에서 체스를 쉽게 배우고,</span><br /><span id="entryIdentityTitleSecond">우리 고장의 이야기를 만나다.</span></h1>
-            <p class="entry-identity-description" id="entryIdentityDescription">처음 배우는 한 수부터 함께 즐기는 대국까지, 이지메이트가 체스를 쉽게 안내합니다. 처인성 전투를 담은 체스판 위에서 지역의 역사와 문화도 새롭게 발견해보세요.</p>
             <div class="entry-actions">
               <button class="button primary" id="mainAccountButton" type="button">계정으로 시작</button>
               <button class="button secondary" id="mainTutorialButton" type="button">훈련장으로 가기</button>
@@ -216,11 +232,12 @@
                 <span class="home-brand-art-tile" aria-hidden="true"></span>
                 <img src="/assets/cheoinseong/illustrations/scene-2-cavalry-encircle.png" alt="처인성을 둘러싼 기마대 장면" width="1672" height="941" decoding="async" />
               </figure>
-            </section>            <div class="home-dashboard">
+            </section>
+            <div class="home-dashboard">
               <div class="home-main-column">
                 <section class="home-match-intro" aria-labelledby="dashboardTitle">
                   <div class="home-overview-head">
-                    <div><h2 id="dashboardTitle">환영합니다, <span id="welcomeName">Player</span>님!</h2><p class="screen-description">오늘도 한 수씩, 함께 성장해요.</p></div>
+                    <div><h2 id="dashboardTitle">이어서 즐겨요</h2><p class="screen-description">오늘도 한 수씩, 함께 성장해요.</p></div>
 <div class="home-start-actions"><button class="button primary" type="button" id="homeContinueTraining">훈련 이어하기</button><button class="button secondary" type="button" data-view-link="dashboard">대국 시작</button></div>
                     <div class="home-theme-control">
                       <button class="home-theme-toggle" id="homeThemeToggle" type="button" aria-label="보드 테마 선택" aria-expanded="false" aria-controls="homeThemePopover">
@@ -255,19 +272,6 @@
 <button class="button primary" id="homeDailyPuzzleButton" type="button">풀어보기</button>
                   </div>
                 <div class="home-puzzle-preview" role="img" aria-label="성문 뒤의 함정 시작 배치: 백 차례, e1 룩으로 메이트를 찾으세요."><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true">♚</span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true">♟</span><span class="preview-square dark" aria-hidden="true">♟</span><span class="preview-square light" aria-hidden="true">♟</span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true">♞</span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true">♙</span><span class="preview-square light" aria-hidden="true">♙</span><span class="preview-square dark" aria-hidden="true">♙</span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true"></span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true">♖</span><span class="preview-square light" aria-hidden="true"></span><span class="preview-square dark" aria-hidden="true">♔</span><span class="preview-square light" aria-hidden="true"></span></div></article>
-
-                <section class="home-elo-strip" aria-label="내 학습 기록">
-                  <div class="home-elo">
-                    <strong id="dashboardEasyElo">1000</strong>
-                    <span>Easy Elo</span>
-                  </div>
-                  <div class="home-stat-inline">
-                    <span><b id="dashboardStreak">0</b>일 연속</span>
-                    <span><b id="homeMatchCount">—</b> 대국</span>
-                    <span><b id="homePuzzleCount">0</b> 퍼즐</span>
-                    <span><b id="homeBadgeCount">—</b> 배지</span>
-                  </div>
-                </section>
 
                 <section class="home-insight-panel" aria-label="리더보드와 오늘의 퀘스트">
 
@@ -390,7 +394,12 @@
                 <p>문화제·수업·지역 프로그램 협력 문의를 기다립니다.</p>
               </div>
               <a href="mailto:easymate.team@gmail.com">문의하기</a>
-            </section>          </section>
+              <div class="home-closing-footer">
+                <img src="/assets/easymate-logo-mark-v2.png" alt="EasyMate" width="369" height="366" loading="lazy" decoding="async" />
+                <small>© 2026 EasyMate</small>
+              </div>
+            </section>
+          </section>
 
           <section class="view" data-view="dashboard" aria-labelledby="matchTitle">
             <div class="view-header">
@@ -681,7 +690,9 @@
           <section class="view how-to-play-view" data-view="how-to-play" aria-labelledby="howToPlayTitle">
             <div class="view-header">
               <div>
+                <span class="training-kicker">한 수씩 배우기</span>
                 <h2 id="howToPlayTitle">훈련장</h2>
+                <p class="training-intro">기본기부터 처인성 캠페인과 연습까지, 내 속도에 맞춰 이어가요.</p>
               </div>
               <button class="button primary" id="tutorialLoginButton" type="button">로그인 화면으로 가기</button>
             </div>
@@ -740,7 +751,10 @@
           <section class="view" data-view="forum" aria-labelledby="forumTitle">
             <div class="forum-board">
               <header class="forum-heading">
-                <h2 id="forumTitle">게시판</h2>
+                <div>
+                  <span class="forum-kicker">함께 나누기</span>
+                  <h2 id="forumTitle">게시판</h2>
+                </div>
                 <p>공지, 질문, 수업 자료를 나누는 공간입니다.</p>
               </header>
 

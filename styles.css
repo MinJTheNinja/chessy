@@ -11388,16 +11388,6 @@ body.is-signed-in .match-layout:is([data-state="idle"],[data-state="searching"])
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
-.entry-content .entry-identity-description {
-  max-width: 620px;
-  margin: 0 auto 28px;
-  color: var(--muted);
-  font-size: 1rem;
-  line-height: 1.8;
-  text-align: center;
-  word-break: keep-all;
-  overflow-wrap: anywhere;
-}
 /* Puzzle courses: compact, named stages using the in-game Goryeo artwork. */
 .how-to-play-view[data-training-mode="puzzle"] > .training-summary,
 .how-to-play-view[data-training-mode="cheoinseong"] > .training-summary { display: none; }
@@ -13884,4 +13874,386 @@ body.is-signed-in .view[data-view="overview"] {
     transition-duration: 150ms !important;
     scroll-behavior: auto !important;
   }
+}
+/* Full-width home and the signed-in summary directly below the navigation. */
+.home-status-banner {
+  display: none;
+  position: relative;
+  align-items: center;
+  min-height: 54px;
+  padding: 8px clamp(20px, 4vw, 68px);
+  border-bottom: 1px solid #ddd4ec;
+  background: #f0eafb;
+  color: #251c3e;
+}
+
+body.is-signed-in:not(.show-landing):has(.view[data-view="overview"].active) .home-status-banner:not([hidden]) {
+  display: flex;
+}
+
+.home-status-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  width: min(100%, 1280px);
+  margin-inline: auto;
+  padding-right: 44px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.home-status-content strong,
+.home-status-content b {
+  color: #1f1835;
+}
+
+.home-status-content .home-status-separator {
+  color: #b69bd8;
+}
+
+.home-status-close {
+  position: absolute;
+  right: clamp(20px, 4vw, 68px);
+  top: 50%;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  place-items: center;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: #443459;
+  cursor: pointer;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.home-status-close:hover { color: #7d49aa; }
+.home-status-close:focus-visible { outline: 2px solid #7d49aa; outline-offset: 2px; }
+
+body.is-signed-in .workspace:has(> .view[data-view="overview"].active),
+body.is-signed-in .view[data-view="overview"],
+.view[data-view="overview"] > :is(.home-brand-hero, .home-dashboard, .home-story-section, .home-closing) {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
+
+.home-closing-footer {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: var(--space-lg);
+  padding-top: var(--space-md);
+  border-top: 1px solid color-mix(in srgb, var(--home-deep-text) 25%, transparent);
+  color: var(--home-deep-muted);
+}
+
+.home-closing-footer img {
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.home-closing-footer small { font-size: 0.85rem; }
+
+@media (max-width: 640px) {
+  .home-status-content { gap: 2px 8px; font-size: 0.82rem; }
+  .home-status-content strong { flex-basis: 100%; }
+  .home-status-content .home-status-separator { display: none; }
+}
+/* Training and forum share the full-width editorial language of the home page. */
+.workspace:has(> .view:is([data-view="how-to-play"], [data-view="forum"]).active),
+body.is-signed-in .workspace:has(> .view:is([data-view="how-to-play"], [data-view="forum"]).active) {
+  width: 100%;
+  max-width: none;
+  padding: 0 !important;
+}
+
+body .view[data-view="how-to-play"],
+body .view[data-view="forum"] {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  border-radius: 0;
+  background: var(--home-paper-2) !important;
+  color: var(--home-ink);
+  font-family: var(--home-body);
+}
+
+body .view[data-view="how-to-play"] {
+  --training-accent: var(--home-accent-dark);
+  --training-soft: var(--home-accent-soft);
+  --training-border: var(--home-rule);
+  padding: 0 clamp(20px, 5vw, 80px) clamp(56px, 7vw, 104px);
+}
+
+body .how-to-play-view > .view-header {
+  min-height: 240px;
+  margin: 0 calc(-1 * clamp(20px, 5vw, 80px)) var(--space-xl);
+  padding: clamp(40px, 5vw, 80px) clamp(20px, 5vw, 80px);
+  align-items: end;
+  gap: var(--space-lg);
+  background: var(--home-deep);
+  color: var(--home-deep-text);
+}
+
+.training-kicker,
+.forum-kicker {
+  display: block;
+  margin-bottom: var(--space-xs);
+  color: var(--home-deep-muted);
+  font-family: var(--home-display);
+  font-size: var(--text-sm);
+  font-weight: 800;
+}
+
+body .how-to-play-view > .view-header h2,
+.forum-heading h2 {
+  margin: 0;
+  color: var(--home-deep-text);
+  font-family: var(--home-display);
+  font-size: clamp(2.6rem, 5vw, 4.25rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+}
+
+.training-intro {
+  max-width: 60ch;
+  margin: var(--space-sm) 0 0;
+  color: var(--home-deep-muted);
+  line-height: 1.7;
+}
+
+.how-to-play-view > .view-header .button {
+  min-height: 44px;
+  border-color: var(--home-deep-text) !important;
+  border-radius: var(--radius-input);
+  background: var(--home-deep-text) !important;
+  color: var(--home-deep) !important;
+}
+
+.how-to-play-view .training-resume-card {
+  min-height: 112px;
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--home-rule);
+  border-left: 4px solid var(--home-accent);
+  border-radius: 0;
+  background: var(--home-paper);
+}
+
+.training-resume-copy span,
+.training-section-heading h2,
+.campaign-kicker,
+.campaign-detail-head > div:first-child > span {
+  color: var(--home-accent-dark);
+}
+
+.training-resume-copy strong,
+.fundamentals-copy strong,
+.campaign-season-copy h3,
+.campaign-coming article strong {
+  color: var(--home-ink);
+  font-family: var(--home-display);
+}
+
+.how-to-play-view .training-resume-card .button,
+.how-to-play-view .campaign-season-card > .button {
+  border-color: var(--home-accent-dark) !important;
+  border-radius: var(--radius-input);
+  background: var(--home-accent-dark) !important;
+  color: var(--home-accent-ink) !important;
+}
+
+.training-edition-picker {
+  border-color: var(--home-rule);
+}
+
+.training-edition-picker > span,
+.training-section-heading p,
+.training-inline-progress,
+.fundamentals-copy small,
+.campaign-season-copy p,
+.practice-rush small {
+  color: var(--home-ink-soft);
+}
+
+.training-edition-options button.active,
+.how-to-play-view .training-mode-toggle button.active,
+.how-to-play-view .training-mode-toggle button.active small {
+  color: var(--home-accent-dark);
+}
+
+.how-to-play-view .training-mode-toggle {
+  border-bottom-color: var(--home-rule);
+}
+
+.how-to-play-view .training-mode-toggle button.active {
+  border-bottom-color: var(--home-accent-dark);
+}
+
+.training-inline-progress i,
+.campaign-season-progress i { background: var(--home-paper-3); }
+.training-inline-progress b,
+.campaign-season-progress b { background: var(--home-accent); }
+
+.fundamentals-row,
+.campaign-season-card,
+.campaign-era,
+.campaign-coming article,
+.campaign-scene-list button,
+.practice-lesson-list button,
+.practice-rush,
+.practice-group,
+.campaign-completion {
+  border-color: var(--home-rule);
+  border-radius: 0;
+  background: var(--home-paper);
+}
+
+.fundamentals-row.is-current,
+.campaign-scene-list .is-current button,
+.practice-lesson-list .is-current button {
+  border-color: var(--home-accent);
+  background: var(--home-accent-soft);
+  box-shadow: inset 3px 0 0 var(--home-accent);
+}
+
+.fundamentals-row.is-locked,
+.campaign-scene-list .is-locked button,
+.practice-lesson-list .is-locked button {
+  background: var(--home-paper-2);
+}
+
+.fundamentals-number,
+.puzzle-lesson-number,
+.fundamentals-icon { background: var(--home-paper-3); color: var(--home-ink-soft); }
+.fundamentals-row:is(.is-complete,.is-current) .fundamentals-number,
+.campaign-scene-list li:is(.is-complete,.is-current) .puzzle-lesson-number,
+.practice-lesson-list li:is(.is-complete,.is-current) .puzzle-lesson-number {
+  background: var(--home-accent-dark);
+  color: var(--home-accent-ink);
+}
+
+.fundamentals-action,
+.training-next-link button,
+.campaign-back,
+.campaign-scene-list .puzzle-lesson-status,
+.practice-lesson-list .puzzle-lesson-status,
+.campaign-completion strong {
+  color: var(--home-accent-dark);
+}
+
+.practice-filters button.active { border-color: var(--home-accent-dark); background: var(--home-accent-dark); }
+.practice-rush > span { background: var(--home-accent-soft); color: var(--home-accent-dark); }
+.practice-group[open] summary { border-bottom-color: var(--home-rule); }
+.how-to-play-shell { border: 1px solid var(--home-rule); background: var(--home-paper); }
+
+body .view[data-view="forum"] { padding: 0; }
+.forum-board {
+  --color-paper: var(--home-paper);
+  --color-paper-2: var(--home-paper-2);
+  --color-ink: var(--home-ink);
+  --color-ink-soft: var(--home-ink-soft);
+  --color-rule: var(--home-rule);
+  --color-accent: var(--home-accent-dark);
+  --color-accent-soft: var(--home-accent-soft);
+  --color-focus: var(--home-focus);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 clamp(20px, 5vw, 80px) clamp(56px, 7vw, 104px);
+}
+
+.forum-heading {
+  min-height: 240px;
+  margin-inline: calc(-1 * clamp(20px, 5vw, 80px));
+  padding: clamp(40px, 5vw, 80px) clamp(20px, 5vw, 80px);
+  border: 0;
+  background: var(--home-deep);
+  color: var(--home-deep-text);
+}
+
+.forum-heading p {
+  color: var(--home-deep-muted);
+  line-height: 1.7;
+}
+
+.forum-tabs {
+  gap: var(--space-lg);
+  padding-top: var(--space-sm);
+  border-bottom-color: var(--home-rule);
+}
+
+.forum-tabs button.active,
+.forum-tabs button:hover {
+  border-bottom-color: var(--home-accent-dark);
+  color: var(--home-accent-dark);
+}
+
+.forum-toolbar { padding-top: var(--space-lg); padding-bottom: var(--space-md); }
+.forum-search input { border-radius: var(--radius-input); background: var(--home-paper); }
+.resource-primary,
+.forum-toolbar > .button.primary,
+.forum-composer .button.primary {
+  border-color: var(--home-accent-dark) !important;
+  background: var(--home-accent-dark) !important;
+  color: var(--home-accent-ink) !important;
+}
+
+.forum-list { border-top: 1px solid var(--home-rule); }
+.forum-post {
+  padding-inline: var(--space-md);
+  border-bottom-color: var(--home-rule) !important;
+  background: var(--home-paper);
+}
+.forum-post:has(.forum-post-pin:not(:empty)) { background: var(--home-accent-soft); }
+.forum-post h4 { color: var(--home-ink); font-family: var(--home-display); }
+.forum-post-tag,
+.forum-post-tag.question,
+.forum-post-tag.free { color: var(--home-accent-dark); }
+.forum-composer,
+.resource-card,
+.resource-filters,
+.resource-upload form,
+.resource-upload-tips,
+.resource-detail-comments { border-color: var(--home-rule); border-radius: 0; background: var(--home-paper); }
+.resource-filters { padding: var(--space-md); border: 1px solid var(--home-rule); }
+.resource-card:hover { border-color: var(--home-accent-dark); }
+.resource-preview { background: var(--home-accent-soft); }
+.resource-upload-tips h3 { color: var(--home-accent-dark); }
+
+body .view[data-view="how-to-play"] :is(button,a,input,select):focus-visible,
+.forum-board :is(button,a,input,select,textarea):focus-visible {
+  outline: 2px solid var(--home-focus);
+  outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  body .how-to-play-view > .view-header,
+  .forum-heading {
+    min-height: 0;
+    padding-block: var(--space-2xl);
+  }
+  body .how-to-play-view > .view-header { align-items: flex-start; flex-direction: column; }
+  .forum-heading { grid-template-columns: 1fr; gap: var(--space-sm); }
+  .forum-heading p { justify-self: start; margin: 0; }
+  .forum-tabs { gap: var(--space-md); overflow-x: auto; }
+  .forum-post { padding-inline: var(--space-sm); }
+}
+
+@media (max-width: 520px) {
+  body .how-to-play-view > .view-header h2,
+  .forum-heading h2 { font-size: 2.75rem; }
+  .forum-toolbar { grid-template-columns: minmax(0, 1fr) auto; }
+  .forum-toolbar > .button { min-width: 100px; padding-inline: var(--space-sm); }
+  .training-resume-card { padding: var(--space-md); }
 }
