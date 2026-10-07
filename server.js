@@ -1593,6 +1593,7 @@ const achievementArtwork = {
 };
 
 const cheoinseongPuzzleIds = ["cheoin-1", "cheoin-2", "cheoin-3", "cheoin-4", "cheoin-5"];
+const poeunPuzzleIds = ["poeun-oosang", "poeun-hayeoga", "poeun-danshim", "poeun-seonjukgyo", "poeun-cheonjang"];
 const goryeoPuzzleTiers = [
   ["s1", "s2", "s3"],
   ["m1", "m2", "m3", "h1", "h2"],
@@ -1669,7 +1670,14 @@ function normalizeTraining(training = {}) {
       : legacyCompletion
         ? [1]
         : [],
-    completedPuzzles: Array.isArray(training.completedPuzzles) ? training.completedPuzzles : [],
+    completedPuzzles: Array.isArray(training.completedPuzzles)
+      ? training.completedPuzzles.map((puzzle) => {
+          if (!puzzle || typeof puzzle !== "object") return puzzle;
+          const campaign_id = poeunPuzzleIds.includes(puzzle.id) ? "poeun"
+            : cheoinseongPuzzleIds.includes(puzzle.id) ? "cheoinseong" : puzzle.campaign_id;
+          return campaign_id ? { ...puzzle, campaign_id } : puzzle;
+        })
+      : [],
     reviewQuizzes: Array.isArray(training.reviewQuizzes) ? training.reviewQuizzes : [],
   };
 }
@@ -3218,11 +3226,12 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     const body = await readBody(req);
     const puzzleId = String(body.puzzleId || "goryeo-vs-mongol").slice(0, 80);
     const cheoinseongStageIndex = cheoinseongPuzzleIds.indexOf(puzzleId);
-    if (cheoinseongStageIndex < 0 && !state.puzzleUnlocked) {
+    const poeunStageIndex = poeunPuzzleIds.indexOf(puzzleId);
+    if (poeunStageIndex < 0 && !state.puzzleUnlocked) {
       sendJson(res, 409, { error: "Finish every training module before opening puzzles.", state });
       return true;
     }
-    if (cheoinseongStageIndex < 0) {
+    if (cheoinseongStageIndex < 0 && poeunStageIndex < 0) {
       const basePuzzleId = baseGoryeoPuzzleId(puzzleId);
       const tierIndex = goryeoPuzzleTiers.findIndex((tier) => tier.includes(basePuzzleId));
       if (tierIndex > 0) {
@@ -3252,6 +3261,7 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     }
     const puzzle = {
       id: puzzleId,
+      ...(poeunStageIndex >= 0 ? { campaign_id: "poeun" } : cheoinseongStageIndex >= 0 ? { campaign_id: "cheoinseong" } : {}),
       stars: Math.max(0, Math.min(3, Number(body.stars || 0))),
       module: state.nextModule?.id || trainingModules.at(-1).id,
       completedAt: new Date().toISOString(),
@@ -3263,7 +3273,7 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
       if (Number.isFinite(Number(body[key]))) puzzle[key] = Math.max(0, Number(body[key]));
     });
     const existingIndex = user.training.completedPuzzles.findIndex((item) => item.id === puzzleId);
-    const knownPuzzle = cheoinseongPuzzleIds.includes(puzzleId) || goryeoPuzzleTiers.flat().includes(baseGoryeoPuzzleId(puzzleId)) && /^(?:[smha][1-3](?:-v[2-6])?|gate[2-5])$/.test(puzzleId);
+    const knownPuzzle = cheoinseongPuzzleIds.includes(puzzleId) || poeunPuzzleIds.includes(puzzleId) || goryeoPuzzleTiers.flat().includes(baseGoryeoPuzzleId(puzzleId)) && /^(?:[smha][1-3](?:-v[2-6])?|gate[2-5])$/.test(puzzleId);
     if (existingIndex < 0 && knownPuzzle) addEasyElo(user, 10);
     if (existingIndex >= 0) user.training.completedPuzzles[existingIndex] = { ...user.training.completedPuzzles[existingIndex], ...puzzle };
     else user.training.completedPuzzles.push(puzzle);
