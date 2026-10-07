@@ -4356,31 +4356,34 @@ function serveStatic(req, res, pathname) {
     try {
       let cached = staticTextCache.get(filePath);
       if (!cached || cached.etag !== etag) {
-        // Share compression work across simultaneous first-page requests.
-        cached = { etag };
-        cached.ready = (async () => {
-          const data = await fs.promises.readFile(filePath);
-          const [gzip, brotli] = await Promise.all([
-            gzipAsync(data, { level: zlib.constants.Z_BEST_SPEED }),
-            brotliAsync(data, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 4 } }),
-          ]);
-          return { data, gzip, brotli };
-        })();
+        cached = {
+          etag,
+          ready: fs.promises.readFile(filePath),
+          encodings: new Map(),
+        };
         staticTextCache.set(filePath, cached);
         cached.ready.catch(() => {
           if (staticTextCache.get(filePath) === cached) staticTextCache.delete(filePath);
         });
       }
 
-      const content = await cached.ready;
+      const data = await cached.ready;
       const accepted = String(req.headers["accept-encoding"] || "");
-      let body = content.data;
-      if (/\bbr\b/i.test(accepted)) {
-        body = content.brotli;
-        responseHeaders["content-encoding"] = "br";
-      } else if (/\bgzip\b/i.test(accepted)) {
-        body = content.gzip;
-        responseHeaders["content-encoding"] = "gzip";
+      const encoding = /\bbr\b/i.test(accepted) ? "br" : /\bgzip\b/i.test(accepted) ? "gzip" : null;
+      let body = data;
+      if (encoding) {
+        let compressed = cached.encodings.get(encoding);
+        if (!compressed) {
+          compressed = encoding === "br"
+            ? brotliAsync(data, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 4 } })
+            : gzipAsync(data, { level: zlib.constants.Z_BEST_SPEED });
+          cached.encodings.set(encoding, compressed);
+          compressed.catch(() => {
+            if (cached.encodings.get(encoding) === compressed) cached.encodings.delete(encoding);
+          });
+        }
+        body = await compressed;
+        responseHeaders["content-encoding"] = encoding;
       }
       responseHeaders["content-length"] = body.length;
       res.writeHead(200, responseHeaders);
