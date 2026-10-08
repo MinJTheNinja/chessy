@@ -4,13 +4,22 @@ const { chromium } = require(process.env.PLAYWRIGHT_CORE_PATH || 'playwright-cor
 
 const root = path.resolve(__dirname, '..');
 const asset = name => `data:image/png;base64,${fs.readFileSync(path.join(root, 'assets/poeun', name)).toString('base64')}`;
-const scenes = [
+const english = process.argv.includes('--english');
+const koreanScenes = [
   ['scene-osang.png', '포은 정몽주는 누구?', '고려 말의 학자이자 외교관, 포은 정몽주를 만나볼까요?'],
   ['scene-hayeoga.png', '한 수의 선택', '새 나라로 함께 가자는 제안 앞에서, 고려를 향한 마음을 지켰다고 전해집니다.'],
   ['scene-danshim.png', '단심가', '“이 몸이 죽고 죽어”로 시작하는 답가. 변치 않는 마음을 노래합니다.'],
   ['scene-cheonjang.png', '바람이 바꾼 길', '1406년, 영천으로 가던 명정이 바람에 날려 용인에 떨어졌다는 이야기가 있어요.'],
   ['scene-seonjukgyo.png', '그래서 용인에서!', '정몽주의 묘가 있는 용인 모현에서, 포은문화제로 그를 기억합니다.'],
-].map(([image, title, subtitle]) => ({ image: asset(image), title, subtitle }));
+];
+const englishScenes = [
+  ['scene-osang.png', 'Who was Poeun?', 'Meet Jeong Mong-ju, a scholar and diplomat of late Goryeo.'],
+  ['scene-hayeoga.png', 'A choice', 'Tradition says he held to Goryeo despite an invitation to join a new dynasty.'],
+  ['scene-danshim.png', 'Dansimga', 'His answering poem speaks of an unwavering heart.'],
+  ['scene-cheonjang.png', 'A changed path', 'In 1406, a funeral banner is said to have blown down in Yongin.'],
+  ['scene-seonjukgyo.png', 'Why Yongin?', 'His tomb is in Mohyeon, where the Poeun Festival remembers him.'],
+];
+const scenes = (english ? englishScenes : koreanScenes).map(([image, title, subtitle]) => ({ image: asset(image), title, subtitle }));
 
 (async () => {
   const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH || undefined, args: ['--no-sandbox'] });
@@ -75,6 +84,6 @@ const scenes = [
     }, { scenes, mascot: asset('dansimi.png') });
     await Promise.race([renderPromise, new Promise((_, reject) => setTimeout(() => reject(new Error('render did not complete')), 50000))]);
     const download = await downloadPromise;
-    await download.saveAs(path.join(root, 'assets/poeun/poeun-intro.webm'));
+    await download.saveAs(path.join(root, `assets/poeun/poeun-intro${english ? '.en' : ''}.webm`));
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

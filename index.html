@@ -63,9 +63,10 @@
     <link rel="stylesheet" href="/tokens.css?v=20260925-home-v3" />
     <link rel="stylesheet" href="/styles.css?v=20261008-worksheets" />
     <link rel="stylesheet" href="/assets/poeun/poeun.css?v=20261008-scene-narration" />
+    <script src="/assets/i18n/en-supplement.js?v=20261008" defer></script>
     <script src="/assets/poeun/stations.js?v=20261008" defer></script>
-    <script src="/assets/poeun/station-ui.js?v=20261008-scene-narration" defer></script>
-    <script src="/app.js?v=20261008-copy-cleanup" defer></script>
+    <script src="/assets/poeun/station-ui.js?v=20261008-full-english" defer></script>
+    <script src="/app.js?v=20261008-full-english" defer></script>
   </head>
   <body>
     <header class="site-header">
@@ -84,8 +85,6 @@
       <div class="header-actions">
         <div class="piece-edition-toggle" id="headerPieceEditionToggle" role="group" aria-label="말 디자인 선택">
           <button class="active" type="button" data-piece-edition="cheoinseong">처인성</button>
-          <button type="button" data-piece-edition="poeun">포은</button>
-          <button type="button" data-piece-edition="beta">Beta</button>
         </div>
         <div class="header-language" id="headerLanguage" translate="no">
                     <select id="languageSelect" aria-label="화면 언어" hidden>
@@ -211,10 +210,6 @@
             <button class="theme-tile cheoin-theme active" type="button" data-piece-edition="cheoinseong">
               <span>처인성</span>
             </button>
-            <button class="theme-tile poeun-theme" type="button" data-piece-edition="poeun"><span>포은</span></button>
-            <button class="theme-tile beta-theme" type="button" data-piece-edition="beta">
-              <span>Beta</span>
-            </button>
             <button class="theme-tile coming-soon" type="button" disabled>
               <span>Coming soon</span>
             </button>
@@ -258,8 +253,6 @@
                           <div class="home-theme-list" role="group" aria-label="보드 테마 선택">
                             <button type="button" data-piece-edition="original"><b>오리지널</b><small>기본 체스판</small></button>
                             <button type="button" data-piece-edition="cheoinseong"><b>처인성</b><small>EasyMate &amp; 용인문화원</small></button>
-                            <button type="button" data-piece-edition="poeun"><b>포은</b><small>단심이의 체스 이야기</small></button>
-                            <button type="button" data-piece-edition="beta"><b>Beta</b><small>한국 테마 체스</small></button>
                           </div>
                         </section>
                       </div>
@@ -1048,7 +1041,6 @@
                 <button class="profile-settings-back" id="closeProfileSettings" type="button">← 프로필</button>
                 <header class="profile-settings-header">
                   <h3 id="profileSettingsTitle">설정</h3>
-                  <p>바꾸면 바로 적용돼요.</p>
                 </header>
                 <div class="settings-grid profile-settings-grid">
                   <article class="settings-card profile-board-settings">
@@ -1058,8 +1050,6 @@
                       <div class="profile-theme-list" role="group" aria-label="보드 테마 선택">
                         <button type="button" role="radio" aria-checked="false" data-piece-edition="original"><i aria-hidden="true"></i><span class="profile-theme-preview original" aria-hidden="true">♞</span><span><b>오리지널</b><small>기본 체스판</small></span></button>
                         <button type="button" role="radio" aria-checked="true" data-piece-edition="cheoinseong"><i aria-hidden="true"></i><span class="profile-theme-preview cheoinseong" aria-hidden="true">♟ ♟</span><span><b>고려-몽골</b><small>EasyMate &amp; 용인문화원</small></span></button>
-                        <button type="button" role="radio" aria-checked="false" data-piece-edition="poeun"><i aria-hidden="true"></i><span class="profile-theme-preview poeun" aria-hidden="true">♜</span><span><b>포은</b><small>단심이의 체스 이야기</small></span></button>
-                        <button type="button" role="radio" aria-checked="false" data-piece-edition="beta"><i aria-hidden="true"></i><span class="profile-theme-preview beta" aria-hidden="true">♛</span><span><b>Beta</b><small>한국 테마 체스</small></span></button>
                       </div>
                     </div>
                   </article>

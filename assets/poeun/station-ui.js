@@ -1,11 +1,12 @@
 (function () {
   let disposeCurrent = () => {};
   const safe = (v) => String(v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  function mount(container, station, {onComplete = () => {}, onBack = () => {}, onNext = () => {}, completed = false, isLast = false} = {}) {
+  function mount(container, station, {onComplete = () => {}, onBack = () => {}, onNext = () => {}, translate = (value) => value, completed = false, isLast = false} = {}) {
     disposeCurrent();
     let disposed = false;
     let timer = 0;
     disposeCurrent = () => { disposed = true; clearTimeout(timer); };
+    const story = translate(station.story);
     const virtues = station.virtues ? `<div class="poeun-virtues" aria-label="기물과 덕목">${station.virtues.map(([glyph,piece,virtue]) => `<div class="poeun-virtue"><span aria-hidden="true">${glyph}</span><strong>${piece}</strong><small>${virtue}</small></div>`).join("")}</div>` : "";
     const glyphs = ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"];
     const board = `<figure class="poeun-board-figure"><div class="poeun-mini-board" role="img" aria-label="채워진 글리프로 표시한 여섯 종류의 체스 기물">${Array.from({length:64}, (_,i) => `<span class="${(Math.floor(i/8)+i%8)%2 ? "dark" : "light"}" aria-hidden="true">${i < 8 ? glyphs[i] : i < 16 ? "♟" : ""}</span>`).join("")}</div><figcaption>${safe(station.caption)}</figcaption></figure>`;
@@ -22,11 +23,11 @@
     const bubble = container.querySelector(".poeun-bubble-text");
     const afterStory = container.querySelector(".poeun-after-story");
     const skip = container.querySelector(".poeun-skip");
-    const sentences = station.story.match(/[^.!?]+[.!?]?/g)?.map(part => part.trim()).filter(Boolean) || [station.story];
+    const sentences = story.match(/[^.!?]+[.!?]?/g)?.map(part => part.trim()).filter(Boolean) || [story];
     function revealQuestion() {
       if (disposed || !afterStory.hidden) return;
       clearTimeout(timer);
-      bubble.textContent = station.story;
+      bubble.textContent = story;
       container.querySelector(".poeun-story-card").classList.add("is-finished");
       afterStory.hidden = false;
       skip.hidden = true;
@@ -58,7 +59,7 @@
       container.querySelectorAll("[data-choice]").forEach(item => { item.classList.toggle("is-chosen", item === button); item.setAttribute("aria-pressed", String(item === button)); });
       const result = container.querySelector(".poeun-choice-result");
       result.hidden = false;
-      result.querySelector("p").textContent = option.feedback;
+      result.querySelector("p").textContent = translate(option.feedback);
       if (!completed) { completed = true; onComplete(station.slug); }
       result.scrollIntoView({behavior:"smooth",block:"nearest"});
     }));

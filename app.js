@@ -853,6 +853,7 @@ const screenRefreshCopy = {
 };
 Object.assign(screenRefreshCopy, { "체스 기초": "Chess basics" });
 Object.assign(englishText, screenRefreshCopy);
+Object.assign(englishText, globalThis.EasyMateEnglishSupplement || {});
 Object.entries(screenRefreshCopy).forEach(([ko, en]) => { koreanText[en] = ko; });
 // Korean-first copy must also translate back after an English round trip.
 Object.entries(englishText).forEach(([korean, english]) => {
@@ -1066,7 +1067,7 @@ const cheoinseongPieceAssets = {
 };
 
 function normalizePieceEdition(edition) {
-  return Object.prototype.hasOwnProperty.call(pieceEditionNames, edition) ? edition : "cheoinseong";
+  return edition === "original" ? "original" : "cheoinseong";
 }
 
 function betaPieceSvg(pieceCode) {
@@ -2684,12 +2685,16 @@ function hidePoeunPanels() {
 function renderPoeunPath() {
   if (!poeunPathList) return;
   const completed = completedPoeunIds();
-  poeunPathList.innerHTML = `<header class="poeun-path-heading poeun-hero"><div class="poeun-intro-film"><video class="poeun-intro-video" controls playsinline preload="metadata" poster="/assets/poeun/scene-osang.png" aria-label="포은 정몽주와 용인 이야기, 36초 만화 영상"><source src="/assets/poeun/poeun-intro.webm" type="video/webm" /><track kind="captions" src="/assets/poeun/poeun-intro.ko.vtt" srclang="ko" label="한국어" />영상을 재생할 수 없습니다.</video></div><div class="poeun-hero-copy"><h2 class="poeun-hero-title">포은문화제 · 단심이의 체스 이야기</h2><div class="poeun-hero-meta"><span class="poeun-progress">${completed.size} / ${poeunStages.length} 완료</span></div><button type="button" class="poeun-picker-back">← 캠페인 선택</button></div></header><ol class="poeun-path-nodes"></ol>`;
+  const introFilmSource = currentInterfaceLanguage() === "Korean" ? "/assets/poeun/poeun-intro.webm" : "/assets/poeun/poeun-intro.en.webm";
+  poeunPathList.innerHTML = `<header class="poeun-path-heading poeun-hero"><div class="poeun-intro-film"><video class="poeun-intro-video" controls playsinline preload="metadata" poster="/assets/poeun/scene-osang.png" aria-label="포은 정몽주와 용인 이야기, 36초 만화 영상"><source src="${introFilmSource}" type="video/webm" /><track kind="captions" src="/assets/poeun/poeun-intro.ko.vtt" srclang="ko" label="한국어" /><track kind="subtitles" src="/assets/poeun/poeun-intro.en.vtt" srclang="en" label="English" />영상을 재생할 수 없습니다.</video></div><div class="poeun-hero-copy"><h2 class="poeun-hero-title">포은문화제 · 단심이의 체스 이야기</h2><div class="poeun-hero-meta"><span class="poeun-progress">${completed.size} / ${poeunStages.length} ${translateCopy("완료")}</span></div><button type="button" class="poeun-picker-back">← 캠페인 선택</button></div></header><ol class="poeun-path-nodes"></ol>`;
+  const introVideo = poeunPathList.querySelector(".poeun-intro-video");
+  const subtitleTrack = introVideo?.querySelector(`track[srclang="${currentInterfaceLanguage() === "Korean" ? "ko" : "en"}"]`);
+  if (subtitleTrack) subtitleTrack.default = true;
   poeunPathList.querySelector(".poeun-picker-back").onclick = showCampaignPicker;
   const nodes = poeunPathList.querySelector(".poeun-path-nodes");
   poeunStages.forEach((stage, index) => {
     const row = document.createElement("li");
-    row.innerHTML = `<button type="button" class="poeun-path-node"><span class="number">${String(index + 1).padStart(2, "0")}</span><img class="poeun-path-art" src="/assets/poeun/scene-${stage.slug}.png" alt="" width="120" height="68" loading="lazy" /><span><strong>${stage.title}</strong><small>${stage.concept}</small></span><span class="poeun-path-tail">${completed.has(stage.slug) ? "✓ 완료 · 다시 보기" : "시작 →"}</span></button>`;
+    row.innerHTML = `<button type="button" class="poeun-path-node"><span class="number">${String(index + 1).padStart(2, "0")}</span><img class="poeun-path-art" src="/assets/poeun/scene-${stage.slug}.png" alt="" width="120" height="68" loading="lazy" /><span><strong>${translateCopy(stage.title)}</strong><small>${translateCopy(stage.concept)}</small></span><span class="poeun-path-tail">${translateCopy(completed.has(stage.slug) ? "✓ 완료 · 다시 보기" : "시작 →")}</span></button>`;
     row.querySelector("button").onclick = () => openPoeunChapter(stage.slug);
     nodes.append(row);
   });
@@ -2780,6 +2785,7 @@ function openPoeunChapter(slug, { updateHash = true } = {}) {
   setActiveTrainingPathMode("poeun");
   markPoeunNavigationActive();
   window.PoeunStationUI.mount(poeunChapter, stage, {
+    translate: translateCopy,
     completed: completedPoeunIds().has(slug),
     signedIn: Boolean(currentUser),
     onComplete: recordPoeunCompletion,
@@ -8158,6 +8164,8 @@ languageSelect?.addEventListener("change", async () => {
     syncOpenTrainingFrameLanguage();
     await refreshTrainingState();
     syncOpenTrainingFrameLanguage();
+    if (poeunChapterOpen && activePoeunSlug) openPoeunChapter(activePoeunSlug, { updateHash: false });
+    else if (poeunPathList && !poeunPathList.hidden) renderPoeunPath();
   }
   resetSubtitlePlaceholders();
   setSttStatus(sttListening);
@@ -8873,15 +8881,15 @@ function renderTrainingControls() {
     button.querySelector(".training-card-next").textContent = `${ko ? "다음" : "Next"}: ${next}`;
     button.querySelector(".training-card-action").textContent = count ? (ko ? "이어가기 →" : "Continue →") : (ko ? "시작하기 →" : "Start →");
   };
-  updateCard(showTutorialGuideButton, basics, 6, state.nextModule?.title || (ko ? "기본기 복습" : "Review fundamentals"));
-  updateCard(showCheoinseongGuideButton, campaign, 10, poeunStages.find((stage) => !completedPoeunIds().has(stage.slug))?.title || (ko ? "처인성" : "Cheoinseong"));
+  updateCard(showTutorialGuideButton, basics, 6, translateCopy(state.nextModule?.title || "기본기 복습"));
+  updateCard(showCheoinseongGuideButton, campaign, 10, translateCopy(poeunStages.find((stage) => !completedPoeunIds().has(stage.slug))?.title || "처인성"));
   updateCard(showPuzzleGuideButton, practice, 11, (ko ? "퍼즐 풀기" : "Solve puzzles"));
   if (trainingContinueButton) {
     const next = state.nextModule;
     const nextPractice = puzzlePathStages.find((stage) => !stage.series && canOpenPuzzleStage(stage, completed) && !completed.has(stage.id));
     const nextPoeun = poeunStages.find((stage) => !completedPoeunIds().has(stage.slug));
     const action = next ? () => openTrainingModule(next.id) : nextPractice ? () => openPuzzleStage(nextPractice, puzzlePathStages.indexOf(nextPractice)) : nextPoeun ? () => openPoeunChapter(nextPoeun.slug) : () => showTrainingModuleHome();
-    const title = next ? next.title : nextPractice ? nextPractice.ko : nextPoeun ? nextPoeun.title : "기본기 복습";
+    const title = translateCopy(next ? next.title : nextPractice ? nextPractice.ko : nextPoeun ? nextPoeun.title : "기본기 복습");
     trainingContinueButton.querySelector("strong").textContent = `${ko ? "다음" : "Next"}: ${title} ▶`;
     trainingContinueButton.onclick = action;
   }
