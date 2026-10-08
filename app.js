@@ -215,9 +215,6 @@ const resourceUploadForm = document.querySelector("#resourceUploadForm");
 const resourceFileInput = document.querySelector("#resourceFileInput");
 const resourceDropzone = document.querySelector("#resourceDropzone");
 const resourceFileRow = document.querySelector("#resourceFileRow");
-const resourceFileName = document.querySelector("#resourceFileName");
-const resourceFileMeta = document.querySelector("#resourceFileMeta");
-const removeResourceFileButton = document.querySelector("#removeResourceFile");
 const resourceTitleInput = document.querySelector("#resourceTitleInput");
 const resourceDescriptionInput = document.querySelector("#resourceDescriptionInput");
 const shopInterestStatus = document.querySelector("#shopInterestStatus");
@@ -1494,10 +1491,27 @@ let adminSearchFrame = 0;
 let forumFilter = "All";
 let forumPosts = [];
 let expandedForumPostId = null;
-let selectedResourceFile = null;
+let selectedResourceFiles = [];
 let staffShopProducts = [];
 
 const forumResources = [];
+
+async function refreshForumResources() {
+  try {
+    const { resources } = await api("/api/forum/resources");
+    forumResources.splice(0, forumResources.length, ...(resources || []).map((resource) => ({
+      ...resource,
+      date: new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric" }).format(new Date(resource.createdAt)),
+      pages: 1,
+      size: `${Math.max(0.1, resource.size / 1024 / 1024).toFixed(1)}MB · ${resource.files.length}개 파일`,
+      files: resource.files.map((file) => ({ name: file.name, url: `/api/forum/resources/${encodeURIComponent(resource.id)}/files/${encodeURIComponent(file.id)}` })),
+      downloads: 0, comments: 0, official: false,
+    })));
+    renderResourceLibrary();
+  } catch (error) {
+    console.warn("Could not load forum resources:", error);
+  }
+}
 
 const voiceClientId =
   window.crypto?.randomUUID?.() || `voice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -5275,7 +5289,7 @@ function setForumSurface(surface = "posts") {
   resourceUploadPanel?.toggleAttribute("hidden", surface !== "upload");
   showResourceLibraryButton?.classList.toggle("active", !showPosts);
   showResourceLibraryButton?.setAttribute("aria-current", showPosts ? "false" : "page");
-  if (showLibrary) renderResourceLibrary();
+  if (showLibrary) refreshForumResources();
 }
 
 function createResourcePreview(resource, large = false) {
@@ -5344,7 +5358,7 @@ function renderResourceLibrary() {
     const title = document.createElement("h3");
     title.textContent = resource.title;
     const meta = document.createElement("p");
-    meta.textContent = resource.pending ? `${resource.type} · 검토 중, 나만 보여요` : `${resource.type} · ${resource.pages}쪽 · ${resource.size}`;
+    meta.textContent = `${resource.type} · ${resource.size}`;
     const author = document.createElement("span");
     author.textContent = `${resource.author} · ${resource.date}`;
     const stats = document.createElement("footer");
@@ -5390,21 +5404,21 @@ function openResourceDetail(resource) {
 
   const downloadCard = document.createElement("aside");
   downloadCard.className = "resource-download-card";
-  const download = document.createElement("button");
-  download.type = "button";
-  download.className = "button resource-primary";
-  download.textContent = "↓ 다운로드";
-  download.addEventListener("click", () => {
-    if (resource.fileUrl) {
-      const link = document.createElement("a");
-      link.href = resource.fileUrl;
-      link.download = resource.fileName || resource.title;
-      link.click();
-      return;
-    }
-    download.textContent = "다운로드 파일이 없습니다";
-    window.setTimeout(() => { download.textContent = "↓ 다운로드"; }, 1800);
-  });
+  const files = resource.files || (resource.fileUrl ? [{ name: resource.fileName || resource.title, url: resource.fileUrl }] : []);
+  const downloads = document.createElement("div");
+  downloads.className = "resource-download-list";
+  if (files.length) {
+    files.forEach((file) => {
+      const download = document.createElement("a");
+      download.className = "button resource-primary";
+      download.href = file.url;
+      download.download = file.name;
+      download.textContent = `↓ ${file.name}`;
+      downloads.append(download);
+    });
+  } else {
+    downloads.textContent = "다운로드 파일이 없습니다";
+  }
   const fileMeta = document.createElement("p");
   fileMeta.textContent = `인쇄용 A4 · ${resource.type} · ${resource.size} · 다운로드 ${resource.downloads}`;
   const answerRow = document.createElement("div");
@@ -5417,7 +5431,7 @@ function openResourceDetail(resource) {
   const authorName = document.createElement("strong");
   authorName.textContent = resource.author;
   authorRow.append(authorLabel, authorName);
-  downloadCard.append(download, fileMeta, answerRow, termsRow, authorRow);
+  downloadCard.append(downloads, fileMeta, answerRow, termsRow, authorRow);
   layout.append(viewer, downloadCard);
 
   const description = document.createElement("section");
@@ -5436,7 +5450,7 @@ function openResourceDetail(resource) {
 }
 
 function showResourceUpload() {
-  selectedResourceFile = null;
+  selectedResourceFiles = [];
   resourceUploadForm?.reset();
   resourceFileRow?.toggleAttribute("hidden", true);
   resourceDropzone?.toggleAttribute("hidden", false);
@@ -5444,19 +5458,45 @@ function showResourceUpload() {
   resourceDropzone?.focus();
 }
 
-function setSelectedResourceFile(file) {
-  if (!file) return;
-  if (file.size > 20 * 1024 * 1024) {
+function renderSelectedResourceFiles() {
+  resourceFileRow?.replaceChildren();
+  selectedResourceFiles.forEach((file, index) => {
+    const row = document.createElement("div");
+    row.className = "resource-file-row";
+    const icon = document.createElement("span");
+    icon.className = "resource-file-thumb";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "▤";
+    const name = document.createElement("strong");
+    name.textContent = file.name;
+    const meta = document.createElement("small");
+    meta.textContent = `${Math.max(0.1, file.size / 1024 / 1024).toFixed(1)}MB · 업로드 준비됨`;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.setAttribute("aria-label", `${file.name} 제거`);
+    remove.textContent = "×";
+    remove.addEventListener("click", () => {
+      selectedResourceFiles.splice(index, 1);
+      renderSelectedResourceFiles();
+    });
+    row.append(icon, name, meta, remove);
+    resourceFileRow?.append(row);
+  });
+  resourceFileRow?.toggleAttribute("hidden", !selectedResourceFiles.length);
+  resourceDropzone?.setCustomValidity("");
+}
+
+function addSelectedResourceFiles(files) {
+  const added = [...(files || [])];
+  if (!added.length) return;
+  if (added.some((file) => file.size > 20 * 1024 * 1024)) {
     resourceDropzone?.setCustomValidity("파일은 20MB 이하로 골라 주세요.");
     resourceDropzone?.reportValidity();
     return;
   }
-  selectedResourceFile = file;
-  resourceDropzone?.setCustomValidity("");
-  if (resourceFileName) resourceFileName.textContent = file.name;
-  if (resourceFileMeta) resourceFileMeta.textContent = `${Math.max(0.1, file.size / 1024 / 1024).toFixed(1)}MB · 업로드 준비됨`;
-  resourceFileRow?.toggleAttribute("hidden", false);
-  resourceDropzone?.toggleAttribute("hidden", true);
+  selectedResourceFiles.push(...added);
+  renderSelectedResourceFiles();
+  if (resourceFileInput) resourceFileInput.value = "";
 }
 
 function resourceTypeFromFile(file) {
@@ -5466,34 +5506,43 @@ function resourceTypeFromFile(file) {
   return "PDF";
 }
 
-function submitResourceUpload(event) {
+async function submitResourceUpload(event) {
   event.preventDefault();
-  if (!selectedResourceFile) {
+  if (!selectedResourceFiles.length) {
     resourceDropzone?.setCustomValidity("올릴 파일을 먼저 골라 주세요.");
     resourceDropzone?.reportValidity();
     return;
   }
   if (!resourceUploadForm?.reportValidity()) return;
-  const type = resourceTypeFromFile(selectedResourceFile);
-  const today = new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric" }).format(new Date());
-  forumResources.unshift({
-    id: `resource-upload-${Date.now()}`,
-    title: resourceTitleInput.value.trim(),
-    type,
-    pages: 1,
-    size: `${Math.max(0.1, selectedResourceFile.size / 1024 / 1024).toFixed(1)}MB`,
-    author: currentUser?.displayName || "나",
-    date: today,
-    downloads: 0,
-    comments: 0,
-    official: false,
-    answer: Boolean(document.querySelector("#resourceAnswerCheck")?.checked),
-    description: resourceDescriptionInput.value.trim() || "설명이 아직 없어요.",
-    pending: true,
-    fileName: selectedResourceFile.name,
-    fileUrl: URL.createObjectURL(selectedResourceFile),
-  });
-  selectedResourceFile = null;
+  const totalSize = selectedResourceFiles.reduce((sum, file) => sum + file.size, 0);
+  if (selectedResourceFiles.length > 5 || totalSize > 50 * 1024 * 1024) {
+    resourceDropzone?.setCustomValidity("파일은 최대 5개, 합계 50MB 이하로 골라 주세요.");
+    resourceDropzone?.reportValidity();
+    return;
+  }
+  const submit = resourceUploadForm.querySelector('[type="submit"]');
+  submit.disabled = true;
+  try {
+    const files = await Promise.all(selectedResourceFiles.map((file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve({ name: file.name, data: String(reader.result).split(",", 2)[1] });
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    })));
+    await api("/api/forum/resources", { method: "POST", body: {
+      title: resourceTitleInput.value.trim(), description: resourceDescriptionInput.value.trim(), files,
+      answer: Boolean(document.querySelector("#resourceAnswerCheck")?.checked),
+      privacyConfirmed: Boolean(document.querySelector("#resourcePrivacyCheck")?.checked),
+      rightsConfirmed: Boolean(document.querySelector("#resourceRightsCheck")?.checked),
+    } });
+  } catch (error) {
+    resourceDropzone?.setCustomValidity(error.message || "업로드에 실패했어요.");
+    resourceDropzone?.reportValidity();
+    submit.disabled = false;
+    return;
+  }
+  submit.disabled = false;
+  selectedResourceFiles = [];
   resourceUploadForm.reset();
   resourceFileRow?.toggleAttribute("hidden", true);
   resourceDropzone?.toggleAttribute("hidden", false);
@@ -8663,7 +8712,7 @@ showResourceUploadButton?.addEventListener("click", showResourceUpload);
 resourceUploadBackButton?.addEventListener("click", () => setForumSurface("library"));
 cancelResourceUploadButton?.addEventListener("click", () => setForumSurface("library"));
 resourceDropzone?.addEventListener("click", () => resourceFileInput?.click());
-resourceFileInput?.addEventListener("change", () => setSelectedResourceFile(resourceFileInput.files?.[0]));
+resourceFileInput?.addEventListener("change", () => addSelectedResourceFiles(resourceFileInput.files));
 resourceDropzone?.addEventListener("dragover", (event) => {
   event.preventDefault();
   resourceDropzone.classList.add("is-dragging");
@@ -8672,14 +8721,7 @@ resourceDropzone?.addEventListener("dragleave", () => resourceDropzone.classList
 resourceDropzone?.addEventListener("drop", (event) => {
   event.preventDefault();
   resourceDropzone.classList.remove("is-dragging");
-  setSelectedResourceFile(event.dataTransfer?.files?.[0]);
-});
-removeResourceFileButton?.addEventListener("click", () => {
-  selectedResourceFile = null;
-  if (resourceFileInput) resourceFileInput.value = "";
-  resourceFileRow?.toggleAttribute("hidden", true);
-  resourceDropzone?.toggleAttribute("hidden", false);
-  resourceDropzone?.focus();
+  addSelectedResourceFiles(event.dataTransfer?.files);
 });
 resourceUploadForm?.addEventListener("submit", submitResourceUpload);
 document.querySelectorAll("[data-shop-interest]").forEach((button) => {

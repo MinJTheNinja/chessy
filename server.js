@@ -22,6 +22,7 @@ const dataDir = dataDirOverride
   : path.join(rootDir, ".localappdata", "live-chess");
 const dbPath = path.join(dataDir, "db.json");
 const authDbPath = path.join(dataDir, "identity.json");
+const resourceDbPath = path.join(dataDir, "resources.json");
 const legacyBackupPath = path.join(dataDir, "db.pre-normalization.json");
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
@@ -130,6 +131,7 @@ const staticTextCache = new Map();
 let localDbWriteQueue = Promise.resolve();
 let postgresStateQueue = Promise.resolve();
 let localIdentityWriteQueue = Promise.resolve();
+let localResourceWriteQueue = Promise.resolve();
 const appStateContext = new AsyncLocalStorage();
 
 function postgresSslOptions(connectionString) {
@@ -273,6 +275,22 @@ function normalizeDb(db = {}) {
   };
 }
 
+async function readLocalResources() {
+  try { return JSON.parse(await fs.promises.readFile(resourceDbPath, "utf8")); }
+  catch (error) { if (error.code === "ENOENT") return []; throw error; }
+}
+
+async function writeLocalResource(resource) {
+  const operation = localResourceWriteQueue.catch(() => {}).then(async () => {
+    const resources = await readLocalResources();
+    resources.unshift(resource);
+    await fs.promises.mkdir(dataDir, { recursive: true });
+    await atomicWriteJson(resourceDbPath, resources);
+  });
+  localResourceWriteQueue = operation.then(() => undefined, () => undefined);
+  return operation;
+}
+
 function clone(value) {
   return structuredClone(value);
 }
@@ -375,6 +393,10 @@ async function ensurePostgresDb() {
           updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
       `);
+      await pgPool.query(`CREATE TABLE IF NOT EXISTS forum_resources (
+        id TEXT PRIMARY KEY, metadata JSONB NOT NULL, files JSONB NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
       await pgPool.query(
         `
           INSERT INTO app_state (id, data)
@@ -991,7 +1013,7 @@ function deferredResponse() {
   };
 }
 
-function readBody(req, maxBytes = 1_000_000) {
+function readBody(req, maxBytes = 1_000_000, timeoutMs = 10000) {
   if (req.parsedBody) return req.parsedBody;
   return new Promise((resolve, reject) => {
     let body = "";
@@ -1002,7 +1024,7 @@ function readBody(req, maxBytes = 1_000_000) {
       clearTimeout(timer);
       reject(Object.assign(new Error(message), { statusCode }));
     };
-    const timer = setTimeout(() => fail("Request body timed out", 408), 10000);
+    const timer = setTimeout(() => fail("Request body timed out", 408), timeoutMs);
     req.once("aborted", () => fail("Request aborted", 400));
     req.once("error", () => fail("Request body failed", 400));
     if (req.aborted || req.destroyed) {
@@ -2576,6 +2598,71 @@ function routePattern(pathname, pattern) {
 }
 
 async function handleFastApi(req, res, pathname, searchParams = new URLSearchParams()) {
+  if (pathname === "/api/forum/resources" || pathname.startsWith("/api/forum/resources/")) {
+    const user = await getSessionUser(req);
+    if (req.method === "GET" && pathname === "/api/forum/resources") {
+      const resources = pgPool
+        ? (await (await ensurePostgresDb(), pgPool.query("SELECT metadata FROM forum_resources ORDER BY created_at DESC"))).rows.map((row) => row.metadata)
+        : (await readLocalResources()).map((resource) => resource.metadata);
+      sendJson(res, 200, { resources });
+      return true;
+    }
+    if (req.method === "POST" && pathname === "/api/forum/resources") {
+      if (!requireUser(user, res)) return true;
+      const body = await readBody(req);
+      const files = Array.isArray(body.files) ? body.files : [];
+      const title = String(body.title || "").trim().slice(0, 80);
+      if (!title || !files.length || files.length > 5 || !body.privacyConfirmed || !body.rightsConfirmed) {
+        sendJson(res, 400, { error: "Title, 1–5 files, and sharing confirmations are required." });
+        return true;
+      }
+      let totalBytes = 0;
+      const storedFiles = [];
+      for (const file of files) {
+        const name = path.basename(String(file.name || "")).slice(0, 180);
+        const extension = path.extname(name).toLowerCase();
+        const base64 = String(file.data || "");
+        if (!name || ![".pdf", ".hwp", ".hwpx", ".docx", ".png", ".jpg", ".jpeg", ".webp", ".gif"].includes(extension)
+          || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(base64)) {
+          sendJson(res, 400, { error: "Unsupported or invalid file." }); return true;
+        }
+        const size = Buffer.byteLength(base64, "base64");
+        if (!size || size > 20 * 1024 * 1024) { sendJson(res, 413, { error: "Each file must be 20 MB or smaller." }); return true; }
+        totalBytes += size;
+        storedFiles.push({ id: crypto.randomUUID(), name, extension, size, data: base64 });
+      }
+      if (totalBytes > 50 * 1024 * 1024) { sendJson(res, 413, { error: "Files must total 50 MB or less." }); return true; }
+      const metadata = {
+        id: crypto.randomUUID(), title, description: String(body.description || "").trim().slice(0, 500),
+        author: publicDisplayName(user), authorId: user.id, createdAt: new Date().toISOString(),
+        answer: Boolean(body.answer), type: [".hwp", ".hwpx"].includes(storedFiles[0].extension) ? "HWP" :
+          [".png", ".jpg", ".jpeg", ".webp", ".gif"].includes(storedFiles[0].extension) ? "이미지" : "PDF",
+        size: totalBytes, files: storedFiles.map(({ id, name, size }) => ({ id, name, size })),
+      };
+      if (pgPool) {
+        await ensurePostgresDb();
+        await pgPool.query("INSERT INTO forum_resources (id, metadata, files) VALUES ($1, $2::jsonb, $3::jsonb)",
+          [metadata.id, JSON.stringify(metadata), JSON.stringify(storedFiles)]);
+      } else {
+        await writeLocalResource({ metadata, files: storedFiles });
+      }
+      sendJson(res, 201, { resource: metadata });
+      return true;
+    }
+    const match = pathname.match(/^\/api\/forum\/resources\/([^/]+)\/files\/([^/]+)$/);
+    if (req.method === "GET" && match) {
+      const resource = pgPool
+        ? (await (await ensurePostgresDb(), pgPool.query("SELECT files FROM forum_resources WHERE id = $1", [match[1]]))).rows[0]
+        : (await readLocalResources()).find((item) => item.metadata.id === match[1]);
+      const file = resource?.files?.find((item) => item.id === match[2]);
+      if (!file) { sendJson(res, 404, { error: "File not found." }); return true; }
+      const mime = { ".pdf": "application/pdf", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif" }[file.extension] || "application/octet-stream";
+      res.writeHead(200, { "content-type": mime, "content-disposition": `attachment; filename*=UTF-8''${encodeURIComponent(file.name)}`, "x-content-type-options": "nosniff" });
+      res.end(Buffer.from(file.data, "base64"));
+      return true;
+    }
+    return false;
+  }
   if (req.method === "GET" && pathname === "/api/config") {
     sendJson(res, 200, {
       googleClientId,
@@ -4602,7 +4689,8 @@ const server = http.createServer(async (req, res) => {
     if (requestUrl.pathname.startsWith("/api/")) {
       // Finish uploading before authentication or borrowing a transaction connection.
       if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
-        req.parsedBody = Promise.resolve(await readBody(req));
+        const resourceUpload = req.method === "POST" && requestUrl.pathname === "/api/forum/resources";
+        req.parsedBody = Promise.resolve(await readBody(req, resourceUpload ? 70 * 1024 * 1024 : 1_000_000, resourceUpload ? 120000 : 10000));
       }
       const fastHandled = await handleFastApi(req, res, requestUrl.pathname, requestUrl.searchParams);
       if (fastHandled) return;

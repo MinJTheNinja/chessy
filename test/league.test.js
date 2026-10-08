@@ -90,6 +90,40 @@ async function createLeague(baseUrl, cookie, name) {
   return result;
 }
 
+test("forum resources persist multiple downloadable files across restart", { timeout: 30_000 }, async (t) => {
+  const dataDir = fs.mkdtempSync(path.join(projectDir, ".resource-test-"));
+  let runtime = await startServer(dataDir);
+  t.after(async () => {
+    await stopServer(runtime.child);
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  });
+  const author = await signup(runtime.baseUrl, "resource-author@example.test", "Resource Author");
+  const uploaded = await request(runtime.baseUrl, "/api/forum/resources", {
+    method: "POST", cookie: author.cookie,
+    body: {
+      title: "체스 학습지", description: "학습지와 답지", privacyConfirmed: true, rightsConfirmed: true, answer: true,
+      files: [
+        { name: "worksheet.pdf", data: Buffer.from("worksheet").toString("base64") },
+        { name: "answers.pdf", data: Buffer.from("answers").toString("base64") },
+      ],
+    },
+  });
+  assert.equal(uploaded.status, 201);
+  assert.equal(uploaded.data.resource.files.length, 2);
+  await stopServer(runtime.child);
+  runtime = await startServer(dataDir);
+  const listed = await request(runtime.baseUrl, "/api/forum/resources");
+  assert.equal(listed.status, 200);
+  assert.equal(listed.data.resources[0].files.length, 2);
+  assert.equal(JSON.stringify(listed.data).includes("d29ya3NoZWV0"), false, "listing must not expose file data");
+  for (const [index, expected] of ["worksheet", "answers"].entries()) {
+    const file = listed.data.resources[0].files[index];
+    const response = await fetch(`${runtime.baseUrl}/api/forum/resources/${listed.data.resources[0].id}/files/${file.id}`);
+    assert.equal(response.status, 200);
+    assert.equal(await response.text(), expected);
+  }
+});
+
 test("forum preserves staff and teacher notices while blocking league students from creating posts", { timeout: 60_000 }, async (t) => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "easymate-forum-roles-"));
   const runtime = await startServer(dataDir);

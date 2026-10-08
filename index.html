@@ -61,13 +61,13 @@
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
     </noscript>
     <link rel="stylesheet" href="/tokens.css?v=20260925-home-v3" />
-    <link rel="stylesheet" href="/styles.css?v=20261008-worksheets" />
+    <link rel="stylesheet" href="/styles.css?v=20261008-multi-resource" />
     <link rel="stylesheet" href="/assets/poeun/poeun.css?v=20261008-path-redesign" />
-    <script src="/assets/i18n/en-supplement.js?v=20261008-opera-game" defer></script>
+    <script src="/assets/i18n/en-supplement.js?v=20261008-multi-resource" defer></script>
     <script src="/assets/poeun/stations.js?v=20261008-hero-layout" defer></script>
     <script src="/assets/poeun/opera-game.js?v=20261008" defer></script>
     <script src="/assets/poeun/station-ui.js?v=20261008-campaign-cards" defer></script>
-    <script src="/app.js?v=20261008-path-redesign" defer></script>
+    <script src="/app.js?v=20261008-multi-resource" defer></script>
   </head>
   <body>
     <header class="site-header">
@@ -815,7 +815,7 @@
                     <div class="resource-grid" id="resourceGrid"></div>
                   </div>
                 </div>
-                <p class="resource-safety-note">올린 자료는 관리자 확인 후 공개돼요. 학생 이름이나 얼굴이 나온 자료는 올리지 말아 주세요.</p>
+                <p class="resource-safety-note">올린 자료는 바로 공개돼요. 학생 이름이나 얼굴이 나온 자료는 올리지 말아 주세요.</p>
               </section>
 
               <section class="resource-detail" id="resourceDetailPanel" hidden aria-live="polite"></section>
@@ -827,18 +827,18 @@
                   <form id="resourceUploadForm">
                     <h3 id="resourceUploadTitle" class="sr-only">자료 올리기</h3>
                     <label class="resource-field-label" for="resourceFileInput">파일 <b>*</b></label>
-                    <input id="resourceFileInput" type="file" accept=".pdf,.hwp,.hwpx,.docx,image/*" hidden />
+                    <input id="resourceFileInput" type="file" accept=".pdf,.hwp,.hwpx,.docx,image/*" multiple hidden />
                     <button class="resource-dropzone" id="resourceDropzone" type="button">
-                      <span aria-hidden="true">⇧</span><strong>파일을 끌어다 놓거나, 여기를 눌러 골라요</strong><small>PDF · 이미지 · HWP · DOCX · 최대 20MB</small>
+                      <span aria-hidden="true">⇧</span><strong>파일을 여러 개 끌어다 놓거나, 여기를 눌러 골라요</strong><small>PDF · 이미지 · HWP · DOCX · 최대 5개, 파일당 20MB, 합계 50MB</small>
                     </button>
-                    <div class="resource-file-row" id="resourceFileRow" hidden><span class="resource-file-thumb" aria-hidden="true">▤</span><strong id="resourceFileName"></strong><small id="resourceFileMeta"></small><button id="removeResourceFile" type="button" aria-label="선택한 파일 제거">×</button></div>
+                    <div class="resource-file-list" id="resourceFileRow" hidden aria-live="polite"></div>
                     <label class="resource-field-label" for="resourceTitleInput">제목 <b>*</b></label>
                     <input id="resourceTitleInput" type="text" placeholder="예: 체크메이트 한 수 연습 학습지" maxlength="80" required />
                     <label class="resource-field-label" for="resourceDescriptionInput">설명</label>
                     <textarea id="resourceDescriptionInput" rows="5" placeholder="어떤 수업에서, 어떤 순서로 쓰면 좋은지 적어요" maxlength="500"></textarea>
                     <fieldset class="resource-campaign-field"><legend>연결할 캠페인</legend><p>연결하면 그 캠페인 이야기 자료에도 함께 보여요.</p><label><input type="radio" name="resourceCampaign" value="없음" checked /> 없음</label><label><input type="radio" name="resourceCampaign" value="시즌 1 · 처인성" /> 시즌 1 · 처인성</label></fieldset>
-                    <fieldset class="resource-checks"><legend>올리기 전에 확인해요 <b>*</b></legend><label><input id="resourceAnswerCheck" type="checkbox" /> 정답지가 들어 있어요 <small>체크하면 교사용에게만 보여요.</small></label><label><input id="resourcePrivacyCheck" type="checkbox" required /> 학생 이름, 얼굴 같은 개인정보가 없어요</label><label><input id="resourceRightsCheck" type="checkbox" required /> 직접 만들었거나 공유가 허용된 자료예요</label></fieldset>
-                    <div class="resource-upload-actions"><span>관리자 확인 후 자료방에 공개돼요.</span><button id="cancelResourceUpload" type="button">취소</button><button class="button resource-primary" type="submit">⇧ 올리기</button></div>
+                    <fieldset class="resource-checks"><legend>올리기 전에 확인해요 <b>*</b></legend><label><input id="resourceAnswerCheck" type="checkbox" /> 정답지가 들어 있어요</label><label><input id="resourcePrivacyCheck" type="checkbox" required /> 학생 이름, 얼굴 같은 개인정보가 없어요</label><label><input id="resourceRightsCheck" type="checkbox" required /> 직접 만들었거나 공유가 허용된 자료예요</label></fieldset>
+                    <div class="resource-upload-actions"><span>올리면 자료방에 바로 공개돼요.</span><button id="cancelResourceUpload" type="button">취소</button><button class="button resource-primary" type="submit">⇧ 올리기</button></div>
                   </form>
                   <aside class="resource-upload-tips"><h3>이런 자료가 좋아요</h3><ul><li>A4로 인쇄해서 바로 쓸 수 있어요.</li><li>문제와 정답을 따로 파일로 나눠 올려요.</li><li>체스판 그림이 흐리지 않게 해상도를 확인해요.</li><li>출처가 있으면 파일 안에 적어요.</li></ul><a href="#" aria-disabled="true">↓ 학습지 양식 · 준비 중</a></aside>
                 </div>

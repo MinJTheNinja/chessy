@@ -13165,6 +13165,10 @@ body.profile-settings-open .profile-view .profile-settings-panel {
     transition-duration: 150ms !important;
   }
 }
+.resource-file-list { display: grid; gap: var(--space-xs); }
+.resource-file-list[hidden] { display: none; }
+.resource-download-list { display: grid; gap: var(--space-xs); }
+.resource-download-list a { overflow-wrap: anywhere; text-align: center; }
 
 
 /* EasyMate home v2 · Narrative Workflow adaptation of the user-provided mockup. */
