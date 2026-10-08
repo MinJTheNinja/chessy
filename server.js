@@ -2667,6 +2667,8 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
     sendJson(res, 200, {
       googleClientId,
       googleLoginConfigured: Boolean(googleClientId),
+      posthogProjectToken: process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN || "",
+      posthogHost: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
     });
     return true;
   }
@@ -4382,6 +4384,7 @@ function serveStatic(req, res, pathname) {
   const allowedStatic =
     requested === "/index.html" ||
     requested === "/app.js" ||
+    requested === "/analytics.js" ||
     requested === "/styles.css" ||
     requested === "/hallmark-demo.html" ||
     requested === "/hallmark-demo.css" ||
