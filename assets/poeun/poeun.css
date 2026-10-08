@@ -62,7 +62,6 @@
 @media (prefers-reduced-motion: reduce) { .poeun-narrator, .poeun-scene-image, .poeun-after-story { animation: none; } }
 .poeun-story-card { padding: 0; border: 0; background: transparent; }
 .poeun-story-card p { max-width: 65ch; margin-bottom: 0; line-height: 1.8; word-break: keep-all; }
-.poeun-source-label { display: block; width: fit-content; margin-bottom: 12px; padding: 4px 9px; border-radius: 999px; background: #f4e9df; color: var(--poeun-muted); font-size: .75rem; }
 .poeun-virtues { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .poeun-virtue { display: grid; grid-template-columns: auto 1fr; gap: 0 9px; align-items: center; padding: 12px; border: 1px solid var(--poeun-line); border-radius: 12px; background: #fffdf8; color: var(--poeun-ink); font: inherit; text-align: left; cursor: pointer; }
 .poeun-virtue:hover, .poeun-virtue[aria-expanded="true"] { border-color: var(--poeun-red-dark); background: #fff2ec; }
@@ -202,8 +201,8 @@
 .poeun-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(220px, 1fr);
-  align-items: center;
-  gap: clamp(14px, 3vw, 32px);
+  align-items: start;
+  gap: 12px clamp(14px, 3vw, 32px);
   margin: 0 0 22px;
   padding: clamp(20px, 4vw, 36px);
   border: 1px solid #dfc9aa;
@@ -211,9 +210,12 @@
   background: radial-gradient(circle at 88% 20%, #f7c6aa 0, transparent 27%),
     linear-gradient(110deg, #fff6dc, #fff9eb 67%, #fbe4d3);
 }
-.poeun-intro-film { min-width: 0; overflow: hidden; border: 1px solid #d4b39b; border-radius: 15px; background: #271c2c; box-shadow: 0 12px 30px #40221820; }
+.poeun-hero-title { grid-column: 1; grid-row: 1; margin: 0; font-size: clamp(1.2rem, 2.2vw, 1.8rem); }
+.poeun-intro-film { grid-column: 1; grid-row: 2; min-width: 0; overflow: hidden; border: 1px solid #d4b39b; border-radius: 15px; background: #271c2c; box-shadow: 0 12px 30px #40221820; }
+.poeun-hero-copy { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; align-self: stretch; gap: 18px; }
+.poeun-hero-copy .poeun-hero-meta { margin: 0; }
 .poeun-intro-video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #271c2c; object-fit: cover; }
-@media (max-width: 760px) { .poeun-hero { grid-template-columns: 1fr; } .poeun-intro-film { order: 1; } .poeun-hero-copy { order: 2; } }
+@media (max-width: 760px) { .poeun-hero { grid-template-columns: 1fr; } .poeun-hero-title { grid-column: 1; grid-row: 1; } .poeun-intro-film { grid-column: 1; grid-row: 2; } .poeun-hero-copy { grid-column: 1; grid-row: 3; flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; } }
 @media (prefers-reduced-motion: reduce) { .poeun-intro-film * { animation: none !important; } }
 .poeun-hero-copy,
 .poeun-station-header > :first-child { min-width: 0; }
