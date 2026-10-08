@@ -2792,6 +2792,7 @@ function openPoeunChapter(slug, { updateHash = true } = {}) {
     onBack: () => showPoeunPath(),
     isLast: poeunStages.at(-1)?.slug === slug,
     onNext: () => {
+      if (slug === "osang") { showPoeunGameTransition(); return; }
       const next = poeunStages[poeunStages.findIndex((item) => item.slug === slug) + 1];
       if (next) openPoeunChapter(next.slug);
       else showPoeunEnding();
@@ -2799,6 +2800,17 @@ function openPoeunChapter(slug, { updateHash = true } = {}) {
   });
   if (updateHash && location.hash !== `#poeun/${slug}`) history.pushState({ poeunChapter: slug }, "", `/#poeun/${slug}`);
   poeunChapter.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function showPoeunGameTransition({ updateHash = true } = {}) {
+  openPoeunChapter("osang", { updateHash: false });
+  activePoeunSlug = "transition";
+  window.PoeunStationUI.mountTransition(poeunChapter, {
+    translate: translateCopy,
+    onBack: () => openPoeunChapter("osang"),
+    onContinue: () => openPoeunChapter("hayeoga"),
+  });
+  if (updateHash) history.pushState({ poeunChapter: "transition" }, "", "/#poeun/transition");
 }
 
 function showPoeunEnding({ updateHash = true } = {}) {
@@ -8164,7 +8176,8 @@ languageSelect?.addEventListener("change", async () => {
     syncOpenTrainingFrameLanguage();
     await refreshTrainingState();
     syncOpenTrainingFrameLanguage();
-    if (poeunChapterOpen && activePoeunSlug) openPoeunChapter(activePoeunSlug, { updateHash: false });
+    if (poeunChapterOpen && activePoeunSlug === "transition") showPoeunGameTransition({ updateHash: false });
+    else if (poeunChapterOpen && activePoeunSlug) openPoeunChapter(activePoeunSlug, { updateHash: false });
     else if (poeunPathList && !poeunPathList.hidden) renderPoeunPath();
   }
   resetSubtitlePlaceholders();
@@ -8790,7 +8803,10 @@ applyInterfaceLanguage();
 syncLegalLanguage();
 renderLandingTypewriter();
 const initialPoeunSlug = requestedPoeunSlug();
-if (location.hash === "#poeun/ending") {
+if (location.hash === "#poeun/transition") {
+  setView("how-to-play");
+  showPoeunGameTransition({ updateHash: false });
+} else if (location.hash === "#poeun/ending") {
   setView("how-to-play");
   showPoeunEnding({ updateHash: false });
 } else if (initialPoeunSlug) {
@@ -8811,7 +8827,10 @@ checkBackend();
 
 function handlePoeunHistory() {
   const slug = requestedPoeunSlug();
-  if (location.hash === "#poeun/ending") {
+  if (location.hash === "#poeun/transition") {
+    if (!howToPlayView?.classList.contains("active")) setView("how-to-play");
+    showPoeunGameTransition({ updateHash: false });
+  } else if (location.hash === "#poeun/ending") {
     if (!howToPlayView?.classList.contains("active")) setView("how-to-play");
     showPoeunEnding({ updateHash: false });
   } else if (slug) {
