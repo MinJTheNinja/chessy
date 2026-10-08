@@ -139,7 +139,7 @@
   overflow: hidden;
   padding: 0;
   border: 1px solid #dfdcd4;
-  border-radius: 16px;
+  border-radius: 18px;
   background: #fff;
   box-shadow: 0 8px 24px #38241a14;
 }
@@ -167,10 +167,14 @@
 .poeun-campaign-meter span { display: block; height: 100%; border-radius: inherit; background: #d58b19; }
 .poeun-campaign-card.poeun .poeun-campaign-meter span { background: #2e5b49; }
 .poeun-campaign-cta { width: 100%; min-height: 42px; margin-top: 2px; border: 1px solid #2e5b49; border-radius: 8px; background: #2e5b49; color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
-.poeun-campaign-card.cheoinseong .poeun-campaign-cta { border-color: #828985; background: #fff; color: #172725; }
+.poeun-campaign-card.cheoinseong .poeun-campaign-cta { border-color: var(--home-accent-dark); border-radius: 12px; background: #fff; color: var(--home-accent-dark); }
 .poeun-campaign-cta:hover:not(:disabled) { filter: brightness(.92); }
 .poeun-campaign-cta:focus-visible { outline: 3px solid #1688c1; outline-offset: 3px; }
 .poeun-campaign-cta:disabled { opacity: .55; cursor: not-allowed; }
+.poeun-campaign-card.cheoinseong .poeun-campaign-media { background: var(--home-accent-dark); }
+.poeun-campaign-card.cheoinseong .poeun-campaign-badge { background: var(--home-accent-soft); color: var(--home-accent-dark); }
+.poeun-campaign-card.cheoinseong .poeun-campaign-meter span { background: var(--home-accent-dark); }
+.poeun-campaign-card.cheoinseong .poeun-campaign-cta:focus-visible { outline-color: var(--home-accent-dark); }
 .poeun-picker > .poeun-campaign-credits {
   margin: 0;
   color: var(--poeun-muted);

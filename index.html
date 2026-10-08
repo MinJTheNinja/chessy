@@ -61,8 +61,8 @@
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
     </noscript>
     <link rel="stylesheet" href="/tokens.css?v=20260925-home-v3" />
-    <link rel="stylesheet" href="/styles.css?v=20261008-multi-resource" />
-    <link rel="stylesheet" href="/assets/poeun/poeun.css?v=20261008-path-redesign" />
+    <link rel="stylesheet" href="/styles.css?v=20261009-forum-controls" />
+    <link rel="stylesheet" href="/assets/poeun/poeun.css?v=20261009-rounded-purple" />
     <script src="/assets/i18n/en-supplement.js?v=20261008-multi-resource" defer></script>
     <script src="/assets/poeun/stations.js?v=20261008-hero-layout" defer></script>
     <script src="/assets/poeun/opera-game.js?v=20261008" defer></script>
@@ -434,6 +434,7 @@
           <section class="view" data-view="dashboard" aria-labelledby="matchTitle">
             <div class="view-header">
               <div>
+                <span class="play-eyebrow">PLAY</span>
                 <h2 id="matchTitle">플레이</h2>
               </div>
             </div>
@@ -442,6 +443,7 @@
               <aside class="panel lobby-panel">
                 <div class="lobby-main-panel">
                   <section class="quick-match-intro" aria-labelledby="quickMatchTitle">
+                    <span class="play-card-icon" aria-hidden="true">ϟ</span>
                     <h3 id="quickMatchTitle">퀵 매칭</h3>
                     <p>비슷한 실력의 상대를 찾아드려요.</p>
                     <button class="play-find-button" id="findMatch" type="button">상대 찾기</button>
@@ -477,10 +479,10 @@
 
                 <aside class="match-options-panel" aria-label="대국 설정">
                   <section class="match-option-section">
+                    <span class="play-card-icon" aria-hidden="true">☷</span>
                     <div class="panel-heading compact">
                       <div>
-                        <span class="label">맞춤</span>
-                        <h3>게임 만들기</h3>
+                        <h3>게임 만들기 <span class="play-card-tag">맞춤</span></h3>
                       </div>
                     </div>
                     <p>시간과 규칙을 직접 설정하세요.</p><button class="text-action-button" id="showCreateSeek" type="button">방 만들기</button>
@@ -523,8 +525,8 @@
                   </div>
 
                   <section class="match-option-section friend-option-section">
-                    <span class="label">비공개</span>
-                    <h3>친구와 플레이</h3>
+                    <span class="play-card-icon" aria-hidden="true">⚿</span>
+                    <h3>친구와 플레이 <span class="play-card-tag">비공개</span></h3>
                     <p>친구에게 받은 코드를 입력하세요.</p><div class="friend-code-inline"><input id="friendCodePreview" type="text" placeholder="방 코드 입력" aria-label="방 코드 입력" autocomplete="off" maxlength="16" /><button class="text-action-button" id="showFriendRoom" type="button">참여</button></div>
                   </section>
                 </aside>
@@ -729,9 +731,9 @@
 
             <div class="training-home" id="trainingHome">
               <div class="training-home-cards" aria-label="훈련장 종류">
-                <button id="showTutorialGuide" type="button" class="training-home-card is-primary"><span class="training-card-icon" aria-hidden="true">♙</span><span class="training-card-content"><span class="training-card-heading"><strong>기본기</strong><span class="training-card-badge">추천</span></span><span class="training-card-next">다음: 기물의 움직임</span><span class="training-card-progress"><i><b></b></i><em>0 / 6</em></span><span class="training-card-action">시작하기 →</span></span><span class="training-card-arrow" aria-hidden="true">›</span></button>
-                <button id="showCheoinseongGuide" type="button" class="training-home-card"><span class="training-card-icon" aria-hidden="true">♜</span><span class="training-card-content"><span class="training-card-heading"><strong>지역 캠페인</strong></span><span class="training-card-next">다음: 포은 이야기</span><span class="training-card-progress"><i><b></b></i><em>0 / 10</em></span><span class="training-card-action">시작하기 →</span></span><span class="training-card-arrow" aria-hidden="true">›</span></button>
-                <button id="showPuzzleGuide" type="button" class="training-home-card"><span class="training-card-icon" aria-hidden="true">♞</span><span class="training-card-content"><span class="training-card-heading"><strong>연습</strong></span><span class="training-card-next">다음: 퍼즐 풀기</span><span class="training-card-progress"><i><b></b></i><em>0 / 11</em></span><span class="training-card-action">시작하기 →</span></span><span class="training-card-arrow" aria-hidden="true">›</span></button>
+                <button id="showTutorialGuide" type="button" class="training-home-card is-primary"><span class="training-card-top"><span class="training-card-icon" aria-hidden="true">♙</span><span class="training-card-content"><span class="training-card-heading"><strong>기본기</strong><span class="training-card-badge">추천</span></span><span class="training-card-next">다음: 기물의 움직임</span></span></span><span class="training-card-progress"><span class="training-card-progress-label">진행도</span><em>0 / 6 단계</em><i aria-hidden="true"><b></b></i></span><span class="training-card-action">시작하기 →</span></button>
+                <button id="showCheoinseongGuide" type="button" class="training-home-card"><span class="training-card-top"><span class="training-card-icon" aria-hidden="true">⚑</span><span class="training-card-content"><span class="training-card-heading"><strong>지역 캠페인</strong><span class="training-card-badge">추천</span></span><span class="training-card-next">다음: 포은 이야기</span></span></span><span class="training-card-progress"><span class="training-card-progress-label">진행도</span><em>0 / 10 단계</em><i aria-hidden="true"><b></b></i></span><span class="training-card-action">시작하기 →</span></button>
+                <button id="showPuzzleGuide" type="button" class="training-home-card"><span class="training-card-top"><span class="training-card-icon" aria-hidden="true">◎</span><span class="training-card-content"><span class="training-card-heading"><strong>연습</strong></span><span class="training-card-next">다음: 퍼즐 풀기</span></span></span><span class="training-card-progress"><span class="training-card-progress-label">진행도</span><em>0 / 11 단계</em><i aria-hidden="true"><b></b></i></span><span class="training-card-action">시작하기 →</span></button>
               </div>
             </div>
 
@@ -770,23 +772,28 @@
               <header class="forum-heading">
                 <div>
                   <h2 id="forumTitle">게시판</h2>
+                  <p>공지, 질문, 수업 자료를 나누는 공간입니다.</p>
                 </div>
-                <p>공지, 질문, 수업 자료를 나누는 공간입니다.</p>
               </header>
 
-              <nav class="forum-tabs" aria-label="게시판 분류">
-                <button class="active" type="button" data-forum-filter="All">전체</button>
-                <button type="button" data-forum-filter="Notice">공지</button>
-                <button type="button" data-forum-filter="Question">질문</button>
-                <button type="button" id="showResourceLibrary">자료방</button>
-              </nav>
-
-              <section class="forum-section" id="forumPostsPanel">
-                <div class="forum-toolbar">
+              <div class="forum-controls">
+                <nav class="forum-tabs" aria-label="게시판 분류">
+                  <button class="active" type="button" data-forum-filter="All">전체</button>
+                  <button type="button" data-forum-filter="Notice">공지</button>
+                  <button type="button" data-forum-filter="Question">질문</button>
+                  <button type="button" id="showResourceLibrary">자료방</button>
+                </nav>
+                <div class="forum-toolbar" id="forumPostToolbar">
                   <label class="forum-search"><span class="sr-only">게시글 검색</span><input id="forumSearchInput" type="search" placeholder="검색" autocomplete="off" /></label>
                   <button class="button primary" id="showForumComposer" type="button"><span aria-hidden="true">＋</span> 새 글</button>
                 </div>
+                <div class="forum-toolbar" id="resourceToolbar" hidden>
+                  <label class="forum-search resource-search"><span class="sr-only">학습지 검색</span><input id="resourceSearchInput" type="search" placeholder="학습지 검색" autocomplete="off" /></label>
+                  <button class="button resource-primary" id="showResourceUpload" type="button"><span aria-hidden="true">⇧</span> 자료 올리기</button>
+                </div>
+              </div>
 
+              <section class="forum-section" id="forumPostsPanel">
                 <article class="wire-card forum-composer" id="forumComposer" hidden>
                   <div class="forum-composer-head"><h3>새 글</h3><button type="button" id="closeForumComposer" aria-label="글쓰기 닫기">×</button></div>
                   <label>제목<input id="forumPostTitle" type="text" placeholder="제목 입력" maxlength="80" /></label>
@@ -799,10 +806,6 @@
               </section>
 
               <section class="resource-library" id="resourceLibraryPanel" hidden aria-labelledby="resourceLibraryTitle">
-                <div class="forum-toolbar">
-                  <label class="forum-search resource-search"><span class="sr-only">학습지 검색</span><input id="resourceSearchInput" type="search" placeholder="학습지 검색" autocomplete="off" /></label>
-                  <button class="button resource-primary" id="showResourceUpload" type="button"><span aria-hidden="true">⇧</span> 자료 올리기</button>
-                </div>
                 <div class="resource-layout">
                   <aside class="resource-filters" aria-label="자료 형식">
                     <h3>형식</h3>

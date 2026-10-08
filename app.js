@@ -197,6 +197,8 @@ const forumComposer = document.querySelector("#forumComposer");
 const forumFilterButtons = document.querySelectorAll("[data-forum-filter]");
 const forumNoticeOption = forumPostCategory?.querySelector('option[value="Notice"]');
 const forumPostsPanel = document.querySelector("#forumPostsPanel");
+const forumPostToolbar = document.querySelector("#forumPostToolbar");
+const resourceToolbar = document.querySelector("#resourceToolbar");
 const forumSearchInput = document.querySelector("#forumSearchInput");
 const closeForumComposerButton = document.querySelector("#closeForumComposer");
 const showResourceLibraryButton = document.querySelector("#showResourceLibrary");
@@ -3405,7 +3407,18 @@ function trainingPuzzleRows(stages, completed, ko, campaign = false) {
     const score = campaign
       ? (done ? "<small>★★★</small>" : "")
       : variants.length ? `<small>${ko ? "유사문제" : "Related"} ${similarDone} / ${variants.length}</small>` : "";
-    item.innerHTML = `<button type="button" ${accessible ? "" : "disabled"}><span class="puzzle-lesson-number">${index + 1}</span><span class="puzzle-lesson-art"><img src="${puzzleStageArtwork(stage)}" alt="" /></span><span class="puzzle-lesson-copy"><strong>${ko ? stage.ko : stage.en} ${type}</strong><span>${ko ? stage.koDescription : stage.enDescription}</span></span><span class="puzzle-lesson-status">${done ? `✓ ${ko ? "다시 풀기" : "Replay"}` : ready ? `▷ ${ko ? "도전" : "Start"}` : `♙ ${ko ? "잠김" : "Locked"}`}${score}</span></button>`;
+    if (campaign) {
+      const title = accessible ? (ko ? stage.ko : stage.en) : (ko ? "[장면 제목]" : "[Scene title]");
+      const description = accessible ? (ko ? stage.koDescription : stage.enDescription) : (ko ? "[장면 설명]" : "[Scene description]");
+      const art = accessible ? `<img src="${puzzleStageArtwork(stage)}" alt="" />` : (ko ? "이미지" : "Image");
+      const status = done
+        ? `<small aria-label="별 세 개">★★★</small><b>${ko ? "다시 풀기" : "Replay"}</b>`
+        : ready ? `<b>${ko ? "도전하기" : "Start"} ▶</b>` : `<b>${ko ? "이전 단계 완료 후 열림" : "Unlock after previous stage"}</b>`;
+      const marker = done ? "✓" : ready ? index + 1 : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
+      item.innerHTML = `<button type="button" ${accessible ? "" : "disabled"}><span class="puzzle-lesson-number">${marker}</span><span class="puzzle-lesson-art">${art}</span><span class="puzzle-lesson-copy"><strong>${title} ${accessible ? type : `<em>${ko ? "유형" : "Type"}</em>`}</strong><span>${description}</span></span><span class="puzzle-lesson-status">${status}</span></button>`;
+    } else {
+      item.innerHTML = `<button type="button" ${accessible ? "" : "disabled"}><span class="puzzle-lesson-number">${index + 1}</span><span class="puzzle-lesson-art"><img src="${puzzleStageArtwork(stage)}" alt="" /></span><span class="puzzle-lesson-copy"><strong>${ko ? stage.ko : stage.en} ${type}</strong><span>${ko ? stage.koDescription : stage.enDescription}</span></span><span class="puzzle-lesson-status">${done ? `✓ ${ko ? "다시 풀기" : "Replay"}` : ready ? `▷ ${ko ? "도전" : "Start"}` : `♙ ${ko ? "잠김" : "Locked"}`}${score}</span></button>`;
+    }
     if (accessible) item.querySelector("button").onclick = () => openPuzzleStage(stage, puzzlePathStages.indexOf(stage));
     list.append(item);
   });
@@ -3448,7 +3461,25 @@ function renderPuzzleStageList(list, seriesItem, completed = completedPuzzleIds(
   }
   if (seriesItem.id === "cheoinseong") {
     list.innerHTML = `<button class="campaign-back" type="button">← ${ko ? "캠페인" : "Campaigns"}</button><header class="campaign-detail-head"><div><span>${ko ? "시즌 1 · 1232" : "Season 1 · 1232"}</span><h2>${ko ? "처인성" : "Cheoinseong"}</h2><p>${ko ? "관군 없이 성을 지킨 승려 김윤후와 처인부곡민의 이야기를 체스로 풀어요." : "Play through the story of Cheoinseong."}</p></div><div class="campaign-detail-art"><img src="/assets/cheoinseong-pieces-v2/g_rook.png" alt="" /><img src="/assets/cheoinseong-pieces-v2/g_knight.png" alt="" /></div><div class="campaign-season-progress"><span>${count} / 5 ${ko ? "단계 완료" : "complete"}</span><i><b style="width:${count * 20}%"></b></i></div></header><section class="campaign-era"><div><strong>${ko ? "이 사건, 한눈에" : "At a glance"}</strong><small>${ko ? "사건 요약 2~3문장" : "A brief event summary"}</small></div><span>${ko ? "인물 · 지도 · 답사 자료 모음" : "People · map · field notes"} →</span><ol><li><b>1231</b><small>${ko ? "몽골 1차 침입" : "First invasion"}</small></li><li><b>1232</b><small>${ko ? "강화 천도" : "Move to Ganghwa"}</small></li><li><b>1232</b><small>${ko ? "처인성 전투" : "Battle of Cheoinseong"}</small></li><li><b>[${ko ? "연도" : "year"}]</b><small>[${ko ? "사건" : "event"}]</small></li></ol></section><section class="campaign-scenes"><h3>${ko ? "다섯 장면" : "Five scenes"} <small>${ko ? "풀 때마다 그날의 기록이 열려요" : "A record opens with each solution"}</small></h3></section><footer class="campaign-completion"><strong>${ko ? "시즌 1 보상" : "Season 1 reward"}</strong><span>▢ ${ko ? "처인성 수호자 배지" : "Guardian badge"}</span><span>♟ ♟ ${ko ? "고려-몽골 말 디자인" : "Goryeo-Mongol pieces"}</span><small>${ko ? "5장을 모두 풀면 받아요" : "Complete all five chapters"}</small></footer>`;
+    list.querySelector(".campaign-back").textContent = ko ? "← 지역 캠페인" : "← Regional campaigns";
+    const progress = list.querySelector(".campaign-season-progress");
+    const nextStage = stages.find((stage) => !completed.has(stage.id));
+    progress.innerHTML = `<div><strong>${count} / ${stages.length} ${ko ? "단계 완료" : "complete"}</strong><small>${nextStage ? `${ko ? "다음" : "Next"} · ${stages.indexOf(nextStage) + 1}${ko ? "단계" : ""} ${ko ? nextStage.ko : nextStage.en}` : (ko ? "모든 장면 완료" : "All scenes complete")}</small></div><div class="campaign-progress-segments" role="progressbar" aria-label="${ko ? "처인성 진행도" : "Cheoinseong progress"}" aria-valuenow="${count}" aria-valuemin="0" aria-valuemax="${stages.length}">${stages.map((stage) => `<i class="${completed.has(stage.id) ? "is-done" : stage === nextStage ? "is-next" : ""}"></i>`).join("")}</div>`;
+    list.querySelector(".campaign-detail-head").after(progress);
+    list.querySelector(".campaign-era small").textContent = ko ? "[사건 요약 2~3문장]" : "[A brief event summary]";
+    list.querySelector(".campaign-era li:nth-child(3)").classList.add("is-current");
+    list.querySelector(".campaign-completion").remove();
     list.querySelector(".campaign-scenes").append(trainingPuzzleRows(stages, completed, ko, true));
+    const resourceLabel = list.querySelector(".campaign-era > span");
+    const resourceLink = document.createElement("button");
+    resourceLink.className = "campaign-resource-link";
+    resourceLink.type = "button";
+    resourceLink.textContent = resourceLabel.textContent;
+    resourceLink.addEventListener("click", () => {
+      setView("forum");
+      setForumSurface("library");
+    });
+    resourceLabel.replaceWith(resourceLink);
     list.querySelector(".campaign-back").onclick = () => {
       campaignDetailOpen = false;
       puzzlePathRenderSignature = "";
@@ -4201,7 +4232,27 @@ function renderLobby(lobby = {}) {
       ? "퀵 매칭으로 첫 상대를 찾아보거나 친구에게 방 코드를 보내보세요."
       : "로컬 서버를 시작하면 실제 플레이어 대기 목록을 볼 수 있습니다.";
 
-    empty.append(title, text);
+    const icon = document.createElement("span");
+    icon.className = "play-empty-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "♙";
+    empty.append(icon, title, text);
+    if (backendOnline) {
+      const actions = document.createElement("div");
+      actions.className = "play-empty-actions";
+      const findButton = document.createElement("button");
+      findButton.type = "button";
+      findButton.className = "button primary small";
+      findButton.textContent = "상대 찾기";
+      findButton.addEventListener("click", () => findMatchButton.click());
+      const createButton = document.createElement("button");
+      createButton.type = "button";
+      createButton.className = "button secondary small";
+      createButton.textContent = "방 만들기";
+      createButton.addEventListener("click", () => showCreateSeekButton.click());
+      actions.append(findButton, createButton);
+      empty.append(actions);
+    }
     openSeeksList.append(empty);
     return;
   }
@@ -5124,6 +5175,23 @@ function renderForumPosts() {
     forumPostList.append(empty);
     return;
   }
+  const postGroups = new Map();
+  for (const [key, label] of [
+    ["pinned", currentInterfaceLanguage() === "Korean" ? "📌 고정된 글" : "📌 Pinned posts"],
+    ["regular", currentInterfaceLanguage() === "Korean" ? "전체 글" : "All posts"],
+  ]) {
+    if (!visiblePosts.some((post) => (key === "pinned") === Boolean(post.pinned))) continue;
+    const group = document.createElement("section");
+    group.className = `forum-post-group forum-post-group-${key}`;
+    const heading = document.createElement("h3");
+    heading.className = "forum-group-heading";
+    heading.textContent = label;
+    const posts = document.createElement("div");
+    posts.className = "forum-post-group-list";
+    group.append(heading, posts);
+    forumPostList.append(group);
+    postGroups.set(key, posts);
+  }
   visiblePosts.forEach((post) => {
     const item = document.createElement("article");
     item.className = "forum-post";
@@ -5260,20 +5328,38 @@ function renderForumPosts() {
       }
       main.append(detail);
     }
+    const menu = document.createElement("details");
+    menu.className = "forum-post-menu";
+    const menuToggle = document.createElement("summary");
+    menuToggle.setAttribute("aria-label", `${post.title} 메뉴`);
+    menuToggle.textContent = "⋮";
+    const menuActions = document.createElement("div");
+    const openButton = document.createElement("button");
+    openButton.type = "button";
+    openButton.textContent = expandedForumPostId === post.id ? "접기" : "글 보기";
+    openButton.addEventListener("click", () => {
+      expandedForumPostId = expandedForumPostId === post.id ? null : post.id;
+      renderForumPosts();
+    });
+    menuActions.append(openButton);
     if (currentUser && post.authorId === currentUser.id) {
       const editButton = document.createElement("button");
       editButton.type = "button";
       editButton.className = "forum-pin-action";
       editButton.textContent = currentInterfaceLanguage() === "Korean" ? "편집" : "Edit";
-      editButton.addEventListener("click", () => openForumPostEditor(post, main, editButton));
-      side.append(editButton);
+      editButton.addEventListener("click", () => {
+        menu.open = false;
+        openForumPostEditor(post, main, editButton);
+      });
+      menuActions.append(editButton);
     }
     side.append(author, time, comments);
-    if (pinButton) side.append(pinButton);
-    if (deleteButton) side.append(deleteButton);
+    if (pinButton) menuActions.append(pinButton);
+    if (deleteButton) menuActions.append(deleteButton);
+    menu.append(menuToggle, menuActions);
     time.textContent = forumTimeLabel(post.createdAt);
-    item.append(pin, main, side);
-    forumPostList.append(item);
+    item.append(pin, main, side, menu);
+    postGroups.get(post.pinned ? "pinned" : "regular").append(item);
   });
 }
 
@@ -5284,6 +5370,8 @@ function setForumSurface(surface = "posts") {
     button.classList.toggle("active", showPosts && button.dataset.forumFilter === forumFilter);
   });
   forumPostsPanel?.toggleAttribute("hidden", !showPosts);
+  forumPostToolbar?.toggleAttribute("hidden", !showPosts);
+  resourceToolbar?.toggleAttribute("hidden", !showLibrary);
   resourceLibraryPanel?.toggleAttribute("hidden", !showLibrary);
   resourceDetailPanel?.toggleAttribute("hidden", surface !== "detail");
   resourceUploadPanel?.toggleAttribute("hidden", surface !== "upload");
@@ -8951,12 +9039,15 @@ function renderTrainingControls() {
   const campaign = puzzlePathStages.filter((stage) => stage.series === "cheoinseong" && completed.has(stage.id)).length + completedPoeunIds().size;
   const updateCard = (button, count, total, next) => {
     if (!button) return;
-    button.querySelector("em").textContent = `${count} / ${total}`;
+    button.querySelector("em").textContent = `${count} / ${total} ${ko ? "단계" : "steps"}`;
     button.querySelector(".training-card-progress b").style.width = `${Math.min(100, count / total * 100)}%`;
     button.querySelector(".training-card-next").textContent = `${ko ? "다음" : "Next"}: ${next}`;
-    button.querySelector(".training-card-action").textContent = count ? (ko ? "이어가기 →" : "Continue →") : (ko ? "시작하기 →" : "Start →");
+    button.querySelector(".training-card-action").textContent = count >= total && button === showTutorialGuideButton
+      ? (ko ? "복습하기 →" : "Review →")
+      : count ? (ko ? "이어하기 →" : "Continue →") : (ko ? "시작하기 →" : "Start →");
   };
   updateCard(showTutorialGuideButton, basics, 6, translateCopy(state.nextModule?.title || "기본기 복습"));
+  showTutorialGuideButton?.querySelector(".training-card-badge")?.replaceChildren(basics >= 6 ? (ko ? "완료" : "Done") : (ko ? "추천" : "Recommended"));
   updateCard(showCheoinseongGuideButton, campaign, 10, translateCopy(poeunStages.find((stage) => !completedPoeunIds().has(stage.slug))?.title || "처인성"));
   updateCard(showPuzzleGuideButton, practice, 11, (ko ? "퍼즐 풀기" : "Solve puzzles"));
   if (trainingContinueButton) {
