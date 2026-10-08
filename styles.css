@@ -11248,6 +11248,12 @@ body.show-how-to-play .workspace {
 body:has(.view:is([data-view="overview"], [data-view="dashboard"], [data-view="how-to-play"], [data-view="forum"], [data-view="profile"]).active):not(.show-landing) {
   background-image: linear-gradient(#ffffffb8, #ffffffb8), url('/assets/chess-line-wallpaper-v1.png');
 }
+body.show-how-to-play:not(.show-landing),
+body.show-how-to-play:not(.show-landing) .app-shell,
+body.show-how-to-play:not(.show-landing) .workspace {
+  background: var(--home-paper-2);
+  background-image: none;
+}
 body.is-signed-in .view[data-view="overview"],
 body.is-signed-in .view[data-view="dashboard"],
 body .view[data-view="how-to-play"] { width: 100%; max-width: 1120px; margin-inline: auto; }
@@ -14266,6 +14272,28 @@ body .how-to-play-view > .view-header h2,
   border-bottom-color: var(--home-accent-dark);
 }
 
+/* Training landing and section navigation */
+.training-home[hidden], .training-section-tools[hidden], .training-edition-picker[hidden] { display: none !important; }
+.training-home { display: grid; gap: 22px; margin: 34px 0 56px; }
+.training-continue { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px; border: 1px solid #594078; border-radius: 18px; background: #271a42; color: #fff; cursor: pointer; font: inherit; text-align: left; }
+.training-continue span { color: #e6d4f6; font-size: .85rem; font-weight: 700; }
+.training-continue strong { font-size: clamp(1rem, 2vw, 1.25rem); }
+.training-continue:hover { background: #392459; }
+.training-home-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.training-home-cards button { display: grid; justify-items: start; align-content: start; gap: 10px; min-height: 220px; padding: 24px; border: 1px solid #d7c7b8; border-radius: 22px; background: #fffaf2; color: #25202a; cursor: pointer; font: inherit; text-align: left; box-shadow: 0 8px 22px #311d290c; }
+.training-home-cards button:hover { border-color: #8b5d91; transform: translateY(-3px); box-shadow: 0 13px 28px #311d291b; }
+.training-card-icon { display: grid; width: 52px; height: 52px; place-items: center; border-radius: 16px; background: #eee1f3; color: #633b79; font-size: 1.8rem; }
+.training-home-cards strong { font-size: 1.4rem; }
+.training-home-cards small { color: #655c65; line-height: 1.5; }
+.training-home-cards em { margin-top: auto; color: #6d387a; font-size: .85rem; font-style: normal; font-weight: 800; }
+.training-section-tools { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 22px; padding: 12px 0; border-bottom: 1px solid #d9cbbd; }
+.training-home-back { padding: 9px 0; border: 0; background: none; color: #613b73; cursor: pointer; font: inherit; font-weight: 800; }
+.training-section-tools .training-edition-picker { display: flex; align-items: center; gap: 12px; margin: 0; padding: 0; border: 0; background: transparent; }
+.training-section-tools .training-edition-picker > span { white-space: nowrap; }
+.how-to-play-view[data-training-mode="home"] > .view-header { display: flex; }
+.how-to-play-view:not([data-training-mode="home"]) > .view-header { display: none; }
+@media (max-width: 760px) { .training-home-cards { grid-template-columns: 1fr; } .training-home-cards button { min-height: 155px; } .training-section-tools { flex-wrap: wrap; } .training-section-tools .training-edition-picker { flex-wrap: wrap; } }
+
 .training-inline-progress i,
 .campaign-season-progress i { background: var(--home-paper-3); }
 .training-inline-progress b,
@@ -14470,6 +14498,7 @@ body .view[data-view="how-to-play"] :is(button,a,input,select):focus-visible,
 /* About: three feature stories share one horizontal slide track. */
 .home-feature-story { display: block; }
 .home-feature-story .home-story-heading { max-width: none; padding-bottom: var(--space-lg); }
+.home-feature-story .home-story-heading h2 { margin-top: 0; }
 .home-feature-story .home-story-heading > span { margin-top: var(--space-sm); }
 .home-feature-carousel { min-width: 0; }
 .home-feature-window { overflow: hidden; outline-offset: 4px; }
@@ -14485,12 +14514,12 @@ body .view[data-view="how-to-play"] :is(button,a,input,select):focus-visible,
 .home-feature-image-tutorial { background: #ddd4c8; }
 .home-feature-image-tutorial::before { position: absolute; inset: 0; background: conic-gradient(#c2ac91 25%, #eadfce 0 50%, #c2ac91 0 75%, #eadfce 0) 0 0 / 5rem 5rem; content: ""; opacity: .45; }
 .home-feature-image-tutorial img { width: min(56%, 17rem); height: auto; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 1rem 1rem #3a302a35); }
-.home-feature-image-resources { background: #ded9ce; }
-.home-resource-sheet { display: grid; width: min(65%, 18rem); min-height: 19rem; padding: 1.25rem; background: #fffefa; box-shadow: .6rem .8rem 0 #bfb8ad, 0 1rem 2rem #443b322a; transform: rotate(-4deg); }
-.home-resource-sheet > span { color: var(--home-accent-dark); font-size: .65rem; font-weight: 800; letter-spacing: .12em; }
-.home-resource-sheet > strong { color: var(--home-ink); font-size: 1.2rem; line-height: 1.2; }
-.home-resource-sheet img { width: 6rem; height: 6rem; margin: auto; object-fit: contain; }
-.home-resource-sheet > small { border-top: 1px solid #d8d2c8; padding-top: .5rem; color: var(--home-ink-soft); }
+.home-feature-image-resources { background: #e9e3ee; }
+.home-worksheet-stack { position: relative; width: 100%; min-height: 27rem; overflow: hidden; }
+.home-worksheet-stack img { position: absolute; top: 12%; left: 50%; width: clamp(8.25rem, 33vw, 13rem); height: auto; max-height: none; aspect-ratio: 612 / 792; object-fit: contain; border: 1px solid #d5cce0; background: white; box-shadow: 0 .9rem 1.8rem #24173738; }
+.home-worksheet-stack img:nth-child(1) { transform: translateX(-86%) rotate(-10deg); }
+.home-worksheet-stack img:nth-child(2) { transform: translateX(-38%) rotate(7deg); }
+.home-worksheet-stack img:nth-child(3) { transform: translateX(-61%) rotate(-2deg) translateY(-.4rem); }
 .home-feature-image figcaption { position: absolute; right: var(--space-sm); bottom: var(--space-sm); left: var(--space-sm); padding: .55rem .75rem; background: color-mix(in srgb, var(--home-paper) 91%, transparent); color: var(--home-ink); font-size: var(--text-sm); font-weight: 700; }
 .home-feature-controls { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); margin-top: var(--space-lg); }
 .home-feature-dots, .home-feature-arrows { display: flex; align-items: center; gap: .5rem; }
@@ -14505,8 +14534,186 @@ body .view[data-view="how-to-play"] :is(button,a,input,select):focus-visible,
   .home-feature-image { min-height: 14rem; }
   .home-feature-image img { max-height: 17rem; }
   .home-feature-image-tutorial img { max-height: 13rem; }
-  .home-resource-sheet { min-height: 14rem; }
+  .home-worksheet-stack { min-height: 19rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   .home-feature-track { transition: none; }
+}
+
+/* Compact training landing and section-level piece settings. */
+body .how-to-play-view[data-training-mode="home"] > .view-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 152px;
+  margin-bottom: 0;
+  padding-block: 20px;
+  align-items: center;
+}
+body .how-to-play-view[data-training-mode="home"] > .view-header h2 { font-size: clamp(2.2rem, 4vw, 3rem); }
+.how-to-play-view[data-training-mode="home"] #tutorialLoginButton { display: none !important; }
+.how-to-play-view[data-training-mode="home"] .training-intro { margin-top: 6px; font-size: .95rem; }
+.how-to-play-view[data-training-mode="home"] .training-continue {
+  display: grid;
+  flex: 0 1 360px;
+  gap: 3px;
+  width: auto;
+  min-height: 68px;
+  padding: 12px 18px;
+  border-color: #8d70bc;
+  border-radius: 13px;
+  background: #673d98;
+  box-shadow: 0 8px 20px #0d092a38;
+}
+.how-to-play-view[data-training-mode="home"] .training-continue:hover { background: #7850aa; }
+.how-to-play-view[data-training-mode="home"] .training-continue span { color: #eadcf8; }
+.how-to-play-view[data-training-mode="home"] .training-continue strong { color: #fff; font-size: 1rem; }
+.training-home { gap: 0; margin: 20px 0 32px; }
+.training-home-cards { gap: 14px; }
+.training-home-cards .training-home-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-content: stretch;
+  align-items: start;
+  gap: 13px;
+  min-height: 170px;
+  padding: 18px;
+  border-radius: 16px;
+}
+.training-card-icon { width: 46px; height: 46px; border-radius: 12px; font-size: 1.65rem; }
+.training-card-content { display: grid; min-width: 0; gap: 4px; }
+.training-card-heading { display: flex; align-items: center; gap: 7px; }
+.training-home-cards strong { font-size: 1.2rem; line-height: 1.25; }
+.training-card-badge { padding: 2px 7px; border-radius: 999px; background: #f0dfff; color: #65388c; font-size: .69rem; font-weight: 800; }
+.training-home-cards small { font-size: .82rem; }
+.training-card-next { color: #6b4c7b; font-size: .78rem; font-weight: 700; }
+.training-card-progress { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+.training-card-progress i { flex: 1; height: 5px; overflow: hidden; border-radius: 999px; background: #e7ddf0; }
+.training-card-progress b { display: block; width: 0; height: 100%; border-radius: inherit; background: #7750a9; }
+.training-home-cards .training-card-progress em { margin: 0; color: #5a4171; font-size: .72rem; white-space: nowrap; }
+.training-card-action { align-self: end; margin-top: 6px; color: #653b82; font-size: .8rem; font-weight: 800; }
+.training-card-arrow { display: none; }
+.training-section-heading { position: relative; align-items: start; }
+.training-section-heading > .training-edition-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  white-space: nowrap;
+}
+.training-section-heading > .training-edition-picker[hidden] { display: none !important; }
+.training-section-heading > .training-edition-picker > span { font-size: .82rem; font-weight: 800; }
+@media (max-width: 900px) {
+  .training-section-heading > .training-edition-picker { grid-column: 1 / -1; justify-self: end; }
+}
+@media (max-width: 760px) {
+  body .how-to-play-view[data-training-mode="home"] { padding-inline: 19px; padding-bottom: 84px; }
+  body .how-to-play-view[data-training-mode="home"] > .view-header {
+    display: block;
+    min-height: 108px;
+    margin-inline: -19px;
+    padding: 16px 20px;
+    align-items: flex-start;
+    gap: 0;
+  }
+  body .how-to-play-view[data-training-mode="home"] > .view-header h2 { font-size: 1.75rem; }
+  .how-to-play-view[data-training-mode="home"] .training-intro { margin-top: 2px; font-size: .78rem; line-height: 1.35; }
+  .how-to-play-view[data-training-mode="home"] .training-continue {
+    position: fixed;
+    z-index: 20;
+    right: 19px;
+    bottom: max(82px, calc(70px + env(safe-area-inset-bottom)));
+    left: 19px;
+    display: flex;
+    width: auto;
+    min-height: 44px;
+    padding: 9px 14px;
+    border-radius: 9px;
+  }
+  .how-to-play-view[data-training-mode="home"] .training-continue span { display: none; }
+  .how-to-play-view[data-training-mode="home"] .training-continue strong { font-size: .86rem; }
+  .training-home { margin: 14px 0 16px; }
+  .training-home-cards { grid-template-columns: 1fr; gap: 8px; }
+  .training-home-cards .training-home-card {
+    grid-template-columns: 39px minmax(0, 1fr) 12px;
+    align-items: center;
+    gap: 10px;
+    min-height: 104px;
+    padding: 11px 12px;
+    border-radius: 13px;
+  }
+  .training-card-icon { width: 36px; height: 36px; border-radius: 9px; font-size: 1.35rem; }
+  .training-card-content { gap: 2px; }
+  .training-home-cards strong { font-size: .94rem; }
+  .training-home-cards small { font-size: .68rem; line-height: 1.25; }
+  .training-card-next { font-size: .64rem; }
+  .training-card-progress { gap: 7px; margin-top: 3px; }
+  .training-card-action { margin-top: 2px; font-size: .66rem; }
+  .training-card-arrow { display: block; align-self: center; color: #6e3d94; font-size: 1.25rem; }
+  .training-home-cards .training-home-card.is-primary { border-color: #6f439b; background: #6f439b; color: #fff; }
+  .training-home-card.is-primary .training-card-icon { background: #f0e4fb; color: #6f439b; }
+  .training-home-card.is-primary :is(small,.training-card-next,.training-card-action,.training-card-arrow,.training-card-progress em) { color: #fff; }
+  .training-home-card.is-primary .training-card-progress i { background: #ffffff55; }
+  .training-home-card.is-primary .training-card-progress b { background: #fff; }
+  .training-home-card.is-primary .training-card-badge { background: #fff; color: #6f439b; }
+  .training-section-heading:has(> .training-edition-picker) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 10px 8px;
+  }
+  .training-section-heading > .training-edition-picker {
+    grid-column: 2;
+    grid-row: 1;
+    display: grid;
+    justify-items: end;
+    gap: 3px;
+  }
+  .training-section-heading > .training-edition-picker > span { font-size: .7rem; }
+  .training-section-heading > .training-inline-progress { grid-column: 1 / -1; grid-row: 2; }
+  .training-section-heading .training-edition-options button { font-size: .73rem; }
+}
+
+/* Final training and Poeun copy cleanup. */
+body.show-how-to-play:not(.show-landing) { background-color: var(--home-paper-2) !important; background-image: none !important; }
+body.show-how-to-play:not(.show-landing) :is(#dashboard, .app-shell, .workspace) { background-color: var(--home-paper-2) !important; background-image: none !important; }
+.how-to-play-view[data-training-mode="home"] .training-continue { display: flex; align-items: center; justify-content: center; }
+.training-home-cards .training-home-card { min-height: 148px; }
+.training-home-card .training-card-content { gap: 6px; }
+.training-section-heading:has(> .training-design-change) { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: start; }
+.training-design-change { justify-self: end; padding: 8px 11px; border: 1px solid #cdb8d4; border-radius: 8px; background: #fffaf2; color: #623981; font: inherit; font-size: .81rem; font-weight: 800; white-space: nowrap; cursor: pointer; }
+.training-design-change:hover { background: #f1e5f7; }
+.training-next-link { justify-content: flex-end; }
+.poeun-hero .poeun-hero-title { margin: 0; color: #231d25; font-size: clamp(1.45rem, 2.5vw, 2.15rem); line-height: 1.25; letter-spacing: -.04em; }
+.poeun-hero-copy { display: grid; align-content: center; justify-items: start; gap: 16px; }
+.poeun-hero-meta { margin: 0; }
+.home-feature-image-tutorial::before { display: none; }
+.home-team-story .home-story-copy > p:first-child:last-of-type { margin-top: 0; color: var(--home-accent-dark); font-size: var(--text-sm); font-weight: 800; line-height: normal; }
+.home-feature-image-tutorial img { width: 100%; height: 100%; max-height: 27rem; aspect-ratio: 16 / 10; object-fit: cover; filter: none; }
+.home-feature-image-tutorial { aspect-ratio: 16 / 10; min-height: 0; background: #f6f4f1; }
+.home-feature-image-tutorial img { width: 100%; height: 100%; max-height: none; aspect-ratio: auto; object-fit: contain; }
+.home-feature-image-campaign img { object-position: center 63%; }
+.home-press { display: grid; grid-column: 1 / -1; gap: 1.5rem; min-width: 0; margin-top: var(--space-lg); padding-top: var(--space-xl); border-top: 1px solid var(--home-deep-rule); }
+.home-press-heading { display: grid; gap: .4rem; }
+.home-press-heading p { margin: 0; color: #c9aae8; font-size: var(--text-sm); font-weight: 800; letter-spacing: .12em; }
+.home-press-heading h3 { margin: 0; color: var(--home-deep-text); font-size: clamp(1.6rem, 3vw, 2.25rem); }
+.home-activity-story .home-story-heading h2 { margin-top: 0; }
+.home-press-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-sm); }
+.home-press-card { display: flex; flex-direction: column; align-items: flex-start; gap: .8rem; min-width: 0; min-height: 17rem; padding: 1.4rem; border: 1px solid var(--home-deep-rule); background: var(--home-deep-card); color: var(--home-deep-text); text-decoration: none; transition: border-color 180ms ease, transform 180ms ease; }
+.home-press-card:hover { border-color: #c9aae8; transform: translateY(-3px); }
+.home-press-card:focus-visible { outline: 2px solid #d7b5ff; outline-offset: 3px; }
+.home-press-source { display: flex; flex-wrap: wrap; gap: .35rem .7rem; color: #c9aae8; font-size: var(--text-sm); font-weight: 700; }
+.home-press-source time { color: var(--home-deep-muted); font-weight: 400; }
+.home-press-card strong { font-size: 1.15rem; line-height: 1.35; }
+.home-press-card > span:not(.home-press-source) { color: var(--home-deep-muted); font-size: var(--text-sm); line-height: 1.55; }
+.home-press-card em { margin-top: auto; color: #e6d5fb; font-size: var(--text-sm); font-style: normal; font-weight: 800; }
+@media (max-width: 59.99rem) { .home-press-list { grid-template-columns: 1fr; } .home-press-card { min-height: 0; } }
+@media (max-width: 760px) {
+  .training-home-cards .training-home-card { min-height: 94px; }
+  .training-section-heading:has(> .training-design-change) { grid-template-columns: minmax(0, 1fr) auto; }
+  .training-section-heading > .training-design-change { grid-column: 2; grid-row: 1; }
+  .training-section-heading > .training-inline-progress { grid-column: 1 / -1; grid-row: 2; }
 }

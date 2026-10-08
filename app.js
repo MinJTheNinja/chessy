@@ -101,6 +101,10 @@ const showTutorialGuideButton = document.querySelector("#showTutorialGuide");
 const showPuzzleGuideButton = document.querySelector("#showPuzzleGuide");
 const showCheoinseongGuideButton = document.querySelector("#showCheoinseongGuide");
 const trainingEditionPicker = document.querySelector("#trainingEditionPicker");
+const trainingHome = document.querySelector("#trainingHome");
+const trainingContinueButton = document.querySelector("#trainingContinue");
+const trainingSectionTools = document.querySelector("#trainingSectionTools");
+const trainingHomeBackButton = document.querySelector("#trainingHomeBack");
 const trainingEditionLabel = document.querySelector("#trainingEditionLabel");
 const trainingEditionButtons = [...document.querySelectorAll("[data-training-edition]")];
 const tutorialPuzzleNote = document.querySelector("#tutorialPuzzleNote");
@@ -1042,6 +1046,7 @@ const pieceNames = {
 const pieceEditionNames = {
   original: "Original Edition",
   cheoinseong: "Cheoinseong Edition",
+  poeun: "Poeun Edition",
   beta: "Beta Edition",
 };
 
@@ -1130,6 +1135,10 @@ function originalPieceSprite(pieceCode) {
 function pieceSvg(pieceCode, edition = "beta") {
   const normalizedEdition = normalizePieceEdition(edition);
   if (normalizedEdition === "original") return originalPieceSprite(pieceCode);
+  if (normalizedEdition === "poeun") {
+    const symbols = { k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟" };
+    return `<span class="poeun-theme-glyph" aria-label="포은 ${pieceCode?.[0] === "w" ? "백" : "흑"} ${pieceNames[pieceCode?.[1]] || "기물"}">${symbols[pieceCode?.[1]] || symbols.p}</span>`;
+  }
   return normalizedEdition === "cheoinseong" ? cheoinseongPieceSvg(pieceCode) : betaPieceSvg(pieceCode);
 }
 
@@ -2450,8 +2459,8 @@ function trainingTutorialPath(edition = activeTrainingEdition()) {
 function renderTrainingEditionControls() {
   const edition = activeTrainingEdition();
   const korean = currentInterfaceLanguage() === "Korean";
-  trainingEditionPicker?.toggleAttribute("hidden", activeTrainingPathMode === "cheoinseong");
-  if (trainingEditionLabel) trainingEditionLabel.textContent = korean ? "튜토리얼 말 디자인" : "Tutorial piece design";
+  trainingEditionPicker?.toggleAttribute("hidden", activeTrainingPathMode !== "tutorial");
+  if (trainingEditionLabel) trainingEditionLabel.textContent = korean ? "말 디자인" : "Piece design";
   trainingEditionButtons.forEach((button) => {
     const active = button.dataset.trainingEdition === edition;
     button.classList.toggle("active", active);
@@ -2675,12 +2684,12 @@ function hidePoeunPanels() {
 function renderPoeunPath() {
   if (!poeunPathList) return;
   const completed = completedPoeunIds();
-  poeunPathList.innerHTML = `<header class="poeun-path-heading poeun-hero"><div class="poeun-hero-copy"><span class="training-kicker">포은문화제 · 단심이의 체스 이야기</span><h2>마음이 움직이는 순간,<br />한 수를 선택해요</h2><p>하여가, 단심가, 선죽교. 시와 이야기를 따라 체스 규칙을 직접 익히는 세 개의 짧은 스테이션입니다.</p><div class="poeun-hero-meta"><span>스테이션당 약 90초</span><span class="poeun-progress">${completed.size} / ${poeunStages.length} 완료</span></div><button type="button" class="poeun-picker-back">← 캠페인 선택</button></div><div class="poeun-hero-art"><img src="/assets/poeun/dansimi.png" alt="갓과 붉은 망토를 입은 단심이" width="320" height="320" /></div></header><ol class="poeun-path-nodes"></ol>`;
+  poeunPathList.innerHTML = `<header class="poeun-path-heading poeun-hero"><div class="poeun-intro-film"><video class="poeun-intro-video" controls playsinline preload="metadata" poster="/assets/poeun/scene-osang.png" aria-label="포은 정몽주와 용인 이야기, 36초 만화 영상"><source src="/assets/poeun/poeun-intro.webm" type="video/webm" /><track kind="captions" src="/assets/poeun/poeun-intro.ko.vtt" srclang="ko" label="한국어" />영상을 재생할 수 없습니다.</video></div><div class="poeun-hero-copy"><h2 class="poeun-hero-title">포은문화제 · 단심이의 체스 이야기</h2><div class="poeun-hero-meta"><span class="poeun-progress">${completed.size} / ${poeunStages.length} 완료</span></div><button type="button" class="poeun-picker-back">← 캠페인 선택</button></div></header><ol class="poeun-path-nodes"></ol>`;
   poeunPathList.querySelector(".poeun-picker-back").onclick = showCampaignPicker;
   const nodes = poeunPathList.querySelector(".poeun-path-nodes");
   poeunStages.forEach((stage, index) => {
     const row = document.createElement("li");
-    row.innerHTML = `<button type="button" class="poeun-path-node"><span class="number">${String(index + 1).padStart(2, "0")}</span><span><strong>${stage.title}</strong><small>${stage.concept}</small></span><span class="poeun-path-tail">${completed.has(stage.slug) ? "✓ 완료 · 다시 보기" : "시작 →"}</span></button>`;
+    row.innerHTML = `<button type="button" class="poeun-path-node"><span class="number">${String(index + 1).padStart(2, "0")}</span><img class="poeun-path-art" src="/assets/poeun/scene-${stage.slug}.png" alt="" width="120" height="68" loading="lazy" /><span><strong>${stage.title}</strong><small>${stage.concept}</small></span><span class="poeun-path-tail">${completed.has(stage.slug) ? "✓ 완료 · 다시 보기" : "시작 →"}</span></button>`;
     row.querySelector("button").onclick = () => openPoeunChapter(stage.slug);
     nodes.append(row);
   });
@@ -2688,6 +2697,7 @@ function renderPoeunPath() {
 
 function showPoeunPath({ updateHash = true } = {}) {
   window.PoeunStationUI?.dispose();
+  if (pieceGuideDialog?.open) pieceGuideDialog.close();
   navigationRevision += 1;
   trainingModuleOpen = false;
   poeunChapterOpen = false;
@@ -2755,6 +2765,7 @@ function markTrainingNavigationActive() {
 function openPoeunChapter(slug, { updateHash = true } = {}) {
   const stage = poeunStages.find((item) => item.slug === slug);
   if (!stage || !poeunChapter) return;
+  if (pieceGuideDialog?.open) pieceGuideDialog.close();
   navigationRevision += 1;
   activePoeunSlug = slug;
   poeunChapterOpen = true;
@@ -2773,10 +2784,28 @@ function openPoeunChapter(slug, { updateHash = true } = {}) {
     signedIn: Boolean(currentUser),
     onComplete: recordPoeunCompletion,
     onBack: () => showPoeunPath(),
-    onSignup: () => currentUser ? showPoeunPath() : openAccountEntry("signup"),
+    isLast: poeunStages.at(-1)?.slug === slug,
+    onNext: () => {
+      const next = poeunStages[poeunStages.findIndex((item) => item.slug === slug) + 1];
+      if (next) openPoeunChapter(next.slug);
+      else showPoeunEnding();
+    },
   });
   if (updateHash && location.hash !== `#poeun/${slug}`) history.pushState({ poeunChapter: slug }, "", `/#poeun/${slug}`);
   poeunChapter.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function showPoeunEnding({ updateHash = true } = {}) {
+  poeunChapterOpen = true;
+  activePoeunSlug = "";
+  poeunPathList?.setAttribute("hidden", "");
+  poeunChapter?.removeAttribute("hidden");
+  window.PoeunStationUI.mountEnding(poeunChapter, {
+    onRestart: () => openPoeunChapter(poeunStages[0].slug),
+    onRoute: () => showPoeunPath(),
+  });
+  if (updateHash && location.hash !== "#poeun/ending") history.pushState({ poeunEnding: true }, "", "/#poeun/ending");
+  poeunChapter?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 let entryTypewriterTimer = 0;
@@ -3344,7 +3373,7 @@ function renderCampaignPicker(list, completed = completedPuzzleIds()) {
   const basicsComplete = Boolean(activeTrainingState().puzzleUnlocked);
   const cheoinCount = puzzlePathStages.filter((stage) => stage.series === "cheoinseong" && completed.has(stage.id)).length;
   const poeunCount = completedPoeunIds().size;
-  list.innerHTML = `<section class="poeun-picker"><h2>지역 캠페인</h2><p>이야기를 선택해 지역 문화 속 체스를 체험해 보세요.</p><div class="poeun-campaign-cards"><button type="button" class="poeun-campaign-card ${basicsComplete ? "" : "is-locked"}" ${basicsComplete ? "" : "disabled"}><strong>처인성</strong><small>고려 vs 몽골 · 5장면 · 처인성 ${cheoinCount} / 5</small><em>${basicsComplete ? "시작 가능" : "기본기 완료 후 열림"}</em></button><button type="button" class="poeun-campaign-card"><strong>포은</strong><small>하여가 · 단심가 · 선죽교 · 포은 ${poeunCount} / ${poeunStages.length}</small><em>바로 시작</em></button></div></section>`;
+  list.innerHTML = `<section class="poeun-picker"><h2>지역 캠페인</h2><p>이야기를 선택해 지역 문화 속 체스를 체험해 보세요.</p><div class="poeun-campaign-cards"><button type="button" class="poeun-campaign-card ${basicsComplete ? "" : "is-locked"}" ${basicsComplete ? "" : "disabled"}><span class="poeun-campaign-copy"><strong>처인성</strong><em>${basicsComplete ? "시작 가능" : "기본기 완료 후 열림"}</em></span><img class="poeun-campaign-photo" src="/assets/poeun/cheoinseong-site.jpg" alt="용인 처인성의 성곽 터" /></button><button type="button" class="poeun-campaign-card"><span class="poeun-campaign-copy"><strong>포은</strong><em>바로 시작</em></span><img class="poeun-campaign-photo poeun-campaign-portrait" src="/assets/poeun/jeong-mongju-portrait.jpg" alt="포은 정몽주 초상" /></button></div><p class="poeun-campaign-credits">사진: <a href="https://gnews.gg.go.kr/news/news_detail.do?number=202506172202226372C076&amp;s_code=C076" target="_blank" rel="noopener noreferrer">경기도뉴스포털 · 서승연</a> / 초상: <a href="https://commons.wikimedia.org/wiki/File:Goryeo-Portrait_of_Jeong_Mongju-01.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a></p></section>`;
   list.querySelectorAll(".poeun-campaign-card")[0].onclick = () => {
     campaignDetailOpen = true;
     puzzlePathRenderSignature = "";
@@ -3439,10 +3468,13 @@ async function refreshTrainingState() {
 function setActiveTrainingPathMode(mode) {
   activeTrainingPathMode = mode;
   if (howToPlayView) howToPlayView.dataset.trainingMode = mode;
-  trainingEditionPicker?.toggleAttribute("hidden", mode === "cheoinseong" || mode === "poeun");
+  trainingHome?.toggleAttribute("hidden", mode !== "home");
+  trainingSectionTools?.toggleAttribute("hidden", mode === "home");
+  trainingEditionPicker?.toggleAttribute("hidden", mode !== "tutorial");
+  renderTrainingEditionControls();
   showTutorialGuideButton?.classList.toggle("active", mode === "tutorial");
   showPuzzleGuideButton?.classList.toggle("active", mode === "puzzle");
-  showCheoinseongGuideButton?.classList.toggle("active", mode === "cheoinseong" || mode === "poeun");
+  showCheoinseongGuideButton?.classList.toggle("active", mode === "cheoinseong");
   pieceGuideTriggers.forEach((button) => { button.hidden = button.dataset.pieceGuideContext !== "match" && !["puzzle", "cheoinseong"].includes(mode); });
 }
 
@@ -3688,6 +3720,7 @@ function watchPuzzleFrameHeight() {
 }
 
 function setHowToPlayMode(mode) {
+  if (mode === "home") { showTrainingLanding(); return; }
   if (mode === "poeun") {
     if (poeunChapterOpen) {
       setActiveTrainingPathMode("poeun");
@@ -5836,7 +5869,7 @@ function setView(viewName) {
   if (isStudentTutorialRequired() && viewName !== "how-to-play" && !returningToActiveMatch) {
     viewName = "how-to-play";
   }
-  if (viewName === "how-to-play") showTrainingModuleHome();
+  if (viewName === "how-to-play") showTrainingLanding();
   setForumPolling(viewName === "forum");
   if (viewName === "home") {
     updateRouteForView(viewName);
@@ -8226,6 +8259,23 @@ function showHomeFeature(index) {
   });
 }
 
+function showTrainingLanding() {
+  navigationRevision += 1;
+  hidePoeunPanels();
+  markTrainingNavigationActive();
+  trainingModuleOpen = false;
+  campaignDetailOpen = false;
+  howToPlayShell?.classList.remove("puzzle-mode");
+  howToPlayView?.classList.remove("puzzle-mode");
+  resetHowToPlayFrameSizing();
+  trainingModuleList?.setAttribute("hidden", "");
+  puzzlePathList?.setAttribute("hidden", "");
+  cheoinseongPathList?.setAttribute("hidden", "");
+  howToPlayShell?.setAttribute("hidden", "");
+  setActiveTrainingPathMode("home");
+  renderTrainingControls();
+}
+
 homeFeatureDots.forEach((dot) => dot.addEventListener("click", () => showHomeFeature(Number(dot.dataset.featureSlide))));
 document.querySelector("#homeFeaturePrevious")?.addEventListener("click", () => showHomeFeature(homeFeatureIndex - 1));
 document.querySelector("#homeFeatureNext")?.addEventListener("click", () => showHomeFeature(homeFeatureIndex + 1));
@@ -8290,8 +8340,9 @@ mainAccountButton?.addEventListener("click", () => openAccountEntry("signup"));
 mainTutorialButton?.addEventListener("click", () => {
   clearRequestedTrainingModule();
   setView("how-to-play");
-  showTrainingModuleHome();
 });
+
+trainingHomeBackButton?.addEventListener("click", showTrainingLanding);
 
 tutorialLoginButton?.addEventListener("click", () => currentUser ? setView("dashboard") : openAccountEntry("login"));
 
@@ -8731,7 +8782,10 @@ applyInterfaceLanguage();
 syncLegalLanguage();
 renderLandingTypewriter();
 const initialPoeunSlug = requestedPoeunSlug();
-if (initialPoeunSlug) {
+if (location.hash === "#poeun/ending") {
+  setView("how-to-play");
+  showPoeunEnding({ updateHash: false });
+} else if (initialPoeunSlug) {
   setView("how-to-play");
   history.replaceState({ poeunPath: true }, "", "/#poeun");
   openPoeunChapter(initialPoeunSlug);
@@ -8749,7 +8803,10 @@ checkBackend();
 
 function handlePoeunHistory() {
   const slug = requestedPoeunSlug();
-  if (slug) {
+  if (location.hash === "#poeun/ending") {
+    if (!howToPlayView?.classList.contains("active")) setView("how-to-play");
+    showPoeunEnding({ updateHash: false });
+  } else if (slug) {
     if (poeunChapterOpen && activePoeunSlug === slug) return;
     if (!howToPlayView?.classList.contains("active")) {
       setView("how-to-play");
@@ -8782,7 +8839,8 @@ function renderTrainingModuleList() {
     [5, "핀과 스큐어", "Pins and skewers", "한 줄에 선 두 기물을 묶는 핀과 스큐어를 배워요.", "capture"],
     [6, "숨은 공격과 메이트", "Discovered attacks", "숨은 공격을 열고, 질식·사다리·뒷줄 메이트를 구분해요.", "mate"],
   ];
-  trainingModuleList.innerHTML = `<header class="training-section-heading"><div><h2>${ko ? "기본기" : "Fundamentals"}</h2><p>${ko ? "규칙은 여기서 한 번만 배워요. 배운 규칙은 캠페인과 연습에서 써봐요." : "Learn each rule once, then use it in campaigns and practice."}</p></div><div class="training-inline-progress"><span>${done.size} / 6 ${ko ? "단계 완료" : "complete"}</span><i><b style="width:${done.size / 6 * 100}%"></b></i></div></header><div class="fundamentals-list"></div>`;
+  trainingModuleList.innerHTML = `<header class="training-section-heading"><div><h2>${ko ? "기본기" : "Fundamentals"}</h2><p>${ko ? "규칙은 여기서 한 번만 배워요. 배운 규칙은 캠페인과 연습에서 써봐요." : "Learn each rule once, then use them in campaigns and practice."}</p></div><div class="training-inline-progress"><span>${done.size} / 6 ${ko ? "단계 완료" : "complete"}</span><i><b style="width:${done.size / 6 * 100}%"></b></i></div><button class="training-design-change" type="button">${ko ? "디자인 바꾸기" : "Change design"} →</button></header><div class="fundamentals-list"></div>`;
+  trainingModuleList.querySelector(".training-design-change").onclick = () => { setView("profile"); setProfileSettingsMode(true); };
   const list = trainingModuleList.querySelector(".fundamentals-list");
   lessons.forEach(([id, koTitle, enTitle, description, icon]) => {
     const complete = done.has(id);
@@ -8796,7 +8854,7 @@ function renderTrainingModuleList() {
   });
   const footer = document.createElement("footer");
   footer.className = "training-next-link";
-  footer.innerHTML = `<span>${ko ? "포은은 바로 시작할 수 있고, 처인성은 기본기 완료 후 열립니다." : "Start Poeun now; Cheoinseong opens after the fundamentals."}</span><button type="button">${ko ? "지역 캠페인 보기" : "View campaigns"} →</button>`;
+  footer.innerHTML = `<button type="button">${ko ? "지역 캠페인 보기" : "View campaigns"} →</button>`;
   footer.querySelector("button").onclick = showCampaignPicker;
   trainingModuleList.append(footer);
 }
@@ -8807,9 +8865,26 @@ function renderTrainingControls() {
   const completed = completedPuzzleIds();
   const basics = new Set((state.completedModules || []).map(Number)).size;
   const practice = puzzlePathStages.filter((stage) => !stage.series && completed.has(stage.id)).length;
-  if (showTutorialGuideButton) showTutorialGuideButton.innerHTML = `${ko ? "기본기" : "Fundamentals"} <small>${basics} / 6</small>`;
-  if (showCheoinseongGuideButton) showCheoinseongGuideButton.textContent = ko ? "지역 캠페인" : "Local campaigns";
-  if (showPuzzleGuideButton) showPuzzleGuideButton.innerHTML = `${ko ? "연습" : "Practice"} <small>${practice} / 11</small>`;
+  const campaign = puzzlePathStages.filter((stage) => stage.series === "cheoinseong" && completed.has(stage.id)).length + completedPoeunIds().size;
+  const updateCard = (button, count, total, next) => {
+    if (!button) return;
+    button.querySelector("em").textContent = `${count} / ${total}`;
+    button.querySelector(".training-card-progress b").style.width = `${Math.min(100, count / total * 100)}%`;
+    button.querySelector(".training-card-next").textContent = `${ko ? "다음" : "Next"}: ${next}`;
+    button.querySelector(".training-card-action").textContent = count ? (ko ? "이어가기 →" : "Continue →") : (ko ? "시작하기 →" : "Start →");
+  };
+  updateCard(showTutorialGuideButton, basics, 6, state.nextModule?.title || (ko ? "기본기 복습" : "Review fundamentals"));
+  updateCard(showCheoinseongGuideButton, campaign, 10, poeunStages.find((stage) => !completedPoeunIds().has(stage.slug))?.title || (ko ? "처인성" : "Cheoinseong"));
+  updateCard(showPuzzleGuideButton, practice, 11, (ko ? "퍼즐 풀기" : "Solve puzzles"));
+  if (trainingContinueButton) {
+    const next = state.nextModule;
+    const nextPractice = puzzlePathStages.find((stage) => !stage.series && canOpenPuzzleStage(stage, completed) && !completed.has(stage.id));
+    const nextPoeun = poeunStages.find((stage) => !completedPoeunIds().has(stage.slug));
+    const action = next ? () => openTrainingModule(next.id) : nextPractice ? () => openPuzzleStage(nextPractice, puzzlePathStages.indexOf(nextPractice)) : nextPoeun ? () => openPoeunChapter(nextPoeun.slug) : () => showTrainingModuleHome();
+    const title = next ? next.title : nextPractice ? nextPractice.ko : nextPoeun ? nextPoeun.title : "기본기 복습";
+    trainingContinueButton.querySelector("strong").textContent = `${ko ? "다음" : "Next"}: ${title} ▶`;
+    trainingContinueButton.onclick = action;
+  }
   [showPuzzleGuideButton, showCheoinseongGuideButton].forEach((button) => {
     button?.classList.remove("locked");
     button?.setAttribute("aria-disabled", "false");

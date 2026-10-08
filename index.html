@@ -61,11 +61,11 @@
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
     </noscript>
     <link rel="stylesheet" href="/tokens.css?v=20260925-home-v3" />
-    <link rel="stylesheet" href="/styles.css?v=20261008-feature-slides" />
-    <link rel="stylesheet" href="/assets/poeun/poeun.css?v=20261007" />
-    <script src="/assets/poeun/stations.js?v=20261007" defer></script>
-    <script src="/assets/poeun/station-ui.js?v=20261007" defer></script>
-    <script src="/app.js?v=20261008-feature-slides" defer></script>
+    <link rel="stylesheet" href="/styles.css?v=20261008-worksheets" />
+    <link rel="stylesheet" href="/assets/poeun/poeun.css?v=20261008-scene-narration" />
+    <script src="/assets/poeun/stations.js?v=20261008" defer></script>
+    <script src="/assets/poeun/station-ui.js?v=20261008-scene-narration" defer></script>
+    <script src="/app.js?v=20261008-copy-cleanup" defer></script>
   </head>
   <body>
     <header class="site-header">
@@ -84,6 +84,7 @@
       <div class="header-actions">
         <div class="piece-edition-toggle" id="headerPieceEditionToggle" role="group" aria-label="말 디자인 선택">
           <button class="active" type="button" data-piece-edition="cheoinseong">처인성</button>
+          <button type="button" data-piece-edition="poeun">포은</button>
           <button type="button" data-piece-edition="beta">Beta</button>
         </div>
         <div class="header-language" id="headerLanguage" translate="no">
@@ -210,6 +211,7 @@
             <button class="theme-tile cheoin-theme active" type="button" data-piece-edition="cheoinseong">
               <span>처인성</span>
             </button>
+            <button class="theme-tile poeun-theme" type="button" data-piece-edition="poeun"><span>포은</span></button>
             <button class="theme-tile beta-theme" type="button" data-piece-edition="beta">
               <span>Beta</span>
             </button>
@@ -256,6 +258,7 @@
                           <div class="home-theme-list" role="group" aria-label="보드 테마 선택">
                             <button type="button" data-piece-edition="original"><b>오리지널</b><small>기본 체스판</small></button>
                             <button type="button" data-piece-edition="cheoinseong"><b>처인성</b><small>EasyMate &amp; 용인문화원</small></button>
+                            <button type="button" data-piece-edition="poeun"><b>포은</b><small>단심이의 체스 이야기</small></button>
                             <button type="button" data-piece-edition="beta"><b>Beta</b><small>한국 테마 체스</small></button>
                           </div>
                         </section>
@@ -331,7 +334,6 @@
               </div>
               <div class="home-brand-copy">
                 <h1 id="homeHeroTitle">체스를 배우고,<br />우리 고장의 이야기를 만나요.</h1>
-                <p class="home-brand-lede">체스의 기본 규칙부터 지역 이야기를 담은 캠페인까지, 한 수씩 따라가며 배워요.</p>
                 <div class="home-brand-actions">
                   <button class="button primary" type="button" data-view-link="how-to-play">훈련 시작</button>
                   <button class="button secondary" type="button" data-view-link="dashboard">대국 시작</button>
@@ -344,24 +346,22 @@
             </section>
             <section class="home-story-section home-training-story home-feature-story" aria-labelledby="homeTrainingStoryTitle">
               <header class="home-story-heading">
-                <p>EasyMate 둘러보기</p>
                 <h2 id="homeTrainingStoryTitle">배우고, 경험하고, 나누는 체스</h2>
-                <span>세 가지 기능을 예시 이미지와 함께 살펴보세요.</span>
               </header>
               <div class="home-feature-carousel" aria-roledescription="캐러셀" aria-label="EasyMate 주요 기능">
                 <div class="home-feature-window" id="homeFeatureWindow" tabindex="0" aria-label="좌우 화살표로 기능 소개 넘기기">
                   <div class="home-feature-track" id="homeFeatureTrack">
                     <article class="home-feature-slide" aria-label="1 / 3: 튜토리얼">
                       <div class="home-feature-copy"><span class="home-feature-number">01 / 03</span><h3>튜토리얼</h3><p>기물의 움직임부터 체크메이트까지, 직접 한 수씩 두며 익혀요.</p><button class="home-story-link" type="button" data-view-link="how-to-play">튜토리얼 시작 <span aria-hidden="true">→</span></button></div>
-                      <figure class="home-feature-image home-feature-image-tutorial"><img src="/assets/tutorial-pieces/g_knight.webp" alt="튜토리얼에서 사용하는 체스 나이트 기물" loading="lazy" decoding="async" /><figcaption>기물을 직접 움직이며 배우는 첫 수</figcaption></figure>
+                      <figure class="home-feature-image home-feature-image-tutorial"><img src="/assets/training-lesson-screenshot.png" alt="실제 기본기 학습 화면에서 체스 기물의 움직임을 배우는 모습" loading="lazy" decoding="async" /><figcaption>실제 기본기 화면 · 기물의 움직임</figcaption></figure>
                     </article>
                     <article class="home-feature-slide" aria-label="2 / 3: 지역 캠페인">
                       <div class="home-feature-copy"><span class="home-feature-number">02 / 03</span><h3>지역 캠페인</h3><p>처인성과 포은의 이야기를 따라가며 역사 속 선택을 체스판에서 경험해요.</p><button class="home-story-link" id="homeFeatureCampaign" type="button">지역 캠페인 보기 <span aria-hidden="true">→</span></button></div>
-                      <figure class="home-feature-image"><img src="/assets/cheoinseong/illustrations/scene-1-people-defend.png" alt="처인성의 사람들이 성을 지키는 캠페인 장면" loading="lazy" decoding="async" /><figcaption>지역의 이야기가 한 판의 체스가 됩니다</figcaption></figure>
+                      <figure class="home-feature-image home-feature-image-campaign"><img src="/assets/cheoinseong/festival-booth-activity.jpg" alt="처인성문화제 체험부스에서 방문객이 체스 기물을 움직이는 모습" loading="lazy" decoding="async" /><figcaption>처인성문화제 체스 체험부스</figcaption></figure>
                     </article>
                     <article class="home-feature-slide" aria-label="3 / 3: 학습 자료">
                       <div class="home-feature-copy"><span class="home-feature-number">03 / 03</span><h3>학습 자료</h3><p>수업 자료와 체스 학습지를 자료방에서 찾아보고 함께 나눠요.</p><button class="home-story-link" id="homeFeatureResources" type="button">자료방 둘러보기 <span aria-hidden="true">→</span></button></div>
-                      <figure class="home-feature-image home-feature-image-resources"><div class="home-resource-sheet"><span>CHESS WORKSHEET</span><strong>체크메이트<br />한 수 연습</strong><img src="/assets/puzzle-stage-icons-v3/01-back-rank.png" alt="체스 학습 문제의 예시 이미지" loading="lazy" decoding="async" /><small>01 / 기본 전술</small></div><figcaption>배운 내용을 다시 꺼내 보는 학습 자료</figcaption></figure>
+                      <figure class="home-feature-image home-feature-image-resources"><div class="home-worksheet-stack" role="img" aria-label="EasyMate 초등 체스 첫걸음 학습지 세 장이 겹쳐 놓인 모습"><img src="/assets/worksheets/first-steps-4.webp" alt="" loading="lazy" decoding="async" /><img src="/assets/worksheets/first-steps-3.webp" alt="" loading="lazy" decoding="async" /><img src="/assets/worksheets/first-steps-2.webp" alt="" loading="lazy" decoding="async" /></div><figcaption>초등 체스 첫걸음 학습지</figcaption></figure>
                     </article>
                   </div>
                 </div>
@@ -381,18 +381,32 @@
                 <p>고려와 몽골의 이야기를 서로 다른 기물과 퍼즐로 구성했습니다. 역사를 외우기보다 직접 수를 선택하며 장면을 따라갑니다.</p>
                 <button class="home-story-link" type="button" data-view-link="how-to-play">캠페인 시작 <span aria-hidden="true">→</span></button>
               </div>
-              <div class="home-piece-row" aria-label="처인성 캠페인 기물 구성">
-                <article class="home-piece"><span aria-hidden="true">♚</span><strong>킹</strong><small>고려 · 김윤후 승장</small><small>몽골 · 살리타이</small></article>
-                <article class="home-piece"><span aria-hidden="true">♛</span><strong>퀸</strong><small>고려 · 궁수</small><small>몽골 · 설정 중</small></article>
-                <article class="home-piece"><span aria-hidden="true">♜</span><strong>룩</strong><small>고려 · 처인 토성</small><small>몽골 · 공성탑</small></article>
-                <article class="home-piece"><span aria-hidden="true">♝</span><strong>비숍</strong><small>고려 · 승병</small><small>몽골 · 샤먼·책사</small></article>
-                <article class="home-piece"><span aria-hidden="true">♞</span><strong>나이트</strong><small>고려 · 매복 기습대</small><small>몽골 · 기마대</small></article>
-                <article class="home-piece"><span aria-hidden="true">♟</span><strong>폰</strong><small>고려 · 처인부곡민</small><small>몽골 · 병졸</small></article>
-              </div>
+              <section class="home-press" aria-labelledby="homePressTitle">
+                <div class="home-press-heading"><p>PRESS</p><h3 id="homePressTitle">언론 속 EasyMate</h3></div>
+                <div class="home-press-list">
+                  <a class="home-press-card" href="https://www.gnjn.co.kr/news/articleView.html?idxno=124039" target="_blank" rel="noopener noreferrer" aria-label="경기남부저널 기사 새 창에서 보기">
+                    <span class="home-press-source">경기남부저널 <time datetime="2026-09-02">2026. 9. 2.</time></span>
+                    <strong>청소년이 새롭게 풀어낸 처인성</strong>
+                    <span>외대부고 학생들이 처인성 전투를 체스 기물과 퍼즐로 재구성한 참여형 콘텐츠를 소개합니다.</span>
+                    <em>기사 읽기 <span aria-hidden="true">↗</span></em>
+                  </a>
+                  <a class="home-press-card" href="https://www.gdodam.co.kr/S2N4/20028" target="_blank" rel="noopener noreferrer" aria-label="경기도담 기사 새 창에서 보기">
+                    <span class="home-press-source">경기도담 <time datetime="2026-09-04">2026. 9. 4.</time></span>
+                    <strong>역사문화 논문공모와 청소년 참여</strong>
+                    <span>용인문화원 논문공모 소식에서 외대부고 학생들의 처인성 체스 콘텐츠와 문화제 현장 운영 계획을 전합니다.</span>
+                    <em>기사 읽기 <span aria-hidden="true">↗</span></em>
+                  </a>
+                  <a class="home-press-card" href="http://www.nggnews.co.kr/news/articleView.html?idxno=37025" target="_blank" rel="noopener noreferrer" aria-label="뉴스경기 기사 새 창에서 보기">
+                    <span class="home-press-source">뉴스경기 <time datetime="2026-09-02">2026. 9. 2.</time></span>
+                    <strong>제35회 처인성문화제의 참여형 콘텐츠</strong>
+                    <span>외대부고 학생들이 만든 체스·퍼즐 콘텐츠와 용인학연구소의 역사 자문을 다룹니다.</span>
+                    <em>기사 읽기 <span aria-hidden="true">↗</span></em>
+                  </a>
+                </div>
+              </section>
             </section>
             <section class="home-story-section home-activity-story" aria-labelledby="homeActivityTitle">
               <header class="home-story-heading">
-                <p>활동 기록</p>
                 <h2 id="homeActivityTitle">문화제 현장에서 만난 체스</h2>
               </header>
               <div class="home-activity-list">
@@ -404,8 +418,7 @@
             <section class="home-story-section home-team-story" aria-labelledby="homeTeamTitle">
               <div class="home-story-copy">
                 <p>팀 소개</p>
-                <h2 id="homeTeamTitle">지역의 이야기를<br />함께 두는 사람들</h2>
-                <p>교육과 문화, 체스를 연결해 누구나 한 수씩 배울 수 있는 경험을 만듭니다.</p>
+                <h2 id="homeTeamTitle">EasyMate 팀원들</h2>
               </div>
               <ul class="home-team-list" aria-label="EasyMate 팀원">
                 <li><figure class="home-team-photo"><img src="/assets/team-seong-minjong.jpg" alt="성민종 프로필 사진" width="413" height="531" loading="lazy" decoding="async" /></figure><strong>성민종</strong><span>Founder</span></li>
@@ -712,25 +725,19 @@
           <section class="view how-to-play-view" data-view="how-to-play" aria-labelledby="howToPlayTitle">
             <div class="view-header">
               <div>
-                <span class="training-kicker">한 수씩 배우기</span>
                 <h2 id="howToPlayTitle">훈련장</h2>
                 <p class="training-intro">기본기부터 지역 캠페인과 연습까지, 내 속도에 맞춰 이어가요.</p>
               </div>
+              <button class="training-continue" id="trainingContinue" type="button"><strong>다음: 기물의 움직임 ▶</strong></button>
               <button class="button primary" id="tutorialLoginButton" type="button">로그인 화면으로 가기</button>
             </div>
 
-            <div class="training-edition-picker" id="trainingEditionPicker" role="group" aria-labelledby="trainingEditionLabel">
-              <span id="trainingEditionLabel">튜토리얼 말 디자인</span>
-              <div class="training-edition-options">
-                <button id="trainingEditionOriginal" type="button" data-training-edition="original">오리지널</button>
-                <button id="trainingEditionCheoinseong" type="button" data-training-edition="cheoinseong">고려-몽골</button>
+            <div class="training-home" id="trainingHome">
+              <div class="training-home-cards" aria-label="훈련장 종류">
+                <button id="showTutorialGuide" type="button" class="training-home-card is-primary"><span class="training-card-icon" aria-hidden="true">♙</span><span class="training-card-content"><span class="training-card-heading"><strong>기본기</strong><span class="training-card-badge">추천</span></span><span class="training-card-next">다음: 기물의 움직임</span><span class="training-card-progress"><i><b></b></i><em>0 / 6</em></span><span class="training-card-action">시작하기 →</span></span><span class="training-card-arrow" aria-hidden="true">›</span></button>
+                <button id="showCheoinseongGuide" type="button" class="training-home-card"><span class="training-card-icon" aria-hidden="true">♜</span><span class="training-card-content"><span class="training-card-heading"><strong>지역 캠페인</strong></span><span class="training-card-next">다음: 포은 이야기</span><span class="training-card-progress"><i><b></b></i><em>0 / 10</em></span><span class="training-card-action">시작하기 →</span></span><span class="training-card-arrow" aria-hidden="true">›</span></button>
+                <button id="showPuzzleGuide" type="button" class="training-home-card"><span class="training-card-icon" aria-hidden="true">♞</span><span class="training-card-content"><span class="training-card-heading"><strong>연습</strong></span><span class="training-card-next">다음: 퍼즐 풀기</span><span class="training-card-progress"><i><b></b></i><em>0 / 11</em></span><span class="training-card-action">시작하기 →</span></span><span class="training-card-arrow" aria-hidden="true">›</span></button>
               </div>
-            </div>
-
-            <div class="training-mode-toggle" aria-label="훈련장 종류">
-              <button class="active" id="showTutorialGuide" type="button">기본기 <small>0 / 6</small></button>
-              <button id="showCheoinseongGuide" type="button">지역 캠페인</button>
-              <button id="showPuzzleGuide" type="button">연습 <small>0 / 11</small></button>
             </div>
 
             <div class="tutorial-gate-note" id="tutorialGateNote" hidden>
@@ -1050,7 +1057,8 @@
                       <span class="profile-settings-label">보드 테마</span>
                       <div class="profile-theme-list" role="group" aria-label="보드 테마 선택">
                         <button type="button" role="radio" aria-checked="false" data-piece-edition="original"><i aria-hidden="true"></i><span class="profile-theme-preview original" aria-hidden="true">♞</span><span><b>오리지널</b><small>기본 체스판</small></span></button>
-                        <button type="button" role="radio" aria-checked="true" data-piece-edition="cheoinseong"><i aria-hidden="true"></i><span class="profile-theme-preview cheoinseong" aria-hidden="true">♟ ♟</span><span><b>처인성</b><small>EasyMate &amp; 용인문화원</small></span></button>
+                        <button type="button" role="radio" aria-checked="true" data-piece-edition="cheoinseong"><i aria-hidden="true"></i><span class="profile-theme-preview cheoinseong" aria-hidden="true">♟ ♟</span><span><b>고려-몽골</b><small>EasyMate &amp; 용인문화원</small></span></button>
+                        <button type="button" role="radio" aria-checked="false" data-piece-edition="poeun"><i aria-hidden="true"></i><span class="profile-theme-preview poeun" aria-hidden="true">♜</span><span><b>포은</b><small>단심이의 체스 이야기</small></span></button>
                         <button type="button" role="radio" aria-checked="false" data-piece-edition="beta"><i aria-hidden="true"></i><span class="profile-theme-preview beta" aria-hidden="true">♛</span><span><b>Beta</b><small>한국 테마 체스</small></span></button>
                       </div>
                     </div>

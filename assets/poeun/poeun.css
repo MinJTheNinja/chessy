@@ -16,7 +16,80 @@
 .poeun-path-list[hidden],
 .poeun-chapter[hidden] { display: none !important; }
 .poeun-path-list,
-.poeun-chapter { scroll-margin-top: 86px; }
+.poeun-chapter { scroll-margin-top: 120px; }
+
+.poeun-story-chapter { display: grid; gap: 18px; }
+.poeun-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 13px;
+  border: 1px solid var(--poeun-line);
+  border-radius: 999px;
+  background: #fffdf7;
+  color: var(--poeun-red-dark);
+  font: inherit;
+  font-size: .86rem;
+  font-weight: 800;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background .2s ease, border-color .2s ease, transform .2s ease;
+}
+.poeun-back:hover { background: #fff1e8; border-color: var(--poeun-red); transform: translateX(-2px); }
+.poeun-back:focus-visible { outline: 3px solid #2d8cff; outline-offset: 3px; }
+.poeun-after-story[hidden], .poeun-skip[hidden] { display: none; }
+.poeun-after-story { display: grid; gap: 18px; animation: poeun-reveal .35s ease-out both; }
+.poeun-scene-frame { position: relative; isolation: isolate; width: 100%; overflow: hidden; border: 1px solid #d7bda5; border-radius: 14px; background: #f1e4d1; }
+.poeun-scene-image { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; animation: poeun-scene-enter .7s ease-out both; }
+.poeun-narration { position: absolute; z-index: 2; right: clamp(12px, 3vw, 26px); bottom: clamp(10px, 2vw, 20px); left: clamp(12px, 3vw, 26px); display: grid; grid-template-columns: clamp(76px, 15%, 132px) minmax(0, 1fr); align-items: end; gap: clamp(10px, 2vw, 20px); min-height: 0; padding: 0; border: 0; background: none; pointer-events: none; }
+.poeun-narrator { display: block; width: 100%; height: auto; align-self: end; transform-origin: 48% 96%; animation: poeun-grounded-gesture 4s ease-in-out infinite; filter: drop-shadow(0 8px 6px #40221830); }
+.poeun-bubble { position: relative; min-height: 0; margin-bottom: 15px; padding: clamp(11px, 2vw, 18px) clamp(13px, 2.3vw, 22px); border: 2px solid #a64c4a; border-radius: 20px 20px 20px 4px; background: #fffdf7f2; box-shadow: 0 8px 20px #40221830; backdrop-filter: blur(4px); }
+.poeun-bubble::before { content: ""; position: absolute; left: -12px; bottom: 13px; width: 20px; height: 20px; transform: rotate(45deg); border-bottom: 2px solid #a64c4a; border-left: 2px solid #a64c4a; background: #fff; }
+.poeun-bubble-text { position: relative; display: block; min-height: 2.5em; font-size: clamp(.88rem, 1.6vw, 1.06rem); line-height: 1.5; word-break: keep-all; }
+.poeun-skip { justify-self: end; padding: 7px 10px; border: 0; background: transparent; color: var(--poeun-red-dark); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.poeun-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@keyframes poeun-grounded-gesture { 0%, 100% { transform: rotate(-1deg) scaleX(1); } 25% { transform: rotate(2deg) scaleX(.995); } 60% { transform: rotate(-2deg) scaleX(1.005); } }
+@keyframes poeun-scene-enter { from { opacity: .55; transform: scale(1.02); } to { opacity: 1; transform: scale(1); } }
+@keyframes poeun-reveal { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 600px) {
+  .poeun-scene-frame::before { content: ""; position: absolute; inset: -12px; background: var(--poeun-scene) center / cover no-repeat; filter: blur(12px) saturate(.8); opacity: .58; }
+  .poeun-scene-image { position: relative; z-index: 1; height: 350px; aspect-ratio: auto; object-fit: contain; object-position: center 38%; }
+  .poeun-narration { right: 10px; bottom: 7px; left: 10px; grid-template-columns: 64px minmax(0, 1fr); gap: 8px; }
+  .poeun-bubble { margin-bottom: 8px; padding: 10px 11px; border-radius: 14px 14px 14px 4px; }
+  .poeun-bubble-text { font-size: .78rem; line-height: 1.42; }
+  .poeun-bubble::before { left: -9px; bottom: 11px; width: 15px; height: 15px; }
+}
+@media (prefers-reduced-motion: reduce) { .poeun-narrator, .poeun-scene-image, .poeun-after-story { animation: none; } }
+.poeun-story-card { padding: clamp(20px, 4vw, 36px); border: 1px solid var(--poeun-line); border-radius: 18px; background: var(--poeun-paper); }
+.poeun-story-card p { max-width: 65ch; margin-bottom: 0; line-height: 1.8; word-break: keep-all; }
+.poeun-source-label { display: block; width: fit-content; margin-bottom: 12px; padding: 4px 9px; border-radius: 999px; background: #f4e9df; color: var(--poeun-muted); font-size: .75rem; }
+.poeun-virtues { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.poeun-virtue { display: grid; grid-template-columns: auto 1fr; gap: 0 9px; align-items: center; padding: 12px; border: 1px solid var(--poeun-line); border-radius: 12px; background: #fffdf8; }
+.poeun-virtue span { grid-row: span 2; color: var(--poeun-red-dark); font-family: "Segoe UI Symbol", serif; font-size: 2rem; }
+.poeun-virtue small { color: var(--poeun-muted); }
+.poeun-chapter-caption { margin: -8px 0 0; color: var(--poeun-muted); font-size: .85rem; }
+.poeun-choice h3 { margin: 0 0 12px; }
+.poeun-choice-options { display: grid; gap: 10px; }
+.poeun-choice-options button { padding: 16px; border: 1px solid var(--poeun-line); border-radius: 10px; background: #fff; color: var(--poeun-ink); font: inherit; text-align: left; cursor: pointer; }
+.poeun-choice-options button:hover, .poeun-choice-options button.is-chosen { border-color: var(--poeun-red-dark); background: #fff2ec; }
+.poeun-choice-result { padding: 20px; border: 1px solid #d4aa9a; border-radius: 14px; background: #fff3e9; line-height: 1.7; }
+.poeun-choice-result[hidden] { display: none; }
+.poeun-virtue-tag { display: inline-block; padding: 5px 11px; border-radius: 999px; background: var(--poeun-red-dark); color: white; font-weight: 700; }
+.poeun-chapter-note { font-weight: 700; }
+.poeun-ending { display: grid; justify-items: start; gap: 12px; padding: clamp(20px, 5vw, 48px); }
+.poeun-ending p { margin: 0; line-height: 1.7; }
+.poeun-ending-check { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 50%; background: #287449; color: #fff; font-size: 1.5rem; animation: poeun-check .35s ease-out both; }
+@keyframes poeun-check { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .poeun-ending-check { animation: none; } }
+@media (max-width: 600px) { .poeun-virtues { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.poeun-theme-glyph { display: grid; width: 100%; height: 100%; place-items: center; font-family: "Segoe UI Symbol", serif; font-size: min(5vw, 52px); line-height: 1; }
+.white-piece .poeun-theme-glyph { color: #fff7df; text-shadow: 0 1px 2px #251518, 1px 0 2px #251518, -1px 0 2px #251518; }
+.black-piece .poeun-theme-glyph { color: #52202b; }
+.poeun-theme { background: #f6e4d7; color: #742733; }
+.poeun-story-chapter .poeun-board-figure { width: min(100%, 290px); }
+.poeun-story-chapter .poeun-mini-board { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); width: 100%; aspect-ratio: 1; }
+.poeun-story-chapter .poeun-mini-board span { min-width: 0; min-height: 0; font-size: clamp(1rem, 3.8vw, 1.65rem); }
+.poeun-board { grid-template-rows: repeat(8, minmax(0, 1fr)); }
 
 .poeun-path-list {
   padding: clamp(18px, 3.5vw, 38px);
@@ -42,6 +115,32 @@
 .poeun-picker h2,
 .poeun-path-heading h2 { color: var(--poeun-ink); letter-spacing: -.04em; }
 .poeun-campaign-cards { gap: 14px; }
+.poeun-campaign-card {
+  grid-template-columns: minmax(0, 1fr) 112px;
+  align-items: center;
+  min-height: 138px;
+  overflow: hidden;
+}
+.poeun-campaign-copy { display: grid; justify-items: start; gap: 12px; }
+.poeun-campaign-photo {
+  width: 112px;
+  height: 96px;
+  border-radius: 10px;
+  object-fit: cover;
+  object-position: 54% center;
+  box-shadow: 0 3px 12px #38241a20;
+}
+.poeun-campaign-portrait { object-position: center 22%; }
+.poeun-picker > .poeun-campaign-credits {
+  margin: -4px 0 0;
+  color: var(--poeun-muted);
+  font-size: .73rem;
+}
+.poeun-campaign-credits a { color: inherit; text-underline-offset: 2px; }
+@media (max-width: 520px) {
+  .poeun-campaign-card { grid-template-columns: minmax(0, 1fr) 88px; }
+  .poeun-campaign-photo { width: 88px; height: 80px; }
+}
 .poeun-campaign-card,
 .poeun-path-node {
   border-color: var(--poeun-line);
@@ -58,6 +157,8 @@
   box-shadow: 0 10px 24px #38241a1a;
 }
 .poeun-path-node .number { color: var(--poeun-red-dark); border-color: var(--poeun-red); }
+.poeun-path-art { width: 94px; height: 58px; flex: 0 0 94px; border-radius: 8px; object-fit: cover; }
+@media (max-width: 520px) { .poeun-path-art { width: 64px; height: 52px; flex-basis: 64px; } }
 .poeun-path-nodes li:not(:last-child)::before { background: #d8ad9d; }
 .poeun-path-node small,
 .poeun-picker > p,
@@ -77,7 +178,7 @@
 
 .poeun-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(108px, 170px);
+  grid-template-columns: minmax(0, 1.65fr) minmax(220px, 1fr);
   align-items: center;
   gap: clamp(14px, 3vw, 32px);
   margin: 0 0 22px;
@@ -87,6 +188,10 @@
   background: radial-gradient(circle at 88% 20%, #f7c6aa 0, transparent 27%),
     linear-gradient(110deg, #fff6dc, #fff9eb 67%, #fbe4d3);
 }
+.poeun-intro-film { min-width: 0; overflow: hidden; border: 1px solid #d4b39b; border-radius: 15px; background: #271c2c; box-shadow: 0 12px 30px #40221820; }
+.poeun-intro-video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #271c2c; object-fit: cover; }
+@media (max-width: 760px) { .poeun-hero { grid-template-columns: 1fr; } .poeun-intro-film { order: 1; } .poeun-hero-copy { order: 2; } }
+@media (prefers-reduced-motion: reduce) { .poeun-intro-film * { animation: none !important; } }
 .poeun-hero-copy,
 .poeun-station-header > :first-child { min-width: 0; }
 .poeun-hero-art img { display: block; width: 100%; height: auto; filter: drop-shadow(0 12px 12px #40221824); }
@@ -278,7 +383,7 @@
 @media (max-width: 680px) {
   .poeun-path-list,
   .poeun-chapter { border-radius: 16px; }
-  .poeun-hero { grid-template-columns: minmax(0, 1fr) 82px; padding: 16px; }
+  .poeun-hero { grid-template-columns: minmax(0, 1fr); padding: 16px; }
   .poeun-station-layout { grid-template-columns: 1fr; }
   .poeun-mascot { grid-template-columns: 80px 1fr; max-width: none; align-items: center; }
   .poeun-mascot img { max-width: 80px; }
