@@ -380,10 +380,6 @@ async function readJsonDbRaw() {
   return clone(normalizeDb(JSON.parse(source)));
 }
 
-function cloneDb(db) {
-  return normalizeDb(JSON.parse(JSON.stringify(db)));
-}
-
 async function readJsonDb() {
   await localDbWriteQueue.catch(() => {});
   return readJsonDbRaw();

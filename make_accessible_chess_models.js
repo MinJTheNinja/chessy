@@ -77,19 +77,6 @@ function addTriPrism(m, pts, z0, z1) {
   }
 }
 
-function addArrow(m, cx, cy, z, length, width, height, angle, twoHead = false) {
-  addRotBox(m, cx, cy, z, length - width * 2, width, height, angle);
-  const c = Math.cos(angle), s = Math.sin(angle);
-  const head = (dir) => {
-    const tip = [cx + c * length / 2 * dir, cy + s * length / 2 * dir];
-    const base = [cx + c * (length / 2 - width * 2) * dir, cy + s * (length / 2 - width * 2) * dir];
-    const p = [-s * width * 1.35, c * width * 1.35];
-    addTriPrism(m, [tip, [base[0] + p[0], base[1] + p[1]], [base[0] - p[0], base[1] - p[1]]], z, z + height);
-  };
-  head(1);
-  if (twoHead) head(-1);
-}
-
 function addRing(m, z0, z1, outerR, innerR, seg = 72, cx = 0, cy = 0) {
   for (let i = 0; i < seg; i++) {
     const a0 = Math.PI * 2 * i / seg;
@@ -175,12 +162,6 @@ function addFrustum(m, cx, cy, z0, z1, r0, r1, seg = 48) {
   }
 }
 
-function translateNew(m, start, dx, dy, dz) {
-  for (let ti = start; ti < m.tris.length; ti++) {
-    m.tris[ti] = m.tris[ti].map(p => [p[0] + dx, p[1] + dy, p[2] + dz]);
-  }
-}
-
 function writeStl(m, filename) {
   const lines = [`solid ${m.name}`];
   for (const t of m.tris) {
@@ -191,34 +172,6 @@ function writeStl(m, filename) {
   }
   lines.push(`endsolid ${m.name}`);
   fs.writeFileSync(path.join(OUT, filename), lines.join("\n"));
-}
-
-function addSocketTile(m, x, y, z0, h, socket) {
-  const s = CFG.square;
-  const g = (s - socket) / 2;
-  addBox(m, x, y, z0, x + g, y + s, z0 + h);
-  addBox(m, x + s - g, y, z0, x + s, y + s, z0 + h);
-  addBox(m, x + g, y, z0, x + s - g, y + g, z0 + h);
-  addBox(m, x + g, y + s - g, z0, x + s - g, y + s, z0 + h);
-}
-
-function addSetupMark(m, cx, cy, z, type) {
-  const h = CFG.setupMarkHeight, w = 1.25, L = 9;
-  if (type === "rook") {
-    addRotBox(m, cx, cy, z, L, w, h, 0); addRotBox(m, cx, cy, z, L, w, h, Math.PI / 2);
-  } else if (type === "bishop") {
-    addRotBox(m, cx, cy, z, L, w, h, Math.PI / 4); addRotBox(m, cx, cy, z, L, w, h, -Math.PI / 4);
-  } else if (type === "knight") {
-    addRotBox(m, cx - 2, cy, z, 8, w, h, Math.PI / 2); addRotBox(m, cx + 1.5, cy + 3.4, z, 7, w, h, 0);
-  } else if (type === "queen") {
-    addRotBox(m, cx, cy - 1, z, 8, w, h, 0); addRotBox(m, cx, cy + 1.8, z, 8, w, h, 0);
-    addRotBox(m, cx - 3.2, cy, z, 5, w, h, Math.PI / 2); addRotBox(m, cx + 3.2, cy, z, 5, w, h, Math.PI / 2);
-  } else if (type === "king") {
-    addRotBox(m, cx, cy, z, L, w, h, 0); addRotBox(m, cx, cy, z, L, w, h, Math.PI / 2);
-    addRotBox(m, cx, cy + 3.8, z, 5.5, w, h, 0);
-  } else if (type === "pawn") {
-    addRing(m, z, z + h, 3.2, 1.5, 36, cx, cy);
-  }
 }
 
 function buildBoard() {
@@ -274,27 +227,6 @@ function addRevolvedPiece(m, profile, height, fluteDepth = 0.05) {
     const j = (i + 1) % seg;
     tri(m, bottom, verts[0][j], verts[0][i]);
     tri(m, top, verts[rings][i], verts[rings][j]);
-  }
-}
-
-function addTopGuide(m, type, z) {
-  const h = 0.45, len = 10, w = 0.75;
-  if (type === "rook") {
-    addArrow(m, 0, 0, z, len, w, h, 0, true); addArrow(m, 0, 0, z, len, w, h, Math.PI / 2, true);
-  } else if (type === "bishop") {
-    addArrow(m, 0, 0, z, len, w, h, Math.PI / 4, true); addArrow(m, 0, 0, z, len, w, h, -Math.PI / 4, true);
-  } else if (type === "queen") {
-    addArrow(m, 0, 0, z, 15, w, h, 0, true); addArrow(m, 0, 0, z, 15, w, h, Math.PI / 2, true);
-    addArrow(m, 0, 0, z, 15, w, h, Math.PI / 4, true); addArrow(m, 0, 0, z, 15, w, h, -Math.PI / 4, true);
-  } else if (type === "king") {
-    addRotBox(m, 0, 0, z, 15, 1.7, h, 0); addRotBox(m, 0, 0, z, 15, 1.7, h, Math.PI / 2);
-  } else if (type === "knight") {
-    for (let a = 0; a < Math.PI * 2; a += Math.PI / 2) {
-      addRotBox(m, Math.cos(a) * 3, Math.sin(a) * 3, z, 9, w, h, a);
-      addRotBox(m, Math.cos(a) * 6 - Math.sin(a) * 3, Math.sin(a) * 6 + Math.cos(a) * 3, z, 7, w, h, a + Math.PI / 2);
-    }
-  } else {
-    addRing(m, z, z + h, 4.2, 1.8, 48);
   }
 }
 

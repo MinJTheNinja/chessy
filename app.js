@@ -26,6 +26,9 @@ const closeFriendRoomButton = document.querySelector("#closeFriendRoom");
 const resignMatchButton = document.querySelector("#resignMatch");
 const drawMatchButton = document.querySelector("#drawMatch");
 const matchResult = document.querySelector("#matchResult span");
+const resultSelfName = document.querySelector("#resultSelfName");
+const resultOpponentName = document.querySelector("#resultOpponentName");
+const resultMatchMeta = document.querySelector("#resultMatchMeta");
 const newGameButton = document.querySelector("#newGame");
 const matchHomeButton = document.querySelector("#matchHome");
 const matchLayout = document.querySelector("#matchLayout");
@@ -42,14 +45,11 @@ const remoteVoiceAudio = document.querySelector("#remoteVoiceAudio");
 const voiceStatusMessages = document.querySelectorAll("[data-voice-status]");
 const reportUserButton = document.querySelector("#reportUser");
 const mannerTemp = document.querySelector("#mannerTemp");
-const dashboardTemp = document.querySelector("#dashboardTemp");
-const profileTemp = document.querySelector("#profileTemp");
 const nextMissionButton = document.querySelector("#nextMission");
 const icebreakerText = document.querySelector("#icebreakerText");
 const sttToggle = document.querySelector("#sttToggle");
 const translationToggle = document.querySelector("#translationToggle");
 const sttPill = document.querySelector("#sttPill");
-const sttStatusText = document.querySelector("#sttStatusText");
 const translatedSpeech = document.querySelector("#translatedSpeech");
 const originalSpeech = document.querySelector("#originalSpeech");
 const subtitleSize = document.querySelector("#subtitleSize");
@@ -67,13 +67,9 @@ const matchSessionDuration = document.querySelector("#matchSessionDuration");
 const matchWordsRecognized = document.querySelector("#matchWordsRecognized");
 const wordsRecognized = document.querySelector("#wordsRecognized");
 const sessionDuration = document.querySelector("#sessionDuration");
-const latencyText = document.querySelector("#latencyText");
-const dashboardLatency = document.querySelector("#dashboardLatency");
-const generateReviewButton = document.querySelector("#generateReview");
 const refreshReviewButton = document.querySelector("#refreshReview");
 const pronunciationStatus = document.querySelector("#pronunciationStatus");
 const reviewStatus = document.querySelector("#reviewStatus");
-const serverStatus = document.querySelector("#serverStatus");
 const authForm = document.querySelector("#authForm");
 const entryAuth = document.querySelector(".entry-auth");
 const authEmail = document.querySelector("#authEmail");
@@ -92,21 +88,14 @@ const tutorialGateNote = document.querySelector("#tutorialGateNote");
 const tutorialLoginButton = document.querySelector("#tutorialLoginButton");
 const mainAccountButton = document.querySelector("#mainAccountButton");
 const mainTutorialButton = document.querySelector("#mainTutorialButton");
-const entryTypewriter = document.querySelector("#entryTypewriter");
-const entryTypewriterText = document.querySelector(".entry-typewriter-text");
 const howToPlayFrame = document.querySelector(".how-to-play-frame");
 const howToPlayShell = document.querySelector("#howToPlayShell");
 const howToPlayView = document.querySelector(".how-to-play-view");
 const showTutorialGuideButton = document.querySelector("#showTutorialGuide");
 const showPuzzleGuideButton = document.querySelector("#showPuzzleGuide");
 const showCheoinseongGuideButton = document.querySelector("#showCheoinseongGuide");
-const trainingEditionPicker = document.querySelector("#trainingEditionPicker");
 const trainingHome = document.querySelector("#trainingHome");
 const trainingContinueButton = document.querySelector("#trainingContinue");
-const trainingSectionTools = document.querySelector("#trainingSectionTools");
-const trainingHomeBackButton = document.querySelector("#trainingHomeBack");
-const trainingEditionLabel = document.querySelector("#trainingEditionLabel");
-const trainingEditionButtons = [...document.querySelectorAll("[data-training-edition]")];
 const tutorialPuzzleNote = document.querySelector("#tutorialPuzzleNote");
 const trainingModuleList = document.querySelector("#trainingModuleList");
 const puzzlePathList = document.querySelector("#puzzlePathList");
@@ -132,23 +121,15 @@ const deleteAccountButton = document.querySelector("#deleteAccount");
 const deleteAccountConfirm = document.querySelector("#deleteAccountConfirm");
 const contrastModeButton = document.querySelector("#contrastModeButton");
 const textSizeSlider = document.querySelector("#textSizeSlider");
-const settingsAccountName = document.querySelector("#settingsAccountName");
 const signupButton = document.querySelector("#signupButton");
 const loginButton = document.querySelector("#loginButton");
-const activeMatchesCount = document.querySelector("#activeMatchesCount");
-const subtitleSessionsCount = document.querySelector("#subtitleSessionsCount");
 const welcomeName = document.querySelector("#welcomeName");
 document.querySelector("#homeStatusClose")?.addEventListener("click", () => {
   document.querySelector("#homeStatusBanner")?.setAttribute("hidden", "");
 });
-const dashboardHeroAvatar = document.querySelector("#dashboardHeroAvatar");
 const dashboardStreak = document.querySelector("#dashboardStreak");
 const dashboardEasyElo = document.querySelector("#dashboardEasyElo");
 const leaderboardList = document.querySelector("#leaderboardList");
-const homeLeaderboardTab = document.querySelector("#homeLeaderboardTab");
-const homeQuestTab = document.querySelector("#homeQuestTab");
-const homeLeaderboardPanel = document.querySelector("#homeLeaderboardPanel");
-const homeQuestPanel = document.querySelector("#homeQuestPanel");
 const homeThemeToggle = document.querySelector("#homeThemeToggle");
 const homeThemePopover = document.querySelector("#homeThemePopover");
 const activeMatchReturn = document.querySelector("#activeMatchReturn");
@@ -190,7 +171,6 @@ const forumPostTitle = document.querySelector("#forumPostTitle");
 const forumPostCategory = document.querySelector("#forumPostCategory");
 const forumPostBody = document.querySelector("#forumPostBody");
 const forumPostList = document.querySelector("#forumPostList");
-const homeForumList = document.querySelector("#homeForumList");
 const publishForumPostButton = document.querySelector("#publishForumPost");
 const showForumComposerButton = document.querySelector("#showForumComposer");
 const forumComposer = document.querySelector("#forumComposer");
@@ -221,19 +201,10 @@ const resourceTitleInput = document.querySelector("#resourceTitleInput");
 const resourceDescriptionInput = document.querySelector("#resourceDescriptionInput");
 const shopInterestStatus = document.querySelector("#shopInterestStatus");
 const shopProductGrid = document.querySelector("#shopProductGrid");
-const staffProductForm = document.querySelector("#staffProductForm");
-const staffProductImage = document.querySelector("#staffProductImage");
-const staffProductImageUrl = document.querySelector("#staffProductImageUrl");
-const staffProductName = document.querySelector("#staffProductName");
-const staffProductPrice = document.querySelector("#staffProductPrice");
-const staffProductDescription = document.querySelector("#staffProductDescription");
-const publishStaffProductButton = document.querySelector("#publishStaffProduct");
-const staffProductStatus = document.querySelector("#staffProductStatus");
 const vocabList = document.querySelector("#vocabList");
 const culturalTitle = document.querySelector("#culturalTitle");
 const culturalBody = document.querySelector("#culturalBody");
 const culturalPrompt = document.querySelector("#culturalPrompt");
-const quickPairGrid = document.querySelector("#quickPairGrid");
 const lobbySummary = document.querySelector("#lobbySummary");
 const seekTimeControl = document.querySelector("#seekTimeControl");
 const createSeekButton = document.querySelector("#createSeek");
@@ -257,11 +228,9 @@ const adminStatus = document.querySelector("#adminStatus");
 const adminUsersCount = document.querySelector("#adminUsersCount");
 const adminMatchesCount = document.querySelector("#adminMatchesCount");
 const adminReportsCount = document.querySelector("#adminReportsCount");
-const shopInterestCount = document.querySelector("#shopInterestCount");
 const adminMatchesList = document.querySelector("#adminMatchesList");
 const adminUsersList = document.querySelector("#adminUsersList");
 const adminReportsList = document.querySelector("#adminReportsList");
-const shopInterestList = document.querySelector("#shopInterestList");
 const adminMatchSearch = document.querySelector("#adminMatchSearch");
 const adminUserSearch = document.querySelector("#adminUserSearch");
 const profileStatus = document.querySelector("#profileStatus");
@@ -273,15 +242,7 @@ const profileEmail = document.querySelector("#profileEmail");
 const editProfileNameButton = document.querySelector("#editProfileName");
 const profileNameEditor = document.querySelector("#profileNameEditor");
 const saveProfileNameButton = document.querySelector("#saveProfileName");
-const profileLanguageText = document.querySelector("#profileLanguageText");
 const profileDisplayName = document.querySelector("#profileDisplayName");
-const profileLanguagePair = document.querySelector("#profileLanguagePair");
-const profilePieceEdition = document.querySelector("#profilePieceEdition");
-const profileImage = document.querySelector("#profileImage");
-const saveProfileButton = document.querySelector("#saveProfile");
-const peerFeedbackType = document.querySelector("#peerFeedbackType");
-const peerFeedbackNote = document.querySelector("#peerFeedbackNote");
-const submitPeerFeedbackButton = document.querySelector("#submitPeerFeedback");
 const badgeList = document.querySelector("#badgeList");
 const badgeDetails = document.querySelector("#badgeDetails");
 const nextBadgeDetails = document.querySelector("#nextBadgeDetails");
@@ -291,15 +252,9 @@ const profileSettingsEmail = document.querySelector("#profileSettingsEmail");
 const profileSignOutButton = document.querySelector("#profileSignOut");
 const profileStreak = document.querySelector("#profileStreak");
 const profileEasyElo = document.querySelector("#profileEasyElo");
-const profileSideElo = document.querySelector("#profileSideElo");
-const profileUserId = document.querySelector("#profileUserId");
 const profileLessonsCount = document.querySelector("#profileLessonsCount");
 const profileQuestionsCount = document.querySelector("#profileQuestionsCount");
 const profileTestsCount = document.querySelector("#profileTestsCount");
-const cultureGuideList = document.querySelector("#cultureGuideList");
-const cultureGuideInput = document.querySelector("#cultureGuideInput");
-const saveCultureGuideButton = document.querySelector("#saveCultureGuide");
-const demoAuthAllowed = ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
 const puzzleCompletionRequests = new Map();
 const studentTutorialRequiredKey = "easyMateStudentTutorialRequired";
 const studentTutorialCompleteKey = "easyMateStudentTutorialComplete";
@@ -879,24 +834,6 @@ function originalCopy(value) {
   return englishText[text] || text;
 }
 
-function canonicalOriginalText(value) {
-  const text = String(value ?? "");
-  const leading = text.match(/^\s*/)?.[0] || "";
-  const trailing = text.match(/\s*$/)?.[0] || "";
-  const trimmed = text.trim();
-  if (!trimmed) return text;
-  return `${leading}${originalCopy(trimmed)}${trailing}`;
-}
-
-function updateLandingHeroCopy() {
-  const entryTitle = document.querySelector("#entryTitle");
-  if (!entryTitle) return;
-  entryTitle.innerHTML =
-    currentInterfaceLanguage() === "Korean"
-      ? "EasyMate"
-      : "EasyMate";
-}
-
 function localizedValue(current, previous) {
   // Keep the pair only while the DOM still contains our last output.
   const original = previous && current === previous.rendered ? previous.original : current;
@@ -930,7 +867,6 @@ function applyInterfaceLanguage(root = document.body) {
   if (!root || applyingLanguage) return;
   applyingLanguage = true;
   document.documentElement.lang = currentInterfaceLanguage() === "Korean" ? "ko" : "en";
-  updateLandingHeroCopy();
 
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
@@ -1461,7 +1397,6 @@ let forumInitialized = false;
 let forumPollInterval = null;
 let forumRefreshPromise = null;
 let forumPostsSignature = "";
-let trainingModuleRenderSignature = "";
 let puzzlePathRenderSignature = "";
 let shopInitialized = false;
 let cachedSpeechVoices = [];
@@ -1504,10 +1439,10 @@ async function refreshForumResources() {
     forumResources.splice(0, forumResources.length, ...(resources || []).map((resource) => ({
       ...resource,
       date: new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric" }).format(new Date(resource.createdAt)),
-      pages: 1,
+      sizeBytes: resource.size,
       size: `${Math.max(0.1, resource.size / 1024 / 1024).toFixed(1)}MB · ${resource.files.length}개 파일`,
-      files: resource.files.map((file) => ({ name: file.name, url: `/api/forum/resources/${encodeURIComponent(resource.id)}/files/${encodeURIComponent(file.id)}` })),
-      downloads: 0, comments: 0, official: false,
+      files: resource.files.map((file) => ({ name: file.name, size: file.size, url: `/api/forum/resources/${encodeURIComponent(resource.id)}/files/${encodeURIComponent(file.id)}` })),
+      comments: 0, official: false,
     })));
     renderResourceLibrary();
   } catch (error) {
@@ -1719,12 +1654,11 @@ function setMatchState(state) {
   matchLayout.dataset.state = nextState;
   matchLayout.classList.toggle("paired", isPlaying);
   findMatchButton.hidden = !isIdle;
-  showCreateSeekButton.hidden = !isIdle;
-  showFriendRoomButton.hidden = !isIdle;
+  showCreateSeekButton.hidden = !isIdle && nextState !== "searching";
+  showFriendRoomButton.hidden = !isIdle && nextState !== "searching";
   cancelMatchSearchButton.hidden = nextState !== "searching";
   if (queueTipPanel) queueTipPanel.hidden = nextState !== "searching";
   matchLayout.classList.toggle("queue-active", nextState === "searching");
-  if (generateReviewButton) generateReviewButton.hidden = true;
   newGameButton.hidden = !isEnded;
   if (matchHomeButton) matchHomeButton.hidden = !isEnded;
   if (!isIdle) seekComposer.hidden = true;
@@ -2138,13 +2072,6 @@ function handleSubtitleSignal(message) {
   });
 }
 
-function setServerStatus(text, online) {
-  if (!serverStatus) return;
-  serverStatus.textContent = text;
-  serverStatus.classList.toggle("online", online === true);
-  serverStatus.classList.toggle("offline", online === false);
-}
-
 function isStaffUser(user = currentUser) {
   return user?.role === "staff" || user?.role === "admin";
 }
@@ -2180,11 +2107,6 @@ function renderStaffAccessState() {
   if (forumPostCategory?.value === "Notice" && !canPostNotice) {
     forumPostCategory.value = "Question";
   }
-  if (staffProductStatus) {
-    staffProductStatus.textContent = translateCopy(
-      canUseStaffTools ? "Ready to add a shop product." : "Only staff can register products.",
-    );
-  }
 }
 
 function renderAuthState() {
@@ -2202,15 +2124,8 @@ function renderAuthState() {
   if (signedIn) {
     headerProfileName.textContent = currentUser.displayName || translateCopy("Player");
     renderAvatar(headerProfileAvatar, currentUser, "Player");
-    if (settingsAccountName) {
-      settingsAccountName.textContent =
-        currentInterfaceLanguage() === "Korean"
-          ? `${currentUser.displayName || "플레이어"}님으로 로그인됨`
-          : `Signed in as ${currentUser.displayName || "Player"}`;
-    }
     updateHeaderPieceEditionToggle(currentUser.pieceEdition);
   } else {
-    if (settingsAccountName) settingsAccountName.textContent = currentInterfaceLanguage() === "Korean" ? "로그아웃됨" : "Signed out";
     updateHeaderPieceEditionToggle(selectedPieceEdition);
     closeProfileMenu();
     if (authSubmit.disabled) document.body.classList.remove("auth-entry-open");
@@ -2259,7 +2174,6 @@ async function setPieceEdition(edition) {
   selectedPieceEdition = nextEdition;
   writeLocalSetting(pieceEditionStorageKey, nextEdition);
   updateHeaderPieceEditionToggle(nextEdition);
-  if (profilePieceEdition) profilePieceEdition.value = nextEdition;
   if (currentUser) replaceCurrentUser({ ...currentUser, pieceEdition: nextEdition });
   if (currentMatchPlayers.length) {
     currentMatchPlayers = currentMatchPlayers.map((player) =>
@@ -2447,24 +2361,6 @@ function activeTrainingState() {
   return currentUser ? cachedTrainingState || currentUser.training || localTrainingState() : localTrainingState();
 }
 
-const trainingModuleDescriptions = {
-  1: "폰, 룩, 비숍, 나이트, 퀸, 킹의 움직임과 임금끼리 싸울 수 없는 규칙을 배워요.",
-  2: "각 기물이 상대 기물을 잡는 방법을 연습해요.",
-  3: "체크를 피하고, 막고, 공격한 기물을 잡아봐요.",
-  4: "여러 체크메이트 모양과 승리 조건을 배워요.",
-  5: "봉수대의 저격처럼 한 줄에 선 기물을 묶는 핀과 스큐어를 배워요.",
-  6: "매복을 걷어 숨은 공격을 열고, 질식·사다리·뒷줄 메이트를 구분해요.",
-};
-
-const trainingModuleArt = {
-  1: { src: "/assets/front-pieces-v1/g_pawn.webp?v=20260905-webp", alt: "고려 꼬마 창병" },
-  2: { src: "/assets/front-pieces-v1/g_bishop.webp?v=20260905-webp", alt: "고려 승병" },
-  3: { src: "/assets/front-pieces-v1/g_king.webp?v=20260905-webp", alt: "고려 임금님" },
-  4: { src: "/assets/front-pieces-v1/g_knight.webp?v=20260905-webp", alt: "고려 백마 기수" },
-  5: { src: "/assets/front-pieces-v1/g_rook.webp?v=20260905-webp", alt: "고려 돌탑 수문장" },
-  6: { src: "/assets/front-pieces-v1/g_bishop.webp?v=20260905-webp", alt: "고려 승병" },
-};
-
 function activeTrainingEdition() {
   return selectedPieceEdition === "original" ? "original" : "cheoinseong";
 }
@@ -2472,53 +2368,6 @@ function activeTrainingEdition() {
 function trainingTutorialPath(edition = activeTrainingEdition()) {
   return edition === "original" ? "/assets/how-to-play.html" : "/assets/how-to-play-cheoinseong.html";
 }
-
-function renderTrainingEditionControls() {
-  const edition = activeTrainingEdition();
-  const korean = currentInterfaceLanguage() === "Korean";
-  trainingEditionPicker?.toggleAttribute("hidden", activeTrainingPathMode !== "tutorial");
-  if (trainingEditionLabel) trainingEditionLabel.textContent = korean ? "말 디자인" : "Piece design";
-  trainingEditionButtons.forEach((button) => {
-    const active = button.dataset.trainingEdition === edition;
-    button.classList.toggle("active", active);
-    button.setAttribute("aria-pressed", String(active));
-    button.textContent = button.dataset.trainingEdition === "original" ? (korean ? "오리지널" : "Original") : (korean ? "고려-몽골" : "Goryeo-Mongol");
-  });
-}
-
-function reloadOpenTrainingEdition() {
-  if (!trainingModuleOpen || !howToPlayFrame?.src) return;
-  try {
-    const url = new URL(howToPlayFrame.src, window.location.origin);
-    if (activeTrainingPathMode === "tutorial") {
-      if (!url.pathname.includes("how-to-play") && !url.pathname.includes("advanced-tactics")) return;
-      const moduleId = Number(url.searchParams.get("module") || 1);
-      url.pathname = moduleId >= 5 ? "/assets/advanced-tactics.html" : trainingTutorialPath();
-      url.searchParams.set("edition", activeTrainingEdition());
-      url.searchParams.set("v", "20260905-khan-knight-copy");
-    } else if (activeTrainingPathMode === "puzzle") {
-      if (!url.pathname.includes("goryeo-vs-mongol-puzzle")) return;
-      url.searchParams.set("edition", activeTrainingEdition());
-      url.searchParams.set("v", "20260905-puzzle-scenes-v2-khan-copy");
-    } else {
-      return;
-    }
-    howToPlayFrame.src = `${url.pathname}${url.search}`;
-  } catch {
-    // Leave the current training content in place if its URL cannot be normalized.
-  }
-}
-
-const trainingStageIconNames = {
-  1: "movement",
-  2: "capture",
-  3: "defense",
-  4: "mate",
-  5: "defense",
-  6: "mate",
-  puzzle: "puzzle",
-  review: "review",
-};
 
 const puzzlePathStages = [
   {
@@ -2727,6 +2576,18 @@ function renderPoeunPath() {
   });
 }
 
+function updateMatchResultSummary(match) {
+  if (resultSelfName) resultSelfName.textContent = currentUser?.displayName || translateCopy("You");
+  const opponent = match?.players?.find((player) => player.userId !== currentUser?.id) || match?.players?.[1];
+  if (resultOpponentName) resultOpponentName.textContent = opponent?.displayName || translateCopy("Partner waiting");
+  const parts = [match ? matchSourceLabel(match) : matchSourceBadge?.textContent, match ? matchClockLabel(match) : timeControlBadge?.textContent].filter(Boolean);
+  if (resultMatchMeta) resultMatchMeta.textContent = parts.join(" · ");
+  const selfAvatar = document.querySelector(".result-self-avatar");
+  const opponentAvatar = document.querySelector(".result-opponent-avatar");
+  if (selfAvatar) selfAvatar.textContent = initials(currentUser?.displayName || translateCopy("You"));
+  if (opponentAvatar) opponentAvatar.textContent = initials(opponent?.displayName || translateCopy("Partner waiting"));
+}
+
 function showPoeunPath({ updateHash = true } = {}) {
   window.PoeunStationUI?.dispose();
   if (pieceGuideDialog?.open) pieceGuideDialog.close();
@@ -2853,64 +2714,8 @@ function showPoeunEnding({ updateHash = true } = {}) {
   poeunChapter?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-let entryTypewriterTimer = 0;
-let selectedTrainingReviewModuleId = 0;
 let activeTrainingPathMode = "tutorial";
 let campaignDetailOpen = false;
-
-function landingTypewriterPhrase() {
-  return currentInterfaceLanguage() === "Korean" ? "체스..? 엄청 쉽죠." : "chess..? it’s easy.";
-}
-
-function fitLandingTypewriter(phrase = landingTypewriterPhrase()) {
-  if (!entryTypewriter || !entryTypewriterText) return;
-  const previousText = entryTypewriterText.textContent;
-  const styles = window.getComputedStyle(entryTypewriter);
-  const maxSize = Number.parseFloat(styles.getPropertyValue("--entry-typewriter-max-size")) || 82;
-  const minSize = Number.parseFloat(styles.getPropertyValue("--entry-typewriter-min-size")) || 28;
-  entryTypewriter.style.fontSize = `${maxSize}px`;
-  entryTypewriterText.textContent = phrase;
-  const availableWidth = Math.max(1, entryTypewriter.clientWidth - 20);
-  const requiredWidth = Math.max(1, entryTypewriterText.scrollWidth);
-  const fittedSize = Math.max(minSize, Math.min(maxSize, Math.floor((maxSize * availableWidth) / requiredWidth)));
-  entryTypewriter.style.fontSize = `${fittedSize}px`;
-  entryTypewriterText.textContent = previousText;
-}
-
-function renderLandingTypewriter({ animate = true } = {}) {
-  if (!entryTypewriter || !entryTypewriterText) return;
-  window.clearTimeout(entryTypewriterTimer);
-  const phrase = landingTypewriterPhrase();
-  const characters = Array.from(phrase);
-  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-  entryTypewriter.setAttribute("aria-label", phrase);
-  entryTypewriter.classList.remove("typing", "complete");
-  fitLandingTypewriter(phrase);
-
-  if (!animate || reduceMotion) {
-    entryTypewriterText.textContent = phrase;
-    entryTypewriter.classList.add("complete");
-    return;
-  }
-
-  entryTypewriterText.textContent = "";
-  entryTypewriter.classList.add("typing");
-  let characterIndex = 0;
-  const pauseAfterCharacter = phrase.indexOf("?") + 1;
-  const characterDelay = currentInterfaceLanguage() === "Korean" ? 105 : 78;
-  const typeNextCharacter = () => {
-    characterIndex += 1;
-    entryTypewriterText.textContent = characters.slice(0, characterIndex).join("");
-    if (characterIndex < characters.length) {
-      const delay = characterIndex === pauseAfterCharacter ? 2000 : characterDelay;
-      entryTypewriterTimer = window.setTimeout(typeNextCharacter, delay);
-      return;
-    }
-    entryTypewriter.classList.remove("typing");
-    entryTypewriter.classList.add("complete");
-  };
-  entryTypewriterTimer = window.setTimeout(typeNextCharacter, 260);
-}
 
 const todayQuestDefinitions = [
   { key: "puzzles", total: 5, ko: "퍼즐 5개 풀기", en: "Solve 5 puzzles" },
@@ -3005,167 +2810,6 @@ function renderTodayQuests() {
   });
 }
 
-function renderTrainingModuleListLegacy() {
-  if (!trainingModuleList) return;
-  const state = activeTrainingState();
-  const renderSignature = JSON.stringify({
-    language: currentInterfaceLanguage(),
-    edition: activeTrainingEdition(),
-    next: state.nextModule?.id || null,
-    completedModules: state.completedModules || [],
-    completedPuzzles: state.completedPuzzles || [],
-    puzzleUnlocked: Boolean(state.puzzleUnlocked),
-    modules: (state.modules || []).map((module) => [module.id, module.title, Boolean(module.completed)]),
-  });
-  if (renderSignature === trainingModuleRenderSignature && trainingModuleList.childElementCount) return;
-  trainingModuleRenderSignature = renderSignature;
-  const progressLabel = document.querySelector('#trainingProgressLabel');
-  const completed = (state.modules || []).filter(module => module.completed).length;
-  const total = (state.modules || []).length;
-  if (progressLabel) progressLabel.textContent = currentInterfaceLanguage() === 'Korean' ? completed + ' / ' + total + ' 단계 완료' : completed + ' / ' + total + ' lessons completed';
-  const meter = document.querySelector('#trainingProgressMeter');
-  if (meter) { meter.max = total || 4; meter.value = completed; }
-  const nextModuleId = Number(state.nextModule?.id || 0);
-  trainingModuleList.innerHTML = "";
-  (state.modules || []).forEach((module) => {
-    const moduleId = Number(module.id);
-    const completed = Boolean(module.completed);
-    const current = moduleId === nextModuleId;
-    const accessible = completed || current;
-    const card = document.createElement("article");
-    card.className = `training-module-row ${moduleId % 2 ? "path-left" : "path-right"}${completed ? " completed" : ""}${current ? " current" : ""}${accessible ? "" : " locked"}`;
-    card.dataset.pathStep = String(moduleId);
-    const tooltipId = `trainingStageTooltip${moduleId}`;
-    const status = completed ? "완료" : current ? "학습 가능" : "잠김";
-    card.innerHTML = `
-      <div class="training-path-anchor">
-        <button class="training-path-node" type="button" aria-describedby="${tooltipId}"${accessible ? "" : ' aria-disabled="true"'}>
-          <span class="training-stage-icon icon-${trainingStageIconNames[moduleId]}" aria-hidden="true"></span>
-          <span class="visually-hidden">모듈 ${moduleId} · ${module.title} · ${status}</span>
-        </button>
-        <div class="training-path-tooltip" id="${tooltipId}" role="tooltip">
-          <span class="training-module-index">모듈 ${moduleId} · ${status}</span>
-          <h3>${module.title}</h3>
-          <p>${trainingModuleDescriptions[moduleId] || "체스의 기본 규칙을 배워요."}</p>
-          <strong>${accessible ? completed ? "눌러서 다시 학습" : "눌러서 시작" : "이전 모듈을 먼저 완료하세요"}</strong>
-        </div>
-      </div>`;
-    card.querySelector(".training-path-tooltip").removeAttribute("role");
-    const control = card.querySelector(".training-path-node");
-    if (accessible) {
-      control.addEventListener("click", () => openTrainingModule(moduleId));
-    }
-    if (current) {
-      const continueButton = document.createElement('button');
-      continueButton.className = 'button primary training-continue';
-      continueButton.type = 'button';
-      continueButton.textContent = currentInterfaceLanguage() === 'Korean' ? '이어서 학습' : 'Continue lesson';
-      continueButton.addEventListener('click', () => openTrainingModule(moduleId));
-      card.querySelector('.training-path-tooltip').append(continueButton);
-    }
-    trainingModuleList.append(card);
-  });
-
-  const puzzleUnlocked = Boolean(state.puzzleUnlocked);
-  const completedPuzzles = activeTrainingState().completedPuzzles || [];
-  const puzzleCompleted = readDailyQuestProgress().puzzles > 0 || (Array.isArray(completedPuzzles) && completedPuzzles.length > 0);
-  const puzzleCard = document.createElement("article");
-  puzzleCard.className = `training-module-row training-puzzle-row path-left${puzzleCompleted ? " completed" : ""}${puzzleUnlocked ? " current" : " locked"}`;
-  puzzleCard.dataset.pathStep = "7";
-  puzzleCard.innerHTML = `
-    <div class="training-path-anchor">
-      <button class="training-path-node" type="button" aria-describedby="trainingPuzzleTooltip"${puzzleUnlocked ? "" : ' aria-disabled="true"'}>
-        <span class="training-stage-icon icon-${trainingStageIconNames.puzzle}" aria-hidden="true"></span>
-        <span class="visually-hidden">퍼즐 · 성문 뒤의 함정 · ${puzzleCompleted ? "완료" : puzzleUnlocked ? "학습 가능" : "잠김"}</span>
-      </button>
-      <div class="training-path-tooltip" id="trainingPuzzleTooltip" role="tooltip">
-        <span class="training-module-index">퍼즐 · ${puzzleCompleted ? "완료" : puzzleUnlocked ? "학습 가능" : "잠김"}</span>
-        <h3>성문 뒤의 함정</h3>
-        <p>${puzzleUnlocked ? "튜토리얼을 마쳤습니다. 오늘의 퍼즐로 다음 실력을 열어보세요." : "모든 튜토리얼 모듈을 완료하면 열립니다."}</p>
-        <strong>${puzzleUnlocked ? "눌러서 퍼즐 풀기" : "튜토리얼을 먼저 완료하세요"}</strong>
-      </div>
-    </div>`;
-  puzzleCard.querySelector(".training-path-tooltip").removeAttribute("role");
-  const puzzleControl = puzzleCard.querySelector(".training-path-node");
-  if (puzzleUnlocked) {
-    puzzleControl.addEventListener("click", () => setHowToPlayMode("puzzle"));
-  }
-  trainingModuleList.append(puzzleCard);
-
-  const completedModules = (state.completedModules || []).map(Number);
-  const reviewModules = (state.modules || []).filter((module) => completedModules.includes(Number(module.id)));
-  const review = document.createElement("footer");
-  review.className = "training-review-row";
-  review.innerHTML = `
-    <div class="training-review-intro">
-      <span class="training-module-index">복습 퀴즈</span>
-      <p>${reviewModules.length ? "복습할 모듈을 골라 네 문제로 확인해 볼까요?" : "모듈을 완료하면 복습 퀴즈를 시작할 수 있어요."}</p>
-    </div>`;
-  const reviewChooser = document.createElement("div");
-  reviewChooser.className = "training-review-chooser";
-  const selectedReviewModule =
-    reviewModules.find((module) => Number(module.id) === selectedTrainingReviewModuleId) || reviewModules[0] || null;
-  selectedTrainingReviewModuleId = Number(selectedReviewModule?.id || 0);
-  const reviewMenu = document.createElement("div");
-  reviewMenu.className = "training-review-menu";
-  const reviewTrigger = document.createElement("button");
-  reviewTrigger.type = "button";
-  reviewTrigger.className = "training-review-select";
-  reviewTrigger.disabled = reviewModules.length === 0;
-  reviewTrigger.setAttribute("aria-haspopup", "listbox");
-  reviewTrigger.setAttribute("aria-expanded", "false");
-  reviewTrigger.innerHTML = `<span>${selectedReviewModule ? `모듈 ${selectedReviewModule.id} · ${selectedReviewModule.title}` : "완료한 모듈이 없습니다"}</span><span aria-hidden="true">⌄</span>`;
-
-  const reviewOptions = document.createElement("div");
-  reviewOptions.className = "training-review-options";
-  reviewOptions.setAttribute("role", "listbox");
-  reviewOptions.hidden = true;
-  reviewModules.forEach((module) => {
-    const option = document.createElement("button");
-    option.type = "button";
-    option.className = "training-review-option";
-    option.setAttribute("role", "option");
-    option.setAttribute("aria-selected", String(Number(module.id) === selectedTrainingReviewModuleId));
-    option.textContent = `모듈 ${module.id} · ${module.title}`;
-    option.addEventListener("click", () => {
-      selectedTrainingReviewModuleId = Number(module.id);
-      reviewTrigger.querySelector("span").textContent = option.textContent;
-      reviewOptions.querySelectorAll('[role="option"]').forEach((item) => {
-        item.setAttribute("aria-selected", String(item === option));
-      });
-      reviewOptions.hidden = true;
-      reviewTrigger.setAttribute("aria-expanded", "false");
-      reviewTrigger.focus();
-    });
-    reviewOptions.append(option);
-  });
-  reviewTrigger.addEventListener("click", () => {
-    const opening = reviewOptions.hidden;
-    reviewOptions.hidden = !opening;
-    reviewTrigger.setAttribute("aria-expanded", String(opening));
-  });
-  reviewMenu.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape" || reviewOptions.hidden) return;
-    reviewOptions.hidden = true;
-    reviewTrigger.setAttribute("aria-expanded", "false");
-    reviewTrigger.focus();
-  });
-  reviewMenu.append(reviewTrigger, reviewOptions);
-
-  const reviewControl = document.createElement("button");
-  reviewControl.type = "button";
-  reviewControl.className = "training-review-open";
-  reviewControl.textContent = "복습 퀴즈 시작";
-  reviewControl.disabled = reviewModules.length === 0;
-  if (reviewModules.length) reviewControl.addEventListener("click", () => {
-    const chosenModuleId = Number(selectedTrainingReviewModuleId || 0);
-    if (chosenModuleId) openTrainingReview(chosenModuleId);
-  });
-  reviewChooser.append(reviewMenu, reviewControl);
-  review.append(reviewChooser);
-  trainingModuleList.append(review);
-}
-
 function completedPuzzleIds() {
   const completed = activeTrainingState().completedPuzzles || [];
   const ids = new Set();
@@ -3231,100 +2875,12 @@ function similarPuzzleIds(stage) {
   return Array.from({ length: 5 }, (_, index) => `${stage.id}-v${index + 2}`);
 }
 
-function nextSimilarPuzzleId(stage, completed = completedPuzzleIds()) {
-  const variants = similarPuzzleIds(stage);
-  if (!variants.length) return "";
-  return variants.find((id) => !completed.has(id)) || variants[0];
-}
-
 function puzzleStageArtwork(stage) {
   const pieces = {
     s1: "rook", s2: "knight", s3: "queen", m1: "rook", m2: "king", m3: "pawn", h1: "knight", h2: "rook", a1: "king", a2: "rook", a3: "queen",
     "cheoin-1": "pawn", "cheoin-2": "knight", "cheoin-3": "bishop", "cheoin-4": "rook", "cheoin-5": "queen",
   };
   return `/assets/cheoinseong-pieces-v2/g_${pieces[stage.id] || "pawn"}.png`;
-}
-
-function renderPuzzleStageListLegacy(list, seriesItem) {
-  if (!list) return;
-  const korean = currentInterfaceLanguage() === "Korean";
-  const history = seriesItem.id === "cheoinseong";
-  const completed = completedPuzzleIds();
-  const stages = seriesItem.stages;
-  const completedCount = stages.filter((stage) => completed.has(stage.id)).length;
-  const nextIndex = stages.findIndex((stage) => !completed.has(stage.id) && canOpenPuzzleStage(stage, completed));
-  const allComplete = nextIndex === -1;
-  const currentIndex = allComplete ? 0 : nextIndex;
-  const next = stages[currentIndex];
-  const t = (ko, en) => korean ? ko : en;
-  const title = history ? t("처인성 이야기 퍼즐", "Cheoinseong story puzzles") : t("고려·몽골 체크메이트 퍼즐", "Goryeo–Mongol checkmate puzzles");
-  list.replaceChildren();
-  if (!next) return;
-  const hero = document.createElement("header");
-  hero.className = `puzzle-course-header${history ? " is-history" : ""}`;
-  hero.innerHTML = `<div class="puzzle-course-intro"><h2>${title}</h2></div>
-    ${history ? `<div class="puzzle-course-art" aria-hidden="true"><img src="/assets/cheoinseong-pieces-v2/g_rook.png" alt="" /><img src="/assets/cheoinseong-pieces-v2/g_knight.png" alt="" /></div>` : ""}
-    <div class="puzzle-course-progress"><span id="${seriesItem.id}CourseProgress">${completedCount} / ${stages.length} ${t("단계 완료", "stages complete")}</span><progress max="${stages.length}" value="${completedCount}" aria-labelledby="${seriesItem.id}CourseProgress"></progress></div>`;
-  list.append(hero);
-  const layout = document.createElement("div");
-  layout.className = "puzzle-course-layout";
-  const lessons = document.createElement("div");
-  lessons.className = "puzzle-course-lessons";
-  const groups = history ? [{ name: t("처인성을 따라가는 다섯 이야기", "Five stories of Cheoinseong"), stages }] : [1, 2, 3].map(tier => ({
- name: t(`${tier}수 메이트`, `Mate in ${tier}`),
- stages: stages.filter(stage => Number(stage.tier || 1) === tier)
-}));
-  groups.forEach((group) => {
-    const section = document.createElement("section");
-    section.className = "puzzle-lesson-group";
-    section.innerHTML = `<h3>${group.name}</h3>${group.description ? `<p>${group.description}</p>` : ""}`;
-    const rows = document.createElement("ol");
-    rows.className = "puzzle-lesson-list";
-    group.stages.forEach((stage) => {
-      const index = stages.indexOf(stage);
-      const done = completed.has(stage.id);
-      const ready = !done && canOpenPuzzleStage(stage, completed);
-      const accessible = canOpenPuzzleStage(stage, completed);
-      const status = done ? t("다시 풀기", "Replay") : ready ? t("도전", "Start") : t("잠김", "Locked");
-      const row = document.createElement("li");
-      row.className = `puzzle-lesson${done ? " is-complete" : ""}${ready ? " is-current" : ""}${accessible ? "" : " is-locked"}`;
-      const control = document.createElement("button");
-      control.type = "button";
-      control.className = "puzzle-lesson-button";
-      control.disabled = !accessible;
-      control.innerHTML = `<span class="puzzle-lesson-number">${index + 1}</span><span class="puzzle-lesson-art"><img src="${puzzleStageArtwork(stage)}" alt="" loading="lazy" /></span><span class="puzzle-lesson-copy"><strong>${t(stage.ko, stage.en)}</strong><span>${t(stage.koDescription, stage.enDescription)}</span></span><span class="puzzle-lesson-status"><span aria-hidden="true">${done ? "✓" : ready ? "▷" : "🔒"}</span>${status}</span>`;
-      if (accessible) control.addEventListener("click", () => openPuzzleStage(stage, index));
-      row.append(control);
-      const variantId = done ? nextSimilarPuzzleId(stage, completed) : "";
-      if (variantId) {
-        const practice = document.createElement("button");
-        practice.type = "button"; practice.className = "puzzle-course-similar";
-        practice.textContent = t("유사문제 풀기 →", "Practice similar puzzle →");
-        practice.addEventListener("click", () => openPuzzleStage({...stage, id: variantId, ko: stage.ko + " · 유사 퍼즐", en: stage.en + " · Similar puzzle"}, index));
-        row.append(practice);
-      }
-      rows.append(row);
-    });
-    section.append(rows);
-    lessons.append(section);
-  });
-  const aside = document.createElement("aside");
-  aside.className = "puzzle-course-aside";
-  aside.setAttribute("aria-label", t("다음 도전과 복습", "Next challenge and review"));
-  aside.innerHTML = `<section class="puzzle-next-card"><span class="puzzle-course-eyebrow">${allComplete ? t("모든 단계를 완료했어요", "All stages complete") : history ? t("이어서 할 이야기", "Your next story") : t("다음 도전", "Next challenge")}</span><h3>${t(next.ko, next.en)}</h3><div class="puzzle-next-art"><img src="${puzzleStageArtwork(next)}" alt="${t("고려측 체스 기물", "Goryeo chess piece")}" /></div><button class="button primary puzzle-resume" type="button">${allComplete ? t("처음부터 복습하기", "Review from the start") : history ? t("이야기 이어하기", "Continue the story") : t("이어서 풀기", "Continue puzzles")} <span aria-hidden="true">→</span></button></section>
-    <section class="puzzle-learning-note"><span class="puzzle-course-eyebrow">${history ? t("체스와 만나는 지역 이야기", "Local stories through chess") : t("천천히 생각해도 괜찮아요", "Take your time")}</span><h3>${history ? t("처인성을 지키는 기물들", "The defenders of Cheoinseong") : t("한 수보다 중요한 생각", "Think before you move")}</h3><p>${history ? t("병사, 기마병, 승병과 성벽. 실제 게임 속 고려측 기물을 만나며 이야기를 따라가세요.", "Follow the story with the Goryeo soldiers, cavalry, monks and fortress pieces used in the game.") : t("상대 왕의 도망갈 칸을 살피고, 내 기물이 함께 공격할 방법을 찾아보세요.", "Look for the king’s escape squares and ways for your pieces to work together.")}</p></section>`;
-  aside.querySelector(".puzzle-resume").addEventListener("click", () => openPuzzleStage(next, currentIndex));
-  if (!history) {
-    const maxTier = maxUnlockedPuzzleTier(completed);
-    const rushCard = document.createElement("section");
-    rushCard.className = "puzzle-rush-card";
-    rushCard.innerHTML = `<h3>${t("퍼즐 러시", "Puzzle Rush")}</h3><p>${t(`90초 · ${maxTier}수 메이트까지`, `90 seconds · Up to mate in ${maxTier}`)}</p><button class="button secondary" type="button" data-puzzle-rush>${t("시작", "Start")} <span aria-hidden="true">→</span></button>`;
-    rushCard.querySelector("[data-puzzle-rush]").addEventListener("click", () => openPuzzleRush(maxTier));
-    aside.querySelector(".puzzle-learning-note").replaceWith(rushCard);
-  }
-
-  layout.append(lessons, aside);
-  list.append(layout);
 }
 
 function maxUnlockedPuzzleTier(completed = completedPuzzleIds()) {
@@ -3362,34 +2918,6 @@ function renderPuzzlePath() {
     en: "The Last Arrow of Cheoinseong",
     stages: puzzlePathStages.filter((stage) => stage.series === "cheoinseong"),
   }, completed);
-}
-
-function renderTrainingControlsLegacy() {
-  const state = activeTrainingState();
-  const puzzleUnlocked = Boolean(state.puzzleUnlocked);
-  const korean = currentInterfaceLanguage() === "Korean";
-  if (showPuzzleGuideButton) showPuzzleGuideButton.textContent = korean ? "퍼즐" : "Puzzle";
-  if (showCheoinseongGuideButton) showCheoinseongGuideButton.textContent = korean ? "처인성" : "Cheoinseong";
-  if (showPuzzleGuideButton) {
-    showPuzzleGuideButton.classList.toggle("locked", !puzzleUnlocked);
-    showPuzzleGuideButton.setAttribute("aria-disabled", puzzleUnlocked ? "false" : "true");
-  }
-  if (showCheoinseongGuideButton) {
-    showCheoinseongGuideButton.classList.remove("locked");
-    showCheoinseongGuideButton.setAttribute("aria-disabled", "false");
-  }
-  if (tutorialLoginButton) tutorialLoginButton.hidden = Boolean(currentUser);
-  renderTrainingEditionControls();
-  if (tutorialPuzzleNote) {
-    tutorialPuzzleNote.hidden = puzzleUnlocked || activeTrainingPathMode === "cheoinseong";
-    tutorialPuzzleNote.textContent =
-      currentInterfaceLanguage() === "Korean"
-        ? "모든 훈련 모듈을 완료하면 퍼즐을 열 수 있습니다."
-        : "Finish every training module to unlock puzzles.";
-  }
-  renderTrainingModuleList();
-  renderPuzzlePath();
-  renderHomeTrainingProgress();
 }
 
 function trainingPuzzleRows(stages, completed, ko, campaign = false) {
@@ -3546,9 +3074,6 @@ function setActiveTrainingPathMode(mode) {
   activeTrainingPathMode = mode;
   if (howToPlayView) howToPlayView.dataset.trainingMode = mode;
   trainingHome?.toggleAttribute("hidden", mode !== "home");
-  trainingSectionTools?.toggleAttribute("hidden", mode === "home");
-  trainingEditionPicker?.toggleAttribute("hidden", mode !== "tutorial");
-  renderTrainingEditionControls();
   showTutorialGuideButton?.classList.toggle("active", mode === "tutorial");
   showPuzzleGuideButton?.classList.toggle("active", mode === "puzzle");
   showCheoinseongGuideButton?.classList.toggle("active", mode === "cheoinseong");
@@ -3610,28 +3135,6 @@ function openTrainingModule(moduleId) {
   if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${korean ? "모듈" : "Module"} ${normalizedModuleId} · ${korean ? module.title : translateCopy(module.title)}`;
   const tutorialPath = normalizedModuleId >= 5 ? "/assets/advanced-tactics.html" : trainingTutorialPath();
   if (howToPlayFrame) howToPlayFrame.src = `${tutorialPath}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&lang=${korean ? "ko" : "en"}&v=20260909-edition-copy`;
-  setActiveTrainingPathMode("tutorial");
-  howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function openTrainingReview(moduleId) {
-  navigationRevision += 1;
-  const normalizedModuleId = Math.min(6, Math.max(1, Number(moduleId) || 1));
-  const state = activeTrainingState();
-  if (!(state.completedModules || []).map(Number).includes(normalizedModuleId)) return;
-  trainingModuleOpen = true;
-  howToPlayShell?.classList.remove("puzzle-mode");
-  howToPlayView?.classList.remove("puzzle-mode");
-  resetHowToPlayFrameSizing();
-  trainingModuleList?.setAttribute("hidden", "");
-  puzzlePathList?.setAttribute("hidden", "");
-  cheoinseongPathList?.setAttribute("hidden", "");
-  howToPlayShell?.removeAttribute("hidden");
-  trainingModuleToolbar?.removeAttribute("hidden");
-  const korean = currentInterfaceLanguage() === "Korean";
-  if (activeTrainingModuleTitle) activeTrainingModuleTitle.textContent = `${korean ? "모듈" : "Module"} ${normalizedModuleId} · ${korean ? "복습 퀴즈" : "Review Quiz"}`;
-  const tutorialPath = normalizedModuleId >= 5 ? "/assets/advanced-tactics.html" : trainingTutorialPath();
-  if (howToPlayFrame) howToPlayFrame.src = `${tutorialPath}?module=${normalizedModuleId}&edition=${activeTrainingEdition()}&review=1&lang=${korean ? "ko" : "en"}&v=20260909-edition-copy`;
   setActiveTrainingPathMode("tutorial");
   howToPlayShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -4201,17 +3704,6 @@ function currentPlayerColor(match) {
   return match.players.find((player) => player.userId === null)?.color || "white";
 }
 
-async function refreshStats() {
-  if (!backendOnline) return;
-  try {
-    const stats = await api("/api/stats");
-    if (activeMatchesCount) activeMatchesCount.textContent = String(stats.activeMatches);
-    if (subtitleSessionsCount) subtitleSessionsCount.textContent = String(stats.subtitleSessions);
-  } catch {
-    // Non-critical status cards can fail without blocking play.
-  }
-}
-
 function renderLobby(lobby = {}) {
   cachedLobbyData = lobby;
   const seeks = lobby.openSeeks || [];
@@ -4395,7 +3887,6 @@ function renderAdminOverview(data) {
   if (adminUsersCount) adminUsersCount.textContent = String(data.stats?.users || 0);
   if (adminMatchesCount) adminMatchesCount.textContent = String(data.stats?.activeMatches || 0);
   if (adminReportsCount) adminReportsCount.textContent = String(data.stats?.openReports || 0);
-  if (shopInterestCount) shopInterestCount.textContent = String(data.shopInterests?.length || 0);
   if (adminStatus) {
     adminStatus.textContent =
       currentInterfaceLanguage() === "Korean"
@@ -4520,25 +4011,6 @@ function renderAdminOverview(data) {
     currentInterfaceLanguage() === "Korean" ? "아직 안전 신고가 없습니다." : "No safety reports yet.",
   );
 
-  if (shopInterestList) {
-    renderAdminList(
-      shopInterestList,
-      data.shopInterests || [],
-      (interest) => {
-        const card = document.createElement("article");
-        card.className = "admin-item";
-        const title = document.createElement("strong");
-        title.textContent = interest.productName || "Product";
-        const displayName = document.createElement("span");
-        displayName.textContent = interest.displayName || "Guest Player";
-        const email = document.createElement("p");
-        email.textContent = interest.email || "No email";
-        card.append(title, displayName, email);
-        return card;
-      },
-      currentInterfaceLanguage() === "Korean" ? "아직 상품 관심 기록이 없습니다." : "No product interest yet.",
-    );
-  }
 }
 
 async function resolveAdminReport(reportId) {
@@ -4587,7 +4059,6 @@ async function endAdminMatch(matchId) {
       body: { result: "Ended by staff" },
     });
     await refreshAdmin();
-    await refreshStats();
   } catch (error) {
     adminStatus.textContent = error.message;
   }
@@ -4615,7 +4086,6 @@ async function checkBackend() {
   try {
     const [health, session] = await Promise.all([api("/api/health"), api("/api/session")]);
     backendOnline = Boolean(health.ok);
-    setServerStatus(currentInterfaceLanguage() === "Korean" ? "서버 연결됨" : "Backend online", true);
     if (!applyCurrentUserSnapshot(session.user, userRevision)) return;
     cachedTrainingState = currentUser?.training || cachedTrainingState;
     if (currentUser) {
@@ -4645,7 +4115,6 @@ async function checkBackend() {
     }
   } catch {
     backendOnline = false;
-    setServerStatus(currentInterfaceLanguage() === "Korean" ? "프로토타입 모드" : "Prototype mode", false);
     renderLobby({ openSeeks: [], openSeeksTotal: 0, queuedPlayers: 0 });
   }
 }
@@ -5038,7 +4507,6 @@ async function uploadProfileImage(file) {
   }
   try {
     const dataUrl = await readImageFileAsDataUrl(file);
-    if (profileImage) profileImage.value = dataUrl;
     await saveProfilePatch({ avatarUrl: dataUrl });
   } catch (error) {
     if (profileStatus) profileStatus.textContent = error.message;
@@ -5167,7 +4635,6 @@ function renderForumPosts() {
     .sort(
     (first, second) => Number(second.pinned) - Number(first.pinned)
   );
-  renderHomeForumPreview();
   if (visiblePosts.length === 0) {
     const empty = document.createElement("p");
     empty.className = "forum-empty";
@@ -5450,7 +4917,7 @@ function renderResourceLibrary() {
     const author = document.createElement("span");
     author.textContent = `${resource.author} · ${resource.date}`;
     const stats = document.createElement("footer");
-    stats.innerHTML = `<span aria-label="다운로드 수">↓ ${resource.downloads}</span><span aria-label="댓글 수">▢ ${resource.comments}</span>`;
+    stats.innerHTML = `<span aria-label="다운로드 수">↓ ${resource.downloads ?? "—"}</span><span aria-label="댓글 수">▢ ${resource.comments}</span>`;
     if (resource.official) {
       const official = document.createElement("b");
       official.textContent = "공식";
@@ -5466,11 +4933,13 @@ function renderResourceLibrary() {
 
 function openResourceDetail(resource) {
   if (!resourceDetailPanel) return;
+  const korean = currentInterfaceLanguage() === "Korean";
+  const label = (ko, en) => korean ? ko : en;
   resourceDetailPanel.replaceChildren();
   const back = document.createElement("button");
   back.type = "button";
   back.className = "resource-back";
-  back.textContent = "← 자료방";
+  back.textContent = label("← 자료방", "← Resources");
   back.addEventListener("click", () => setForumSurface("library"));
 
   const heading = document.createElement("header");
@@ -5483,64 +4952,80 @@ function openResourceDetail(resource) {
 
   const layout = document.createElement("div");
   layout.className = "resource-detail-layout";
-  const viewer = document.createElement("div");
-  viewer.className = "resource-viewer";
-  viewer.append(createResourcePreview(resource, true));
-  const pageLabel = document.createElement("span");
-  pageLabel.textContent = `1 / ${resource.pages || 1}쪽`;
-  viewer.append(pageLabel);
-
-  const downloadCard = document.createElement("aside");
-  downloadCard.className = "resource-download-card";
   const files = resource.files || (resource.fileUrl ? [{ name: resource.fileName || resource.title, url: resource.fileUrl }] : []);
+  const fileSection = document.createElement("section");
+  fileSection.className = "resource-detail-files";
+  const filesHeading = document.createElement("h4");
+  filesHeading.textContent = label(`첨부 파일 ${files.length}`, `Attached files ${files.length}`);
   const downloads = document.createElement("div");
   downloads.className = "resource-download-list";
   if (files.length) {
-    files.forEach((file) => {
+    files.forEach((file, index) => {
+      const extension = String(file.name || "").split(".").pop().toUpperCase();
+      const fileType = ["PDF", "HWP", "HWPX", "DOCX", "PNG", "JPG", "JPEG", "WEBP", "GIF"].includes(extension) ? extension : resource.type;
+      const isAnswer = /정답|해설|answer|solution/i.test(file.name || "");
+      const fileLabel = isAnswer ? label("정답지", "Answer key") : /학습지|worksheet/i.test(file.name || "") ? label("학습지", "Worksheet") : label(`첨부 파일 ${index + 1}`, `File ${index + 1}`);
+      const row = document.createElement("div");
+      row.className = "resource-download-row";
+      const icon = document.createElement("span");
+      icon.className = "resource-download-icon";
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = "▤";
+      const copy = document.createElement("div");
+      copy.className = "resource-download-copy";
+      const label = document.createElement("strong");
+      label.textContent = fileLabel;
+      const type = document.createElement("small");
+      type.textContent = fileType;
+      const name = document.createElement("span");
+      name.className = "resource-download-name";
+      name.textContent = file.name;
+      copy.append(label, type, name);
       const download = document.createElement("a");
       download.className = "button resource-primary";
       download.href = file.url;
       download.download = file.name;
-      const icon = document.createElement("span");
-      icon.className = "resource-download-icon";
-      icon.setAttribute("aria-hidden", "true");
-      icon.textContent = "↓";
-      const name = document.createElement("span");
-      name.className = "resource-download-name";
-      name.textContent = file.name;
-      download.append(icon, name);
-      downloads.append(download);
+      download.textContent = label("↓ 받기", "↓ Download");
+      row.append(icon, copy, download);
+      downloads.append(row);
     });
   } else {
-    downloads.textContent = "다운로드 파일이 없습니다";
+    downloads.textContent = label("다운로드 파일이 없습니다", "No files to download");
   }
-  const fileMeta = document.createElement("p");
-  fileMeta.textContent = `인쇄용 A4 · ${resource.type} · ${resource.size} · 다운로드 ${resource.downloads}`;
-  const answerRow = document.createElement("div");
-  answerRow.innerHTML = `<span>정답지</span><strong>${resource.answer ? "포함" : "미포함"}</strong>`;
-  const termsRow = document.createElement("div");
-  termsRow.innerHTML = "<span>이용 조건</span><strong>수업용 공유</strong>";
-  const authorRow = document.createElement("div");
-  const authorLabel = document.createElement("span");
-  authorLabel.textContent = "올린이";
-  const authorName = document.createElement("strong");
-  authorName.textContent = resource.author;
-  authorRow.append(authorLabel, authorName);
-  downloadCard.append(downloads, fileMeta, answerRow, termsRow, authorRow);
-  layout.append(viewer, downloadCard);
+  fileSection.append(filesHeading, downloads);
+
+  const info = document.createElement("aside");
+  info.className = "resource-download-card";
+  const infoHeading = document.createElement("h4");
+  infoHeading.textContent = label("자료 정보", "Resource details");
+  info.append(infoHeading);
+  const addInfo = (label, value, badge = false) => {
+    const row = document.createElement("div");
+    const name = document.createElement("span");
+    name.textContent = label;
+    const detail = document.createElement("strong");
+    detail.textContent = value;
+    if (badge) detail.className = "resource-info-badge";
+    row.append(name, detail);
+    info.append(row);
+  };
+  addInfo(label("형식", "Format"), resource.type || "—");
+  addInfo(label("용량", "Size"), Number.isFinite(resource.sizeBytes) ? `${(resource.sizeBytes / 1024 / 1024).toFixed(1)}MB` : "—");
+  addInfo(label("파일", "Files"), label(`${files.length}개`, `${files.length}`));
+  addInfo(label("정답지", "Answer key"), resource.answer ? label("포함", "Included") : label("미포함", "Not included"), resource.answer);
+  addInfo(label("다운로드", "Downloads"), Number.isFinite(resource.downloads) ? label(`${resource.downloads}회`, `${resource.downloads}`) : "—");
+  layout.append(fileSection, info);
 
   const description = document.createElement("section");
   description.className = "resource-description";
   const descriptionTitle = document.createElement("h4");
-  descriptionTitle.textContent = "설명";
+  descriptionTitle.textContent = label("설명", "Description");
   const descriptionBody = document.createElement("p");
   descriptionBody.textContent = resource.description;
   description.append(descriptionTitle, descriptionBody);
 
-  const comments = document.createElement("section");
-  comments.className = "resource-detail-comments";
-  comments.innerHTML = `<h4>댓글 <span>${resource.comments}</span></h4><div><input type="text" aria-label="댓글 내용" placeholder="사용해 본 후기나 질문을 남겨요" /><button type="button">등록</button></div>`;
-  resourceDetailPanel.append(back, heading, layout, description, comments);
+  resourceDetailPanel.append(back, heading, layout);
+  if (resource.description) resourceDetailPanel.append(description);
   setForumSurface("detail");
 }
 
@@ -5592,13 +5077,6 @@ function addSelectedResourceFiles(files) {
   selectedResourceFiles.push(...added);
   renderSelectedResourceFiles();
   if (resourceFileInput) resourceFileInput.value = "";
-}
-
-function resourceTypeFromFile(file) {
-  const extension = String(file?.name || "").split(".").pop().toLocaleLowerCase();
-  if (["hwp", "hwpx"].includes(extension)) return "HWP";
-  if (String(file?.type || "").startsWith("image/")) return "이미지";
-  return "PDF";
 }
 
 async function submitResourceUpload(event) {
@@ -5756,22 +5234,6 @@ function openForumPostEditor(post, container, editButton) {
   form.append(title, body, save, cancel, error); container.append(form); editButton.disabled = true; title.focus();
 }
 
-function renderHomeForumPreview() {
-  if (!homeForumList) return;
-  homeForumList.replaceChildren();
-  ["Notice", "Question", "Free"].forEach((category) => {
-    const item = document.createElement("li");
-    const label = document.createElement("b");
-    const title = document.createElement("span");
-    const post = forumPosts.find((candidate) => candidate.category === category);
-    label.textContent = translateCopy(category);
-    title.textContent = post?.title || "";
-    item.classList.toggle("is-empty", !post);
-    item.append(label, title);
-    homeForumList.append(item);
-  });
-}
-
 async function publishForumPost() {
   const title = forumPostTitle.value.trim();
   const body = forumPostBody.value.trim();
@@ -5894,19 +5356,6 @@ function ensureStaffProductIds() {
   if (changed) saveStaffShopProducts();
 }
 
-function readStaffProductImage(file) {
-  return new Promise((resolve, reject) => {
-    if (!file) {
-      resolve("");
-      return;
-    }
-    const reader = new FileReader();
-    reader.addEventListener("load", () => resolve(String(reader.result || "")));
-    reader.addEventListener("error", () => reject(new Error("Could not read product image.")));
-    reader.readAsDataURL(file);
-  });
-}
-
 function addShopProductCard({ id, tag: productTag = "Staff pick", imageSrc, name, price, description }, { prepend = true, deletable = false } = {}) {
   if (!shopProductGrid) return;
   shopProductGrid.querySelector(".shop-empty")?.remove();
@@ -5970,56 +5419,10 @@ function renderStaffShopProducts() {
 }
 
 function deleteStaffProduct(productId) {
-  if (!isStaffUser() || !productId) {
-    if (staffProductStatus) staffProductStatus.textContent = translateCopy("Staff access required.");
-    return;
-  }
-  const beforeCount = staffShopProducts.length;
+  if (!isStaffUser() || !productId) return;
   staffShopProducts = staffShopProducts.filter((product) => product.id !== productId);
   saveStaffShopProducts();
   document.querySelector(`[data-product-id="${CSS.escape(productId)}"]`)?.remove();
-  if (staffProductStatus) {
-    staffProductStatus.textContent = translateCopy(
-      beforeCount === staffShopProducts.length ? "Product not found." : "Product deleted.",
-    );
-  }
-}
-
-async function publishStaffProduct() {
-  if (!isStaffUser()) {
-    if (staffProductStatus) staffProductStatus.textContent = translateCopy("Staff access required.");
-    return;
-  }
-  const name = staffProductName.value.trim();
-  const price = staffProductPrice.value.trim();
-  const description = staffProductDescription.value.trim();
-  if (!name || !price || !description) {
-    if (staffProductStatus) staffProductStatus.textContent = translateCopy("Add a product name, price, and description.");
-    return;
-  }
-
-  try {
-    const uploadedImage = await readStaffProductImage(staffProductImage.files?.[0]);
-    const imageSrc = uploadedImage || staffProductImageUrl.value.trim();
-    const product = {
-      id: window.crypto?.randomUUID?.() || `product_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-      imageSrc,
-      name,
-      price,
-      description,
-    };
-    staffShopProducts.unshift(product);
-    saveStaffShopProducts();
-    addShopProductCard(product, { deletable: true });
-    staffProductImage.value = "";
-    staffProductImageUrl.value = "";
-    staffProductName.value = "";
-    staffProductPrice.value = "";
-    staffProductDescription.value = "";
-    if (staffProductStatus) staffProductStatus.textContent = translateCopy("Product added.");
-  } catch (error) {
-    if (staffProductStatus) staffProductStatus.textContent = error.message;
-  }
 }
 
 function setView(viewName) {
@@ -6080,7 +5483,7 @@ function setView(viewName) {
   });
   if (viewName === "dashboard") {
     if (!boardInitialized) buildBoard();
-    Promise.allSettled([refreshStats(), refreshLobby()]);
+    void refreshLobby();
   }
   if (viewName === "how-to-play") refreshTrainingState();
   if (viewName === "forum") {
@@ -6309,6 +5712,7 @@ function renderMatch(match) {
   if (selfPlayerName) selfPlayerName.textContent = currentUser?.displayName || translateCopy("You");
   voiceRing.textContent = opponent?.displayName ? initials(opponent.displayName) : "—";
   matchResult.textContent = match.result ? translateCopy(match.result) : translateCopy("In progress");
+  updateMatchResultSummary(match);
   const turn = match.game?.turn || "white";
   syncState.textContent = match.game?.gameOver
     ? currentInterfaceLanguage() === "Korean" ? "대국 종료" : "Game over"
@@ -6395,7 +5799,6 @@ async function makeMove(from, to) {
     showAchievementUnlocks(data.unlocked);
     syncState.textContent =
       currentInterfaceLanguage() === "Korean" ? `${data.move.san} 수가 반영되었습니다` : `${data.move.san} accepted`;
-    refreshStats();
   } catch (error) {
     if (previousPieces) pieces = previousPieces;
     selectedSquare = null;
@@ -6464,8 +5867,8 @@ async function finishMatch(result, options = {}) {
   const review = options.review ?? true;
   setMatchState("ended");
   matchResult.textContent = translateCopy(result);
+  updateMatchResultSummary();
   syncState.textContent = options.statusText ? translateCopy(options.statusText) : currentInterfaceLanguage() === "Korean" ? "대국 종료" : "Match ended";
-  if (generateReviewButton) generateReviewButton.textContent = translateCopy("Generate AI Review");
   window.clearInterval(clockInterval);
   if (backendOnline && currentMatchId) {
     try {
@@ -6474,7 +5877,6 @@ async function finishMatch(result, options = {}) {
         body: { result },
       });
       renderMatch(data.match);
-      await refreshStats();
     } catch (error) {
       syncState.textContent = error.message;
       return;
@@ -6568,8 +5970,8 @@ async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안
   queuePrompt.textContent = label;
   queueProgress.style.width = "38%";
   matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "검색 중" : "Searching";
-  queueTime.textContent = currentInterfaceLanguage() === "Korean" ? "00:00 경과" : "00:00 elapsed";
-  showQueueTip(0);
+  queueTime.textContent = "00:00";
+  showQueueTip(1);
 
   if (backendOnline) {
     try {
@@ -6605,7 +6007,6 @@ async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안
               clearInterval(queueInterval);
               renderMatch(next.match);
               matchResult.textContent = overrides.readyText || (currentInterfaceLanguage() === "Korean" ? "상대를 찾았습니다" : "Opponent matched");
-              await refreshStats();
               await refreshLobby();
             }
           } catch {
@@ -6618,7 +6019,6 @@ async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안
         renderMatch(data.match);
         matchResult.textContent = overrides.readyText || (liveQueue ? currentInterfaceLanguage() === "Korean" ? "상대를 찾았습니다" : "Opponent matched" : currentInterfaceLanguage() === "Korean" ? "대국 준비 완료" : "Game ready");
       }
-      await refreshStats();
       await refreshLobby();
     } catch (error) {
       queuePrompt.textContent = error.message;
@@ -6629,7 +6029,7 @@ async function startQueue(label = currentInterfaceLanguage() === "Korean" ? "안
   queueInterval = setInterval(() => {
     seconds += 1;
     const elapsed = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-    queueTime.textContent = currentInterfaceLanguage() === "Korean" ? `${elapsed} 경과` : `${elapsed} elapsed`;
+    queueTime.textContent = elapsed;
     if (seconds % 7 === 0) showQueueTip(queueTipIndex + 1);
   }, 1000);
 }
@@ -6716,7 +6116,6 @@ async function acceptSeek(seek) {
     const data = await api(`/api/matches/seeks/${seek.id}/accept`, { method: "POST" });
     renderMatch(data.match);
     matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "게임에 참여했습니다" : "Game joined";
-    await refreshStats();
     await refreshLobby();
   } catch (error) {
     queuePrompt.textContent = error.message;
@@ -6743,7 +6142,6 @@ async function createOpenSeek() {
     if (data.match) {
       renderMatch(data.match);
       matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "설정에 맞는 상대를 찾았습니다" : "Matched by settings";
-      await refreshStats();
       await refreshLobby();
       return;
     }
@@ -6820,7 +6218,6 @@ async function joinPrivateChallenge() {
     renderMatch(data.match);
     friendRoomDialog.close();
     matchResult.textContent = currentInterfaceLanguage() === "Korean" ? "비공개 방에 참여했습니다" : "Private challenge joined";
-    await refreshStats();
     await refreshLobby();
   } catch (error) {
     queuePrompt.textContent = error.message;
@@ -6831,8 +6228,6 @@ async function joinPrivateChallenge() {
 function updateTemperature(value) {
   const label = mannerBadgeText(value);
   mannerTemp.textContent = label;
-  if (dashboardTemp) dashboardTemp.textContent = label;
-  if (profileTemp) profileTemp.textContent = label;
 }
 
 function mannerBadgeText(value) {
@@ -7373,17 +6768,6 @@ async function copyTeacherLeagueCode() {
   }
 }
 
-function setHomeInsightTab(tab = "leaderboard") {
-  if (!homeLeaderboardTab) return;
-  const showQuests = tab === "quests";
-  homeLeaderboardPanel?.toggleAttribute("hidden", showQuests);
-  homeQuestPanel?.toggleAttribute("hidden", !showQuests);
-  homeLeaderboardTab?.classList.toggle("active", !showQuests);
-  homeQuestTab?.classList.toggle("active", showQuests);
-  homeLeaderboardTab?.setAttribute("aria-selected", showQuests ? "false" : "true");
-  homeQuestTab?.setAttribute("aria-selected", showQuests ? "true" : "false");
-}
-
 function setHomeThemePopover(open) {
   if (!homeThemePopover || !homeThemeToggle) return;
   homeThemePopover.hidden = !open;
@@ -7393,7 +6777,6 @@ function setHomeThemePopover(open) {
 function renderDashboardSummary() {
   const user = currentUser || {};
   if (welcomeName) welcomeName.textContent = user.displayName || "Player";
-  renderAvatar(dashboardHeroAvatar, user, "GP");
   if (dashboardStreak) dashboardStreak.textContent = String(Number(user.streak || 0));
   if (dashboardEasyElo) dashboardEasyElo.textContent = String(Number(user.easyElo || 1000));
   if (leagueCodeInput && user.leagueCode) leagueCodeInput.value = user.leagueCode;
@@ -7406,7 +6789,6 @@ function renderDashboardSummary() {
   }
   renderLeagueAction();
   renderTodayQuests();
-  renderHomeForumPreview();
   renderHomeTrainingProgress();
   syncLocalizedControls();
 }
@@ -7642,20 +7024,10 @@ function renderProfile(profile) {
   profileName.textContent = user.displayName;
   profileEmail.textContent = user.email;
   if (profileSettingsEmail) profileSettingsEmail.textContent = user.email;
-  if (profileLanguageText) {
-    profileLanguageText.textContent = user.languagePair
-      ? translateCopy(user.languagePair)
-      : currentInterfaceLanguage() === "Korean" ? "언어 조합이 아직 없습니다." : "Language pair not set";
-  }
   profileDisplayName.value = user.displayName || "";
-  if (profileLanguagePair) profileLanguagePair.value = user.languagePair || "English to Korean";
-  if (profilePieceEdition) profilePieceEdition.value = normalizePieceEdition(user.pieceEdition);
   updateHeaderPieceEditionToggle(user.pieceEdition);
-  if (profileImage) profileImage.value = user.avatarUrl || "";
   if (profileStreak) profileStreak.textContent = String(Number(user.streak || 0));
   if (profileEasyElo) profileEasyElo.textContent = String(Number(user.easyElo || 1000));
-  if (profileSideElo) profileSideElo.textContent = String(Number(user.easyElo || 1000));
-  if (profileUserId) profileUserId.textContent = user.id || "user";
   if (profileLessonsCount) profileLessonsCount.textContent = String(profile.stats?.matches || 0);
   const earnedBadges = Array.isArray(profile.badges) ? profile.badges : [];
   if (profileQuestionsCount) profileQuestionsCount.textContent = String(earnedBadges.length);
@@ -7675,25 +7047,6 @@ function renderProfile(profile) {
 
   renderProfileBadges(earnedBadges, profile);
 
-  if (cultureGuideList) cultureGuideList.innerHTML = "";
-  if (cultureGuideList && !profile.cultureGuide.length) {
-    const empty = document.createElement("p");
-    empty.textContent = currentInterfaceLanguage() === "Korean" ? "아직 저장된 문화 노트가 없어요. 대국 뒤 인상 깊은 표현을 남겨보세요." : "No culture notes saved yet.";
-    cultureGuideList?.append(empty);
-  } else if (cultureGuideList) {
-    profile.cultureGuide.forEach((entry) => {
-      const item = document.createElement("p");
-      const source = document.createElement("strong");
-      source.textContent = translateCopy(entry.source || "Culture note");
-      item.append(source, document.createTextNode(` ${entry.note || ""}`));
-      cultureGuideList?.append(item);
-    });
-  }
-
-  profileStatus.textContent =
-    currentInterfaceLanguage() === "Korean"
-      ? `대국 ${profile.stats.matches}개, 복습 ${profile.stats.reviews}개, 문화 노트 ${profile.stats.cultureNotes}개`
-      : `${profile.stats.matches} match(es), ${profile.stats.reviews} review(s), ${profile.stats.cultureNotes} culture note(s).`;
   profileStatus.textContent = "프로필 기록을 불러왔습니다.";
 }
 
@@ -7702,25 +7055,15 @@ function clearProfile() {
   profileName.textContent = currentInterfaceLanguage() === "Korean" ? "로그인 필요" : "Sign in required";
   profileEmail.textContent = "—";
   if (profileSettingsEmail) profileSettingsEmail.textContent = "—";
-  if (profileLanguageText) {
-    profileLanguageText.textContent =
-      currentInterfaceLanguage() === "Korean" ? "언어 설정을 불러오려면 로그인하세요." : "Sign in to load language settings.";
-  }
   profileDisplayName.value = "";
-  if (profileLanguagePair) profileLanguagePair.value = "English to Korean";
-  if (profilePieceEdition) profilePieceEdition.value = "cheoinseong";
-  if (profileImage) profileImage.value = "";
   if (profileStreak) profileStreak.textContent = "0";
   if (profileEasyElo) profileEasyElo.textContent = "—";
-  if (profileSideElo) profileSideElo.textContent = "—";
-  if (profileUserId) profileUserId.textContent = "—";
   if (profileLessonsCount) profileLessonsCount.textContent = "0";
   if (profileQuestionsCount) profileQuestionsCount.textContent = "0";
   if (profileTestsCount) profileTestsCount.textContent = "0";
   badgeList.innerHTML = "";
   badgeDetails.innerHTML = "";
   nextBadgeDetails?.replaceChildren();
-  if (cultureGuideList) cultureGuideList.innerHTML = "";
   profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "저장된 프로필을 불러오려면 로그인하세요." : "Sign in to load your saved profile.";
 }
 
@@ -7742,78 +7085,6 @@ async function refreshProfile() {
     renderProfile(profile);
     showAchievementUnlocks(profile.unlocked);
     renderAuthState();
-  } catch (error) {
-    profileStatus.textContent = error.message;
-  }
-}
-
-async function saveProfile() {
-  try {
-    profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "프로필을 저장하는 중..." : "Saving profile...";
-    const { data: profile, applied } = await requestCurrentUserMutation(() =>
-      api("/api/profile", {
-        method: "PUT",
-        body: {
-          displayName: profileDisplayName.value,
-          displayNameSource: "user",
-          languagePair: profileLanguagePair?.value || currentUser?.languagePair || authLanguagePair?.value || "English to Korean",
-          pieceEdition: profilePieceEdition?.value,
-          avatarUrl: profileImage?.value || "",
-        },
-      }),
-    );
-    if (!applied) return;
-    renderProfile(profile);
-    authStatus.textContent =
-      currentInterfaceLanguage() === "Korean" ? `${currentUser.displayName}님으로 로그인됨` : `Signed in as ${currentUser.displayName}`;
-    updateHeaderPieceEditionToggle(currentUser.pieceEdition);
-    renderAuthState();
-  } catch (error) {
-    profileStatus.textContent = error.message;
-  }
-}
-
-async function submitPeerFeedback() {
-  if (!peerFeedbackType || !peerFeedbackNote) return;
-  try {
-    profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "피드백을 보내는 중..." : "Submitting feedback...";
-    const data = await api("/api/profile/feedback", {
-      method: "POST",
-      body: {
-        kind: peerFeedbackType.value,
-        note: peerFeedbackNote.value,
-        matchId: currentMatchId,
-      },
-    });
-    peerFeedbackNote.value = "";
-    if (data.profile) renderProfile(data.profile);
-    profileStatus.textContent = currentMatchId
-      ? currentInterfaceLanguage() === "Korean"
-        ? `${data.target?.displayName || "대국 파트너"}에게 피드백을 저장했습니다.`
-        : `Feedback saved for ${data.target?.displayName || "your match partner"}.`
-      : currentInterfaceLanguage() === "Korean"
-        ? "프로필 기록에 피드백을 저장했습니다."
-        : "Feedback saved to your profile history.";
-  } catch (error) {
-    profileStatus.textContent = error.message;
-  }
-}
-
-async function saveCultureGuide() {
-  if (!cultureGuideInput) return;
-  try {
-    const note = cultureGuideInput.value.trim();
-    if (!note) {
-      profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "문화 노트를 먼저 입력하세요." : "Enter a culture note first.";
-      return;
-    }
-    profileStatus.textContent = currentInterfaceLanguage() === "Korean" ? "문화 노트를 저장하는 중..." : "Saving culture note...";
-    const profile = await api("/api/profile/culture-guide", {
-      method: "POST",
-      body: { note, source: "Culture Guide" },
-    });
-    cultureGuideInput.value = "";
-    renderProfile(profile);
   } catch (error) {
     profileStatus.textContent = error.message;
   }
@@ -7851,7 +7122,6 @@ function setSttStatus(active, detail = "") {
   const activeDetail = currentInterfaceLanguage() === "Korean" ? "듣는 중" : "Listening";
   const pausedDetail = currentInterfaceLanguage() === "Korean" ? "대기 중" : "Paused";
   sttPill.textContent = active ? listeningText : pausedText;
-  if (sttStatusText) sttStatusText.textContent = detail || (active ? activeDetail : pausedDetail);
   if (matchSttStatus) matchSttStatus.textContent = detail || (active ? activeDetail : pausedDetail);
   setSttButtonText(active ? translateCopy("Stop captions") : translateCopy("Start captions"));
 }
@@ -7998,10 +7268,6 @@ function appendFinalSubtitle({ speaker, text, sourceLanguage, persist = false })
   wordsRecognized.textContent = String(nextWords);
   if (matchWordsRecognized) matchWordsRecognized.textContent = String(nextWords);
 
-  const latency = 80 + Math.floor(Math.random() * 80);
-  if (latencyText) latencyText.textContent = `${latency} ms`;
-  if (dashboardLatency) dashboardLatency.textContent = `${latency} ms`;
-
   translateSubtitleText(phrase, { sourceLanguage }).then((result) => {
     translatedLines.forEach((line) => {
       line.replaceChildren();
@@ -8012,7 +7278,6 @@ function appendFinalSubtitle({ speaker, text, sourceLanguage, persist = false })
     if (persist) persistSubtitleLine(phrase, result.text, speaker);
     if (["nvidia", "mymemory", "backend"].includes(result.provider)) {
       const translated = currentInterfaceLanguage() === "Korean" ? "번역됨" : "Translated";
-      if (sttStatusText) sttStatusText.textContent = translated;
       if (matchSttStatus) matchSttStatus.textContent = translated;
     }
   });
@@ -8347,7 +7612,6 @@ languageSelect?.addEventListener("change", async () => {
   buildBoard();
   renderActiveMatchReturn();
   if (!queueTipPanel?.hidden) showQueueTip();
-  renderLandingTypewriter();
   renderAuthState();
   renderDashboardSummary();
   updateTemperature(currentUser?.mannerTemperature ?? currentManner);
@@ -8412,19 +7676,6 @@ document.addEventListener("click", (event) => {
   if (homeThemePopover?.contains(control)) setHomeThemePopover(false);
 });
 
-trainingEditionButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    const edition = button.dataset.trainingEdition === "original" ? "original" : "cheoinseong";
-    void setPieceEdition(edition);
-    trainingModuleRenderSignature = "";
-    renderTrainingEditionControls();
-    renderTrainingModuleList();
-    reloadOpenTrainingEdition();
-  });
-});
-
-homeLeaderboardTab?.addEventListener("click", () => setHomeInsightTab("leaderboard"));
-homeQuestTab?.addEventListener("click", () => setHomeInsightTab("quests"));
 resumeMatchButton?.addEventListener("click", resumeActivePlay);
 document.querySelector('#homeContinueTraining')?.addEventListener('click', async () => {
   setView('how-to-play');
@@ -8520,9 +7771,6 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") setHomeThemePopover(false);
 });
 
-profilePieceEdition?.addEventListener("change", (event) => {
-  setPieceEdition(event.target.value);
-});
 
 signupButton.addEventListener("click", () => {
   if (currentUser) {
@@ -8547,7 +7795,6 @@ mainTutorialButton?.addEventListener("click", () => {
   setView("how-to-play");
 });
 
-trainingHomeBackButton?.addEventListener("click", showTrainingLanding);
 
 tutorialLoginButton?.addEventListener("click", () => currentUser ? setView("dashboard") : openAccountEntry("login"));
 
@@ -8582,7 +7829,6 @@ pieceGuideDialog?.addEventListener("close", () => {
 howToPlayFrame?.addEventListener("load", watchPuzzleFrameHeight);
 window.addEventListener("resize", () => {
   schedulePuzzleFrameHeightSync();
-  fitLandingTypewriter();
 }, { passive: true });
 
 window.addEventListener("message", (event) => {
@@ -8631,7 +7877,8 @@ continueToDashboardButton.addEventListener("click", () => {
 findMatchButton.addEventListener("click", quickPairFromSelectedPool);
 cancelMatchSearchButton.addEventListener("click", cancelMatchSearch);
 nextQueueTipButton?.addEventListener("click", () => showQueueTip(queueTipIndex + 1));
-showCreateSeekButton.addEventListener("click", () => {
+showCreateSeekButton.addEventListener("click", async () => {
+  if (matchLayout.dataset.state === "searching") await cancelMatchSearch();
   seekComposer.hidden = false;
   queuePrompt.textContent = "Choose settings, then create a game.";
   seekTimeControl.focus();
@@ -8640,6 +7887,7 @@ document.querySelector("#friendCodePreview")?.addEventListener("keydown", (event
   if (event.key === "Enter") { event.preventDefault(); showFriendRoomButton.click(); }
 });
 showFriendRoomButton.addEventListener("click", async () => {
+  if (matchLayout.dataset.state === "searching") await cancelMatchSearch();
   const state = await refreshActivePlayState();
   if (state?.openChallenge) {
     resumableChallenge = state.openChallenge;
@@ -8722,7 +7970,6 @@ async function saveProfilePatch(patch = {}) {
   return profile;
 }
 
-saveProfileButton?.addEventListener("click", saveProfile);
 editProfileNameButton?.addEventListener("click", () => {
   if (profileNameEditor) profileNameEditor.hidden = !profileNameEditor.hidden;
   profileDisplayName?.focus();
@@ -8736,8 +7983,6 @@ profileDisplayName?.addEventListener("keydown", (event) => {
 });
 profileAvatarButton?.addEventListener("click", () => profileImageFile?.click());
 profileImageFile?.addEventListener("change", () => uploadProfileImage(profileImageFile.files?.[0]));
-submitPeerFeedbackButton?.addEventListener("click", submitPeerFeedback);
-saveCultureGuideButton?.addEventListener("click", saveCultureGuide);
 joinLeagueButton?.addEventListener("click", joinLeague);
 leaveLeagueButton?.addEventListener("click", leaveLeague);
 createLeagueButton?.addEventListener("click", createLeague);
@@ -8848,7 +8093,6 @@ resourceUploadForm?.addEventListener("submit", submitResourceUpload);
 document.querySelectorAll("[data-shop-interest]").forEach((button) => {
   button.addEventListener("click", () => saveShopInterest(button.dataset.shopInterest));
 });
-publishStaffProductButton?.addEventListener("click", publishStaffProduct);
 
 resignMatchButton.addEventListener("click", () => finishMatch("Resigned"));
 drawMatchButton.addEventListener("click", offerDraw);
@@ -8965,7 +8209,6 @@ matchSubtitleTargetLanguage.addEventListener("change", () => {
   subtitleTargetLanguage.value = matchSubtitleTargetLanguage.value;
 });
 
-generateReviewButton?.addEventListener("click", () => requestReview("the completed match"));
 refreshReviewButton?.addEventListener("click", () => requestReview("the latest transcript sample"));
 
 document.querySelectorAll(".vocab-term").forEach((button) => {
@@ -8978,7 +8221,6 @@ updateRoomLink(null);
 renderAuthState();
 applyInterfaceLanguage();
 syncLegalLanguage();
-renderLandingTypewriter();
 const initialPoeunSlug = requestedPoeunSlug();
 if (location.hash === "#poeun/transition") {
   setView("how-to-play");

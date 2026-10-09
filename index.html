@@ -436,6 +436,7 @@
               <div>
                 <span class="play-eyebrow">PLAY</span>
                 <h2 id="matchTitle">플레이</h2>
+                <p class="searching-subtitle">다른 플레이어가 들어오기를 기다리고 있어요.</p>
               </div>
             </div>
 
@@ -463,21 +464,22 @@
 
                   <div class="queue-box">
                     <div class="queue-status-head">
-                      <span class="label">매칭 상태</span>
-                      <button class="button secondary small" id="cancelMatchSearch" type="button" hidden>취소</button>
+                      <span class="label">● 매칭 중</span>
                     </div>
-                    <strong id="queueTime">방식 선택</strong>
+                    <div class="queue-elapsed"><strong id="queueTime">방식 선택</strong><span>경과</span></div>
                     <div class="progress-track"><span id="queueProgress"></span></div>
-                    <p id="queuePrompt">원하는 대국 방식을 선택하세요.</p>
+                    <p id="queuePrompt" role="status">원하는 대국 방식을 선택하세요.</p>
                     <div class="queue-tip" id="queueTipPanel" hidden>
-                      <span class="label">기다리는 동안</span>
+                      <span class="label">♧ 기다리는 동안</span>
                       <p id="queueTip">첫 수를 두기 전에 상대에게 좋아하는 오프닝을 물어보세요.</p>
                       <button class="text-link" id="nextQueueTip" type="button">다른 안내</button>
                     </div>
+                    <button class="button secondary small" id="cancelMatchSearch" type="button" hidden>매칭 취소</button>
                   </div>
                 </div>
 
                 <aside class="match-options-panel" aria-label="대국 설정">
+                  <h3 class="searching-options-title">다른 방법으로 시작하기</h3>
                   <section class="match-option-section">
                     <span class="play-card-icon" aria-hidden="true">☷</span>
                     <div class="panel-heading compact">
@@ -534,34 +536,41 @@
 
               <section class="board-panel" aria-label="실시간 체스 보드">
                 <div class="board-toolbar">
-                  <button class="button secondary" type="button" data-open-piece-guide data-piece-guide-context="match">기물 확인하기</button>
                   <div>
                     <span class="label" id="matchSourceBadge">대기실 동기화</span>
-                    <strong id="syncState">실시간 체스 준비됨</strong>
                     <p class="board-meta" id="timeControlBadge">아직 시작된 시계가 없어요.</p>
                   </div>
+                  <button class="button secondary" type="button" data-open-piece-guide data-piece-guide-context="match">♧ 기물 안내</button>
                 </div>
                 <div class="match-play-grid">
                   <div class="board-stage">
                     <div class="chess-board" id="chessBoard" aria-label="Interactive chess board"></div>
                     <div class="match-result" id="matchResult">
-                      <strong>Game status</strong>
+                      <div class="result-emblem" aria-hidden="true">⚑</div>
+                      <small class="result-eyebrow">GAME OVER</small>
+                      <strong>대국이 끝났어요</strong>
                       <span>대국 중</span>
+                      <div class="result-players" aria-label="대국 참가자">
+                        <div class="result-player"><span class="result-avatar result-self-avatar" aria-hidden="true">나</span><b id="resultSelfName">나</b></div>
+                        <span class="result-versus">vs</span>
+                        <div class="result-player opponent"><b id="resultOpponentName">상대</b><span class="result-avatar result-opponent-avatar" aria-hidden="true">상</span></div>
+                      </div>
+                      <p class="result-meta" id="resultMatchMeta"></p>
                       <div class="match-result-actions">
                         <button class="button secondary small" id="matchHome" type="button" hidden>홈으로 돌아가기</button>
                         <button class="button dark small" id="newGame" type="button" hidden>새 대국</button>
-                        <button class="button dark small" id="generateReview" data-view-link="review" hidden>AI 복습 만들기</button>
                       </div>
                     </div>
                   </div>
                   <aside class="match-game-panel" aria-label="대국 정보와 실시간 자막">
                     <section class="player-clock-card opponent-clock-card" id="blackClockCard">
-                      <strong id="blackClock">준비 전</strong>
                       <div>
-                        <span class="online-dot"></span>
+                        <span class="player-avatar opponent-avatar" aria-hidden="true">하</span>
                         <span id="boardPartnerName">상대 대기</span>
                         <small>ID <span id="boardPartnerId">대기 중</span></small>
                       </div>
+                      <span class="clock-state">상대 차례</span>
+                      <strong id="blackClock">준비 전</strong>
                     </section>
 
                     <section class="notation-caption-panel match-optional-communications" aria-label="대국 중 실시간 자막" hidden>
@@ -610,19 +619,21 @@
                       </div>
                     </section>
 
-                    <section class="match-action-strip" aria-label="대국 행동">
-                      <button class="icon-action" id="drawMatch" type="button" title="무승부 제안" aria-label="무승부 제안">1/2</button>
-                      <button class="icon-action danger" id="resignMatch" type="button" title="기권" aria-label="기권">⚑</button>
-                      <button class="icon-action danger report-inline" id="reportUser" type="button" title="신고하기" aria-label="신고하기">신고</button>
-                    </section>
-
                     <section class="player-clock-card self-clock-card" id="whiteClockCard">
                       <div>
-                        <span class="online-dot"></span>
+                        <span class="player-avatar self-avatar" aria-hidden="true">M</span>
                         <span id="selfPlayerName">나</span>
                       </div>
+                      <span class="clock-state">기다리는 중</span>
                       <strong id="whiteClock">준비 전</strong>
                     </section>
+
+                    <section class="match-action-strip" aria-label="대국 행동">
+                      <button class="icon-action" id="drawMatch" type="button" title="무승부 제안" aria-label="무승부 제안">수 1 / 2</button>
+                      <button class="icon-action danger" id="resignMatch" type="button" title="기권" aria-label="기권">⚑ 기권</button>
+                      <button class="icon-action danger report-inline" id="reportUser" type="button" title="신고하기" aria-label="신고하기">♧ 신고</button>
+                    </section>
+                    <span class="sr-only" id="syncState" aria-live="polite">실시간 체스 준비됨</span>
 
                     <div class="match-voice-bar match-optional-communications" hidden>
                       <div class="match-voice-actions">
@@ -712,7 +723,6 @@
                   <h3 id="culturalTitle">아직 문화 메모가 없어요</h3>
                   <p id="culturalBody">실제 대화에서 문화 관련 표현이 확인되면 여기에 표시됩니다.</p>
                   <p id="culturalPrompt"></p>
-                  <button class="button secondary full" disabled>문화 노트에 저장</button>
                 </article>
 
               </aside>
@@ -1020,7 +1030,6 @@
                       <small>받은 배지</small>
                     </article>
                   </div>
-                  <span id="profileSideElo" hidden>1000</span>
                 </aside>
               </article>
 
@@ -1077,7 +1086,6 @@
                     </div>
                   </article>
 
-                  <input id="profileImage" type="url" placeholder="이미지 URL을 붙여넣기" hidden />
                   <article class="settings-card delete-account-zone">
                     <span class="profile-settings-label">계정</span>
                     <div class="profile-account-row">
