@@ -5501,7 +5501,14 @@ function openResourceDetail(resource) {
       download.className = "button resource-primary";
       download.href = file.url;
       download.download = file.name;
-      download.textContent = `↓ ${file.name}`;
+      const icon = document.createElement("span");
+      icon.className = "resource-download-icon";
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = "↓";
+      const name = document.createElement("span");
+      name.className = "resource-download-name";
+      name.textContent = file.name;
+      download.append(icon, name);
       downloads.append(download);
     });
   } else {
@@ -8257,8 +8264,12 @@ document.querySelectorAll(".route-card").forEach((card) => {
 
 document.querySelectorAll(".segment").forEach((button) => {
   button.addEventListener("click", () => {
-    document.querySelectorAll(".segment").forEach((item) => item.classList.remove("active"));
+    document.querySelectorAll(".segment").forEach((item) => {
+      item.classList.remove("active");
+      item.setAttribute("aria-pressed", "false");
+    });
     button.classList.add("active");
+    button.setAttribute("aria-pressed", "true");
     syncState.textContent =
       currentInterfaceLanguage() === "Korean"
         ? `${button.dataset.mode === "Rated" ? "기록" : "친선"} 게임 준비됨`

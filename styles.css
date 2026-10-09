@@ -12205,14 +12205,22 @@ body { overflow-x: clip; }
   border: 0;
 }
 .resource-download-list .button {
-  display: block;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-xs);
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
   padding: var(--space-sm);
+  text-align: left;
+}
+.resource-download-list .resource-download-icon { color: inherit; }
+.resource-download-list .resource-download-name {
+  min-width: 0;
+  color: inherit;
   white-space: normal;
   overflow-wrap: anywhere;
-  text-align: center;
 }
 .resource-download-card span { color: var(--color-ink-soft); }
 
@@ -15388,6 +15396,95 @@ body .view[data-view="dashboard"] .match-layout[data-state="idle"] .quick-match-
   .view[data-view="dashboard"] .match-layout[data-state="idle"] .lobby-panel:has(.seek-composer:not([hidden])) .play-waiting-list { grid-row: 5; }
   .view[data-view="dashboard"] .match-layout[data-state="idle"] :is(.quick-match-intro, .match-option-section) { min-height: 210px; padding: 22px; }
   .view[data-view="dashboard"] .match-layout[data-state="idle"] .play-waiting-list { padding: 20px; }
+}
+
+/* Hallmark · playful app controls · pre-emit critique: P4 H4 E4 S4 R5 V4 */
+.view[data-view="dashboard"] .match-layout[data-state="idle"] .seek-composer {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  border-color: var(--home-rule);
+  background: var(--home-paper);
+}
+.view[data-view="dashboard"] .seek-composer .panel-heading { grid-column: 1 / -1; margin: 0; }
+.view[data-view="dashboard"] .seek-composer .label {
+  color: var(--home-accent-dark);
+  font-size: .76rem;
+  font-weight: 850;
+}
+.view[data-view="dashboard"] .seek-composer h3 {
+  margin: 3px 0 0;
+  color: var(--home-ink);
+  font-size: 1.35rem;
+  letter-spacing: -.03em;
+}
+.view[data-view="dashboard"] .match-layout[data-state="idle"] .seek-composer label {
+  gap: 9px;
+  color: var(--home-ink);
+  font-size: .88rem;
+  font-weight: 750;
+}
+.view[data-view="dashboard"] .seek-composer label[hidden] { display: none; }
+.view[data-view="dashboard"] .seek-composer .segmented {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.view[data-view="dashboard"] .seek-composer .segment {
+  min-height: 48px;
+  border: 1px solid var(--home-rule);
+  border-radius: 11px;
+  background: var(--home-paper-2);
+  color: var(--home-ink);
+  font: inherit;
+  font-weight: 800;
+}
+.view[data-view="dashboard"] .seek-composer .segment + .segment { border-left: 1px solid var(--home-rule); }
+.view[data-view="dashboard"] .seek-composer .segment.active {
+  border-color: var(--home-accent-dark);
+  background: var(--home-accent-soft);
+  color: var(--home-accent-dark);
+  box-shadow: inset 0 0 0 1px var(--home-accent-dark);
+}
+.view[data-view="dashboard"] .seek-composer select {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1px solid var(--home-rule);
+  border-radius: 11px;
+  background: var(--home-paper-2);
+  color: var(--home-ink);
+  font: inherit;
+}
+.view[data-view="dashboard"] .seek-composer #createSeek {
+  grid-column: 1 / -1;
+  width: min(100%, 320px);
+  justify-self: end;
+  min-height: 48px;
+  border: 1px solid var(--home-accent-dark);
+  border-radius: 11px;
+  background: var(--home-accent-dark);
+  color: var(--home-accent-ink);
+  font: inherit;
+  font-weight: 850;
+}
+.view[data-view="dashboard"] .seek-composer :is(.segment, select, #createSeek):focus-visible,
+#friendRoomDialog :is(button, input):focus-visible {
+  outline: 2px solid var(--home-accent-dark);
+  outline-offset: 3px;
+}
+
+#friendRoomDialog { border: 0; border-radius: 20px; padding: 0; box-shadow: 0 20px 60px color-mix(in srgb, var(--home-ink) 20%, transparent); }
+#friendRoomDialog::backdrop { background: color-mix(in srgb, var(--home-ink) 55%, transparent); }
+#friendRoomDialog .friend-room-card { background: var(--home-paper); color: var(--home-ink); }
+#friendRoomDialog :is(.label, h3, label) { color: var(--home-ink); }
+#friendRoomDialog .challenge-code,
+#friendRoomDialog input { border-color: var(--home-rule); border-radius: 11px; background: var(--home-paper-2); color: var(--home-ink); }
+#friendRoomDialog .button { border-radius: 11px; }
+#friendRoomDialog .button.primary { border-color: var(--home-accent-dark); background: var(--home-accent-dark); color: var(--home-accent-ink); }
+#friendRoomDialog .button.secondary { border-color: var(--home-rule); background: var(--home-paper-2); color: var(--home-ink); }
+@media (max-width: 640px) {
+  .view[data-view="dashboard"] .match-layout[data-state="idle"] .seek-composer { grid-template-columns: minmax(0, 1fr); }
+  .view[data-view="dashboard"] .seek-composer #createSeek { width: 100%; }
 }
 
 /* Training home cards follow the compact, rounded three-card layout. */
