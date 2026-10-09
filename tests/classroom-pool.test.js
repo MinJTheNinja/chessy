@@ -28,6 +28,7 @@ function boundedPool(max) {
       let ownsRow = false;
       return {
         async query(sql, params) {
+          if (sql.includes('FROM matches')) return { rows: [] };
           if (sql.includes('FOR UPDATE')) {
             if (rowLocked) await new Promise(resolve => rowWaiters.push(resolve));
             rowLocked = true;
@@ -126,7 +127,7 @@ test('queued state writes leave a connection available to login and recover afte
 test('Redis starts after commit and release, never on rollback, and cannot block later writes', { timeout: 3000 }, async () => {
   let released = false, writes = 0;
   const pool = { async connect() { released = false; return {
-    async query(sql) { return {rows: sql.includes('FOR UPDATE') ? [{data:{}}] : []}; },
+    async query(sql) { return {rows: sql.includes('FROM matches') ? [] : sql.includes('FOR UPDATE') ? [{data:{}}] : []}; },
     release() { released = true; },
   }; }};
   const c = stateContext(pool, {

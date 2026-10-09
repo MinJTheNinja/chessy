@@ -12,7 +12,7 @@ Identity and tutorial data no longer live in the shared `app_state` JSON documen
 
 `users`, `sessions`, and `tutorial_progress` are the only sources of truth for their domains. Runtime `app_state` writes strip `users`, `sessions`, and top-level `training`. The compatibility `db.users` list is derived from `users` and is never serialized by `writeDb()`.
 
-The data still in `app_state` includes queues, seeks, challenges, matches and transcripts, voice letters, reviews, reports, shop interests, leagues, and forum posts. These are protected by an `app_state(id='main') FOR UPDATE` transaction for mutations. They are candidates for later per-match/per-domain normalization.
+Matches and their transcripts live in the `matches` table (migration `002_normalize_matches`). Move, transcript, and end requests lock only their match row. The migration backs up the legacy state and verifies every copied match before removing `app_state.matches`. Queue, seek, challenge, review, report, shop, league, and forum metadata remain in `app_state`; legacy mutations that can also change matches lock all match rows before writing.
 
 ## Free Shared Backend Setup
 
@@ -34,6 +34,7 @@ The app stores normalized identity/tutorial rows and the remaining shared applic
 - `DATABASE_URL`: runtime PostgreSQL connection string.
 - `MIGRATION_DATABASE_URL`: optional migration-only connection string; preferred for `npm run migrate`. If absent, the command uses `DATABASE_URL`.
 - `PGSSLMODE=require`: optional when the URL does not already include an SSL mode.
+- `PGSSLROOTCERT`: optional path to the PostgreSQL CA certificate. When set, the server verifies the database certificate instead of using its legacy permissive TLS setting. Use this for the isolated Supabase test project and production deployments.
 - `LOCAL_DATA_DIR`: optional local JSON fallback directory, useful for tests and local isolation.
 - `TEST_DATABASE_URL` plus `ALLOW_TEST_DATABASE_WRITE=1`: enables the isolated-schema PostgreSQL migration test. Never point this at production.
 
@@ -46,11 +47,11 @@ The app stores normalized identity/tutorial rows and the remaining shared applic
 5. Deploy the new server code. Do not run old server code after new writes begin because the old code treats `app_state.users` as authoritative.
 6. Verify signup, login, logout, session restoration, and one tutorial completion with non-production test accounts only.
 
-The migration copies the original `app_state.data` to `app_state_legacy_backup` before backfill. It inserts rows with `ON CONFLICT DO NOTHING`, hashes legacy raw session tokens, inserts tutorial modules idempotently, records version `001_normalize_identity`, and removes normalized domains from `app_state.main` only after count verification succeeds.
+Migration `001_normalize_identity` copies the original `app_state.data` to `app_state_legacy_backup`, hashes legacy raw session tokens, and moves identity and tutorial data. Migration `002_normalize_matches` makes another backup, copies each match to its own row, checks the copied JSONB against the original, and removes the legacy match list only after verification succeeds. Both migrations are transactional and idempotent.
 
 ## Backup and rollback
 
-Preferred rollback is a database restore to the pre-deploy checkpoint plus deployment of the previous server artifact. For a manual rollback, stop all new-server traffic first, restore the `app_state.main.data` value from `app_state_legacy_backup` version `001_normalize_identity`, then deploy the previous server. Do not run old and new versions simultaneously: that would recreate two writable sources of truth.
+Preferred rollback is a database restore to the pre-deploy checkpoint plus deployment of the previous server artifact. A manual rollback requires stopping new-server traffic and restoring the matching `app_state_legacy_backup` snapshots for both migrations before deploying the previous server. Do not run old and new versions simultaneously: that would recreate two writable sources of truth.
 
 The local JSON fallback writes `db.pre-normalization.json` once and keeps identity data in `identity.json`. Its mutation queues use fresh snapshots, preventing lost updates within one Node process.
 
@@ -64,7 +65,7 @@ Never use `easymate.online` or the production Supabase database for load or migr
 
 ## Post-deploy monitoring
 
-Watch PostgreSQL connection saturation, transaction duration and lock wait time on `app_state`, signup/login p95 latency, PBKDF2 worker-pool latency, duplicate-email conflict rate, expired-session row count, 5xx rate, and match/transcript write latency. At the expected three live games the single remaining `app_state` row lock is acceptable, but per-match tables are the next scaling step.
+Watch PostgreSQL connection saturation, per-match row lock wait time, transaction duration, signup/login p95 latency, PBKDF2 worker-pool latency, duplicate-email conflict rate, expired-session row count, 5xx rate, and match/transcript write latency. Match creation and other mixed metadata writes still use the `app_state` lock; ordinary moves do not.
 
 ## Diverged branch integration
 

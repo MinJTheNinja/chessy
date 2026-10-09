@@ -5,6 +5,51 @@ const path = require("path");
 const migrationVersion = "001_normalize_identity";
 const sessionTtlMs = 30 * 24 * 60 * 60 * 1000;
 const schemaSql = fs.readFileSync(path.join(__dirname, "migrations", "001_normalize_identity.sql"), "utf8");
+const matchesMigrationVersion = "002_normalize_matches";
+const matchesSchemaSql = fs.readFileSync(path.join(__dirname, "migrations", "002_normalize_matches.sql"), "utf8");
+
+async function migrateLegacyMatches(client) {
+  await client.query("BEGIN");
+  try {
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [matchesMigrationVersion]);
+    await client.query(matchesSchemaSql);
+    const applied = await client.query("SELECT details FROM schema_migrations WHERE version = $1", [matchesMigrationVersion]);
+    if (applied.rows[0]) {
+      await client.query("COMMIT");
+      return { ...applied.rows[0].details, alreadyApplied: true };
+    }
+    const state = await client.query("SELECT data FROM app_state WHERE id = $1 FOR UPDATE", ["main"]);
+    const legacy = state.rows[0]?.data || {};
+    const matches = Array.isArray(legacy.matches) ? legacy.matches.filter((match) => match?.id) : [];
+    await client.query(
+      `INSERT INTO app_state_legacy_backup (migration_version, data)
+       VALUES ($1, $2::jsonb) ON CONFLICT (migration_version) DO NOTHING`,
+      [matchesMigrationVersion, JSON.stringify(legacy)],
+    );
+    for (const match of matches) {
+      await client.query(
+        `INSERT INTO matches (id, data, created_at)
+         VALUES ($1, $2::jsonb, COALESCE($3::timestamptz, NOW()))
+         ON CONFLICT (id) DO NOTHING`,
+        [String(match.id), JSON.stringify(match), Number.isFinite(Date.parse(match.createdAt)) ? match.createdAt : null],
+      );
+      const verified = await client.query("SELECT data = $2::jsonb AS same FROM matches WHERE id = $1", [String(match.id), JSON.stringify(match)]);
+      if (!verified.rows[0]?.same) throw new Error(`Match migration content verification failed: ${match.id}`);
+    }
+    const count = await client.query("SELECT COUNT(*)::int AS count FROM matches");
+    const before = new Set(matches.map((match) => String(match.id))).size;
+    const after = count.rows[0].count;
+    if (after < before) throw new Error(`Match migration count verification failed: ${before} > ${after}`);
+    await client.query("UPDATE app_state SET data = data - 'matches', updated_at = NOW() WHERE id = $1", ["main"]);
+    const details = { before, after };
+    await client.query("INSERT INTO schema_migrations (version, details) VALUES ($1, $2::jsonb)", [matchesMigrationVersion, JSON.stringify(details)]);
+    await client.query("COMMIT");
+    return details;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  }
+}
 
 function tokenHash(token) {
   return crypto.createHash("sha256").update(String(token || ""), "utf8").digest("hex");
@@ -173,6 +218,8 @@ async function migrateLegacyState(client, options = {}) {
 }
 
 module.exports = {
+  migrateLegacyMatches,
+  matchesMigrationVersion,
   appliedMigrationDetails,
   databaseCounts,
   legacyCounts,

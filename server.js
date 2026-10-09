@@ -10,6 +10,7 @@ const { Chess } = require("chess.js");
 const { Pool } = require("pg");
 const {
   migrateLegacyState,
+  migrateLegacyMatches,
   sessionTtlMs,
   splitLegacyUser,
   tokenHash,
@@ -46,6 +47,10 @@ const myMemoryEmail = process.env.MYMEMORY_EMAIL;
 const myMemoryEndpoint = (process.env.MYMEMORY_ENDPOINT || "https://api.mymemory.translated.net").replace(/\/$/, "");
 const redisEnabled = Boolean(upstashRedisRestUrl && upstashRedisRestToken);
 const nvidiaEnabled = Boolean(nvidiaApiKey);
+const configuredPgPoolMax = Number(process.env.PG_POOL_MAX || 10);
+if (databaseUrl && (!Number.isInteger(configuredPgPoolMax) || configuredPgPoolMax < 1)) {
+  throw new Error("PG_POOL_MAX must be a positive integer.");
+}
 const rateLimitBuckets = new Map();
 let cachedIceServers = null;
 let cachedIceServersAt = 0;
@@ -95,11 +100,21 @@ const pgPool = databaseUrl
   ? new Pool({
       connectionString: databaseUrl,
       ssl: postgresSslOptions(databaseUrl),
+      max: configuredPgPoolMax,
       connectionTimeoutMillis: Number(process.env.PG_CONNECT_TIMEOUT_MS || 10000),
       statement_timeout: 8000,
       idle_in_transaction_session_timeout: 10000,
     })
   : null;
+const matchPoolWaitSamples = [];
+function recordMatchPoolWait(milliseconds) {
+  if (process.env.MATCH_PERF_PROFILE !== "1") return;
+  matchPoolWaitSamples.push(milliseconds);
+  if (matchPoolWaitSamples.length < 100) return;
+  const sorted = matchPoolWaitSamples.splice(0).sort((a, b) => a - b);
+  const p95 = sorted[Math.ceil(sorted.length * 0.95) - 1];
+  console.log(`MATCH_POOL_WAIT ${JSON.stringify({ count: sorted.length, p50Ms: Number(sorted[49].toFixed(1)), p95Ms: Number(p95.toFixed(1)), maxMs: Number(sorted.at(-1).toFixed(1)), poolMax: pgPool.options.max })}`);
+}
 // Idle transaction timeouts and network disconnects must not crash the process.
 pgPool?.on("error", error => console.warn("PostgreSQL idle connection failed:", error.message));
 pgPool?.on("connect", client => {
@@ -136,6 +151,9 @@ const appStateContext = new AsyncLocalStorage();
 
 function postgresSslOptions(connectionString) {
   if (!connectionString) return false;
+  if (process.env.PGSSLROOTCERT) {
+    return { ca: fs.readFileSync(process.env.PGSSLROOTCERT, "utf8"), rejectUnauthorized: true };
+  }
   try {
     const parsed = new URL(connectionString);
     const sslMode = String(parsed.searchParams.get("sslmode") || "").toLowerCase();
@@ -408,7 +426,9 @@ async function ensurePostgresDb() {
       const client = await pgPool.connect();
       try {
         const result = await migrateLegacyState(client);
+        const matchesResult = await migrateLegacyMatches(client);
         console.log(`Normalized storage ready (${result.after.users} users, ${result.after.sessions} sessions).`);
+        console.log(`Match storage ready (${matchesResult.after} matches).`);
       } finally {
         client.release();
       }
@@ -436,11 +456,62 @@ async function readDb({ includeUsers = true } = {}) {
   await ensurePostgresDb();
   const context = appStateContext.getStore();
   const queryable = context?.client || pgPool;
-  const [result, users] = await Promise.all([
+  const [result, users, matches] = await Promise.all([
     queryable.query("SELECT data FROM app_state WHERE id = $1", ["main"]),
     includeUsers ? loadAllUsers(queryable) : [],
+    queryable.query("SELECT data FROM matches ORDER BY created_at, id"),
   ]);
-  return { ...normalizeDb(result.rows[0]?.data || defaultDb()), users };
+  return { ...normalizeDb(result.rows[0]?.data || defaultDb()), matches: matches.rows.map((row) => row.data), users };
+}
+
+async function readAllMatches() {
+  if (!pgPool) return (await readJsonDb()).matches;
+  await ensurePostgresDb();
+  const queryable = appStateContext.getStore()?.client || pgPool;
+  const result = await queryable.query("SELECT data FROM matches ORDER BY created_at, id");
+  return result.rows.map((row) => row.data);
+}
+
+async function readMatchesForUsers(userIds) {
+  if (!pgPool) return readAllMatches();
+  const ids = [...new Set(userIds.filter(Boolean))];
+  if (!ids.length) return [];
+  await ensurePostgresDb();
+  const queryable = appStateContext.getStore()?.client || pgPool;
+  const predicates = ids.map((_, index) => `data @> $${index + 1}::jsonb`).join(" OR ");
+  const values = ids.map((userId) => JSON.stringify({ players: [{ userId }] }));
+  const result = await queryable.query(`SELECT data FROM matches WHERE ${predicates}`, values);
+  return result.rows.map((row) => row.data);
+}
+
+async function readMatchById(matchId) {
+  if (!pgPool) return (await readJsonDb()).matches.find((match) => match.id === matchId) || null;
+  await ensurePostgresDb();
+  const queryable = appStateContext.getStore()?.client || pgPool;
+  const result = await queryable.query("SELECT data FROM matches WHERE id = $1", [matchId]);
+  return result.rows[0]?.data || null;
+}
+
+async function writeMatch(match) {
+  if (!match?.id) throw new Error("A match id is required.");
+  const context = appStateContext.getStore();
+  if (context?.kind === "local") {
+    const matches = context.db.matches || [];
+    const index = matches.findIndex((entry) => entry.id === match.id);
+    if (index < 0) matches.push(clone(match));
+    else matches[index] = clone(match);
+    context.db.matches = matches;
+    context.dirty = true;
+    return;
+  }
+  if (context?.kind !== "postgres" || !context.client) throw new Error("Match writes require a storage transaction.");
+  if (!context.matchScoped && context.lockMatches === false) throw new Error("Match writes require a match-locked transaction.");
+  await context.client.query(
+    `INSERT INTO matches (id, data, created_at, updated_at)
+     VALUES ($1, $2::jsonb, COALESCE($3::timestamptz, NOW()), NOW())
+     ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
+    [match.id, JSON.stringify(match), Number.isFinite(Date.parse(match.createdAt)) ? match.createdAt : null],
+  );
 }
 
 async function writeDb(db) {
@@ -448,6 +519,28 @@ async function writeDb(db) {
   await ensurePostgresDb();
   const context = appStateContext.getStore();
   if (!context?.client) throw new Error("app_state writes must run inside withAppStateMutation().");
+  if (context.matchScoped) throw new Error("Use writeMatch() inside withMatchMutation().");
+  // Only changed rows are written; unrelated state updates leave active rooms untouched.
+  if (context.lockMatches !== false) {
+    const nextMatches = new Map((db.matches || []).map((match) => [String(match.id), match]));
+    for (const [id, match] of nextMatches) {
+      const serialized = JSON.stringify(match);
+      if (context.originalMatches.get(id) !== serialized) await writeMatch(match);
+      context.originalMatches.set(id, serialized);
+    }
+    for (const id of [...context.originalMatches.keys()]) {
+      if (nextMatches.has(id)) continue;
+      await context.client.query("DELETE FROM matches WHERE id = $1", [id]);
+      context.originalMatches.delete(id);
+    }
+  } else {
+    const currentMatches = new Map((db.matches || []).map((match) => [String(match.id), JSON.stringify(match)]));
+    if (currentMatches.size !== context.originalMatches.size
+      || [...currentMatches].some(([id, serialized]) => context.originalMatches.get(id) !== serialized)) {
+      throw new Error("This route changed matches without a match lock.");
+    }
+  }
+  const { matches, ...stateWithoutMatches } = normalizeDb(db);
   await context.client.query(
     `
       INSERT INTO app_state (id, data, updated_at)
@@ -455,16 +548,51 @@ async function writeDb(db) {
       ON CONFLICT (id)
       DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()
     `,
-    ["main", JSON.stringify(normalizeDb(db))],
+    ["main", JSON.stringify(stateWithoutMatches)],
   );
 }
 
-async function withAppStateMutation(callback) {
+async function withMatchMutation(matchId, callback, { includeUsers = false } = {}) {
+  if (!pgPool) return withAppStateMutation(async (db) => {
+    const match = db.matches.find((item) => item.id === matchId);
+    return callback(db, match || null);
+  }, { includeUsers });
+  await ensurePostgresDb();
+  const poolWaitStarted = Date.now();
+  const client = await pgPool.connect();
+  recordMatchPoolWait(Date.now() - poolWaitStarted);
+  const context = { kind: "postgres", client, matchScoped: true, redisRooms: new Map(), roomEvents: [] };
+  let committed = false;
+  try {
+    await client.query("BEGIN");
+    await client.query("SET LOCAL lock_timeout = '5s'");
+    const locked = await client.query("SELECT data FROM matches WHERE id = $1 FOR UPDATE", [matchId]);
+    const match = locked.rows[0]?.data || null;
+    const state = await client.query("SELECT data FROM app_state WHERE id = $1", ["main"]);
+    const users = includeUsers ? await loadAllUsers(client) : [];
+    const db = { ...normalizeDb(state.rows[0]?.data || defaultDb()), matches: match ? [match] : [], users };
+    const value = await appStateContext.run(context, () => callback(db, match));
+    await client.query("COMMIT");
+    committed = true;
+    return value;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+    if (committed) for (const [id, payload] of context.roomEvents) broadcast(id, payload);
+    if (committed) for (const match of context.redisRooms.values()) {
+      syncRedisRoom(match).catch((error) => console.warn("Redis room sync failed:", error.message));
+    }
+  }
+}
+
+async function withAppStateMutation(callback, { includeUsers = true, lockMatches = true } = {}) {
   if (!pgPool) {
     const operation = localDbWriteQueue.catch(() => {}).then(async () => {
       ensureJsonDb();
       const raw = JSON.parse(await fs.promises.readFile(dbPath, "utf8"));
-      const users = await loadAllUsers();
+      const users = includeUsers ? await loadAllUsers() : [];
       const context = { kind: "local", db: normalizeDb(raw), dirty: false };
       const result = await appStateContext.run(context, () => callback({ ...clone(context.db), users }));
       if (context.dirty) await atomicWriteJson(dbPath, normalizeDb(context.db));
@@ -474,22 +602,24 @@ async function withAppStateMutation(callback) {
     return operation;
   }
   // Queue before borrowing a connection so row-lock waiters cannot starve login.
-  const operation = postgresStateQueue.catch(() => {}).then(() => runPostgresStateMutation(callback));
+  const operation = postgresStateQueue.catch(() => {}).then(() => runPostgresStateMutation(callback, { includeUsers, lockMatches }));
   postgresStateQueue = operation.then(() => undefined, () => undefined);
   return operation;
 }
 
-async function runPostgresStateMutation(callback) {
+async function runPostgresStateMutation(callback, { includeUsers = true, lockMatches = true } = {}) {
   await ensurePostgresDb();
   const client = await pgPool.connect();
-  const context = { kind: "postgres", client, redisRooms: new Map() };
+  const context = { kind: "postgres", client, lockMatches, originalMatches: new Map(), redisRooms: new Map() };
   let committed = false;
   try {
     await client.query("BEGIN");
     await client.query("SET LOCAL lock_timeout = '5s'");
     const result = await client.query("SELECT data FROM app_state WHERE id = $1 FOR UPDATE", ["main"]);
-    const users = await loadAllUsers(client);
-    const db = { ...normalizeDb(result.rows[0]?.data || defaultDb()), users };
+    const matches = await client.query(`SELECT data FROM matches ORDER BY id${lockMatches ? " FOR UPDATE" : ""}`);
+    context.originalMatches = new Map(matches.rows.map((row) => [String(row.data.id), JSON.stringify(row.data)]));
+    const users = includeUsers ? await loadAllUsers(client) : [];
+    const db = { ...normalizeDb(result.rows[0]?.data || defaultDb()), matches: matches.rows.map((row) => row.data), users };
     const value = await appStateContext.run(context, () => callback(db));
     await client.query("COMMIT");
     committed = true;
@@ -1330,8 +1460,7 @@ function transcriptSpeakerUser(match, item, db) {
 }
 
 async function moderateTranscriptItem(matchId, transcriptItemId) {
-  const snapshot = await readDb();
-  const snapshotMatch = snapshot.matches.find((item) => item.id === matchId);
+  const snapshotMatch = await readMatchById(matchId);
   const snapshotItem = (snapshotMatch?.transcript || []).find((item) => item.id === transcriptItemId);
   if (!snapshotItem || snapshotItem.safetyCheckedAt) return;
   const safety = await detectUnsafeText(snapshotItem.text);
@@ -1815,6 +1944,24 @@ function recordMatchCompletionStreak(match, db) {
 async function saveMatchParticipantUsers(match, db) {
   const participantIds = new Set((match.players || []).map((player) => player.userId).filter(Boolean));
   await Promise.all(db.users.filter((user) => participantIds.has(user.id)).map((user) => saveUser(user)));
+}
+
+function apiMutationMayChangeMatches(method, pathname) {
+  return shouldExpirePrivateRooms(method, pathname)
+    || pathname.startsWith("/api/matches/")
+    || pathname === "/api/challenges"
+    || pathname.startsWith("/api/challenges/")
+    || /^\/api\/admin\/matches\/[^/]+\/end$/.test(pathname);
+}
+
+async function lockMatchParticipantUsers(match) {
+  if (!pgPool) return;
+  const participantIds = [...new Set((match.players || []).map((player) => player.userId).filter(Boolean))].sort();
+  if (!participantIds.length) return;
+  await appStateContext.getStore().client.query(
+    "SELECT id FROM users WHERE id = ANY($1::text[]) ORDER BY id FOR UPDATE",
+    [participantIds],
+  );
 }
 
 function maskEmailMiddle(email) {
@@ -2670,6 +2817,125 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
       posthogProjectToken: process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN || "",
       posthogHost: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
     });
+    return true;
+  }
+  if (pgPool && req.method === "POST" && pathname === "/api/matches/start") {
+    const user = await getSessionUser(req);
+    if (!requireUser(user, res)) return true;
+    const body = await readBody(req);
+    const match = createMatch({ matches: [] }, user, { ...body, pairingType: body.pairingType || "practice" });
+    await withMatchMutation(match.id, async () => {
+      await writeMatch(match);
+      const context = appStateContext.getStore();
+      context.redisRooms.set(match.id, match);
+      context.roomEvents.push([match.id, { type: "match:started", match: decorateMatch(match) }]);
+    });
+    sendJson(res, 200, { match: decorateMatch(match) });
+    return true;
+  }
+  if (pgPool && req.method === "GET" && pathname === "/api/matches/lobby") {
+    await ensurePostgresDb();
+    const state = await pgPool.query("SELECT data FROM app_state WHERE id = $1", ["main"]);
+    const db = normalizeDb(state.rows[0]?.data || defaultDb());
+    const openSeeks = db.seeks.filter((seek) => seek.status === "open");
+    const user = await getSessionUser(req);
+    const visibleSeeks = openSeeks.filter((seek) => seek.userId !== user?.id).slice(-20).reverse();
+    const ids = [...new Set(visibleSeeks.map((seek) => seek.userId))];
+    const names = ids.length
+      ? await pgPool.query("SELECT id, display_name FROM users WHERE id = ANY($1::text[])", [ids])
+      : { rows: [] };
+    sendJson(res, 200, {
+      quickPools,
+      openSeeks: visibleSeeks.map((seek) => decorateSeek({ users: names.rows.map((row) => ({ id: row.id, displayName: row.display_name })) }, seek)),
+      openSeeksTotal: openSeeks.length,
+      queuedPlayers: db.queue.length,
+    });
+    return true;
+  }
+  if (pgPool && req.method === "GET" && pathname === "/api/matches/active") {
+    const user = await getSessionUser(req);
+    if (!requireUser(user, res)) return true;
+    await ensurePostgresDb();
+    let state = await pgPool.query("SELECT data FROM app_state WHERE id = $1", ["main"]);
+    let db = normalizeDb(state.rows[0]?.data || defaultDb());
+    const now = Date.now();
+    if (db.challenges.some((challenge) => {
+      const createdAt = Date.parse(challenge.createdAt || "");
+      return challenge.status === "open" && Number.isFinite(createdAt) && now - createdAt >= privateRoomTtlMs;
+    })) {
+      await withAppStateMutation((lockedDb) => expireStalePrivateRooms(lockedDb, now), { includeUsers: false });
+      state = await pgPool.query("SELECT data FROM app_state WHERE id = $1", ["main"]);
+      db = normalizeDb(state.rows[0]?.data || defaultDb());
+    }
+    const active = await pgPool.query(
+      `SELECT data FROM matches
+       WHERE status IS DISTINCT FROM 'ended' AND data @> $1::jsonb
+       ORDER BY created_at DESC, id DESC LIMIT 1`,
+      [JSON.stringify({ players: [{ userId: user.id }] })],
+    );
+    const match = active.rows[0]?.data || null;
+    const openSeek = db.seeks
+      .filter((seek) => seek.userId === user.id && seek.status === "open")
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0] || null;
+    const openChallenge = db.challenges
+      .filter((challenge) => challenge.userId === user.id && challenge.status === "open")
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0] || null;
+    sendJson(res, 200, {
+      match: match ? decorateMatch(match) : null,
+      openSeek: openSeek ? decorateSeek({ ...db, users: [user] }, openSeek) : null,
+      openChallenge,
+      queueEntry: db.queue.find((entry) => entry.userId === user.id) || null,
+    });
+    return true;
+  }
+  const directMatch = pgPool && req.method === "GET"
+    ? /^\/api\/matches\/([^/]+)$/.exec(pathname)
+    : null;
+  if (directMatch && !["active", "lobby"].includes(directMatch[1])) {
+    const user = await getSessionUser(req);
+    const match = await readMatchById(directMatch[1]);
+    if (!match) { sendJson(res, 404, { error: "Match not found." }); return true; }
+    if (!requireMatchAccess(match, user, res)) return true;
+    sendJson(res, 200, { match: decorateMatch(match) });
+    return true;
+  }
+  const directJoin = pgPool && req.method === "POST"
+    ? /^\/api\/matches\/([^/]+)\/join$/.exec(pathname)
+    : null;
+  if (directJoin) {
+    const user = await getSessionUser(req);
+    if (!requireUser(user, res)) return true;
+    const candidate = await readMatchById(directJoin[1]);
+    // Private challenges also update app_state; keep them in the combined transaction.
+    if (candidate?.challengeId) return false;
+    const result = await withMatchMutation(directJoin[1], async (_db, match) => {
+      if (!match) return { status: 404, data: { error: "Match not found." } };
+      if (match.status === "ended") return { status: 409, data: { error: "This match has already ended." } };
+      const existingPlayer = match.players?.find((player) => player.userId === user.id);
+      if (!existingPlayer) {
+        const openSlot = match.players?.find((player) => !player.userId);
+        if (!openSlot) return { status: 409, data: { error: "This match room is already full." } };
+        openSlot.userId = user.id;
+        openSlot.displayName = user.displayName;
+        openSlot.pieceEdition = normalizedPieceEdition(user.pieceEdition);
+        match.partnerName = user.displayName;
+        match.joinedAt = new Date().toISOString();
+      }
+      if ((match.players || []).filter((player) => player.userId).length > 1) {
+        match.status = "matched";
+        if (match.clocks) {
+          match.clocks.running = true;
+          match.clocks.lastUpdatedAt = match.joinedAt || new Date().toISOString();
+          match.clocks.startedAt = match.clocks.lastUpdatedAt;
+        }
+      }
+      await writeMatch(match);
+      const context = appStateContext.getStore();
+      context.redisRooms.set(match.id, match);
+      context.roomEvents.push([match.id, { type: "match:joined", matchId: match.id, match: decorateMatch(match) }]);
+      return { status: 200, data: { match: decorateMatch(match) } };
+    });
+    sendJson(res, result.status, result.data);
     return true;
   }
   // Authenticate unhandled routes once, inside their transaction when applicable.
@@ -4165,7 +4431,14 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
         match.clocks.running = false;
       }
     }
-    const unlocked = !wasEndedBeforeMove && match.status === "ended" ? recordMatchCompletionStreak(match, db) : [];
+    if (!wasEndedBeforeMove && match.status === "ended") {
+      await lockMatchParticipantUsers(match);
+      db.users = await loadAllUsers(appStateContext.getStore()?.client || pgPool);
+      if (pgPool) {
+        db.matches = (await readMatchesForUsers((match.players || []).map((player) => player.userId))).filter((item) => item.id !== match.id);
+        db.matches.push(match);
+      }
+    }
     match.moves.push(move);
     match.transcript.push({
       speaker: move.by,
@@ -4175,10 +4448,15 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
       userId: user?.id || null,
       at: move.at,
     });
+    const unlocked = !wasEndedBeforeMove && match.status === "ended" ? recordMatchCompletionStreak(match, db) : [];
     if (!wasEndedBeforeMove && match.status === "ended") await saveMatchParticipantUsers(match, db);
-    await writeDb(db);
-    syncRedisRoom(match).catch((error) => console.warn(`Redis room sync failed: ${error.message}`));
-    broadcast(match.id, { type: "match:move", matchId: match.id, move, match: decorateMatch(match) });
+    if (pgPool) await writeMatch(match);
+    else await writeDb(db);
+    if (pgPool) appStateContext.getStore()?.redisRooms?.set(match.id, match);
+    else syncRedisRoom(match).catch((error) => console.warn(`Redis room sync failed: ${error.message}`));
+    const moveEvent = { type: "match:move", matchId: match.id, move, match: decorateMatch(match) };
+    if (pgPool) appStateContext.getStore()?.roomEvents?.push([match.id, moveEvent]);
+    else broadcast(match.id, moveEvent);
     sendJson(res, 200, { match: decorateMatch(match), move, unlocked });
     return true;
   }
@@ -4206,9 +4484,13 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
       at: new Date().toISOString(),
     };
     match.transcript.push(item);
-    await writeDb(db);
-    await syncRedisRoom(match);
-    broadcast(match.id, { type: "match:transcript", matchId: match.id, item });
+    if (pgPool) await writeMatch(match);
+    else await writeDb(db);
+    if (pgPool) appStateContext.getStore()?.redisRooms?.set(match.id, match);
+    else await syncRedisRoom(match);
+    const transcriptEvent = { type: "match:transcript", matchId: match.id, item };
+    if (pgPool) appStateContext.getStore()?.roomEvents?.push([match.id, transcriptEvent]);
+    else broadcast(match.id, transcriptEvent);
     sendJson(res, 200, { item, match: decorateMatch(match) });
     moderateTranscriptItem(match.id, item.id).catch((error) => console.warn(`Transcript moderation failed: ${error.message}`));
     return true;
@@ -4243,11 +4525,21 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
       match.clocks.running = false;
       match.clocks.lastUpdatedAt = match.endedAt;
     }
+    if (!wasEnded && pgPool) {
+      await lockMatchParticipantUsers(match);
+      db.users = await loadAllUsers(appStateContext.getStore()?.client || pgPool);
+      db.matches = (await readMatchesForUsers((match.players || []).map((player) => player.userId))).filter((item) => item.id !== match.id);
+      db.matches.push(match);
+    }
     const unlocked = !wasEnded ? recordMatchCompletionStreak(match, db) : [];
     if (!wasEnded) await saveMatchParticipantUsers(match, db);
-    await writeDb(db);
-    await syncRedisRoom(match);
-    broadcast(match.id, { type: "match:ended", matchId: match.id, result: match.result, match: decorateMatch(match) });
+    if (pgPool) await writeMatch(match);
+    else await writeDb(db);
+    if (pgPool) appStateContext.getStore()?.redisRooms?.set(match.id, match);
+    else await syncRedisRoom(match);
+    const endEvent = { type: "match:ended", matchId: match.id, result: match.result, match: decorateMatch(match) };
+    if (pgPool) appStateContext.getStore()?.roomEvents?.push([match.id, endEvent]);
+    else broadcast(match.id, endEvent);
     sendJson(res, 200, { match: decorateMatch(match), unlocked });
     return true;
   }
@@ -4493,7 +4785,6 @@ async function acceptWebSocket(req, socket) {
     socket.destroy();
     return;
   }
-  const db = await readDb();
   const user = await getSessionUser(req);
   if (!user) {
     socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
@@ -4615,8 +4906,7 @@ function broadcast(matchId, data, excludeClient = null) {
 
 async function socketMatchForUser(matchId, user) {
   if (!matchId || !user) return null;
-  const db = await readDb();
-  const match = db.matches.find((item) => item.id === matchId);
+  const match = await readMatchById(matchId);
   if (!match || !canAccessMatch(match, user)) return null;
   return match;
 }
@@ -4709,7 +4999,16 @@ const server = http.createServer(async (req, res) => {
       let handled;
       if (apiRequestNeedsStateTransaction(req.method, requestUrl.pathname)) {
         const deferred = deferredResponse();
-        handled = await withAppStateMutation((db) => run(db, deferred.response));
+        const roomMutation = req.method === "POST"
+          ? /^\/api\/matches\/([^/]+)\/(move|transcript|end)$/.exec(requestUrl.pathname)
+          : null;
+        if (pgPool && roomMutation) {
+          handled = await withMatchMutation(roomMutation[1], (db) => run(db, deferred.response));
+        } else {
+          handled = await withAppStateMutation((db) => run(db, deferred.response), {
+            lockMatches: apiMutationMayChangeMatches(req.method, requestUrl.pathname),
+          });
+        }
         if (handled) deferred.flush(res);
       } else {
         handled = await run(await readDb());

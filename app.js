@@ -6349,6 +6349,21 @@ function localMove(from, to) {
     currentInterfaceLanguage() === "Korean" ? `${from}에서 ${to}로 움직였습니다` : `${from} to ${to} moved locally`;
 }
 
+let moveRequestPending = false;
+
+function previewMove(from, to) {
+  const piece = pieces[from];
+  if (!piece) return null;
+  const specialPawnMove = piece[1] === "p" && (from[0] !== to[0] && !pieces[to] || to[1] === "1" || to[1] === "8");
+  const castling = piece[1] === "k" && Math.abs(from.charCodeAt(0) - to.charCodeAt(0)) > 1;
+  if (specialPawnMove || castling) return null;
+  const previous = { ...pieces };
+  delete pieces[from];
+  pieces[to] = piece;
+  buildBoard();
+  return previous;
+}
+
 async function makeMove(from, to) {
   if (!from || !to || from === to) {
     selectedSquare = null;
@@ -6362,9 +6377,13 @@ async function makeMove(from, to) {
     return;
   }
 
+  if (moveRequestPending) return;
+  moveRequestPending = true;
+
   selectedSquare = null;
   legalMoveTargets = [];
-  buildBoard();
+  const previousPieces = previewMove(from, to);
+  if (!previousPieces) buildBoard();
   syncState.textContent = currentInterfaceLanguage() === "Korean" ? "수를 보내는 중..." : "Sending move...";
 
   try {
@@ -6378,6 +6397,7 @@ async function makeMove(from, to) {
       currentInterfaceLanguage() === "Korean" ? `${data.move.san} 수가 반영되었습니다` : `${data.move.san} accepted`;
     refreshStats();
   } catch (error) {
+    if (previousPieces) pieces = previousPieces;
     selectedSquare = null;
     legalMoveTargets = [];
     buildBoard();
@@ -6398,6 +6418,8 @@ async function makeMove(from, to) {
       return;
     }
     syncState.textContent = error.message;
+  } finally {
+    moveRequestPending = false;
   }
 }
 
