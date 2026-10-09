@@ -4973,14 +4973,14 @@ function openResourceDetail(resource) {
       icon.textContent = "▤";
       const copy = document.createElement("div");
       copy.className = "resource-download-copy";
-      const label = document.createElement("strong");
-      label.textContent = fileLabel;
+      const fileNameLabel = document.createElement("strong");
+      fileNameLabel.textContent = fileLabel;
       const type = document.createElement("small");
       type.textContent = fileType;
       const name = document.createElement("span");
       name.className = "resource-download-name";
       name.textContent = file.name;
-      copy.append(label, type, name);
+      copy.append(fileNameLabel, type, name);
       const download = document.createElement("a");
       download.className = "button resource-primary";
       download.href = file.url;
