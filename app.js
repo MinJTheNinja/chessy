@@ -71,6 +71,9 @@ const refreshReviewButton = document.querySelector("#refreshReview");
 const pronunciationStatus = document.querySelector("#pronunciationStatus");
 const reviewStatus = document.querySelector("#reviewStatus");
 const authForm = document.querySelector("#authForm");
+const authTitle = document.querySelector("#authTitle");
+const authSubtitle = document.querySelector("#authSubtitle");
+const authPasswordHelp = document.querySelector("#authPasswordHelp");
 const entryAuth = document.querySelector(".entry-auth");
 const authEmail = document.querySelector("#authEmail");
 const authDisplayNameField = document.querySelector("#authDisplayNameField");
@@ -913,9 +916,10 @@ function syncLocalizedControls() {
   closeLeagueActionPopoverButton?.setAttribute("aria-label", korean ? "리그 코드 창 닫기" : "Close league code dialog");
   setText(reportUserButton, korean ? "신고" : "Report");
   setText(mainTutorialButton, korean ? "훈련장으로 가기" : "Go to training");
-  setText(document.querySelector("#entryIdentityEyebrow"), korean ? "누구나 쉽게 체스, 더 가까이 지역 이야기" : "Chess for everyone, local stories to discover");
-  setText(document.querySelector("#entryIdentityTitleFirst"), korean ? "체스를 쉽게 배우고," : "Learn chess with ease.");
-  setText(document.querySelector("#entryIdentityTitleSecond"), korean ? "우리 고장의 이야기를 만나다." : "Discover the stories of our communities.");
+  setText(document.querySelector("#entryIdentityTitleFirst"), korean ? "체스를 쉽게 배우고," : "Learn chess with ease,");
+  setText(document.querySelector("#entryIdentityTitleSecond"), korean ? "우리 고장의 " : "and discover our community's ");
+  setText(document.querySelector("#entryIdentityTitleAccent"), korean ? "이야기" : "stories");
+  setText(document.querySelector("#entryIdentityTitleEnding"), korean ? "를 만나다." : ".");
   if (!currentUser) {
     setText(loginButton, korean ? "로그인" : "Login");
     setText(signupButton, korean ? "새 계정" : "New account");
@@ -2111,6 +2115,12 @@ function renderStaffAccessState() {
 
 function renderAuthState() {
   const signedIn = Boolean(currentUser);
+  const korean = currentInterfaceLanguage() === "Korean";
+  const signup = authMode === "signup";
+  authForm.dataset.mode = authMode;
+  authTitle.textContent = signup ? (korean ? "함께 시작해 볼까요?" : "Let's get started") : (korean ? "다시 만나서 반가워요" : "Welcome back");
+  authSubtitle.textContent = signup ? (korean ? "계정을 만들고 체스를 배워보세요." : "Create an account and start learning chess.") : (korean ? "이메일로 로그인하세요." : "Sign in with your email.");
+  authPasswordHelp.hidden = signup;
   if (tutorialLoginButton) {
     tutorialLoginButton.hidden = Boolean(currentUser);
     tutorialLoginButton.textContent = signedIn
@@ -7589,6 +7599,17 @@ authPassword.addEventListener("input", () => {
   if (authConfirmPasswordField.hidden) authConfirmPassword.value = "";
 });
 
+document.querySelectorAll("[data-toggle-password]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const input = document.getElementById(button.dataset.togglePassword);
+    const visible = input.type === "password";
+    input.type = visible ? "text" : "password";
+    button.setAttribute("aria-pressed", String(visible));
+    const label = `${input.id === "authConfirmPassword" ? "비밀번호 확인" : "비밀번호"} ${visible ? "숨기기" : "표시"}`;
+    button.setAttribute("aria-label", currentInterfaceLanguage() === "Korean" ? label : translateCopy(label));
+  });
+});
+
 googleSignInButton.addEventListener("click", signInWithGoogle);
 headerProfileButton.addEventListener("click", (event) => {
   event.stopPropagation();
@@ -7788,7 +7809,7 @@ loginButton.addEventListener("click", () => {
   setAuthMode("login");
 });
 
-mainAccountButton?.addEventListener("click", () => openAccountEntry("signup"));
+mainAccountButton?.addEventListener("click", () => openAccountEntry("login"));
 
 mainTutorialButton?.addEventListener("click", () => {
   clearRequestedTrainingModule();
