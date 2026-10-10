@@ -19,6 +19,10 @@
 .poeun-chapter { scroll-margin-top: 120px; }
 
 .poeun-story-chapter { display: grid; gap: 18px; }
+.poeun-chapter-film { max-width: 960px; overflow: hidden; border: 1px solid #d4b39b; border-radius: 16px; background: #271c2c; box-shadow: 0 12px 30px #40221820; }
+.poeun-chapter-film-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; padding: 11px 16px; color: #fff8e8; font-size: .9rem; }
+.poeun-chapter-film-head span { color: #e4d4c4; font-size: .78rem; }
+.poeun-chapter-video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #271c2c; object-fit: contain; }
 .poeun-back {
   display: inline-flex;
   align-items: center;

@@ -137,6 +137,8 @@ const contentTypes = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
   ".svg": "image/svg+xml",
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
   ".stl": "model/stl",
 };
 const compressibleExtensions = new Set([".html", ".css", ".js", ".json", ".svg"]);
@@ -4800,6 +4802,8 @@ function serveStatic(req, res, pathname) {
       "content-type": contentTypes[extension] || "application/octet-stream",
       etag,
     };
+    const isVideo = extension === ".mp4" || extension === ".webm";
+    if (isVideo) responseHeaders["accept-ranges"] = "bytes";
     if (compressibleExtensions.has(extension)) responseHeaders.vary = "Accept-Encoding";
     if (requested.startsWith("/assets/tutorial-pieces/") || requested.startsWith("/assets/original-chess-pieces-v1/") || /-v\d+\.[a-z0-9]+$/i.test(requested)) {
       responseHeaders["cache-control"] = "public, max-age=31536000, immutable";
@@ -4811,6 +4815,26 @@ function serveStatic(req, res, pathname) {
     if (req.headers["if-none-match"] === etag) {
       res.writeHead(304, responseHeaders);
       res.end();
+      return;
+    }
+
+    if (isVideo && req.headers.range) {
+      const match = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range));
+      const suffixLength = match && !match[1] ? Number(match[2]) : 0;
+      const start = suffixLength ? Math.max(0, stats.size - suffixLength) : Number(match?.[1]);
+      const end = match?.[2] && match[1] ? Number(match[2]) : stats.size - 1;
+      if (!match || !Number.isInteger(start) || !Number.isInteger(end) || start < 0 || start > end || start >= stats.size) {
+        res.writeHead(416, { ...responseHeaders, "content-range": `bytes */${stats.size}` });
+        res.end();
+        return;
+      }
+      responseHeaders["content-range"] = `bytes ${start}-${Math.min(end, stats.size - 1)}/${stats.size}`;
+      responseHeaders["content-length"] = Math.min(end, stats.size - 1) - start + 1;
+      res.writeHead(206, responseHeaders);
+      if (req.method === "HEAD") { res.end(); return; }
+      const stream = fs.createReadStream(filePath, { start, end: Math.min(end, stats.size - 1) });
+      stream.on("error", () => res.destroy());
+      stream.pipe(res);
       return;
     }
 
