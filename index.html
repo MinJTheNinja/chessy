@@ -61,7 +61,7 @@
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
     </noscript>
     <link rel="stylesheet" href="/tokens.css?v=20260925-home-v3" />
-    <link rel="stylesheet" href="/styles.css?v=20261010-auth-card" />
+    <link rel="stylesheet" href="/styles.css?v=20261010-about-hero" />
     <link rel="stylesheet" href="/assets/poeun/poeun.css?v=20261009-rounded-purple" />
     <script src="/assets/i18n/en-supplement.js?v=20261010-guest-welcome" defer></script>
     <script src="/assets/poeun/stations.js?v=20261008-hero-layout" defer></script>
@@ -353,6 +353,10 @@
                 <h2 id="homeTrainingStoryTitle">배우고, 경험하고, 나누는 체스</h2>
               </header>
               <div class="home-feature-carousel" aria-roledescription="캐러셀" aria-label="EasyMate 주요 기능">
+                <div class="home-feature-controls">
+                  <div class="home-feature-dots" role="group" aria-label="기능 소개 선택"><button class="active" type="button" data-feature-slide="0" aria-label="튜토리얼 보기" aria-current="true"><span>01</span> 튜토리얼</button><button type="button" data-feature-slide="1" aria-label="지역 캠페인 보기"><span>02</span> 지역 캠페인</button><button type="button" data-feature-slide="2" aria-label="학습 자료 보기"><span>03</span> 학습 자료</button></div>
+                  <div class="home-feature-arrows"><button id="homeFeaturePrevious" type="button" aria-label="이전 기능">←</button><button id="homeFeatureNext" type="button" aria-label="다음 기능">→</button></div>
+                </div>
                 <div class="home-feature-window" id="homeFeatureWindow" tabindex="0" aria-label="좌우 화살표로 기능 소개 넘기기">
                   <div class="home-feature-track" id="homeFeatureTrack">
                     <article class="home-feature-slide" aria-label="1 / 3: 튜토리얼">
@@ -368,10 +372,6 @@
                       <figure class="home-feature-image home-feature-image-resources"><div class="home-worksheet-stack" role="img" aria-label="EasyMate 초등 체스 첫걸음 학습지 세 장이 겹쳐 놓인 모습"><img src="/assets/worksheets/first-steps-4.webp" alt="" loading="lazy" decoding="async" /><img src="/assets/worksheets/first-steps-3.webp" alt="" loading="lazy" decoding="async" /><img src="/assets/worksheets/first-steps-2.webp" alt="" loading="lazy" decoding="async" /></div><figcaption>초등 체스 첫걸음 학습지</figcaption></figure>
                     </article>
                   </div>
-                </div>
-                <div class="home-feature-controls">
-                  <div class="home-feature-dots" role="group" aria-label="기능 소개 선택"><button class="active" type="button" data-feature-slide="0" aria-label="튜토리얼 보기" aria-current="true"></button><button type="button" data-feature-slide="1" aria-label="지역 캠페인 보기"></button><button type="button" data-feature-slide="2" aria-label="학습 자료 보기"></button></div>
-                  <div class="home-feature-arrows"><button id="homeFeaturePrevious" type="button" aria-label="이전 기능">←</button><button id="homeFeatureNext" type="button" aria-label="다음 기능">→</button></div>
                 </div>
               </div>
             </section>

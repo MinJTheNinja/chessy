@@ -13346,12 +13346,6 @@ body:not(.is-signed-in) .view[data-view="about"] {
   padding: 0;
 }
 
-body:not(.is-signed-in) .view[data-view="about"] .home-brand-hero {
-  min-height: calc(100dvh - 64px);
-  padding: clamp(32px, 5vw, 80px) clamp(24px, 5vw, 96px);
-  background: var(--home-paper);
-}
-
 body.is-signed-in .workspace:has(> .view[data-view="about"].active),
 body.is-signed-in .view[data-view="about"] {
   width: 100%;
@@ -15835,30 +15829,30 @@ body.is-signed-in .view[data-view="dashboard"] .match-layout[data-state="searchi
 }
 
 /* Guest welcome screen. */
-body:not(.is-signed-in):not(.tutorial-complete):not(.show-how-to-play) {
+body:not(.is-signed-in):not(.show-how-to-play) {
   background: var(--home-paper-2);
   background-image: none;
 }
 
-body:not(.is-signed-in):not(.tutorial-complete):not(.show-how-to-play) .site-header {
-  grid-template-columns: auto 1fr;
+body:not(.is-signed-in):not(.show-how-to-play) .site-header {
+  display: flex;
+  justify-content: space-between;
   min-height: 40px;
   padding-inline: max(20px, calc((100vw - 624px) / 2));
   background: var(--home-paper);
 }
 
-body:not(.is-signed-in):not(.tutorial-complete):not(.show-how-to-play) .site-header .brand img {
+body:not(.is-signed-in):not(.show-how-to-play) .site-header .brand img {
   width: 28px;
   height: 28px;
 }
 
-body:not(.is-signed-in):not(.tutorial-complete):not(.show-how-to-play) :is(.desktop-header-nav, .piece-edition-toggle) {
+body:not(.is-signed-in):not(.show-how-to-play) :is(.desktop-header-nav, .piece-edition-toggle) {
   display: none;
 }
 
-body:not(.is-signed-in):not(.tutorial-complete):not(.show-how-to-play) .header-actions {
-  justify-self: end;
-  margin-left: 0;
+body:not(.is-signed-in):not(.show-how-to-play) .header-actions {
+  margin-left: auto;
 }
 
 body:not(.is-signed-in) .entry {
@@ -16000,17 +15994,17 @@ body:not(.is-signed-in) .entry-actions .button.secondary {
   line-height: 1.45;
 }
 
-body:not(.is-signed-in):not(.tutorial-complete):not(.show-how-to-play) .site-footer {
+body:not(.is-signed-in):not(.show-how-to-play) .site-footer {
   background: #fff;
 }
 
-body:not(.is-signed-in):not(.tutorial-complete):not(.show-how-to-play) .site-footer-inner {
+body:not(.is-signed-in):not(.show-how-to-play) .site-footer-inner {
   width: min(624px, calc(100% - 40px));
   min-height: 46px;
   font-size: 0.66rem;
 }
 
-body:not(.is-signed-in):not(.tutorial-complete):not(.show-how-to-play) .site-footer-brand img {
+body:not(.is-signed-in):not(.show-how-to-play) .site-footer-brand img {
   width: 20px;
   height: 20px;
 }
@@ -16019,7 +16013,7 @@ body:not(.is-signed-in):not(.tutorial-complete):not(.show-how-to-play) .site-foo
   body:not(.is-signed-in) .entry-visual { padding: 34px 20px 54px; }
   .entry-features { grid-template-columns: 1fr; gap: 10px; margin-top: 34px; }
   .entry-feature { min-height: 0; }
-  body:not(.is-signed-in):not(.tutorial-complete):not(.show-how-to-play) .site-footer-inner { padding: 16px 0; }
+  body:not(.is-signed-in):not(.show-how-to-play) .site-footer-inner { padding: 16px 0; }
 }
 
 /* Sign in and sign up share the same card. */
@@ -16198,4 +16192,191 @@ body.auth-entry-open:not(.is-signed-in) .auth-card #authSubmit {
 @media (max-width: 420px) {
   body.auth-entry-open:not(.is-signed-in) .entry-auth { padding: 24px 16px 48px; }
   body.auth-entry-open:not(.is-signed-in) .auth-card { padding: 22px; }
+}
+
+/* About page reached from the logo. */
+body:not(.is-signed-in):has(.view[data-view="about"].active) .site-header {
+  padding-inline: clamp(24px, 13vw, 180px);
+}
+
+.view[data-view="about"] .home-brand-hero {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: clamp(24px, 8vw, 100px);
+  row-gap: 10px;
+  min-height: clamp(260px, 42vw, 520px);
+  padding: 30px clamp(24px, 13vw, 180px);
+  background: var(--home-paper-2);
+}
+
+.view[data-view="about"] .home-brand-logo-row {
+  grid-column: 1;
+  grid-row: 1;
+  justify-content: start;
+  align-self: end;
+  padding: 0;
+}
+
+.view[data-view="about"] .home-brand-wordmark {
+  width: clamp(105px, 17vw, 210px);
+}
+
+.view[data-view="about"] .home-brand-copy {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: start;
+}
+
+.view[data-view="about"] .home-brand-copy h1 {
+  max-width: none;
+  font-size: clamp(1.2rem, 3.3vw, 2.7rem);
+  line-height: 1.23;
+}
+
+.view[data-view="about"] .home-brand-actions {
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.view[data-view="about"] .home-brand-actions .button {
+  min-width: 0;
+  min-height: 28px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  box-shadow: none;
+}
+
+.view[data-view="about"] .home-brand-actions .button.primary {
+  border-color: var(--home-accent-dark);
+  background: var(--home-accent-dark);
+  color: #fff;
+  box-shadow: 0 5px 10px color-mix(in srgb, var(--home-accent-dark) 20%, transparent);
+}
+
+.view[data-view="about"] .home-brand-art {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: center;
+  width: min(100%, 24rem);
+  margin: 0;
+}
+
+.view[data-view="about"] .home-brand-art-tile {
+  inset: 5px -7px -6px 8px;
+  border-radius: 12px;
+  transform: rotate(4deg);
+}
+
+.view[data-view="about"] .home-brand-art img {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+}
+
+.view[data-view="about"] .home-feature-story {
+  padding: 32px clamp(24px, 13vw, 180px) 54px;
+  background: #fff;
+}
+
+.view[data-view="about"] .home-feature-story .home-story-heading {
+  padding-bottom: 14px;
+}
+
+.view[data-view="about"] .home-feature-story .home-story-heading h2 {
+  margin: 0;
+  font-size: clamp(1.15rem, 3vw, 2rem);
+}
+
+.view[data-view="about"] .home-feature-controls {
+  margin: 0 0 14px;
+}
+
+.view[data-view="about"] .home-feature-dots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  width: 100%;
+}
+
+.view[data-view="about"] .home-feature-dots button,
+.view[data-view="about"] .home-feature-dots button.active {
+  width: 100% !important;
+  height: 28px;
+  padding: 4px 10px;
+  border: 1px solid var(--home-rule);
+  border-radius: 6px !important;
+  background: #fff;
+  color: var(--home-ink);
+  font-size: 0.72rem;
+  font-weight: 750;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.view[data-view="about"] .home-feature-dots button.active {
+  border-color: var(--home-accent-dark);
+  background: var(--home-accent-dark) !important;
+  color: #fff;
+}
+
+.view[data-view="about"] .home-feature-dots button span {
+  margin-right: 4px;
+  color: var(--home-accent-dark);
+  font-size: 0.66rem;
+}
+
+.view[data-view="about"] .home-feature-dots button.active span { color: #fff; }
+.view[data-view="about"] .home-feature-arrows { display: none; }
+
+.view[data-view="about"] .home-feature-slide {
+  grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+  gap: clamp(18px, 4vw, 48px);
+}
+
+.view[data-view="about"] .home-feature-copy h3 {
+  margin-top: 5px;
+  font-size: clamp(1.2rem, 3vw, 2rem);
+}
+
+.view[data-view="about"] .home-feature-copy p {
+  margin-top: 8px;
+  font-size: clamp(0.72rem, 1.6vw, 0.9rem);
+  line-height: 1.6;
+}
+
+.view[data-view="about"] .home-feature-copy .home-story-link {
+  min-height: 28px;
+  margin-top: 9px;
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--home-accent-dark);
+  color: #fff;
+  font-size: 0.72rem;
+}
+
+.view[data-view="about"] .home-feature-image {
+  min-height: 0;
+  aspect-ratio: 3 / 2;
+  border: 1px solid var(--home-rule);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--home-ink) 8%, transparent);
+}
+
+.view[data-view="about"] .home-feature-image img {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: contain;
+}
+
+.view[data-view="about"] .home-feature-image figcaption { display: none; }
+
+@media (max-width: 520px) {
+  .view[data-view="about"] .home-brand-hero { grid-template-columns: 1fr; min-height: 0; padding-block: 32px 40px; }
+  .view[data-view="about"] .home-brand-art { grid-column: 1; grid-row: 3; width: min(100%, 280px); margin: 20px auto 0; }
+  .view[data-view="about"] .home-feature-slide { grid-template-columns: 1fr; }
+  .view[data-view="about"] .home-feature-dots button { padding-inline: 5px; font-size: 0.65rem; }
 }
