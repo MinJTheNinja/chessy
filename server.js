@@ -2740,6 +2740,20 @@ function routePattern(pathname, pattern) {
   return params;
 }
 
+function youtubeVideoId(value) {
+  try {
+    const url = new URL(String(value || ""));
+    if (url.protocol !== "https:") return null;
+    const host = url.hostname.toLowerCase();
+    let id = null;
+    if (host === "youtu.be" || host === "www.youtu.be") id = url.pathname.split("/")[1];
+    else if (["youtube.com", "www.youtube.com", "m.youtube.com"].includes(host)) {
+      id = url.pathname === "/watch" ? url.searchParams.get("v") : url.pathname.match(/^\/(?:shorts|embed|live)\/([^/]+)/)?.[1];
+    }
+    return /^[A-Za-z0-9_-]{11}$/.test(id || "") ? id : null;
+  } catch { return null; }
+}
+
 async function handleFastApi(req, res, pathname, searchParams = new URLSearchParams()) {
   if (pathname === "/api/forum/resources" || pathname.startsWith("/api/forum/resources/")) {
     const user = await getSessionUser(req);
@@ -2755,8 +2769,9 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
       const body = await readBody(req);
       const files = Array.isArray(body.files) ? body.files : [];
       const title = String(body.title || "").trim().slice(0, 80);
-      if (!title || !files.length || files.length > 5 || !body.privacyConfirmed || !body.rightsConfirmed) {
-        sendJson(res, 400, { error: "Title, 1–5 files, and sharing confirmations are required." });
+      const videoId = body.kind === "video" ? youtubeVideoId(body.videoUrl) : null;
+      if (!title || (body.kind === "video" ? !videoId || files.length : !files.length || files.length > 5)) {
+        sendJson(res, 400, { error: "A title and valid YouTube URL or 1–5 files are required." });
         return true;
       }
       let totalBytes = 0;
@@ -2765,7 +2780,7 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
         const name = path.basename(String(file.name || "")).slice(0, 180);
         const extension = path.extname(name).toLowerCase();
         const base64 = String(file.data || "");
-        if (!name || ![".pdf", ".hwp", ".hwpx", ".docx", ".png", ".jpg", ".jpeg", ".webp", ".gif"].includes(extension)
+        if (!name || ![".pdf", ".hwp", ".hwpx", ".docx"].includes(extension)
           || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(base64)) {
           sendJson(res, 400, { error: "Unsupported or invalid file." }); return true;
         }
@@ -2778,8 +2793,8 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
       const metadata = {
         id: crypto.randomUUID(), title, description: String(body.description || "").trim().slice(0, 500),
         author: publicDisplayName(user), authorId: user.id, createdAt: new Date().toISOString(),
-        answer: Boolean(body.answer), type: [".hwp", ".hwpx"].includes(storedFiles[0].extension) ? "HWP" :
-          [".png", ".jpg", ".jpeg", ".webp", ".gif"].includes(storedFiles[0].extension) ? "이미지" : "PDF",
+        answer: Boolean(body.answer), type: videoId ? "영상" : [".hwp", ".hwpx"].includes(storedFiles[0].extension) ? "HWP" : "PDF",
+        ...(videoId ? { videoId } : {}),
         size: totalBytes, files: storedFiles.map(({ id, name, size }) => ({ id, name, size })),
       };
       if (pgPool) {
@@ -3228,10 +3243,14 @@ async function handleApi(req, res, pathname, searchParams, db, user) {
     sendJson(res, 200, { post }); return true;
   }
   if (req.method === "DELETE" && forumPostParams) {
-    if (!requireStaff(user, res)) return true;
+    if (!requireUser(user, res)) return true;
     const postIndex = db.forumPosts.findIndex((item) => item.id === forumPostParams.id);
     if (postIndex === -1) {
       sendJson(res, 404, { error: "Forum post not found." });
+      return true;
+    }
+    if (db.forumPosts[postIndex].authorId !== user.id && normalizedRole(user) !== "staff") {
+      sendJson(res, 403, { error: "Only the author or staff can delete this post." });
       return true;
     }
     const [deletedPost] = db.forumPosts.splice(postIndex, 1);

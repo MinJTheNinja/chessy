@@ -16383,3 +16383,37 @@ body:not(.is-signed-in):has(.view[data-view="about"].active) .site-header {
   .view[data-view="about"] .home-feature-slide { grid-template-columns: 1fr; }
   .view[data-view="about"] .home-feature-dots button { padding-inline: 5px; font-size: 0.65rem; }
 }
+.resource-upload form { gap: 1rem; padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--color-rule); border-radius: 1.25rem; background: var(--color-paper); box-shadow: var(--shadow-card); }
+.resource-kind-field { display: flex; flex-wrap: wrap; gap: .7rem; margin: 0; padding: 0; border: 0; }
+.resource-kind-field legend { width: 100%; margin-bottom: .65rem; font-weight: 700; }
+.resource-kind-field label { display: inline-flex; align-items: center; gap: .55rem; min-width: 7.5rem; padding: .65rem .85rem; border: 1px solid var(--color-rule); border-radius: .8rem; background: var(--color-paper-2); cursor: pointer; white-space: nowrap; }
+.resource-kind-field input { width: 1.1rem; height: 1.1rem; margin: 0; accent-color: var(--color-accent); }
+.resource-kind-field label:has(input:checked) { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.resource-upload form > input, .resource-upload form > textarea { border-radius: .85rem !important; }
+.resource-upload form > textarea { min-height: 9rem; }
+.resource-upload-actions { display: flex; justify-content: flex-end; gap: .6rem; margin-top: .4rem; padding-top: 1rem; border-top: 1px solid var(--color-rule); }
+.resource-upload-actions > button:not(.button) { border: 1px solid var(--color-rule); border-radius: .75rem; background: var(--color-paper); }
+.resource-upload-actions .button { width: auto; border-radius: .75rem; }
+.resource-campaign-field { gap: .75rem; }
+.resource-campaign-field label { align-items: center; padding: .55rem .8rem; border: 1px solid var(--color-rule); border-radius: .75rem; background: var(--color-paper-2); white-space: nowrap; }
+#resourceFileFields[hidden], #resourceVideoFields[hidden], .resource-checks label[hidden] { display: none !important; }
+#resourceVideoFields { display: grid; gap: .5rem; }
+#resourceVideoFields input { width: 100%; min-height: 48px; padding: .7rem .85rem; border: 1px solid var(--color-rule); border-radius: .85rem; background: white; }
+#resourceVideoFields small { color: var(--color-ink-soft); }
+.resource-preview-video { position: relative; overflow: hidden; background: #191919; }
+.resource-preview-video img { width: 100%; height: 100%; object-fit: cover; }
+.resource-video-play { position: absolute; top: 50%; left: 50%; display: grid; place-items: center; width: 3.5rem; height: 2.5rem; border-radius: .7rem; background: #e62117; color: white; font-size: 1.2rem; transform: translate(-50%, -50%); }
+.resource-video-player { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: .75rem; background: #191919; }
+.resource-detail-files > a { display: inline-block; margin-top: .7rem; color: var(--color-accent); font-weight: 700; }
+.how-to-play-view[data-training-mode="home"] .training-home::after {
+  content: "";
+  display: block;
+  min-height: clamp(220px, 29vw, 360px);
+  margin-top: .5rem;
+  border-radius: 1.4rem;
+  background: url("/assets/training-chess-garden.png") right bottom / cover no-repeat;
+  pointer-events: none;
+}
+@media (max-width: 760px) {
+  .how-to-play-view[data-training-mode="home"] .training-home::after { min-height: 210px; background-size: auto 100%; }
+}

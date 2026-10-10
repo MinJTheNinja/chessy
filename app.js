@@ -200,6 +200,10 @@ const resourceUploadForm = document.querySelector("#resourceUploadForm");
 const resourceFileInput = document.querySelector("#resourceFileInput");
 const resourceDropzone = document.querySelector("#resourceDropzone");
 const resourceFileRow = document.querySelector("#resourceFileRow");
+const resourceFileFields = document.querySelector("#resourceFileFields");
+const resourceVideoFields = document.querySelector("#resourceVideoFields");
+const resourceVideoUrl = document.querySelector("#resourceVideoUrl");
+const resourceKindInputs = document.querySelectorAll('[name="resourceKind"]');
 const resourceTitleInput = document.querySelector("#resourceTitleInput");
 const resourceDescriptionInput = document.querySelector("#resourceDescriptionInput");
 const shopInterestStatus = document.querySelector("#shopInterestStatus");
@@ -1444,8 +1448,8 @@ async function refreshForumResources() {
       ...resource,
       date: new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric" }).format(new Date(resource.createdAt)),
       sizeBytes: resource.size,
-      size: `${Math.max(0.1, resource.size / 1024 / 1024).toFixed(1)}MB · ${resource.files.length}개 파일`,
-      files: resource.files.map((file) => ({ name: file.name, size: file.size, url: `/api/forum/resources/${encodeURIComponent(resource.id)}/files/${encodeURIComponent(file.id)}` })),
+      size: resource.type === "영상" ? "YouTube 영상" : `${Math.max(0.1, resource.size / 1024 / 1024).toFixed(1)}MB · ${resource.files.length}개 파일`,
+      files: (resource.files || []).map((file) => ({ name: file.name, size: file.size, url: `/api/forum/resources/${encodeURIComponent(resource.id)}/files/${encodeURIComponent(file.id)}` })),
       comments: 0, official: false,
     })));
     renderResourceLibrary();
@@ -2565,15 +2569,21 @@ function renderPoeunPath() {
   const allComplete = completed.size === poeunStages.length;
   const nextStage = poeunStages.find((stage) => !completed.has(stage.slug)) || poeunStages[0];
   const introFilmSource = currentInterfaceLanguage() === "Korean" ? "/assets/poeun/poeun-intro.webm" : "/assets/poeun/poeun-intro.en.webm";
-  poeunPathList.innerHTML = `<button type="button" class="poeun-picker-back">← ${label("지역 캠페인", "Regional campaigns")}</button><header class="poeun-path-heading poeun-hero"><div class="poeun-intro-film"><video class="poeun-intro-video" controls playsinline preload="metadata" poster="/assets/poeun/scene-osang.png" aria-label="${label("포은 정몽주와 용인 이야기, 36초 만화 영상", "A 36-second animated story of Jeong Mong-ju and Yongin")}"><source src="${introFilmSource}" type="video/webm" /><track kind="captions" src="/assets/poeun/poeun-intro.ko.vtt" srclang="ko" label="한국어" /><track kind="subtitles" src="/assets/poeun/poeun-intro.en.vtt" srclang="en" label="English" />${label("영상을 재생할 수 없습니다.", "Your browser cannot play this video.")}</video><button type="button" class="poeun-video-play" aria-label="${label("소개 영상 재생", "Play introduction video")}">▶</button></div><div class="poeun-hero-copy"><span class="poeun-hero-eyebrow">${label("포은문화제", "Poeun Culture Festival")}</span><h2 class="poeun-hero-title">${label("단심이의", "Dansimi's")}<br />${label("체스 이야기", "Chess Story")}</h2><div class="poeun-hero-progress"><strong>${completed.size} / ${poeunStages.length} ${label("완료", "complete")}</strong><span>${allComplete ? label("✓ 모든 장 완료", "✓ All chapters complete") : label(`${poeunStages.length - completed.size}장 남음`, `${poeunStages.length - completed.size} chapters left`)}</span></div><div class="poeun-progress-steps" role="progressbar" aria-label="${label("포은 이야기 진행도", "Poeun story progress")}" aria-valuenow="${completed.size}" aria-valuemin="0" aria-valuemax="${poeunStages.length}">${poeunStages.map((stage) => `<i class="${completed.has(stage.slug) ? "is-done" : ""}"></i>`).join("")}</div><button type="button" class="poeun-restart">${allComplete ? label("처음부터 다시 보기 →", "Watch again from the start →") : label("이어서 보기 →", "Continue story →")}</button></div></header><div class="poeun-chapters-heading"><h3>${label("챕터", "Chapters")}</h3><span>${label(`총 ${poeunStages.length}개 장`, `${poeunStages.length} chapters`)}</span></div><ol class="poeun-path-nodes"></ol><button type="button" class="poeun-other-campaigns">${label("다른 캠페인 둘러보기 →", "Explore other campaigns →")}</button>`;
+  poeunPathList.innerHTML = `<header class="poeun-path-heading poeun-hero"><div class="poeun-intro-film"><video class="poeun-intro-video" controls playsinline preload="metadata" poster="/assets/poeun/scene-osang.png" aria-label="${label("포은 정몽주와 용인 이야기, 36초 만화 영상", "A 36-second animated story of Jeong Mong-ju and Yongin")}"><source src="${introFilmSource}" type="video/webm" /><track kind="captions" src="/assets/poeun/poeun-intro.ko.vtt" srclang="ko" label="한국어" /><track kind="subtitles" src="/assets/poeun/poeun-intro.en.vtt" srclang="en" label="English" />${label("영상을 재생할 수 없습니다.", "Your browser cannot play this video.")}</video><button type="button" class="poeun-video-play" aria-label="${label("소개 영상 재생", "Play introduction video")}">▶</button></div><div class="poeun-hero-copy"><span class="poeun-hero-eyebrow">${label("포은문화제", "Poeun Culture Festival")}</span><h2 class="poeun-hero-title">${label("단심이의", "Dansimi's")}<br />${label("체스 이야기", "Chess Story")}</h2><div class="poeun-hero-progress"><strong>${completed.size} / ${poeunStages.length} ${label("완료", "complete")}</strong><span>${allComplete ? label("✓ 모든 장 완료", "✓ All chapters complete") : label(`${poeunStages.length - completed.size}장 남음`, `${poeunStages.length - completed.size} chapters left`)}</span></div><div class="poeun-progress-steps" role="progressbar" aria-label="${label("포은 이야기 진행도", "Poeun story progress")}" aria-valuenow="${completed.size}" aria-valuemin="0" aria-valuemax="${poeunStages.length}">${poeunStages.map((stage) => `<i class="${completed.has(stage.slug) ? "is-done" : ""}"></i>`).join("")}</div><button type="button" class="poeun-restart">${allComplete ? label("처음부터 다시 보기 →", "Watch again from the start →") : label("이어서 보기 →", "Continue story →")}</button></div></header><div class="poeun-chapters-heading"><h3>${label("챕터", "Chapters")}</h3><span>${label(`총 ${poeunStages.length}개 장`, `${poeunStages.length} chapters`)}</span></div><ol class="poeun-path-nodes"></ol><button type="button" class="poeun-other-campaigns">${label("다른 캠페인 둘러보기 →", "Explore other campaigns →")}</button>`;
   const introVideo = poeunPathList.querySelector(".poeun-intro-video");
   const subtitleTrack = introVideo?.querySelector(`track[srclang="${currentInterfaceLanguage() === "Korean" ? "ko" : "en"}"]`);
   if (subtitleTrack) subtitleTrack.default = true;
-  poeunPathList.querySelector(".poeun-picker-back").onclick = showCampaignPicker;
   poeunPathList.querySelector(".poeun-other-campaigns").onclick = showCampaignPicker;
   poeunPathList.querySelector(".poeun-restart").onclick = () => openPoeunChapter(allComplete ? poeunStages[0].slug : nextStage.slug);
   const playButton = poeunPathList.querySelector(".poeun-video-play");
-  playButton.onclick = () => introVideo.play();
+  playButton.onclick = async () => {
+    playButton.hidden = true;
+    try {
+      await introVideo.play();
+    } catch {
+      playButton.hidden = false;
+    }
+  };
   introVideo.addEventListener("play", () => { playButton.hidden = true; });
   introVideo.addEventListener("pause", () => { playButton.hidden = false; });
   const nodes = poeunPathList.querySelector(".poeun-path-nodes");
@@ -4726,6 +4736,8 @@ function renderForumPosts() {
         : currentInterfaceLanguage() === "Korean" ? "고정" : "Pin";
       pinButton.addEventListener("click", () => toggleForumPin(post.id));
 
+    }
+    if (currentUser && (post.authorId === currentUser.id || isStaffUser())) {
       deleteButton = document.createElement("button");
       deleteButton.className = "forum-delete-action";
       deleteButton.type = "button";
@@ -4861,6 +4873,18 @@ function createResourcePreview(resource, large = false) {
   const preview = document.createElement("div");
   preview.className = `resource-preview${large ? " resource-preview-large" : ""}`;
   preview.setAttribute("aria-hidden", "true");
+  if (resource.type === "영상" && /^[A-Za-z0-9_-]{11}$/.test(resource.videoId || "")) {
+    preview.classList.add("resource-preview-video");
+    const thumbnail = document.createElement("img");
+    thumbnail.src = `https://i.ytimg.com/vi/${resource.videoId}/hqdefault.jpg`;
+    thumbnail.alt = "";
+    thumbnail.loading = "lazy";
+    const play = document.createElement("span");
+    play.className = "resource-video-play";
+    play.textContent = "▶";
+    preview.append(thumbnail, play);
+    return preview;
+  }
   const paper = document.createElement("span");
   paper.className = "resource-preview-paper";
   const lines = document.createElement("i");
@@ -4891,10 +4915,10 @@ function renderResourceLibrary() {
   const countByType = (type) => forumResources.filter((resource) => resource.type === type).length;
   const pdfCount = document.querySelector("#resourceCountPdf");
   const hwpCount = document.querySelector("#resourceCountHwp");
-  const imageCount = document.querySelector("#resourceCountImage");
+  const videoCount = document.querySelector("#resourceCountVideo");
   if (pdfCount) pdfCount.textContent = String(countByType("PDF"));
   if (hwpCount) hwpCount.textContent = String(countByType("HWP"));
-  if (imageCount) imageCount.textContent = String(countByType("이미지"));
+  if (videoCount) videoCount.textContent = String(countByType("영상"));
   if (resourceResultCount) resourceResultCount.textContent = String(visible.length);
 
   resourceGrid.replaceChildren();
@@ -4927,7 +4951,9 @@ function renderResourceLibrary() {
     const author = document.createElement("span");
     author.textContent = `${resource.author} · ${resource.date}`;
     const stats = document.createElement("footer");
-    stats.innerHTML = `<span aria-label="다운로드 수">↓ ${resource.downloads ?? "—"}</span><span aria-label="댓글 수">▢ ${resource.comments}</span>`;
+    stats.innerHTML = resource.type === "영상"
+      ? `<span>▶ YouTube에서 재생</span><span aria-label="댓글 수">▢ ${resource.comments}</span>`
+      : `<span aria-label="다운로드 수">↓ ${resource.downloads ?? "—"}</span><span aria-label="댓글 수">▢ ${resource.comments}</span>`;
     if (resource.official) {
       const official = document.createElement("b");
       official.textContent = "공식";
@@ -4963,6 +4989,7 @@ function openResourceDetail(resource) {
   const layout = document.createElement("div");
   layout.className = "resource-detail-layout";
   const files = resource.files || (resource.fileUrl ? [{ name: resource.fileName || resource.title, url: resource.fileUrl }] : []);
+  const isVideo = resource.type === "영상" && /^[A-Za-z0-9_-]{11}$/.test(resource.videoId || "");
   const fileSection = document.createElement("section");
   fileSection.className = "resource-detail-files";
   const filesHeading = document.createElement("h4");
@@ -5002,7 +5029,22 @@ function openResourceDetail(resource) {
   } else {
     downloads.textContent = label("다운로드 파일이 없습니다", "No files to download");
   }
-  fileSection.append(filesHeading, downloads);
+  if (isVideo) {
+    filesHeading.textContent = label("영상 보기", "Watch video");
+    const player = document.createElement("iframe");
+    player.className = "resource-video-player";
+    player.src = `https://www.youtube-nocookie.com/embed/${resource.videoId}`;
+    player.title = resource.title;
+    player.loading = "lazy";
+    player.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+    player.allowFullscreen = true;
+    const youtubeLink = document.createElement("a");
+    youtubeLink.href = `https://www.youtube.com/watch?v=${resource.videoId}`;
+    youtubeLink.target = "_blank";
+    youtubeLink.rel = "noopener noreferrer";
+    youtubeLink.textContent = label("YouTube에서 보기 ↗", "Watch on YouTube ↗");
+    fileSection.append(filesHeading, player, youtubeLink);
+  } else fileSection.append(filesHeading, downloads);
 
   const info = document.createElement("aside");
   info.className = "resource-download-card";
@@ -5020,10 +5062,13 @@ function openResourceDetail(resource) {
     info.append(row);
   };
   addInfo(label("형식", "Format"), resource.type || "—");
-  addInfo(label("용량", "Size"), Number.isFinite(resource.sizeBytes) ? `${(resource.sizeBytes / 1024 / 1024).toFixed(1)}MB` : "—");
-  addInfo(label("파일", "Files"), label(`${files.length}개`, `${files.length}`));
-  addInfo(label("정답지", "Answer key"), resource.answer ? label("포함", "Included") : label("미포함", "Not included"), resource.answer);
-  addInfo(label("다운로드", "Downloads"), Number.isFinite(resource.downloads) ? label(`${resource.downloads}회`, `${resource.downloads}`) : "—");
+  if (isVideo) addInfo(label("출처", "Source"), "YouTube");
+  else {
+    addInfo(label("용량", "Size"), Number.isFinite(resource.sizeBytes) ? `${(resource.sizeBytes / 1024 / 1024).toFixed(1)}MB` : "—");
+    addInfo(label("파일", "Files"), label(`${files.length}개`, `${files.length}`));
+    addInfo(label("정답지", "Answer key"), resource.answer ? label("포함", "Included") : label("미포함", "Not included"), resource.answer);
+    addInfo(label("다운로드", "Downloads"), Number.isFinite(resource.downloads) ? label(`${resource.downloads}회`, `${resource.downloads}`) : "—");
+  }
   layout.append(fileSection, info);
 
   const description = document.createElement("section");
@@ -5044,8 +5089,33 @@ function showResourceUpload() {
   resourceUploadForm?.reset();
   resourceFileRow?.toggleAttribute("hidden", true);
   resourceDropzone?.toggleAttribute("hidden", false);
+  updateResourceKind();
   setForumSurface("upload");
-  resourceDropzone?.focus();
+  resourceTitleInput?.focus();
+}
+
+function selectedResourceKind() {
+  return document.querySelector('[name="resourceKind"]:checked')?.value || "file";
+}
+
+function youtubeVideoId(value) {
+  try {
+    const url = new URL(String(value || ""));
+    if (url.protocol !== "https:") return null;
+    const host = url.hostname.toLowerCase();
+    const id = ["youtu.be", "www.youtu.be"].includes(host) ? url.pathname.split("/")[1]
+      : ["youtube.com", "www.youtube.com", "m.youtube.com"].includes(host)
+        ? (url.pathname === "/watch" ? url.searchParams.get("v") : url.pathname.match(/^\/(?:shorts|embed|live)\/([^/]+)/)?.[1]) : null;
+    return /^[A-Za-z0-9_-]{11}$/.test(id || "") ? id : null;
+  } catch { return null; }
+}
+
+function updateResourceKind() {
+  const video = selectedResourceKind() === "video";
+  resourceFileFields?.toggleAttribute("hidden", video);
+  resourceVideoFields?.toggleAttribute("hidden", !video);
+  if (resourceVideoUrl) { resourceVideoUrl.required = video; resourceVideoUrl.setCustomValidity(""); }
+  resourceDropzone?.setCustomValidity("");
 }
 
 function renderSelectedResourceFiles() {
@@ -5091,14 +5161,20 @@ function addSelectedResourceFiles(files) {
 
 async function submitResourceUpload(event) {
   event.preventDefault();
-  if (!selectedResourceFiles.length) {
+  const isVideo = selectedResourceKind() === "video";
+  if (isVideo && !youtubeVideoId(resourceVideoUrl?.value)) {
+    resourceVideoUrl?.setCustomValidity("올바른 YouTube 영상 주소를 입력해 주세요.");
+    resourceVideoUrl?.reportValidity();
+    return;
+  }
+  if (!isVideo && !selectedResourceFiles.length) {
     resourceDropzone?.setCustomValidity("올릴 파일을 먼저 골라 주세요.");
     resourceDropzone?.reportValidity();
     return;
   }
   if (!resourceUploadForm?.reportValidity()) return;
   const totalSize = selectedResourceFiles.reduce((sum, file) => sum + file.size, 0);
-  if (selectedResourceFiles.length > 5 || totalSize > 50 * 1024 * 1024) {
+  if (!isVideo && (selectedResourceFiles.length > 5 || totalSize > 50 * 1024 * 1024)) {
     resourceDropzone?.setCustomValidity("파일은 최대 5개, 합계 50MB 이하로 골라 주세요.");
     resourceDropzone?.reportValidity();
     return;
@@ -5106,7 +5182,7 @@ async function submitResourceUpload(event) {
   const submit = resourceUploadForm.querySelector('[type="submit"]');
   submit.disabled = true;
   try {
-    const files = await Promise.all(selectedResourceFiles.map((file) => new Promise((resolve, reject) => {
+    const files = await Promise.all((isVideo ? [] : selectedResourceFiles).map((file) => new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve({ name: file.name, data: String(reader.result).split(",", 2)[1] });
       reader.onerror = () => reject(reader.error);
@@ -5114,13 +5190,13 @@ async function submitResourceUpload(event) {
     })));
     await api("/api/forum/resources", { method: "POST", body: {
       title: resourceTitleInput.value.trim(), description: resourceDescriptionInput.value.trim(), files,
-      answer: Boolean(document.querySelector("#resourceAnswerCheck")?.checked),
-      privacyConfirmed: Boolean(document.querySelector("#resourcePrivacyCheck")?.checked),
-      rightsConfirmed: Boolean(document.querySelector("#resourceRightsCheck")?.checked),
+      kind: isVideo ? "video" : "file", videoUrl: isVideo ? resourceVideoUrl.value.trim() : undefined,
+      answer: false,
     } });
   } catch (error) {
-    resourceDropzone?.setCustomValidity(error.message || "업로드에 실패했어요.");
-    resourceDropzone?.reportValidity();
+    const field = isVideo ? resourceVideoUrl : resourceDropzone;
+    field?.setCustomValidity(error.message || "업로드에 실패했어요.");
+    field?.reportValidity();
     submit.disabled = false;
     return;
   }
@@ -5129,6 +5205,7 @@ async function submitResourceUpload(event) {
   resourceUploadForm.reset();
   resourceFileRow?.toggleAttribute("hidden", true);
   resourceDropzone?.toggleAttribute("hidden", false);
+  updateResourceKind();
   setForumSurface("library");
 }
 
@@ -5294,7 +5371,7 @@ async function toggleForumPin(postId) {
 }
 
 async function deleteForumPost(post, control) {
-  if (!isStaffUser() || !post?.id) return;
+  if (!post?.id || !currentUser || (post.authorId !== currentUser.id && !isStaffUser())) return;
   const message = currentInterfaceLanguage() === "Korean"
     ? `“${post.title}” 게시글과 답글을 모두 삭제할까요?`
     : `Delete “${post.title}” and all of its replies?`;
@@ -8099,6 +8176,8 @@ showResourceUploadButton?.addEventListener("click", showResourceUpload);
 resourceUploadBackButton?.addEventListener("click", () => setForumSurface("library"));
 cancelResourceUploadButton?.addEventListener("click", () => setForumSurface("library"));
 resourceDropzone?.addEventListener("click", () => resourceFileInput?.click());
+resourceKindInputs.forEach((input) => input.addEventListener("change", updateResourceKind));
+resourceVideoUrl?.addEventListener("input", () => resourceVideoUrl.setCustomValidity(""));
 resourceFileInput?.addEventListener("change", () => addSelectedResourceFiles(resourceFileInput.files));
 resourceDropzone?.addEventListener("dragover", (event) => {
   event.preventDefault();

@@ -62,12 +62,12 @@
     </noscript>
     <link rel="stylesheet" href="/tokens.css?v=20260925-home-v3" />
     <link rel="stylesheet" href="/styles.css?v=20261010-guest-position" />
-    <link rel="stylesheet" href="/assets/poeun/poeun.css?v=20261009-rounded-purple" />
+    <link rel="stylesheet" href="/assets/poeun/poeun.css?v=20261010-video-play" />
     <script src="/assets/i18n/en-supplement.js?v=20261010-guest-welcome" defer></script>
     <script src="/assets/poeun/stations.js?v=20261008-hero-layout" defer></script>
     <script src="/assets/poeun/opera-game.js?v=20261008" defer></script>
     <script src="/assets/poeun/station-ui.js?v=20261008-campaign-cards" defer></script>
-    <script src="/app.js?v=20261010-auth-card" defer></script>
+    <script src="/app.js?v=20261010-video-play" defer></script>
     <script src="/analytics.js?v=20261009" defer></script>
   </head>
   <body>
@@ -807,7 +807,7 @@
                   <button class="button primary" id="showForumComposer" type="button"><span aria-hidden="true">＋</span> 새 글</button>
                 </div>
                 <div class="forum-toolbar" id="resourceToolbar" hidden>
-                  <label class="forum-search resource-search"><span class="sr-only">학습지 검색</span><input id="resourceSearchInput" type="search" placeholder="학습지 검색" autocomplete="off" /></label>
+                  <label class="forum-search resource-search"><span class="sr-only">자료 검색</span><input id="resourceSearchInput" type="search" placeholder="자료 검색" autocomplete="off" /></label>
                   <button class="button resource-primary" id="showResourceUpload" type="button"><span aria-hidden="true">⇧</span> 자료 올리기</button>
                 </div>
               </div>
@@ -830,7 +830,7 @@
                     <h3>형식</h3>
                     <label><input type="checkbox" value="PDF" data-resource-type /> PDF <span id="resourceCountPdf">0</span></label>
                     <label><input type="checkbox" value="HWP" data-resource-type /> HWP <span id="resourceCountHwp">0</span></label>
-                    <label><input type="checkbox" value="이미지" data-resource-type /> 이미지 <span id="resourceCountImage">0</span></label>
+                    <label><input type="checkbox" value="영상" data-resource-type /> 영상 <span id="resourceCountVideo">0</span></label>
                     <button type="button" id="resetResourceFilters">필터 초기화</button>
                   </aside>
                   <div class="resource-results">
@@ -838,32 +838,32 @@
                     <div class="resource-grid" id="resourceGrid"></div>
                   </div>
                 </div>
-                <p class="resource-safety-note">올린 자료는 바로 공개돼요. 학생 이름이나 얼굴이 나온 자료는 올리지 말아 주세요.</p>
+                <p class="resource-safety-note">올린 자료와 영상 링크는 바로 공개돼요. 학생 이름이나 얼굴이 나온 자료는 올리지 말아 주세요.</p>
               </section>
 
               <section class="resource-detail" id="resourceDetailPanel" hidden aria-live="polite"></section>
 
               <section class="resource-upload" id="resourceUploadPanel" hidden aria-labelledby="resourceUploadTitle">
                 <button class="resource-back" id="resourceUploadBack" type="button">← 자료방</button>
-                <p class="resource-upload-intro">체스 학습지나 수업 자료를 다른 선생님, 친구들과 나눠요.</p>
                 <div class="resource-upload-layout">
                   <form id="resourceUploadForm">
                     <h3 id="resourceUploadTitle" class="sr-only">자료 올리기</h3>
-                    <label class="resource-field-label" for="resourceFileInput">파일 <b>*</b></label>
-                    <input id="resourceFileInput" type="file" accept=".pdf,.hwp,.hwpx,.docx,image/*" multiple hidden />
+                    <fieldset class="resource-kind-field"><legend>자료 형식</legend><label><input type="radio" name="resourceKind" value="file" checked /> 파일</label><label><input type="radio" name="resourceKind" value="video" /> 유튜브 영상</label></fieldset>
+                    <div id="resourceFileFields"><label class="resource-field-label" for="resourceFileInput">파일 <b>*</b></label>
+                    <input id="resourceFileInput" type="file" accept=".pdf,.hwp,.hwpx,.docx" multiple hidden />
                     <button class="resource-dropzone" id="resourceDropzone" type="button">
-                      <span aria-hidden="true">⇧</span><strong>파일을 여러 개 끌어다 놓거나, 여기를 눌러 골라요</strong><small>PDF · 이미지 · HWP · DOCX · 최대 5개, 파일당 20MB, 합계 50MB</small>
+                      <span aria-hidden="true">⇧</span><strong>파일을 여러 개 끌어다 놓거나, 여기를 눌러 골라요</strong><small>PDF · HWP · DOCX · 최대 5개, 파일당 20MB, 합계 50MB</small>
                     </button>
-                    <div class="resource-file-list" id="resourceFileRow" hidden aria-live="polite"></div>
+                    <div class="resource-file-list" id="resourceFileRow" hidden aria-live="polite"></div></div>
+                    <div id="resourceVideoFields" hidden><label class="resource-field-label" for="resourceVideoUrl">유튜브 주소 <b>*</b></label><input id="resourceVideoUrl" type="url" placeholder="https://www.youtube.com/watch?v=..." inputmode="url" /><small>공개된 YouTube 영상 또는 Shorts 주소를 붙여 넣으세요.</small></div>
                     <label class="resource-field-label" for="resourceTitleInput">제목 <b>*</b></label>
                     <input id="resourceTitleInput" type="text" placeholder="예: 체크메이트 한 수 연습 학습지" maxlength="80" required />
                     <label class="resource-field-label" for="resourceDescriptionInput">설명</label>
                     <textarea id="resourceDescriptionInput" rows="5" placeholder="어떤 수업에서, 어떤 순서로 쓰면 좋은지 적어요" maxlength="500"></textarea>
-                    <fieldset class="resource-campaign-field"><legend>연결할 캠페인</legend><p>연결하면 그 캠페인 이야기 자료에도 함께 보여요.</p><label><input type="radio" name="resourceCampaign" value="없음" checked /> 없음</label><label><input type="radio" name="resourceCampaign" value="시즌 1 · 처인성" /> 시즌 1 · 처인성</label></fieldset>
-                    <fieldset class="resource-checks"><legend>올리기 전에 확인해요 <b>*</b></legend><label><input id="resourceAnswerCheck" type="checkbox" /> 정답지가 들어 있어요</label><label><input id="resourcePrivacyCheck" type="checkbox" required /> 학생 이름, 얼굴 같은 개인정보가 없어요</label><label><input id="resourceRightsCheck" type="checkbox" required /> 직접 만들었거나 공유가 허용된 자료예요</label></fieldset>
-                    <div class="resource-upload-actions"><span>올리면 자료방에 바로 공개돼요.</span><button id="cancelResourceUpload" type="button">취소</button><button class="button resource-primary" type="submit">⇧ 올리기</button></div>
+                    <fieldset class="resource-campaign-field"><legend>연결할 캠페인</legend><label><input type="radio" name="resourceCampaign" value="없음" checked /> 없음</label><label><input type="radio" name="resourceCampaign" value="시즌 1 · 처인성" /> 시즌 1 · 처인성</label></fieldset>
+                    <div class="resource-upload-actions"><button id="cancelResourceUpload" type="button">취소</button><button class="button resource-primary" type="submit">⇧ 올리기</button></div>
                   </form>
-                  <aside class="resource-upload-tips"><h3>이런 자료가 좋아요</h3><ul><li>A4로 인쇄해서 바로 쓸 수 있어요.</li><li>문제와 정답을 따로 파일로 나눠 올려요.</li><li>체스판 그림이 흐리지 않게 해상도를 확인해요.</li><li>출처가 있으면 파일 안에 적어요.</li></ul><a href="#" aria-disabled="true">↓ 학습지 양식 · 준비 중</a></aside>
+                  <aside class="resource-upload-tips"><h3>이런 자료가 좋아요</h3><ul><li>학습지는 인쇄해서 바로 쓸 수 있게 만들어요.</li><li>영상은 공개된 YouTube 주소를 사용해요.</li><li>제목과 설명에 수업에서 쓰는 방법을 적어요.</li><li>공유할 권리가 있는 자료만 올려요.</li></ul><a href="#" aria-disabled="true">↓ 학습지 양식 · 준비 중</a></aside>
                 </div>
               </section>
             </div>

@@ -673,6 +673,23 @@ test("slow and aborted league uploads do not block other students", { timeout: 3
 });
 
 
+test("forum authors can delete their posts but other users cannot", async (t) => {
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'forum-delete-'));
+ const runtime=await startServer(dir);
+ t.after(async()=>{await stopServer(runtime.child);fs.rmSync(dir,{recursive:true,force:true});});
+ const author=await signup(runtime.baseUrl,'post-author@example.test','Author');
+ const other=await signup(runtime.baseUrl,'post-reader@example.test','Reader');
+ const created=await request(runtime.baseUrl,'/api/forum/posts',{
+  method:'POST',cookie:author.cookie,body:{title:'My post',body:'My content',category:'Question'},
+ });
+ assert.equal(created.status,201);
+ const route=`/api/forum/posts/${created.data.post.id}`;
+ assert.equal((await request(runtime.baseUrl,route,{method:'DELETE',cookie:other.cookie})).status,403);
+ assert.equal((await request(runtime.baseUrl,route,{method:'DELETE',cookie:author.cookie})).status,200);
+ const posts=await request(runtime.baseUrl,'/api/forum/posts');
+ assert.equal(posts.data.posts.some((post)=>post.id===created.data.post.id),false);
+});
+
 test("learning points persist once, concurrent learning merges, and authors alone edit posts", {timeout:60000}, async(t)=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'learning-edit-'));
  const runtime=await startServer(dir);t.after(async()=>{await stopServer(runtime.child);fs.rmSync(dir,{recursive:true,force:true});});
