@@ -2556,26 +2556,28 @@ function requestedPoeunSlug() {
 
 function hidePoeunPanels() {
   window.PoeunStationUI?.dispose();
+  pausePoeunIntroVideo();
   poeunPathList?.setAttribute("hidden", "");
   poeunChapter?.setAttribute("hidden", "");
   poeunChapterOpen = false;
 }
 
-function renderPoeunPath() {
-  if (!poeunPathList) return;
-  const completed = completedPoeunIds();
-  const ko = currentInterfaceLanguage() === "Korean";
+// Reuse one intro film so re-renders do not discard a video that iOS Safari is still loading.
+let poeunIntroFilm = null;
+
+function poeunIntroFilmElement() {
+  const language = currentInterfaceLanguage();
+  if (poeunIntroFilm?.dataset.language === language) return poeunIntroFilm;
+  const ko = language === "Korean";
   const label = (korean, english) => ko ? korean : english;
-  const allComplete = completed.size === poeunStages.length;
-  const nextStage = poeunStages.find((stage) => !completed.has(stage.slug)) || poeunStages[0];
-  const introFilmSource = currentInterfaceLanguage() === "Korean" ? "/assets/poeun/poeun-intro.webm" : "/assets/poeun/poeun-intro.en.webm";
-  poeunPathList.innerHTML = `<header class="poeun-path-heading poeun-hero"><div class="poeun-intro-film"><video class="poeun-intro-video" controls playsinline preload="metadata" poster="/assets/poeun/scene-osang.png" aria-label="${label("포은 정몽주와 용인 이야기, 36초 만화 영상", "A 36-second animated story of Jeong Mong-ju and Yongin")}"><source src="${introFilmSource}" type="video/webm" /><track kind="captions" src="/assets/poeun/poeun-intro.ko.vtt" srclang="ko" label="한국어" /><track kind="subtitles" src="/assets/poeun/poeun-intro.en.vtt" srclang="en" label="English" />${label("영상을 재생할 수 없습니다.", "Your browser cannot play this video.")}</video><button type="button" class="poeun-video-play" aria-label="${label("소개 영상 재생", "Play introduction video")}">▶</button></div><div class="poeun-hero-copy"><span class="poeun-hero-eyebrow">${label("포은문화제", "Poeun Culture Festival")}</span><h2 class="poeun-hero-title">${label("단심이의", "Dansimi's")}<br />${label("체스 이야기", "Chess Story")}</h2><div class="poeun-hero-progress"><strong>${completed.size} / ${poeunStages.length} ${label("완료", "complete")}</strong><span>${allComplete ? label("✓ 모든 장 완료", "✓ All chapters complete") : label(`${poeunStages.length - completed.size}장 남음`, `${poeunStages.length - completed.size} chapters left`)}</span></div><div class="poeun-progress-steps" role="progressbar" aria-label="${label("포은 이야기 진행도", "Poeun story progress")}" aria-valuenow="${completed.size}" aria-valuemin="0" aria-valuemax="${poeunStages.length}">${poeunStages.map((stage) => `<i class="${completed.has(stage.slug) ? "is-done" : ""}"></i>`).join("")}</div><button type="button" class="poeun-restart">${allComplete ? label("처음부터 다시 보기 →", "Watch again from the start →") : label("이어서 보기 →", "Continue story →")}</button></div></header><div class="poeun-chapters-heading"><h3>${label("챕터", "Chapters")}</h3><span>${label(`총 ${poeunStages.length}개 장`, `${poeunStages.length} chapters`)}</span></div><ol class="poeun-path-nodes"></ol><button type="button" class="poeun-other-campaigns">${label("다른 캠페인 둘러보기 →", "Explore other campaigns →")}</button>`;
-  const introVideo = poeunPathList.querySelector(".poeun-intro-video");
-  const subtitleTrack = introVideo?.querySelector(`track[srclang="${currentInterfaceLanguage() === "Korean" ? "ko" : "en"}"]`);
+  const introFilmSource = ko ? "/assets/poeun/poeun-intro.webm" : "/assets/poeun/poeun-intro.en.webm";
+  const template = document.createElement("template");
+  template.innerHTML = `<div class="poeun-intro-film" data-language="${language}"><video class="poeun-intro-video" controls playsinline preload="metadata" poster="/assets/poeun/scene-osang.png" aria-label="${label("포은 정몽주와 용인 이야기, 36초 만화 영상", "A 36-second animated story of Jeong Mong-ju and Yongin")}"><source src="${introFilmSource}" type="video/webm" /><track kind="captions" src="/assets/poeun/poeun-intro.ko.vtt" srclang="ko" label="한국어" /><track kind="subtitles" src="/assets/poeun/poeun-intro.en.vtt" srclang="en" label="English" />${label("영상을 재생할 수 없습니다.", "Your browser cannot play this video.")}</video><button type="button" class="poeun-video-play" aria-label="${label("소개 영상 재생", "Play introduction video")}">▶</button></div>`;
+  const film = template.content.firstElementChild;
+  const introVideo = film.querySelector(".poeun-intro-video");
+  const subtitleTrack = introVideo.querySelector(`track[srclang="${ko ? "ko" : "en"}"]`);
   if (subtitleTrack) subtitleTrack.default = true;
-  poeunPathList.querySelector(".poeun-other-campaigns").onclick = showCampaignPicker;
-  poeunPathList.querySelector(".poeun-restart").onclick = () => openPoeunChapter(allComplete ? poeunStages[0].slug : nextStage.slug);
-  const playButton = poeunPathList.querySelector(".poeun-video-play");
+  const playButton = film.querySelector(".poeun-video-play");
   playButton.onclick = async () => {
     playButton.hidden = true;
     try {
@@ -2586,6 +2588,26 @@ function renderPoeunPath() {
   };
   introVideo.addEventListener("play", () => { playButton.hidden = true; });
   introVideo.addEventListener("pause", () => { playButton.hidden = false; });
+  poeunIntroFilm = film;
+  return film;
+}
+
+function pausePoeunIntroVideo() {
+  poeunIntroFilm?.querySelector(".poeun-intro-video")?.pause();
+}
+
+function renderPoeunPath() {
+  if (!poeunPathList) return;
+  const completed = completedPoeunIds();
+  const ko = currentInterfaceLanguage() === "Korean";
+  const label = (korean, english) => ko ? korean : english;
+  const allComplete = completed.size === poeunStages.length;
+  const nextStage = poeunStages.find((stage) => !completed.has(stage.slug)) || poeunStages[0];
+  poeunIntroFilm?.remove();
+  poeunPathList.innerHTML = `<header class="poeun-path-heading poeun-hero"><div class="poeun-intro-film-slot"></div><div class="poeun-hero-copy"><span class="poeun-hero-eyebrow">${label("포은문화제", "Poeun Culture Festival")}</span><h2 class="poeun-hero-title">${label("단심이의", "Dansimi's")}<br />${label("체스 이야기", "Chess Story")}</h2><div class="poeun-hero-progress"><strong>${completed.size} / ${poeunStages.length} ${label("완료", "complete")}</strong><span>${allComplete ? label("✓ 모든 장 완료", "✓ All chapters complete") : label(`${poeunStages.length - completed.size}장 남음`, `${poeunStages.length - completed.size} chapters left`)}</span></div><div class="poeun-progress-steps" role="progressbar" aria-label="${label("포은 이야기 진행도", "Poeun story progress")}" aria-valuenow="${completed.size}" aria-valuemin="0" aria-valuemax="${poeunStages.length}">${poeunStages.map((stage) => `<i class="${completed.has(stage.slug) ? "is-done" : ""}"></i>`).join("")}</div><button type="button" class="poeun-restart">${allComplete ? label("처음부터 다시 보기 →", "Watch again from the start →") : label("이어서 보기 →", "Continue story →")}</button></div></header><div class="poeun-chapters-heading"><h3>${label("챕터", "Chapters")}</h3><span>${label(`총 ${poeunStages.length}개 장`, `${poeunStages.length} chapters`)}</span></div><ol class="poeun-path-nodes"></ol><button type="button" class="poeun-other-campaigns">${label("다른 캠페인 둘러보기 →", "Explore other campaigns →")}</button>`;
+  poeunPathList.querySelector(".poeun-intro-film-slot").replaceWith(poeunIntroFilmElement());
+  poeunPathList.querySelector(".poeun-other-campaigns").onclick = showCampaignPicker;
+  poeunPathList.querySelector(".poeun-restart").onclick = () => openPoeunChapter(allComplete ? poeunStages[0].slug : nextStage.slug);
   const nodes = poeunPathList.querySelector(".poeun-path-nodes");
   poeunStages.forEach((stage, index) => {
     const done = completed.has(stage.slug);
@@ -2688,6 +2710,7 @@ function openPoeunChapter(slug, { updateHash = true } = {}) {
   cheoinseongPathList?.setAttribute("hidden", "");
   howToPlayShell?.setAttribute("hidden", "");
   poeunPathList?.setAttribute("hidden", "");
+  pausePoeunIntroVideo();
   poeunChapter.removeAttribute("hidden");
   howToPlayView?.classList.add("puzzle-mode");
   setActiveTrainingPathMode("poeun");
@@ -2725,6 +2748,7 @@ function showPoeunEnding({ updateHash = true } = {}) {
   poeunChapterOpen = true;
   activePoeunSlug = "";
   poeunPathList?.setAttribute("hidden", "");
+  pausePoeunIntroVideo();
   poeunChapter?.removeAttribute("hidden");
   window.PoeunStationUI.mountEnding(poeunChapter, {
     onRestart: () => openPoeunChapter(poeunStages[0].slug),
