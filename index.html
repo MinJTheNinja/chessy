@@ -62,13 +62,13 @@
       <style>body.app-booting .entry { visibility: visible !important; }</style>
     </noscript>
     <link rel="stylesheet" href="/tokens.css?v=20260925-home-v3" />
-    <link rel="stylesheet" href="/styles.css?v=20261010-resource-menu" />
+    <link rel="stylesheet" href="/styles.css?v=20261010-home-dashboard-v3" />
     <link rel="stylesheet" href="/assets/poeun/poeun.css?v=20261010-video-play" />
     <script src="/assets/i18n/en-supplement.js?v=20261010-guest-welcome" defer></script>
     <script src="/assets/poeun/stations.js?v=20261008-hero-layout" defer></script>
     <script src="/assets/poeun/opera-game.js?v=20261008" defer></script>
     <script src="/assets/poeun/station-ui.js?v=20261008-campaign-cards" defer></script>
-    <script src="/app.js?v=20261010-resource-menu" defer></script>
+    <script src="/app.js?v=20261010-home-dashboard" defer></script>
     <script src="/analytics.js?v=20261009" defer></script>
   </head>
   <body class="app-booting">
@@ -252,9 +252,10 @@
 
                 <article class="home-daily-puzzle" aria-labelledby="dailyPuzzleTitle">
                   <img src="/assets/daily-puzzle-icon-transparent-v2.png" alt="퍼즐 탐험 아이콘" loading="lazy" decoding="async" />
-                  <div>
-                    <h3 id="dailyPuzzleTitle">추천 퍼즐: 성문 뒤의 함정</h3>
-                    <p>백 차례 · 1수 메이트</p>
+                  <div class="home-puzzle-copy">
+                    <span class="home-puzzle-badge">추천 퍼즐</span>
+                    <h3 id="dailyPuzzleTitle">성문 뒤의 함정</h3>
+                    <p class="home-puzzle-facts"><span>백 차례</span><span>1수 메이트</span></p>
                     <div class="home-puzzle-actions">
                       <button class="button primary" id="homeDailyPuzzleButton" type="button">풀어보기</button>
                       <div class="home-theme-control">

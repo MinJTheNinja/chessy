@@ -2806,7 +2806,7 @@ function renderTodayQuests() {
   const progress = questProgressSnapshot();
   const korean = currentInterfaceLanguage() === "Korean";
   todayQuestList.replaceChildren();
-  todayQuestDefinitions.forEach((quest) => {
+  todayQuestDefinitions.filter((quest) => quest.key === "puzzles").forEach((quest) => {
     const value = Math.min(quest.total, Math.max(0, Number(progress[quest.key] || 0)));
     const item = document.createElement("li");
     item.className = "today-quest-row";
@@ -4747,7 +4747,9 @@ function renderForumPosts() {
       deleteButton.addEventListener("click", () => deleteForumPost(post, deleteButton));
     }
 
-    main.append(summary);
+    side.append(author, time, comments);
+    time.textContent = forumTimeLabel(post.createdAt);
+    main.append(summary, side);
     if (expandedForumPostId === post.id) {
       const detail = document.createElement("section");
       detail.className = "forum-post-detail";
@@ -4755,17 +4757,29 @@ function renderForumPosts() {
       body.className = "forum-post-body";
       body.textContent = post.body || "";
       detail.append(body);
+      const replyHeading = document.createElement("h5");
+      replyHeading.className = "forum-reply-heading";
+      replyHeading.textContent = currentInterfaceLanguage() === "Korean" ? `댓글 ${replies.length}` : `${replies.length} comments`;
+      detail.append(replyHeading);
       const replyList = document.createElement("div");
       replyList.className = "forum-reply-list";
       replies.forEach((reply) => {
         const row = document.createElement("article");
         row.className = "forum-reply";
+        const avatar = document.createElement("span");
+        avatar.className = "forum-reply-avatar";
+        avatar.setAttribute("aria-hidden", "true");
+        avatar.textContent = (reply.author || "P").trim().charAt(0).toUpperCase();
         const meta = document.createElement("div");
         meta.className = "forum-reply-meta";
-        meta.textContent = `${reply.author || "Player"} · ${forumTimeLabel(reply.createdAt)}`;
+        const replyAuthor = document.createElement("strong");
+        replyAuthor.textContent = reply.author || "Player";
+        const replyTime = document.createElement("time");
+        replyTime.textContent = forumTimeLabel(reply.createdAt);
+        meta.append(replyAuthor, replyTime);
         const copy = document.createElement("p");
         copy.textContent = reply.body || "";
-        row.append(meta, copy);
+        row.append(avatar, meta, copy);
         replyList.append(row);
       });
       detail.append(replyList);
@@ -4780,17 +4794,12 @@ function renderForumPosts() {
         const submit = document.createElement("button");
         submit.type = "submit";
         submit.className = "forum-reply-send";
-        submit.hidden = true;
         submit.disabled = true;
         submit.setAttribute("aria-label", currentInterfaceLanguage() === "Korean" ? "댓글 보내기" : "Send comment");
-        submit.innerHTML = `
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M3.4 4.2 21 12 3.4 19.8l1.5-6.1 8.3-1.7-8.3-1.7-1.5-6.1Z"></path>
-          </svg>`;
+        submit.textContent = currentInterfaceLanguage() === "Korean" ? "등록 →" : "Post →";
         const syncReplyComposer = () => {
           const hasValue = Boolean(input.value.trim());
           form.classList.toggle("has-value", hasValue);
-          submit.hidden = !hasValue;
           submit.disabled = !hasValue;
           input.style.height = "auto";
           input.style.height = `${Math.min(input.scrollHeight, 120)}px`;
@@ -4844,12 +4853,10 @@ function renderForumPosts() {
       });
       menuActions.append(editButton);
     }
-    side.append(author, time, comments);
     if (pinButton) menuActions.append(pinButton);
     if (deleteButton) menuActions.append(deleteButton);
     menu.append(menuToggle, menuActions);
-    time.textContent = forumTimeLabel(post.createdAt);
-    item.append(pin, main, side, menu);
+    item.append(pin, main, menu);
     postGroups.get(post.pinned ? "pinned" : "regular").append(item);
   });
 }
@@ -7001,16 +7008,22 @@ function renderLeaderboard(data = {}) {
   leaderboardList.innerHTML = "";
   const members = data.members || [];
   if (!members.length) {
-    const empty = document.createElement("p");
+    const empty = document.createElement("div");
     empty.className = "leaderboard-empty";
-    empty.textContent =
-      data.emptyReason === "no-league"
-        ? currentInterfaceLanguage() === "Korean"
-          ? "아직 내 리그가 없습니다. 참가 코드를 입력하거나 새 리그 코드를 생성하세요."
-          : "No league yet. Enter a code or create a new league."
-        : currentInterfaceLanguage() === "Korean"
-          ? "아직 리더보드에 표시할 플레이어가 없습니다."
-          : "No players to show on this leaderboard yet.";
+    const icon = document.createElement("span");
+    icon.className = "leaderboard-empty-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v7a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4v3a3 3 0 0 0 3 3m10-6h3v3a3 3 0 0 1-3 3M12 16v3m-4 1h8"/></svg>';
+    const title = document.createElement("strong");
+    const description = document.createElement("span");
+    if (data.emptyReason === "no-league") {
+      title.textContent = currentInterfaceLanguage() === "Korean" ? "아직 내 리그가 없어요" : "No league yet";
+      description.textContent = currentInterfaceLanguage() === "Korean" ? "참가 코드를 입력하거나 새 리그를 만들어 보세요." : "Enter a code or create a new league.";
+    } else {
+      title.textContent = currentInterfaceLanguage() === "Korean" ? "아직 순위가 없어요" : "No rankings yet";
+      description.textContent = currentInterfaceLanguage() === "Korean" ? "첫 대국을 두면 이곳에 순위가 표시돼요." : "Play a match to appear here.";
+    }
+    empty.append(icon, title, description);
     leaderboardList.append(empty);
     return;
   }
