@@ -4963,8 +4963,35 @@ function renderResourceLibrary() {
     open.append(copy);
     open.addEventListener("click", () => openResourceDetail(resource));
     card.append(open);
+    if (currentUser && (resource.authorId === currentUser.id || isStaffUser())) {
+      const actions = document.createElement("div");
+      actions.className = "resource-card-actions";
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "resource-delete-button";
+      remove.textContent = currentInterfaceLanguage() === "Korean" ? "자료 삭제" : "Delete resource";
+      remove.addEventListener("click", () => deleteForumResource(resource, remove));
+      actions.append(remove);
+      card.append(actions);
+    }
     resourceGrid.append(card);
   });
+}
+
+async function deleteForumResource(resource, control) {
+  const korean = currentInterfaceLanguage() === "Korean";
+  if (!resource?.id || !currentUser || (resource.authorId !== currentUser.id && !isStaffUser())) return;
+  if (!window.confirm(korean ? `“${resource.title}” 자료와 첨부 파일을 삭제할까요?` : `Delete “${resource.title}” and its files?`)) return;
+  control.disabled = true;
+  try {
+    await api(`/api/forum/resources/${encodeURIComponent(resource.id)}`, { method: "DELETE" });
+    const index = forumResources.findIndex((item) => item.id === resource.id);
+    if (index !== -1) forumResources.splice(index, 1);
+    setForumSurface("library");
+  } catch (error) {
+    control.disabled = false;
+    control.textContent = error.message || (korean ? "삭제 실패" : "Delete failed");
+  }
 }
 
 function openResourceDetail(resource) {
@@ -4985,6 +5012,14 @@ function openResourceDetail(resource) {
   const meta = document.createElement("p");
   meta.textContent = `${resource.author} · ${resource.date}`;
   heading.append(title, meta);
+  if (currentUser && (resource.authorId === currentUser.id || isStaffUser())) {
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "resource-delete-button";
+    deleteButton.textContent = label("자료 삭제", "Delete resource");
+    deleteButton.addEventListener("click", () => deleteForumResource(resource, deleteButton));
+    heading.append(deleteButton);
+  }
 
   const layout = document.createElement("div");
   layout.className = "resource-detail-layout";

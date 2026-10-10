@@ -124,6 +124,24 @@ test("forum resources persist multiple downloadable files across restart", { tim
   }
 });
 
+test("resource authors can delete their uploads but other users cannot", async (t) => {
+  const dataDir = fs.mkdtempSync(path.join(projectDir, ".resource-delete-test-"));
+  const runtime = await startServer(dataDir);
+  t.after(async () => { await stopServer(runtime.child); fs.rmSync(dataDir, { recursive: true, force: true }); });
+  const author = await signup(runtime.baseUrl, "resource-delete-author@example.test", "Author");
+  const other = await signup(runtime.baseUrl, "resource-delete-other@example.test", "Other");
+  const uploaded = await request(runtime.baseUrl, "/api/forum/resources", {
+    method: "POST", cookie: author.cookie,
+    body: { title: "My video", kind: "video", videoUrl: "https://youtu.be/dQw4w9WgXcQ", files: [] },
+  });
+  assert.equal(uploaded.status, 201);
+  const route = `/api/forum/resources/${uploaded.data.resource.id}`;
+  assert.equal((await request(runtime.baseUrl, route, { method: "DELETE", cookie: other.cookie })).status, 403);
+  assert.equal((await request(runtime.baseUrl, route, { method: "DELETE", cookie: author.cookie })).status, 200);
+  const listed = await request(runtime.baseUrl, "/api/forum/resources");
+  assert.equal(listed.data.resources.some((resource) => resource.id === uploaded.data.resource.id), false);
+});
+
 test("forum preserves staff and teacher notices while blocking league students from creating posts", { timeout: 60_000 }, async (t) => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "easymate-forum-roles-"));
   const runtime = await startServer(dataDir);

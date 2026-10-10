@@ -14,6 +14,7 @@ test('a resource with an attached file opens its detail and download link', () =
   const context = vm.createContext({
     document: { createElement: element },
     resourceDetailPanel: panel,
+    currentUser: null,
     currentInterfaceLanguage: () => 'Korean',
     setForumSurface: (surface) => { context.surface = surface; },
   });

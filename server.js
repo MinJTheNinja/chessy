@@ -309,6 +309,20 @@ async function writeLocalResource(resource) {
   return operation;
 }
 
+async function deleteLocalResource(resourceId, user) {
+  const operation = localResourceWriteQueue.catch(() => {}).then(async () => {
+    const resources = await readLocalResources();
+    const index = resources.findIndex((item) => item.metadata.id === resourceId);
+    if (index === -1) return "missing";
+    if (resources[index].metadata.authorId !== user.id && normalizedRole(user) !== "staff") return "forbidden";
+    resources.splice(index, 1);
+    await atomicWriteJson(resourceDbPath, resources);
+    return "deleted";
+  });
+  localResourceWriteQueue = operation.then(() => undefined, () => undefined);
+  return operation;
+}
+
 function clone(value) {
   return structuredClone(value);
 }
@@ -2805,6 +2819,22 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
         await writeLocalResource({ metadata, files: storedFiles });
       }
       sendJson(res, 201, { resource: metadata });
+      return true;
+    }
+    const resourceMatch = pathname.match(/^\/api\/forum\/resources\/([^/]+)$/);
+    if (req.method === "DELETE" && resourceMatch) {
+      if (!requireUser(user, res)) return true;
+      let result;
+      if (pgPool) {
+        await ensurePostgresDb();
+        const found = await pgPool.query("SELECT metadata FROM forum_resources WHERE id = $1", [resourceMatch[1]]);
+        const metadata = found.rows[0]?.metadata;
+        result = !metadata ? "missing" : metadata.authorId !== user.id && normalizedRole(user) !== "staff" ? "forbidden" : "deleted";
+        if (result === "deleted") await pgPool.query("DELETE FROM forum_resources WHERE id = $1", [resourceMatch[1]]);
+      } else result = await deleteLocalResource(resourceMatch[1], user);
+      if (result === "missing") sendJson(res, 404, { error: "Resource not found." });
+      else if (result === "forbidden") sendJson(res, 403, { error: "Only the author or staff can delete this resource." });
+      else sendJson(res, 200, { ok: true, resourceId: resourceMatch[1] });
       return true;
     }
     const match = pathname.match(/^\/api\/forum\/resources\/([^/]+)\/files\/([^/]+)$/);
