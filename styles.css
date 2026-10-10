@@ -16641,3 +16641,80 @@ body:not(.is-signed-in):has(.view[data-view="about"].active) .site-header {
 @media (max-width: 760px) {
   .how-to-play-view[data-training-mode="home"] .training-home::after { min-height: 210px; background-size: auto 100%; }
 }
+
+/* Phone layouts: keep controls and card content inside the viewport. */
+@media (max-width: 520px) {
+  .view[data-view="overview"] .home-dashboard,
+  .view[data-view="overview"] .home-main-column,
+  .view[data-view="overview"] .home-puzzle-copy,
+  .view[data-view="overview"] .home-leaderboard,
+  .view[data-view="overview"] .home-today-quests {
+    min-width: 0;
+  }
+
+  .view[data-view="overview"] .home-overview-head {
+    padding: 16px 38px 16px 16px;
+  }
+
+  .view[data-view="overview"] .home-start-actions,
+  .view[data-view="overview"] .home-puzzle-actions,
+  .view[data-view="overview"] .home-league-actions .league-mode-toggle {
+    flex-wrap: wrap;
+  }
+
+  .view[data-view="overview"] .home-leaderboard {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .view[data-view="overview"] .home-leaderboard .home-section-head {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+    margin-top: 8px;
+  }
+
+  .view[data-view="overview"] .home-leaderboard-list { grid-row: 3; }
+  .view[data-view="overview"] .home-league-actions { grid-row: 4; }
+
+  .forum-board .forum-controls,
+  .forum-board .forum-toolbar {
+    min-width: 0;
+  }
+
+  .forum-board .forum-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .forum-board .forum-search {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .forum-board .forum-search input { width: 100%; }
+  .resource-upload-actions { flex-wrap: wrap; }
+}
+
+@media (max-width: 390px) {
+  .view[data-view="overview"] .home-daily-puzzle {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .view[data-view="overview"] .home-puzzle-preview {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .view[data-view="overview"] .home-puzzle-copy {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  body:not(.is-signed-in) .entry-content .entry-actions {
+    flex-wrap: wrap;
+  }
+
+  .view[data-view="about"] .home-brand-hero,
+  .view[data-view="about"] .home-feature-story {
+    padding-inline: 20px;
+  }
+}
