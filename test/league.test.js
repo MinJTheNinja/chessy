@@ -136,6 +136,14 @@ test("resource authors can delete their uploads but other users cannot", async (
   });
   assert.equal(uploaded.status, 201);
   const route = `/api/forum/resources/${uploaded.data.resource.id}`;
+  assert.equal((await request(runtime.baseUrl, route, { method: "PATCH", cookie: other.cookie,
+    body: { title: "Changed", description: "No", videoUrl: "https://youtu.be/dQw4w9WgXcQ" } })).status, 403);
+  assert.equal((await request(runtime.baseUrl, route, { method: "PATCH", cookie: author.cookie,
+    body: { title: "", description: "No", videoUrl: "https://youtu.be/dQw4w9WgXcQ" } })).status, 400);
+  const edited = await request(runtime.baseUrl, route, { method: "PATCH", cookie: author.cookie,
+    body: { title: "Updated video", description: "New description", videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" } });
+  assert.equal(edited.status, 200);
+  assert.equal(edited.data.resource.title, "Updated video");
   assert.equal((await request(runtime.baseUrl, route, { method: "DELETE", cookie: other.cookie })).status, 403);
   assert.equal((await request(runtime.baseUrl, route, { method: "DELETE", cookie: author.cookie })).status, 200);
   const listed = await request(runtime.baseUrl, "/api/forum/resources");

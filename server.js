@@ -323,6 +323,31 @@ async function deleteLocalResource(resourceId, user) {
   return operation;
 }
 
+function editedResourceMetadata(metadata, body) {
+  const title = String(body.title || "").trim().slice(0, 80);
+  if (!title) return null;
+  const description = String(body.description || "").trim().slice(0, 500);
+  const videoId = metadata.type === "영상" ? youtubeVideoId(body.videoUrl) : null;
+  if (metadata.type === "영상" && !videoId) return null;
+  return { ...metadata, title, description, ...(videoId ? { videoId } : {}), updatedAt: new Date().toISOString() };
+}
+
+async function updateLocalResource(resourceId, user, body) {
+  const operation = localResourceWriteQueue.catch(() => {}).then(async () => {
+    const resources = await readLocalResources();
+    const resource = resources.find((item) => item.metadata.id === resourceId);
+    if (!resource) return { status: "missing" };
+    if (resource.metadata.authorId !== user.id && normalizedRole(user) !== "staff") return { status: "forbidden" };
+    const metadata = editedResourceMetadata(resource.metadata, body);
+    if (!metadata) return { status: "invalid" };
+    resource.metadata = metadata;
+    await atomicWriteJson(resourceDbPath, resources);
+    return { status: "updated", metadata };
+  });
+  localResourceWriteQueue = operation.then(() => undefined, () => undefined);
+  return operation;
+}
+
 function clone(value) {
   return structuredClone(value);
 }
@@ -2822,6 +2847,31 @@ async function handleFastApi(req, res, pathname, searchParams = new URLSearchPar
       return true;
     }
     const resourceMatch = pathname.match(/^\/api\/forum\/resources\/([^/]+)$/);
+    if (req.method === "PATCH" && resourceMatch) {
+      if (!requireUser(user, res)) return true;
+      const body = await readBody(req);
+      let result;
+      if (pgPool) {
+        await ensurePostgresDb();
+        const found = await pgPool.query("SELECT metadata FROM forum_resources WHERE id = $1", [resourceMatch[1]]);
+        const current = found.rows[0]?.metadata;
+        if (!current) result = { status: "missing" };
+        else if (current.authorId !== user.id && normalizedRole(user) !== "staff") result = { status: "forbidden" };
+        else {
+          const metadata = editedResourceMetadata(current, body);
+          if (!metadata) result = { status: "invalid" };
+          else {
+            await pgPool.query("UPDATE forum_resources SET metadata = $2::jsonb WHERE id = $1", [resourceMatch[1], JSON.stringify(metadata)]);
+            result = { status: "updated", metadata };
+          }
+        }
+      } else result = await updateLocalResource(resourceMatch[1], user, body);
+      if (result.status === "missing") sendJson(res, 404, { error: "Resource not found." });
+      else if (result.status === "forbidden") sendJson(res, 403, { error: "Only the author or staff can edit this resource." });
+      else if (result.status === "invalid") sendJson(res, 400, { error: "A title and valid YouTube URL are required." });
+      else sendJson(res, 200, { resource: result.metadata });
+      return true;
+    }
     if (req.method === "DELETE" && resourceMatch) {
       if (!requireUser(user, res)) return true;
       let result;

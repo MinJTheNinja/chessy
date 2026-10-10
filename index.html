@@ -59,18 +59,20 @@
     />
     <noscript>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+      <style>body.app-booting .entry { visibility: visible !important; }</style>
     </noscript>
     <link rel="stylesheet" href="/tokens.css?v=20260925-home-v3" />
-    <link rel="stylesheet" href="/styles.css?v=20261010-resource-delete" />
+    <link rel="stylesheet" href="/styles.css?v=20261010-resource-menu" />
     <link rel="stylesheet" href="/assets/poeun/poeun.css?v=20261010-video-play" />
     <script src="/assets/i18n/en-supplement.js?v=20261010-guest-welcome" defer></script>
     <script src="/assets/poeun/stations.js?v=20261008-hero-layout" defer></script>
     <script src="/assets/poeun/opera-game.js?v=20261008" defer></script>
     <script src="/assets/poeun/station-ui.js?v=20261008-campaign-cards" defer></script>
-    <script src="/app.js?v=20261010-resource-delete" defer></script>
+    <script src="/app.js?v=20261010-resource-menu" defer></script>
     <script src="/analytics.js?v=20261009" defer></script>
   </head>
-  <body>
+  <body class="app-booting">
+    <script>window.setTimeout(() => document.body.classList.remove("app-booting"), 4000);</script>
     <header class="site-header">
       <a class="brand" href="#about" data-view-link="about" aria-label="EasyMate 소개 보기">
         <img src="/assets/easymate-logo-mark-v2.png" alt="EasyMate" width="369" height="366" decoding="async" />

@@ -4136,6 +4136,8 @@ async function checkBackend() {
   } catch {
     backendOnline = false;
     renderLobby({ openSeeks: [], openSeeksTotal: 0, queuedPlayers: 0 });
+  } finally {
+    document.body.classList.remove("app-booting");
   }
 }
 
@@ -4963,19 +4965,105 @@ function renderResourceLibrary() {
     open.append(copy);
     open.addEventListener("click", () => openResourceDetail(resource));
     card.append(open);
-    if (currentUser && (resource.authorId === currentUser.id || isStaffUser())) {
-      const actions = document.createElement("div");
-      actions.className = "resource-card-actions";
-      const remove = document.createElement("button");
-      remove.type = "button";
-      remove.className = "resource-delete-button";
-      remove.textContent = currentInterfaceLanguage() === "Korean" ? "자료 삭제" : "Delete resource";
-      remove.addEventListener("click", () => deleteForumResource(resource, remove));
-      actions.append(remove);
-      card.append(actions);
-    }
+    if (currentUser && (resource.authorId === currentUser.id || isStaffUser())) card.append(createResourceMenu(resource));
     resourceGrid.append(card);
   });
+}
+
+function createResourceMenu(resource) {
+  const korean = currentInterfaceLanguage() === "Korean";
+  const menu = document.createElement("details");
+  menu.className = "forum-post-menu resource-post-menu";
+  const toggle = document.createElement("summary");
+  toggle.textContent = "⋮";
+  toggle.setAttribute("aria-label", `${resource.title} ${korean ? "옵션" : "options"}`);
+  const actions = document.createElement("div");
+  const edit = document.createElement("button");
+  edit.type = "button";
+  edit.textContent = korean ? "수정" : "Edit";
+  edit.addEventListener("click", () => { menu.open = false; openResourceEditor(resource); });
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.className = "forum-delete-action";
+  remove.textContent = korean ? "삭제" : "Delete";
+  remove.addEventListener("click", () => { menu.open = false; deleteForumResource(resource, remove); });
+  actions.append(edit, remove);
+  menu.append(toggle, actions);
+  return menu;
+}
+
+function openResourceEditor(resource) {
+  if (!resourceDetailPanel || !currentUser || (resource.authorId !== currentUser.id && !isStaffUser())) return;
+  const korean = currentInterfaceLanguage() === "Korean";
+  const form = document.createElement("form");
+  form.className = "resource-edit-form";
+  const heading = document.createElement("h3");
+  heading.textContent = korean ? "자료 수정" : "Edit resource";
+  const makeField = (labelText, control) => {
+    const label = document.createElement("label");
+    const text = document.createElement("span");
+    text.textContent = labelText;
+    label.append(text, control);
+    return label;
+  };
+  const title = document.createElement("input");
+  title.type = "text";
+  title.required = true;
+  title.maxLength = 80;
+  title.value = resource.title;
+  const description = document.createElement("textarea");
+  description.rows = 5;
+  description.maxLength = 500;
+  description.value = resource.description || "";
+  form.append(heading, makeField(korean ? "제목" : "Title", title), makeField(korean ? "설명" : "Description", description));
+  let videoUrl = null;
+  if (resource.type === "영상") {
+    videoUrl = document.createElement("input");
+    videoUrl.type = "url";
+    videoUrl.required = true;
+    videoUrl.value = `https://www.youtube.com/watch?v=${resource.videoId}`;
+    videoUrl.addEventListener("input", () => videoUrl.setCustomValidity(""));
+    form.append(makeField(korean ? "유튜브 주소" : "YouTube URL", videoUrl));
+  }
+  const actions = document.createElement("div");
+  actions.className = "resource-edit-actions";
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.textContent = korean ? "취소" : "Cancel";
+  cancel.addEventListener("click", () => openResourceDetail(resource));
+  const save = document.createElement("button");
+  save.type = "submit";
+  save.className = "button resource-primary";
+  save.textContent = korean ? "저장" : "Save";
+  actions.append(cancel, save);
+  form.append(actions);
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (videoUrl && !youtubeVideoId(videoUrl.value)) {
+      videoUrl.setCustomValidity(korean ? "올바른 YouTube 주소를 입력해 주세요." : "Enter a valid YouTube URL.");
+      videoUrl.reportValidity();
+      return;
+    }
+    if (!form.reportValidity()) return;
+    save.disabled = true;
+    try {
+      const { resource: updated } = await api(`/api/forum/resources/${encodeURIComponent(resource.id)}`, {
+        method: "PATCH",
+        body: { title: title.value.trim(), description: description.value.trim(), ...(videoUrl ? { videoUrl: videoUrl.value.trim() } : {}) },
+      });
+      resource.title = updated.title;
+      resource.description = updated.description;
+      if (updated.videoId) resource.videoId = updated.videoId;
+      renderResourceLibrary();
+      openResourceDetail(resource);
+    } catch (error) {
+      save.disabled = false;
+      save.textContent = error.message || (korean ? "저장 실패" : "Save failed");
+    }
+  });
+  resourceDetailPanel.replaceChildren(form);
+  setForumSurface("detail");
+  title.focus();
 }
 
 async function deleteForumResource(resource, control) {
@@ -5012,14 +5100,7 @@ function openResourceDetail(resource) {
   const meta = document.createElement("p");
   meta.textContent = `${resource.author} · ${resource.date}`;
   heading.append(title, meta);
-  if (currentUser && (resource.authorId === currentUser.id || isStaffUser())) {
-    const deleteButton = document.createElement("button");
-    deleteButton.type = "button";
-    deleteButton.className = "resource-delete-button";
-    deleteButton.textContent = label("자료 삭제", "Delete resource");
-    deleteButton.addEventListener("click", () => deleteForumResource(resource, deleteButton));
-    heading.append(deleteButton);
-  }
+  if (currentUser && (resource.authorId === currentUser.id || isStaffUser())) heading.append(createResourceMenu(resource));
 
   const layout = document.createElement("div");
   layout.className = "resource-detail-layout";
